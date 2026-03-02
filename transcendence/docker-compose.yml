@@ -58,6 +58,9 @@ services:
     volumes:
       - ./monitoring/prometheus:/etc/prometheus
     restart: always
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.external-url=https://localhost/prometheus'
     networks:
       - monitor_net
       - backend_net
