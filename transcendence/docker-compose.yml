@@ -17,7 +17,7 @@ services:
     networks:
       - backend_net
 
-  # Adil - Django / backend
+  # Adil - fastapi / backend
   backend:
     build: ./backend
     container_name: transcendence_back
@@ -65,8 +65,10 @@ services:
   grafana:
     image: grafana/grafana
     container_name: transcendence_grafana
-    ports:
-      - "3001:3000" # secure access dashboard [cite: 447]
+    # deleted port for security reason
+    environment:
+      - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
+      - GF_SERVER_SERVE_FROM_SUB_PATH=true
     depends_on:
       - prometheus
     restart: always
