@@ -56,7 +56,7 @@ services:
     image: prom/prometheus
     container_name: transcendence_prom
     volumes:
-      - ./monitoring/prometheus:/etc/prometheus
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -64,6 +64,21 @@ services:
     networks:
       - monitor_net
       - backend_net
+  
+  node_exporter:
+    image: prom/node-exporter:latest
+    container_name: transcendence_node_exporter
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    networks:
+      - monitor_net
+    restart: always
 
   grafana:
     image: grafana/grafana
