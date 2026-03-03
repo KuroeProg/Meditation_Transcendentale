@@ -87,8 +87,14 @@ services:
     environment:
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
+      - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
+      - GF_USERS_ALLOW_SIGN_UP=false
     depends_on:
       - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     restart: always
     networks:
       - monitor_net
@@ -116,3 +122,6 @@ services:
     # On expose pas le port 5601 sur le net on passe par le 443
     networks:
       - monitor_net
+
+volumes:
+  grafana_data:
