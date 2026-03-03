@@ -46,6 +46,9 @@ services:
     depends_on:
       - backend
       - frontend
+    volumes:
+      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # - ./nginx/certs:/etc/nginx/certs:ro
     restart: always
     networks:
       - frontend_net
