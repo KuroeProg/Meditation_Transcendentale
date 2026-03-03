@@ -12,10 +12,10 @@ down:
 	cd transcendence && docker compose down
 
 clean:
-	cd transcendence && docker compose down -v
+	cd transcendence && docker compose down
 
 fclean: clean
-	cd transcendence && docker compose down --rmi all -v
+	cd transcendence && docker compose down --rmi all
 
 re: fclean all
 
