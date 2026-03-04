@@ -27,6 +27,7 @@ h1 {
 	/* cursor: pointer; */
 	/* user-select: none; */
 	/* pointer-events: none; */
+	cursor: grab;
 }
 
 #board {
@@ -42,3 +43,19 @@ h1 {
 .cell { width: var(--cell); height: var(--cell); }
 .cell.light { background: #f0d9b5}
 .cell.dark { background: #6389b5}
+.cell.selected { background: #7fc97f !important;}
+
+
+.cell.possible-move {
+
+}
+
+.cell.possible-move::after {
+
+}
+
+.cell.possible-capture::after {
+
+}
+
+/* faire le css des mooves possible demain" */
