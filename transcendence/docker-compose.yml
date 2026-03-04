@@ -17,17 +17,21 @@ services:
     networks:
       - backend_net
 
-  # Adil - fastapi / backend
   backend:
     build: ./backend
     container_name: transcendence_back
+    volumes:
+      - ./backend:/app
+    environment:
+      - DB_NAME=${POSTGRES_DB}
+      - DB_USER=${POSTGRES_USER}
+      - DB_PASSWORD=${POSTGRES_PASSWORD}
+      - DB_HOST=db
     depends_on:
       - db
-    env_file: .env
-    restart: always
     networks:
-      - frontend_net
       - backend_net
+    restart: always
 
   # Alexis - frontend
   frontend:
@@ -48,11 +52,12 @@ services:
       - frontend
     volumes:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
-      # - ./nginx/certs:/etc/nginx/certs:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
     restart: always
     networks:
       - frontend_net
       - monitor_net
+      - backend_net
 
   # Cloe - Monitoring
   prometheus:
