@@ -13,11 +13,11 @@ h1 {
 	--cell: 72px;
 	--board-light: #f0d9b5;
 	--board-dark:  #b58863;
-	--board-light-hover: #f6e7c5;
+	/* --board-light-hover: #f6e7c5;
 	--board-dark-hover:  #c99b75;
 	--selected: #7fc97f;
 	--check: rgba(220,50,50,0.7);
-	--gold-dark: #8b6914;
+	--gold-dark: #8b6914; */
 }
 
 .piece {
