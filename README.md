@@ -1,10 +1,9 @@
 # FT_TRANSCENDENCE
 
 ## Team Members
-- Cloe (cfiachet): Project Manager and Cyber Security. Responsible for Infrastructure, Nginx (HTTPS/TLS), and Monitoring (Prometheus/Grafana).
-- Adil (abelmoha): Tech Lead and Backend Developer. Responsible for the Core API and Database management.
-- Alexis (acoste): Frontend Lead and Game Developer. Responsible for UI/UX and Chess game logic.
-- Theo (tbahin): Product Owner. Responsible for Logging and ELK Stack integration.
+- Cloe (cfiachet): Project Manager and Cyber Security. Responsible for Infrastructure, Nginx (HTTPS/TLS), and Monitoring (Prometheus/Grafana), Scrum Master.
+- Theo (tbahin): Responsible for Logging and ELK Stack integration. Tech Lead and Backend Developer. Responsible for the Core API and Database management.
+- Alexis (acoste): Product Owner and Game Developer. Responsible for UI/UX and Chess game logic.
 
 ---
 
@@ -38,6 +37,6 @@
 
 Application: https://localhost/
 
-Monitoring: https://localhost/grafana/
+Monitoring: https://localhost/grafana/ https://localhost/kibana
 
 Metrics: https://localhost/prometheus/ (Authenticated via Nginx)
