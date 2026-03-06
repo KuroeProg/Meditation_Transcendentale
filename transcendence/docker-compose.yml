@@ -109,7 +109,7 @@ services:
 
 # Théo/Mileum - Log Management
   elasticsearch:
-    build: ./elasticsearch
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
     container_name: elastic
     env_file: .env
     environment:
@@ -117,10 +117,10 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
-      - xpack.security.http.ssl.keystore.path=/usr/share/elasticsearch/config/certs/instance.p12
-      - xpack.security.http.ssl.truststore.path=/usr/share/elasticsearch/config/certs/instance.p12
+      - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
+      - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
     volumes:
-      - ./certs:/usr/share/elasticsearch/config/certs
+      - ./transcendence/elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
     restart: always
     ports:
       - "9200:9200"
