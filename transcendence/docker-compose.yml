@@ -113,14 +113,13 @@ services:
     container_name: elastic
     env_file: .env
     environment:
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - discovery.type=single-node
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
       - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
     volumes:
-      - ./transcendence/elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
+      - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
     restart: always
     ports:
       - "9200:9200"
