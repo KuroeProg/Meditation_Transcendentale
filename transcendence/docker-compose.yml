@@ -109,18 +109,28 @@ services:
 
 # Théo/Mileum - Log Management
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
-    container_name: transcendence_elastic
+    build: ./elasticsearch
+    container_name: elastic
+    env_file: .env
     environment:
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - discovery.type=single-node
-      - xpack.security.enabled=false # À activer plus tard (cyber)
+      - xpack.security.enabled=true
+      - xpack.security.http.ssl.enabled=true
+      - xpack.security.http.ssl.keystore.path=/usr/share/elasticsearch/config/certs/instance.p12
+      - xpack.security.http.ssl.truststore.path=/usr/share/elasticsearch/config/certs/instance.p12
+    volumes:
+      - ./certs:/usr/share/elasticsearch/config/certs
     restart: always
+    ports:
+      - "9200:9200"
     networks:
       - monitor_net
 
   kibana:
     image: docker.elastic.co/kibana/kibana:8.10.2
-    container_name: transcendence_kibana
+    container_name: kibana
+    env_file: .env
     environment:
       - SERVER_BASEPATH="/kibana"
       - SERVER_REWRITEBASEPATH="true"
@@ -131,5 +141,21 @@ services:
     networks:
       - monitor_net
 
+  logstash:
+    build: ./logstash
+    container_name: logstash
+    env_file: .env
+    volumes:
+      - ./certs:/usr/share/logstash/config/certs
+    environment:
+      - MONITORING_ENABLED=false
+      - XPACK_MONITORING_ENABLED=false
+      - "LS_JAVA_OPTS=-Xms512m -Xmx512m"
+    depends_on:
+      - elasticsearch
+    networks:
+      - monitor_net
+      - backend_net
+    restart: always
 volumes:
   grafana_data:
