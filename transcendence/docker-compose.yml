@@ -51,6 +51,7 @@ services:
       - backend
       - frontend
     volumes:
+      - ./logs/nginx:/var/log/nginx
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./nginx/certs:/etc/nginx/certs:ro
     restart: always
@@ -109,8 +110,8 @@ services:
 
 # Théo/Mileum - Log Management
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.10.2
-    container_name: elastic
+    build: ./elasticsearch
+    container_name: elasticsearch
     env_file: .env
     environment:
       - discovery.type=single-node
@@ -120,9 +121,9 @@ services:
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
     volumes:
       - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
+      - elastic_data:/usr/share/elasticsearch/data
+      - token_share:/token_share
     restart: always
-    ports:
-      - "9200:9200"
     networks:
       - monitor_net
 
@@ -131,10 +132,16 @@ services:
     container_name: kibana
     env_file: .env
     environment:
+      - ELASTICSEARCH_HOSTS=https://elasticsearch:9200/
+      - ELASTICSEARCH_USERNAME=kibana_system
+      - ELASTICSEARCH_PASSWORD=${KIBANA_PASSWORD} # Defined in your .env
+      - ELASTICSEARCH_SSL_VERIFICATIONMODE=none # Since you use self-signed certs
       - SERVER_BASEPATH="/kibana"
       - SERVER_REWRITEBASEPATH="true"
     depends_on:
       - elasticsearch
+    volumes:
+      - token_share:/token_share:ro
     restart: always
     # On expose pas le port 5601 sur le net on passe par le 443
     networks:
@@ -146,6 +153,7 @@ services:
     env_file: .env
     volumes:
       - ./certs:/usr/share/logstash/config/certs
+      - ./logs/nginx:/var/log/nginx:ro
     environment:
       - MONITORING_ENABLED=false
       - XPACK_MONITORING_ENABLED=false
@@ -158,3 +166,5 @@ services:
     restart: always
 volumes:
   grafana_data:
+  elastic_data:
+  token_share:
