@@ -14,5 +14,3 @@ COPY setup_ssl.sh /usr/local/bin/setup_ssl.sh
 RUN chmod +x /usr/local/bin/setup_ssl.sh
 
 EXPOSE 443
-
-ENTRYPOINT ["/usr/local/bin/setup_ssl.sh"]
