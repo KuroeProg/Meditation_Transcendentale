@@ -64,9 +64,12 @@ services:
   frontend:
     build: ./frontend
     container_name: transcendence_front
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     restart: always
     networks:
-      - frontend_net
+      - backend_net
 
   # Cloé - Cyber
   nginx:
