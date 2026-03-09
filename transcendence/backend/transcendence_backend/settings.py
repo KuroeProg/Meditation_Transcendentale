@@ -38,6 +38,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,6 +49,7 @@ INSTALLED_APPS = [
 ]
 
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',
     'django_prometheus.middleware.PrometheusBeforeMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
@@ -60,6 +62,11 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'transcendence_backend.urls'
+
+CORS_ALLOWED_ORIGINS = [
+    "https://localhost",
+    "http://localhost:5173",
+]
 
 TEMPLATES = [
     {
