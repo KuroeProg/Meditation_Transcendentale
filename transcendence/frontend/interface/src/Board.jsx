@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Chess } from 'chess.js'
 
-const initialGame = new Chess();
+// const initialGame = new Chess();
 
 function toSquare(row, col) {
 	const files = 'abcdefgh';
@@ -9,8 +9,8 @@ function toSquare(row, col) {
 	return files[col] + ranks[row];
 }
 
-	function Board() {
-	const [game, setGame] = useState(initialGame);
+	function Board({ game, setGame}) {
+	// const [game, setGame] = useState(initialGame);
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
 

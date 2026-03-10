@@ -153,9 +153,9 @@ body {
 .player-bar {
 	width: calc(8 * var(--cell));
 	height: 60px; /* switch to pourcentages */
-	background: linear-gradient(145deg, #165da8, #263b50);
+	/* background: linear-gradient(145deg, #165da8, #263b50); */
 	display: flex;
-	/* align-items: center; */
+	align-items: center;
 	/* justify-content: space-between; */
 }
 
@@ -173,6 +173,8 @@ body {
 	font-size: 1rem;
 	letter-spacing: 0.02em;
 	margin: 6px;
+	padding-bottom: 20px;
+
 }
 
 .player-nameW {
@@ -181,6 +183,7 @@ body {
 	font-size: 1rem;
 	letter-spacing: 0.02em;
 	margin: 6px;
+	padding-bottom: 20px;
 }
 
 .player-timerB {
