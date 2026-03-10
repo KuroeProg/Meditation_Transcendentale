@@ -1,4 +1,8 @@
 {
+  "dependencies": {
+    "chess.js": "^1.4.0"
+  }
+}
   "name": "frontend",
   "private": true,
   "version": "0.0.0",

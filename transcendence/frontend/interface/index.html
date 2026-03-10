@@ -1,58 +1,14 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<title>Transcendance Chess Game</title>
-	<link href="style.css" rel="stylesheet">
-</head>
-
-<body>
-
-	<h1>
-		Meditation
-	</h1>
-
-	<div class="board-frame">
-		<div id="board">
-		</div>
-	</div>
-
-
-
-
-
-<script>
-	const initialBoard = [
-	  ['br','bhk','bb','bq','bk','bb','bhk','br'],  // b = black
-	  ['bp','bp','bp','bp','bp','bp','bp','bp'],
-	  [  '',  '',  '',  '',  '',  '',  '',  ''],
-	  [  '',  '',  '',  '',  '',  '',  '',  ''],
-	  [  '',  '',  '',  '',  '',  '',  '',  ''],
-	  [  '',  '',  '',  '',  '',  '',  '',  ''],
-	  ['wp','wp','wp','wp','wp','wp','wp','wp'],  // w = white
-	  ['wr','whk','wb','wq','wk','wb','whk','wr'],
-	];
-
-	const board = document.getElementById('board');
-
-	for (let row = 0; row < 8; row++) {
-		for (let col = 0; col < 8; col++) {
-			const cell = document.createElement('div');
-			cell.className = 'cell ' + ((row + col) % 2 === 0 ? 'light' : 'dark');
-
-			const piece = initialBoard[row][col];
-			if (piece) {
-				const img = document.createElement('img');
-				img.src = 'imgs/pieces/' + piece + '.png';
-				img.className = 'piece';
-				cell.appendChild(img);
-			}
-			board.appendChild(cell);
-		}
-	}
-</script>
-
-
-</body>
-
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>interface</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
 </html>
