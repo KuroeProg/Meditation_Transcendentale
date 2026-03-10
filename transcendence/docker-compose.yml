@@ -17,6 +17,20 @@ services:
     networks:
       - backend_net
 
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault_server
+    restart: always
+    ports:
+      - "8202:8202"
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8202
+    cap_add:
+      - IPC_LOCK
+    networks:
+      - monitor_net
+
   redis:
     image: redis:7-alpine
     container_name: redis_broker
@@ -200,3 +214,4 @@ volumes:
   elastic_data:
   redis_data:
   shared_assets:
+  vault-data:
