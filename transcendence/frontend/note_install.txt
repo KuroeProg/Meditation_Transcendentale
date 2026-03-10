@@ -1,0 +1,32 @@
+Install made to get react working
+
+
+
+# Download and install nvm:
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.4/install.sh | bash
+
+# in lieu of restarting the shell
+\. "$HOME/.nvm/nvm.sh"
+
+# Download and install Node.js:
+nvm install 24
+
+# Verify the Node.js version:
+node -v # Should print "v24.14.0".
+
+# Verify npm version:
+npm -v # Should print "11.9.0".
+
+
+(-> from nodejs.org)
+
+
+Install made for chess.js librairy to work with react
+
+npm install chess.js
+
+
+
+
+chess logo ref backup
+// https://cdn.creativefabrica.com/2023/09/16/chess-logo-vector-Graphics-79384504-1.jpg
