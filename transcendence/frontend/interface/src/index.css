@@ -293,4 +293,65 @@ body {
 	border: 5px solid rgba(0, 0, 0, 0.25);
 }
 
+.king-check {
+  animation: flash-red 0.6s ease;
+}
+
+@keyframes flash-red {
+  0%   { background: #cc0000; }
+  25%  { background: inherit; }
+  50%  { background: #cc0000; }
+  75%  { background: inherit; }
+  100% { background: inherit; }
+}
+
+/* Winner PopUp */
+.popup-overlay {
+	position: fixed;
+	inset: 0;                              /* couvre tout l'écran */
+	background: rgba(0, 0, 0, 0.6);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 100;
+}
+
+.popup-checkmate {
+	position: relative;
+	background: #1e2a35;
+	border-radius: 12px;
+	padding: 2rem 3rem;
+	text-align: center;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+}
+
+.popup-close {
+	position: absolute;
+	top: 0.6rem;
+	right: 0.8rem;
+	background: transparent;
+	border: none;
+	color: #888;
+	font-size: 1.1rem;
+	cursor: pointer;
+}
+
+.popup-close:hover {
+	color: #ffffff;
+}
+
+.popup-title {
+	font-family: 'Georgia', serif;
+	color: #ffffff;
+	font-size: 1.4rem;
+	margin-bottom: 0.6rem;
+}
+
+.popup-winner {
+	font-family: 'Georgia', serif;
+	color: #f0d9b5;
+	font-size: 1.1rem;
+}
+
+
 /* augmenter inline border quand une piece se déplace dessus + */

@@ -14,7 +14,7 @@ function onTimeOut() {
 	console.log("Temps écoulé !");
 }
 
-export function useChessTimer(initialSeconds, isActive) {
+export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 	const [timeLeft, setTimeLeft] = useState(initialSeconds);
 	const intervalRef = useRef(null);
 
@@ -34,7 +34,7 @@ export function useChessTimer(initialSeconds, isActive) {
 }, [isActive]);
 
 	useEffect(() => {
-		if (timeLeft === 0) onTimeOut();
+		if (timeLeft === 0 && onTimeOut) onTimeOut();
 	}, [timeLeft]);
 
 	return formatTime(timeLeft);

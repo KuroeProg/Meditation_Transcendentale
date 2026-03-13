@@ -9,12 +9,34 @@ function toSquare(row, col) {
 	return files[col] + ranks[row];
 }
 
-	function Board({ game, setGame}) {
+function findKingSquare(game) {
+	const board = game.board();
+	for (let row = 0; row < 8; row++) {
+		for (let col = 0; col < 8; col++) {
+		const piece = board[row][col];
+		if (piece && piece.type === 'k' && piece.color === game.turn()) {
+			return toSquare(row, col);
+		}
+		}
+	}
+	return null;
+}
+
+	function Board({ game, setGame, winner, setWinner }) {
 	// const [game, setGame] = useState(initialGame);
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
+	const [kingFlash, setKingFlash] = useState(false);
+
+	function flashKing() {
+		setKingFlash(true);
+		setTimeout(() => setKingFlash(false), 600);
+	}
 
 	function handleClick(row, col) {
+
+		if (winner) return;
+
 		const square = toSquare(row, col);
 
 		//nothing clicked on ->
@@ -23,6 +45,8 @@ function toSquare(row, col) {
 			if (moves.length > 0) {
 				setSelected(square);
 				setPossibleMoves(moves.map(m => m.to));
+			} else if (game.inCheck()) {
+				flashKing();
 			}
 		}
 		//if this square already selected, unselect it
@@ -59,6 +83,16 @@ function toSquare(row, col) {
 				const move = newGame.move({ from: selected, to: square, promotion: 'q' });
 				if (move) {
 					setGame(newGame);
+					if (newGame.isCheckmate()) {
+						const winner = newGame.turn() ==='b' ? 'White' : 'Black';
+						setWinner(winner);
+					} else if (newGame.isStalemate()) {
+						setWinner('Nulle');
+					} else if (newGame.isInsufficientMaterial()) {
+						setWinner('Nulle');
+					} else if (newGame.isThreefoldRepetition()) {
+						setWinner('Nulle');
+					}
 				}
 				setSelected(null);
 				setPossibleMoves([]);
@@ -66,41 +100,80 @@ function toSquare(row, col) {
 	}
 }
 
+	const kingSquare = game.inCheck() ? findKingSquare(game) : null;
 	const position = game.board();
 
+function getPopupContent(winner) {
+	if (winner === 'Nulle') {
+		return {
+			title: 'Draw !',
+			subtitle: 'Equal position'
+		}
+	}
+	else if (winner === 'White-Timeout' || winner === 'Black-Timeout') {
+		const color = winner === 'White-Timeout' ? 'White' : 'Black';
+		return {
+			title: 'Time is up !',
+			subtitle: `${color} wins on time`
+		}
+	}
+	return {
+		title: 'Checkmate !',
+		subtitle: `${winner} wins`
+	}
+}
+
 	return (
-		<div id="board">
-			{position.map((row, rowIndex) =>
-			row.map((piece, colIndex) => {	//creating 8x8 board w chess.js so double for loop
-			const sq = toSquare(rowIndex, colIndex);
-			const isSelected = selected === sq;
-			const isPossibleMove = possibleMoves.includes(sq) && !piece; //add en-passant
-			const isPossibleCapture = possibleMoves.includes(sq) && piece;
 
-			return (
-				<div
-					key={`${rowIndex}-${colIndex}`}
-					className={`cell
-					${(rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'}
-					${isSelected ? 'selected' : ''}
-					${isPossibleMove ? 'possible-move' : ''}
-					${isPossibleCapture ? 'possible-capture' : ''}`}
+	<div>
 
-					onClick={() => handleClick(rowIndex, colIndex)}
-				>
+	{winner && (
+		<div className="popup-overlay">
+			<div className="popup-checkmate">
+				<button className="popup-close" onClick={() => setWinner(null)}>✕</button>
 
-				{piece && (
-					<img
-					src={`/imgs/pieces/${piece.color}${piece.type}.png`}
-					className="piece"
-					/>
-				)}
-				</div>
-			);
-			})
-		)}
+				<p className="popup-title">{getPopupContent(winner).title}</p>
+				<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
+
+			</div>
 		</div>
-	);
+	)}
+
+			<div id="board">
+				{position.map((row, rowIndex) =>
+				row.map((piece, colIndex) => {	//creating 8x8 board w chess.js so double for loop
+				const sq = toSquare(rowIndex, colIndex);
+				const isSelected = selected === sq;
+				const isPossibleMove = possibleMoves.includes(sq) && !piece; //add en-passant
+				const isPossibleCapture = possibleMoves.includes(sq) && piece;
+				const isKingInCheck = sq === kingSquare && kingFlash;
+
+				return (
+					<div
+						key={`${rowIndex}-${colIndex}`}
+						className={`cell
+						${(rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'}
+						${isSelected ? 'selected' : ''}
+						${isPossibleMove ? 'possible-move' : ''}
+						${isPossibleCapture ? 'possible-capture' : ''}
+						${isKingInCheck ? 'king-check' : ''}`}
+
+						onClick={() => handleClick(rowIndex, colIndex)}
+					>
+
+					{piece && (
+						<img
+						src={`/imgs/pieces/${piece.color}${piece.type}.png`}
+						className="piece"
+						/>
+					)}
+					</div>
+				);
+				})
+			)}
+			</div>
+		</div>
+		);
 	}
 
 export default Board;
