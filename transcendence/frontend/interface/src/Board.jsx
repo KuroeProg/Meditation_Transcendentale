@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { Chess } from 'chess.js'
 
 // const initialGame = new Chess();
@@ -23,10 +23,21 @@ function findKingSquare(game) {
 }
 
 	function Board({ game, setGame, winner, setWinner }) {
-	// const [game, setGame] = useState(initialGame);
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
 	const [kingFlash, setKingFlash] = useState(false);
+
+	const [popupOpen, setPopupOpen] = useState(false);
+
+	useEffect(() => {
+		if (winner) setPopupOpen(true)
+	}, [winner])
+
+	const winnerRef = useRef (null);
+	useEffect(() => {
+		winnerRef.current = winner;
+	}, [winner]);
+
 
 	function flashKing() {
 		setKingFlash(true);
@@ -35,7 +46,8 @@ function findKingSquare(game) {
 
 	function handleClick(row, col) {
 
-		if (winner) return;
+		console.log('winnerRef:', winnerRef.current, 'winner:', winner)
+		if (winnerRef.current) return;
 
 		const square = toSquare(row, col);
 
@@ -84,8 +96,8 @@ function findKingSquare(game) {
 				if (move) {
 					setGame(newGame);
 					if (newGame.isCheckmate()) {
-						const winner = newGame.turn() ==='b' ? 'White' : 'Black';
-						setWinner(winner);
+						const gameWinner = newGame.turn() ==='b' ? 'White' : 'Black';
+						setWinner(gameWinner);
 					} else if (newGame.isStalemate()) {
 						setWinner('Nulle');
 					} else if (newGame.isInsufficientMaterial()) {
@@ -124,20 +136,17 @@ function getPopupContent(winner) {
 }
 
 	return (
-
 	<div>
 
-	{winner && (
+		{popupOpen && (
 		<div className="popup-overlay">
 			<div className="popup-checkmate">
-				<button className="popup-close" onClick={() => setWinner(null)}>✕</button>
-
-				<p className="popup-title">{getPopupContent(winner).title}</p>
-				<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
-
+			<button className="popup-close" onClick={() => setPopupOpen(false)}>✕</button>  {} //gerer correctement les fin de parties, removes class de css.
+			<p className="popup-title">{getPopupContent(winner).title}</p>
+			<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
 			</div>
 		</div>
-	)}
+		)}
 
 			<div id="board">
 				{position.map((row, rowIndex) =>

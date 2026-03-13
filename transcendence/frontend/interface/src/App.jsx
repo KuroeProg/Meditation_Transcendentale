@@ -16,11 +16,12 @@ const GAME_DURATION = {
 
 		const [game, setGame] = useState(() => new Chess())
 		const [winner, setWinner] = useState(null)
+		console.log('App render, winner:', winner)
 
 		const [duration, setDuration] = useState(GAME_DURATION.rapid)
 
-		const blackTimer = useChessTimer(5, game.turn() === 'b', () => setWinner('White'))
-		const whiteTimer = useChessTimer(duration, game.turn() === 'w', () => setWinner('Black'))
+		const blackTimer = useChessTimer(5, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
+		const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
 
 	return (
 

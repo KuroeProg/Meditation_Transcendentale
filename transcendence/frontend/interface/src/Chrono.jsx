@@ -17,10 +17,13 @@ function onTimeOut() {
 export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 	const [timeLeft, setTimeLeft] = useState(initialSeconds);
 	const intervalRef = useRef(null);
+	const hasTimedOut = useRef(false);
+	const hasStarted = useRef(false);
 
 	useEffect(() => {
 		if (isActive && timeLeft > 0) {
-		intervalRef.current = startInterval(() => {
+			hasStarted.current = true;
+			intervalRef.current = startInterval(() => {
 			setTimeLeft(prev => {
 				if (prev <= 1) {
 					clearInterval(intervalRef.current);
@@ -34,7 +37,11 @@ export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 }, [isActive]);
 
 	useEffect(() => {
-		if (timeLeft === 0 && onTimeOut) onTimeOut();
+		if (timeLeft === 0 && onTimeOut && !hasTimedOut.current) {
+			hasTimedOut.current = true;
+			console.log('Timer reached 0, calling onTimeOut')
+			onTimeOut();
+		}
 	}, [timeLeft]);
 
 	return formatTime(timeLeft);
