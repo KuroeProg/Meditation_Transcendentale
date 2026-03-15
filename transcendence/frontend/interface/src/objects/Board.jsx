@@ -135,6 +135,14 @@ function getPopupContent(winner) {
 	}
 }
 
+	useEffect(() => {
+	if (popupOpen) {
+		setSelected(null);
+		setPossibleMoves([]);
+		setKingFlash(false);
+	}
+	}, [popupOpen]);
+
 	return (
 	<div>
 

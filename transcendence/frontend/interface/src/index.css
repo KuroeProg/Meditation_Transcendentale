@@ -1,3 +1,6 @@
+/* Main-content */
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
+
 * {
 	margin: 0;
 	padding: 0;
@@ -7,20 +10,30 @@
 h1 {
 	text-align: center;
 	margin: 30px 0px;
+	font-family: 'Crimson Pro';
 }
 
 body {
 
-	  background:
-    radial-gradient(ellipse at 60% 30%, #5865f2 0%, transparent 50%),
-    radial-gradient(ellipse at 30% 60%, #4752c4 0%, transparent 50%),
-    #0e1555;
+	background:
+	radial-gradient(ellipse at 60% 30%, #5865f2 0%, transparent 50%),
+	radial-gradient(ellipse at 30% 60%, #4752c4 0%, transparent 50%),
+	#0e1555;
+
   min-height: 100vh;
-	/* --bg-animated-gradient-background-indigo-1: hsl(var(--bg-animated-gradient-background-indigo-1-hsl)/1); */
-/* background-image: linear-gradient(90deg, rgb(30, 158, 253) 0%, rgb(30, 158, 253) 24%,rgb(24, 148, 250) 24%, rgb(24, 148, 250) 35%,rgb(19, 137, 247) 35%, rgb(19, 137, 247) 59%,rgb(13, 127, 243) 59%, rgb(13, 127, 243) 99%,rgb(7, 116, 240) 99%, rgb(7, 116, 240) 100%),linear-gradient(45deg, rgb(30, 158, 253) 0%, rgb(30, 158, 253) 24%,rgb(24, 148, 250) 24%, rgb(24, 148, 250) 35%,rgb(19, 137, 247) 35%, rgb(19, 137, 247) 59%,rgb(13, 127, 243) 59%, rgb(13, 127, 243) 99%,rgb(7, 116, 240) 99%, rgb(7, 116, 240) 100%),linear-gradient(135deg, rgb(30, 158, 253) 0%, rgb(30, 158, 253) 24%,rgb(24, 148, 250) 24%, rgb(24, 148, 250) 35%,rgb(19, 137, 247) 35%, rgb(19, 137, 247) 59%,rgb(13, 127, 243) 59%, rgb(13, 127, 243) 99%,rgb(7, 116, 240) 99%, rgb(7, 116, 240) 100%),linear-gradient(90deg, rgb(154, 63, 150),rgb(8, 180, 21)); background-blend-mode:overlay,overlay,overlay,normal; */
-/* background-image: linear-gradient(37deg, rgb(32, 218, 233),rgb(40, 21, 236)); */
 }
 
+/* Page d'acceuil Home */
+.home {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 2rem;
+
+}
+
+
+/* sidebar.jsx */
 .sidebar {
 	position:fixed;
 	top: 0;
@@ -110,33 +123,7 @@ body {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* échéquier */
-
+/* Game.jsx */
 
 .header {
 	margin: 1.5rem 0;
@@ -207,25 +194,7 @@ body {
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-/* Board */
+/* Board.jsx */
 
 :root {
 	--cell: 72px;
@@ -355,3 +324,48 @@ body {
 
 
 /* augmenter inline border quand une piece se déplace dessus + */
+
+
+
+/* Aurore Bg */
+
+.aurora-bg {
+position: fixed;
+inset: 0;
+z-index: -1;
+background: #0a0f1e;
+overflow: hidden;
+}
+
+.aurora-bg::before,
+.aurora-bg::after {
+  content: '';
+position: absolute;
+width: 200%;
+height: 200%;
+top: -50%;
+left: -50%;
+animation: aurora-move 12s ease-in-out infinite alternate;
+}
+
+.aurora-bg::before {
+background: radial-gradient(ellipse at 20% 50%, rgba(20, 184, 166, 0.25) 0%, transparent 50%),
+			radial-gradient(ellipse at 80% 20%, rgba(99, 102, 241, 0.2) 0%, transparent 50%),
+			radial-gradient(ellipse at 60% 80%, rgba(16, 185, 129, 0.15) 0%, transparent 40%);
+animation-duration: 10s;
+}
+
+.aurora-bg::after {
+	background: radial-gradient(ellipse at 70% 30%, rgba(139, 92, 246, 0.2) 0%, transparent 50%),
+				radial-gradient(ellipse at 30% 70%, rgba(6, 182, 212, 0.15) 0%, transparent 45%);
+	animation-duration: 14s;
+	animation-direction: alternate-reverse;
+}
+
+@keyframes aurora-move {
+0%   { transform: translate(0%, 0%)   rotate(0deg)   scale(1); }
+33%  { transform: translate(5%, -3%)  rotate(3deg)   scale(1.05); }
+66%  { transform: translate(-3%, 5%)  rotate(-2deg)  scale(0.98); }
+100% { transform: translate(3%, 2%)   rotate(1deg)   scale(1.03); }
+}
+/* doesnt realy work */

@@ -1,145 +1,21 @@
-import './index.css'
-import Board from './Board.jsx'
-import { useState } from 'react'
-import { Chess } from 'chess.js'
-import { useChessTimer } from './Chrono.jsx'
+import { Routes, Route } from 'react-router-dom'
+import Home from './pages/Home.jsx'
+import Game from './pages/Game.jsx'
+import Sidebar from './components/sidebar.jsx'
 
-	function App() {
-		document.title = 'Transcendance Chess Game'
-
-const GAME_DURATION = {
-	bullet: 60,
-	blitz: 300,
-	rapid: 600,
-	classNameic: 1800,
+function App() {
+return (
+	<div className="app-layout">
+		<div className="aurora-bg" />
+		<Sidebar />
+		<div className="main-content">
+			<Routes>
+			<Route path="/"		element={<Home />} />
+			<Route path="/game"	element={<Game />} />
+			</Routes>
+		</div>
+	</div>
+	)
 }
 
-		const [game, setGame] = useState(() => new Chess())
-		const [winner, setWinner] = useState(null)
-		console.log('App render, winner:', winner)
-
-		const [duration, setDuration] = useState(GAME_DURATION.rapid)
-
-		const blackTimer = useChessTimer(5, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
-		const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
-
-	return (
-
-		<div>
-
-		<div className="sidebar">
-			<ul>
-				<li>
-					<a className="logo" href="#">
-						<span className="icon">
-							<i className="icon">
-								<img src="imgs/ChessLogo.jpg" className="Profile-logo"/>
-							</i>
-						</span>
-						<span className="text">
-							Transcendance
-						</span>
-					</a>
-				</li>
-				<li>
-					<a href="#">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-house"></i>
-							</i>
-						</span>
-						<span className="text">
-							Home
-						</span>
-					</a>
-				</li>
-				<li>
-					<a href="#">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-user"></i>
-							</i>
-						</span>
-						<span className="text">
-							Profile
-						</span>
-					</a>
-				</li>
-				<li>
-					<a href="#">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-bell"></i>
-							</i>
-						</span>
-						<span className="text">
-							Friends
-						</span>
-					</a>
-				</li>
-				<li>
-					<a href="#">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-gear"></i>
-							</i>
-						</span>
-						<span className="text">
-							Settings
-						</span>
-					</a>
-				</li>
-				<li>
-					<a href="#">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-right-from-bracket"></i>
-							</i>
-						</span>
-						<span className="text">
-							Logout
-						</span>
-					</a>
-				</li>
-			</ul>
-		</div>
-
-
-
-			<div className="header">
-			</div>
-
-			<div className="game-container">
-
-			<div className="player-bar">
-					<img className="player-avatar" src="imgs/PawnLogoB.jpeg"/>
-					<span className="player-nameB">Joueur Noir</span>
-					<span className="player-timerB">{blackTimer}</span>
-			</div>
-
-			<div className="board-frame">
-				<Board game={game} setGame={setGame} winner={winner} setWinner={setWinner}/>
-			</div>
-
-				<div className="player-bar">
-					<img className='player-avatar' src="imgs/Profile-Logo.png"/>
-					<span className="player-nameW">Joueur Blanc</span>
-					<span className="player-timerW">{whiteTimer}</span>
-				</div>
-
-			</div>
-
-		</div>
-	);
-}
-
-
-export default App;
-
-
-
-
-
-// Todo, effectuer tout les calculs de chrono, réécrire la fonction principales
-// Ecran de win, (popup) / Lose
-// Checkmate
+export default App
