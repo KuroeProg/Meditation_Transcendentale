@@ -103,6 +103,21 @@ DATABASES = {
     }
 }
 
+# 1. Define the Redis connection
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        # Notice we use the service name 'redis' from your docker-compose
+        "LOCATION": f"redis://:{os.environ.get('REDIS_PASSWORD')}@redis:6379/1",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+        }
+    }
+}
+
+# 2. Tell Django to route all 'request.session' calls to Redis
+SESSION_ENGINE = "django.contrib.sessions.backends.cache"
+SESSION_CACHE_ALIAS = "default"
 
 # Password validation
 # https://docs.djangoproject.com/en/5.0/ref/settings/#auth-password-validators
