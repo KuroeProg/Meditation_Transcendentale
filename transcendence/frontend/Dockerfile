@@ -1,13 +1,16 @@
 FROM node:lts
 
-WORKDIR /app
+WORKDIR /app/interface
 
-COPY package*.json ./
+COPY interface/package*.json ./
+
 RUN npm install
 
+WORKDIR /app
 COPY . .
 
-#vite utilise l eport 5173 par defaut
+WORKDIR /app/interface
+
 EXPOSE 5173
 
 CMD ["npm", "run", "dev", "--", "--host", "0.0.0.0"]

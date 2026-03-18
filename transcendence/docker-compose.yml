@@ -82,7 +82,7 @@ services:
     container_name: transcendence_front
     volumes:
       - ./frontend:/app
-      - /app/node_modules
+      - /app/interface/node_modules
     environment:
       - VITE_PORT=5173
     restart: always
