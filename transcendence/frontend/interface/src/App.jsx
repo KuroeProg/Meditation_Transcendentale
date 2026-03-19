@@ -7,12 +7,14 @@ function App() {
 return (
 	<div className="app-layout">
 		<div className="aurora-bg" />
+			<div className="calque">
 		<Sidebar />
 		<div className="main-content">
 			<Routes>
 			<Route path="/"		element={<Home />} />
 			<Route path="/game"	element={<Game />} />
 			</Routes>
+			</div>
 		</div>
 	</div>
 	)
