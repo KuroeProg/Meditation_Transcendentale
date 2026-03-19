@@ -1,5 +1,4 @@
-version: '3.8'
-
+# removed version (because Warning)
 networks:
   frontend_net:
   backend_net:
@@ -93,6 +92,15 @@ services:
   nginx:
     build: ./nginx
     container_name: transcendence_nginx
+    environment:
+      - SEC_RULE_ENGINE=On
+      - SEC_PRINTERRORLOGS=On
+    healthcheck:
+      test: ["CMD", "curl", "-k", "https://localhost:443/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      # start_period: 30s
     ports:
       - "443:443"
     depends_on:
@@ -100,8 +108,11 @@ services:
       - frontend
     volumes:
       - ./logs/nginx:/var/log/nginx
-      - ./nginx/conf.d:/etc/nginx/conf.d:ro
+      # Dossier template pour ne pas effacer notre fichier de config
+      - ./nginx/conf.d/default.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+      # .htpasswd pour prometheus
+      - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
     restart: always
     networks:
       - frontend_net

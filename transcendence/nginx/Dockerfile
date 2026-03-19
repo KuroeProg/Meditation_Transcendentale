@@ -1,13 +1,12 @@
-FROM nginx:stable-alpine
+FROM owasp/modsecurity-crs:nginx
 
-RUN apk add --no-cache openssl
+USER root
 
-RUN rm /etc/nginx/conf.d/default.conf
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
 
-RUN mkdir -p /etc/nginx/certs /var/www/html/legal
+RUN mkdir -p /etc/nginx/certs /var/www/html/legal /etc/nginx/templates/conf.d
 
-COPY conf.d/default.conf /etc/nginx/conf.d/default.conf
-
+COPY conf.d/default.conf /etc/nginx/templates/conf.d/default.conf.template
 COPY legal/ /var/www/html/legal/
 
 COPY setup_ssl.sh /usr/local/bin/setup_ssl.sh
