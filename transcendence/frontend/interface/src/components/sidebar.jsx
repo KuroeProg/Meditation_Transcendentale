@@ -18,7 +18,7 @@ return (
 					</Link>
 				</li>
 				<li>
-					<Link to="/">
+					<Link to="/game">
 						<span className="icon">
 							<i className="icon">
 							<i className="fa-solid fa-house"></i>
