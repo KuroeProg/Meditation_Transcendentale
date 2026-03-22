@@ -53,11 +53,7 @@ const GAME_DURATION = {
 	);
 }
 
-
 export default App;
-
-
-
 
 
 // Todo, effectuer tout les calculs de chrono, réécrire la fonction principales

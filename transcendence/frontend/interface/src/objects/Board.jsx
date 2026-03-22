@@ -1,8 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { Chess } from 'chess.js'
 
-// const initialGame = new Chess();
-
 function toSquare(row, col) {
 	const files = 'abcdefgh';
 	const ranks = '87654321';
@@ -152,7 +150,8 @@ function getPopupContent(winner) {
 			<button className="popup-close" onClick={() => setPopupOpen(false)}>✕</button>  {} //gerer correctement les fin de parties, removes class de css.
 			<p className="popup-title">{getPopupContent(winner).title}</p>
 			<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
-			</div>
+		</div>
+
 		</div>
 		)}
 

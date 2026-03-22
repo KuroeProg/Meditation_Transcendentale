@@ -13,6 +13,13 @@ h1 {
 	font-family: 'Crimson Pro';
 }
 
+.main-content {
+	flex: 1;
+	overflow: auto;
+}
+
+
+
 body {
 
 	/* background:
@@ -27,10 +34,13 @@ body {
 .home {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 2rem;
 
 }
+
+.up-bar {
+	display: flex;
+}
+
 
 /* sidebar.jsx */
 .sidebar {
@@ -39,7 +49,7 @@ body {
 	left: 0;
 	height: 100%;
 	width:250px;
-	z-index: 2;
+	z-index: 10;
 	background: #2f2b2b;
 	overflow-x: hidden;
 	padding-top: 10px;
@@ -125,10 +135,11 @@ body {
 /* Game.jsx */
 
 html, body, #root {
-  margin: 0;
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	/* overflow-x: hidden; */
+	overflow: hidden;
 }
 
 .header {
@@ -174,7 +185,7 @@ html, body, #root {
 
 .player-nameB {
 	font-family: 'Georgia', serif;
-	color: #000000;
+	color: #ffffff;
 	/* font-size: 1rem; */
 	font-size: calc(var(--board-size) * 0.025);
 	letter-spacing: 0.02em;
@@ -197,7 +208,7 @@ html, body, #root {
 	font-family: monospace;
 	/* font-size: 1.3rem; */
 	 font-size: calc(var(--board-size) * 0.035);
-	color: #000000;
+	color: #ffffff;
 	letter-spacing: 0.15em;
 	justify-content: right;
 	margin-left: auto;
