@@ -13,23 +13,32 @@ h1 {
 	font-family: 'Crimson Pro';
 }
 
+.main-content {
+	flex: 1;
+	overflow: auto;
+}
+
+
+
 body {
 
-	background:
+	/* background:
 	radial-gradient(ellipse at 60% 30%, #5865f2 0%, transparent 50%),
 	radial-gradient(ellipse at 30% 60%, #4752c4 0%, transparent 50%),
 	#0e1555;
 
-  min-height: 100vh;
+	min-height: 100vh; */
 }
 
 /* Page d'acceuil Home */
 .home {
 	display: flex;
 	flex-direction: column;
-	align-items: center;
-	gap: 2rem;
 
+}
+
+.up-bar {
+	display: flex;
 }
 
 
@@ -40,7 +49,7 @@ body {
 	left: 0;
 	height: 100%;
 	width:250px;
-	z-index: 2;
+	z-index: 10;
 	background: #2f2b2b;
 	overflow-x: hidden;
 	padding-top: 10px;
@@ -125,21 +134,41 @@ body {
 
 /* Game.jsx */
 
-.header {
-	margin: 1.5rem 0;
-	padding: 0 2rem;
+html, body, #root {
+	margin: 0;
+	padding: 0;
+	height: 100%;
+	/* overflow-x: hidden; */
+	overflow: hidden;
 }
+
+.header {
+	/* margin: 1.5rem 0;
+	padding: 0 2rem; */
+	display:none;
+
+}
+
 
 .game-container {
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	gap: 0.4rem;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  height: 100vh;
+  margin-left: 75px;
+  padding-left: 4rem;
+   padding-right: 4rem;  /* ← matches left side exactly */
+  gap: 0.4rem;
 }
 
+
+
 .player-bar {
-	width: calc(8 * var(--cell));
-	height: 60px; /* switch to pourcentages */
+	width: var(--board-size);
+	/* height: calc(var(--cell) * 0.7); */
+	height: 60px;
 	/* background: linear-gradient(145deg, #165da8, #263b50); */
 	display: flex;
 	align-items: center;
@@ -149,15 +178,16 @@ body {
 .player-avatar {
 	display: flex;
 	align-items: center;
-	width: 40px;
-	height: 45px;
+	width: calc(var(--cell) * 0.55);
+	height: calc(var(--cell) * 0.55);
 	margin: auto 6px;
 }
 
 .player-nameB {
 	font-family: 'Georgia', serif;
-	color: #000000;
-	font-size: 1rem;
+	color: #ffffff;
+	/* font-size: 1rem; */
+	font-size: calc(var(--board-size) * 0.025);
 	letter-spacing: 0.02em;
 	margin: 6px;
 	padding-bottom: 20px;
@@ -167,7 +197,8 @@ body {
 .player-nameW {
 	font-family: 'Georgia', serif;
 	color: #ffffff;
-	font-size: 1rem;
+	/* font-size: 1rem; */
+	font-size: calc(var(--board-size) * 0.025);
 	letter-spacing: 0.02em;
 	margin: 6px;
 	padding-bottom: 20px;
@@ -175,8 +206,9 @@ body {
 
 .player-timerB {
 	font-family: monospace;
-	font-size: 1.3rem;
-	color: #000000;
+	/* font-size: 1.3rem; */
+	 font-size: calc(var(--board-size) * 0.035);
+	color: #ffffff;
 	letter-spacing: 0.15em;
 	justify-content: right;
 	margin-left: auto;
@@ -185,11 +217,12 @@ body {
 
 .player-timerW {
 	font-family: monospace;
-	font-size: 1.3rem;
+	/* font-size: 1.3rem; */
+	 font-size: calc(var(--board-size) * 0.035);
 	color: #ffffff;
 	letter-spacing: 0.15em;
 	margin-left: auto;
-	/* padding: 17.5px 0.8rem */
+	padding: 17.5px 0.8rem
 	/* align-items: center; */
 }
 
@@ -197,15 +230,24 @@ body {
 /* Board.jsx */
 
 :root {
-	--cell: 72px;
+  --sidebar-width: 75px;
+  --player-bar-height: 80px;
+  --board-size: min(
+    calc(100vh - (var(--player-bar-height) * 2)),
+    calc(100vw - var(--sidebar-width) - 8rem)
+  );  /* add space for the top and bottom player bar*/
+  --cell: calc(var(--board-size) / 8);
+}
+
+
+/* :root {
+	--sidebar-width: 75px;
+	--board-size: min(80vmin, calc(100vw - var(--sidebar-width) - 4rem));
+
+	--cell: calc(var(--board-size) / 8);
 	--board-light: #f0d9b5;
 	--board-dark:  #b58863;
-		/* --board-light-hover: #f6e7c5;
-	--board-dark-hover:  #c99b75;
-	--selected: #7fc97f;
-	--check: rgba(220,50,50,0.7);
-	--gold-dark: #8b6914; */
-}
+} */
 
 .piece {
 	width: 100%;
@@ -223,6 +265,8 @@ body {
 	grid-template-columns: repeat(8, var(--cell));
 	grid-template-rows: repeat(8, var(--cell));
 	justify-content: center;
+	width: var(--board-size);
+	height: var(--board-size);
 }
 
 
@@ -333,7 +377,7 @@ body {
 position: fixed;
 inset: 0;
 z-index: -1;
-background: #0a0f1e;
+background: #010617;
 overflow: hidden;
 }
 

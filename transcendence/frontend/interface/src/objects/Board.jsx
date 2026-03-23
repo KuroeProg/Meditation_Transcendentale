@@ -4,8 +4,6 @@ import { useAuth } from '../hooks/useAuth.js'
 import { coalitionToSlug } from '../utils/coalitionTheme.js'
 import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
 
-// const initialGame = new Chess();
-
 function toSquare(row, col) {
 	const files = 'abcdefgh';
 	const ranks = '87654321';
@@ -159,7 +157,8 @@ function getPopupContent(winner) {
 			<button className="popup-close" onClick={() => setPopupOpen(false)}>✕</button>  {} //gerer correctement les fin de parties, removes class de css.
 			<p className="popup-title">{getPopupContent(winner).title}</p>
 			<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
-			</div>
+		</div>
+
 		</div>
 		)}
 

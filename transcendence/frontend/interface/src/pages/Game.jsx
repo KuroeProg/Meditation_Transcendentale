@@ -20,7 +20,7 @@ const GAME_DURATION = {
 
 		const [duration, setDuration] = useState(GAME_DURATION.rapid)
 
-		const blackTimer = useChessTimer(5, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
+		const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
 		const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
 
 	return (
@@ -53,11 +53,7 @@ const GAME_DURATION = {
 	);
 }
 
-
 export default App;
-
-
-
 
 
 // Todo, effectuer tout les calculs de chrono, réécrire la fonction principales
