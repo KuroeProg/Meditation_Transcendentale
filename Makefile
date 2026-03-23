@@ -29,7 +29,7 @@ certs:
 build:
 	cd transcendence && docker compose build
 
-up:
+up: certs
 	cd transcendence && docker compose up
 
 down:
