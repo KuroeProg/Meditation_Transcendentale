@@ -1,81 +1,68 @@
-import { useNavigate } from 'react-router-dom'
 import { Link } from 'react-router-dom'
+import { useAuth } from '../hooks/useAuth.js'
 
 function Sidebar() {
-  const navigate = useNavigate()
+	const { logout, isAuthenticated } = useAuth()
 
-return (
+	return (
 		<div className="sidebar">
 			<ul>
 				<li>
 					<Link to="/" className="logo">
 						<span className="icon">
-								<img src="imgs/ChessLogo.jpg" className="Profile-logo"/>
+							<img src="imgs/ChessLogo.jpg" className="Profile-logo" alt="" />
 						</span>
-						<span className="text">
-							Transcendance
-						</span>
+						<span className="text">Transcendance</span>
 					</Link>
 				</li>
 				<li>
 					<Link to="/">
 						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-house"></i>
-							</i>
+							<i className="fa-solid fa-house" />
 						</span>
-						<span className="text">
-							Home
+						<span className="text">Home</span>
+					</Link>
+				</li>
+				<li>
+					<Link to="/profile">
+						<span className="icon">
+							<i className="fa-solid fa-user" />
 						</span>
+						<span className="text">Profile</span>
 					</Link>
 				</li>
 				<li>
 					<Link to="/">
 						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-user"></i>
-							</i>
+							<i className="fa-solid fa-bell" />
 						</span>
-						<span className="text">
-							Profile
-						</span>
+						<span className="text">Friends</span>
 					</Link>
 				</li>
 				<li>
-					<Link to="/">
+					<Link to="/settings">
 						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-bell"></i>
-							</i>
+							<i className="fa-solid fa-gear" />
 						</span>
-						<span className="text">
-							Friends
-						</span>
+						<span className="text">Settings</span>
 					</Link>
 				</li>
 				<li>
-					<Link to="/">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-gear"></i>
-							</i>
-						</span>
-						<span className="text">
-							Settings
-						</span>
-					</Link>
-				</li>
-				<li>
-					<Link to="/">
-						<span className="icon">
-							<i className="icon">
-							<i className="fa-solid fa-right-from-bracket"></i>
-							</i>
-						</span>
-						<span className="text">
-							Logout
-						</span>
-					</Link>
+					{isAuthenticated ? (
+						<button type="button" className="sidebar-btn" onClick={() => logout()}>
+							<span className="icon">
+								<i className="fa-solid fa-right-from-bracket" />
+							</span>
+							<span className="text">Logout</span>
+						</button>
+					) : (
+						<Link to="/profile">
+							<span className="icon">
+								<i className="fa-solid fa-right-to-bracket" />
+							</span>
+							<span className="text">Login</span>
+						</Link>
+					)}
 				</li>
 			</ul>
 		</div>

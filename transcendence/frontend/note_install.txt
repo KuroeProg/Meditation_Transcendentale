@@ -26,6 +26,35 @@ Install made for chess.js librairy to work with react
 npm install chess.js
 
 
+--- Front : routes & auth (vbonnard) ---
+Depuis transcendence/frontend/interface :
+  npm install
+  npm run dev
+→ http://localhost:5173  (proxy /api → https://127.0.0.1:443 si stack Docker lancée)
+
+Routes : /profile, /settings ; /dashboard → redirection vers /profile (callback OAuth éventuel)
+Backend à brancher (sans casser l’existant) :
+  GET  /api/auth/me
+  GET  /api/auth/42/login
+  POST /api/auth/logout
+Voir src/config/authEndpoints.js
+
+Tester Profil / Paramètres SANS OAuth (npm run dev) :
+  Créer transcendence/frontend/interface/.env.local avec :
+    VITE_DEV_MOCK_USER=true
+  Redémarrer Vite. Tu es "connecté" avec un user fictif (vb_demo).
+  Barre jaune en bas : réinjecter le fictif après un logout de test.
+  Désactive la variable pour retester l’état invité réel.
+
+Préférences UI : pas de thème clair/sombre global (réservé à la DA par coalition) ;
+  seulement « Réduire les animations » + notifications (localStorage).
+
+Pièces d’échecs par coalition (Feu, Eau, Terre, Air) :
+  PNG manuels : public/chess/pieces/ — voir public/chess/pieces/README.md + src/chess/ChessPiecePng.jsx
+  Terre/Air : repli visuel sur feu tant que les dossiers terre/air n’existent pas.
+  Mock : coalition dans src/dev/mockSessionUser.js
+
+
 
 
 chess logo ref backup

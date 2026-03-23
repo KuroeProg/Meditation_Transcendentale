@@ -1,5 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { Chess } from 'chess.js'
+import { useAuth } from '../hooks/useAuth.js'
+import { coalitionToSlug } from '../utils/coalitionTheme.js'
+import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
 
 // const initialGame = new Chess();
 
@@ -23,6 +26,10 @@ function findKingSquare(game) {
 }
 
 	function Board({ game, setGame, winner, setWinner }) {
+	const { user } = useAuth()
+	const coalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
+	const pieceTheme = coalitionSlug
+
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
 	const [kingFlash, setKingFlash] = useState(false);
@@ -179,9 +186,13 @@ function getPopupContent(winner) {
 					>
 
 					{piece && (
-						<img
-						src={`/imgs/pieces/${piece.color}${piece.type}.png`}
-						className="piece"
+						<ChessPieceImg
+							theme={pieceTheme}
+							pieceType={piece.type}
+							pieceColor={piece.color}
+							rowIndex={rowIndex}
+							colIndex={colIndex}
+							className="piece"
 						/>
 					)}
 					</div>
