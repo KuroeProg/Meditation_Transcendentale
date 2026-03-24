@@ -5,6 +5,9 @@
 
 /transcendence/.env
 
+# Logs runtime (nginx, services)
+/transcendence/logs/
+
 # ELK 
 /transcendence/monitoring/elasticsearch/data/
 
