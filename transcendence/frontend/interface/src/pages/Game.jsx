@@ -16,7 +16,7 @@ const GAME_DURATION = {
 
 		const [game, setGame] = useState(() => new Chess())
 		const [winner, setWinner] = useState(null)
-		console.log('App render, winner:', winner)
+		// console.log('App render, winner:', winner)
 
 		const [duration, setDuration] = useState(GAME_DURATION.rapid)
 
