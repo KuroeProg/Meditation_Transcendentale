@@ -1,9 +1,9 @@
 /**
- * Pièces PNG par coalition (eau, feu) — assets dans public/chess/pieces/
+ * Pièces PNG par coalition — assets dans public/chess/pieces/{eau|feu|terre|air}/
  * Les fous : bg / bd selon la couleur de la case (clair / foncé sur l’échiquier).
  */
 
-const THEMES_WITH_PNG = new Set(['eau', 'feu'])
+import { isKnownCoalitionSlug } from '../utils/coalitionTheme.js'
 
 /**
  * @param {'w'|'b'} color
@@ -29,7 +29,7 @@ export function piecePngKey(pieceType, rowIndex, colIndex) {
 
 /**
  * @param {object} props
- * @param {'eau'|'feu'|'terre'|'air'} props.theme — terre/air → fallback feu jusqu’aux assets
+ * @param {'eau'|'feu'|'terre'|'air'} props.theme — slug inconnu → repli **feu**
  * @param {string} props.pieceType
  * @param {'w'|'b'} props.pieceColor
  * @param {number} props.rowIndex
@@ -37,7 +37,7 @@ export function piecePngKey(pieceType, rowIndex, colIndex) {
  * @param {string} [props.className]
  */
 export function ChessPieceImg({ theme, pieceType, pieceColor, rowIndex, colIndex, className, ...rest }) {
-	const resolved = THEMES_WITH_PNG.has(theme) ? theme : 'feu'
+	const resolved = isKnownCoalitionSlug(theme) ? theme : 'feu'
 	const variant = chessColorToVariant(pieceColor)
 	const key = piecePngKey(pieceType, rowIndex, colIndex)
 	const src = `/chess/pieces/${resolved}/${variant}/${key}.png`

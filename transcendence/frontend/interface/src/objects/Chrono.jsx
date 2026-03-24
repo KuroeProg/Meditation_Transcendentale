@@ -1,48 +1,47 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react'
 
 function formatTime(seconds) {
-	const minutes = String(Math.floor(seconds / 60)).padStart(2, '0');
-	const secondsLeft = String(seconds % 60).padStart(2, '0');
-	return `${minutes}:${secondsLeft}`;
+	const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
+	const secondsLeft = String(seconds % 60).padStart(2, '0')
+	return `${minutes}:${secondsLeft}`
 }
 
-function startInterval(callback) {
-	return setInterval(callback, 1000);
-}
-
-function onTimeOut() {
-	console.log("Temps écoulé !");
-}
-
+/**
+ * Compte à rebours. Un interval par hook, nettoyé à la désactivation ou à la fin du temps.
+ */
 export function useChessTimer(initialSeconds, isActive, onTimeOut) {
-	const [timeLeft, setTimeLeft] = useState(initialSeconds);
-	const intervalRef = useRef(null);
-	const hasTimedOut = useRef(false);
-	const hasStarted = useRef(false);
+	const [timeLeft, setTimeLeft] = useState(initialSeconds)
+	const hasTimedOutRef = useRef(false)
+	const onTimeOutRef = useRef(onTimeOut)
+	onTimeOutRef.current = onTimeOut
 
 	useEffect(() => {
-		if (isActive && timeLeft > 0) {
-			hasStarted.current = true;
-			intervalRef.current = startInterval(() => {
-			setTimeLeft(prev => {
-				if (prev <= 1) {
-					clearInterval(intervalRef.current);
-					return 0;
+		setTimeLeft(initialSeconds)
+		hasTimedOutRef.current = false
+	}, [initialSeconds])
+
+	useEffect(() => {
+		if (!isActive) return undefined
+
+		const id = window.setInterval(() => {
+			setTimeLeft((t) => {
+				if (t <= 1) {
+					window.clearInterval(id)
+					return 0
 				}
-				return prev - 1;
-			});
-		});
-	}
-	return () => clearInterval(intervalRef.current);
-}, [isActive]);
+				return t - 1
+			})
+		}, 1000)
+
+		return () => window.clearInterval(id)
+	}, [isActive])
 
 	useEffect(() => {
-		if (timeLeft === 0 && onTimeOut && !hasTimedOut.current) {
-			hasTimedOut.current = true;
-			console.log('Timer reached 0, calling onTimeOut')
-			onTimeOut();
+		if (timeLeft === 0 && onTimeOutRef.current && !hasTimedOutRef.current) {
+			hasTimedOutRef.current = true
+			onTimeOutRef.current()
 		}
-	}, [timeLeft]);
+	}, [timeLeft])
 
-	return formatTime(timeLeft);
+	return formatTime(timeLeft)
 }

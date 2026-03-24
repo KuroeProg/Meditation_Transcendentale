@@ -50,8 +50,7 @@ Préférences UI : pas de thème clair/sombre global (réservé à la DA par coa
   seulement « Réduire les animations » + notifications (localStorage).
 
 Pièces d’échecs par coalition (Feu, Eau, Terre, Air) :
-  PNG manuels : public/chess/pieces/ — voir public/chess/pieces/README.md + src/chess/ChessPiecePng.jsx
-  Terre/Air : repli visuel sur feu tant que les dossiers terre/air n’existent pas.
+  PNG manuels : public/chess/pieces/{eau|feu|terre|air}/{light|dark}/*.png — voir public/chess/pieces/README.md
   Mock : coalition dans src/dev/mockSessionUser.js
 
 

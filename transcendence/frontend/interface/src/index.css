@@ -163,6 +163,45 @@ html, body, #root {
   gap: 0.4rem;
 }
 
+/* Halo échiquier selon coalition (fond d’ambiance actif hors Home) */
+.board-frame {
+	border-radius: 6px;
+	padding: 4px;
+	transition: box-shadow 0.4s ease;
+}
+
+html[data-coalition='feu'] .board-frame {
+	box-shadow:
+		0 0 0 1px rgba(255, 90, 50, 0.35),
+		0 0 48px rgba(255, 60, 30, 0.18),
+		0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+html[data-coalition='eau'] .board-frame {
+	box-shadow:
+		0 0 0 1px rgba(100, 200, 255, 0.3),
+		0 0 52px rgba(56, 189, 248, 0.2),
+		0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+html[data-coalition='terre'] .board-frame {
+	box-shadow:
+		0 0 0 1px rgba(160, 200, 80, 0.35),
+		0 0 48px rgba(152, 171, 27, 0.22),
+		0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+html[data-coalition='air'] .board-frame {
+	box-shadow:
+		0 0 0 1px rgba(200, 170, 255, 0.35),
+		0 0 52px rgba(192, 132, 252, 0.2),
+		0 20px 56px rgba(0, 0, 0, 0.45);
+}
+
+html[data-reduce-motion='true'] .board-frame {
+	transition: none;
+}
+
 
 
 .player-bar {
@@ -425,6 +464,9 @@ animation-duration: 10s;
 	min-height: 100vh;
 	padding: 1.5rem 2rem 3rem;
 	max-width: 960px;
+	position: relative;
+	z-index: 1;
+	isolation: isolate;
 }
 
 .page-shell {
@@ -457,6 +499,8 @@ animation-duration: 10s;
 	left: 75px;
 	right: 0;
 	z-index: 50;
+	isolation: isolate;
+	transform: translateZ(0);
 	display: flex;
 	align-items: center;
 	justify-content: center;

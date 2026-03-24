@@ -1,0 +1,98 @@
+/* Couche sous la sidebar (z-index 10) et le contenu (z-index 1), au-dessus de l’aurora (-1) */
+.coalition-ambient {
+	position: fixed;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+	/* Contexte de composition isolé : évite les artefacts avec la barre fixe / texte au-dessus */
+	isolation: isolate;
+	opacity: 0;
+	/* Pas de fondu : superposition aurora + coalition pendant le transition = « fantômes » */
+}
+
+.coalition-ambient--ready {
+	opacity: 1;
+}
+
+.coalition-ambient__glow {
+	position: absolute;
+	inset: -20%;
+	background: radial-gradient(
+		ellipse 70% 55% at 50% 40%,
+		color-mix(in srgb, var(--coalition-accent, #888) 22%, transparent),
+		transparent 72%
+	);
+	opacity: 0.65;
+	animation: coalition-glow-pulse 14s ease-in-out infinite alternate;
+}
+
+@keyframes coalition-glow-pulse {
+	0% {
+		opacity: 0.45;
+		transform: scale(1);
+	}
+	100% {
+		opacity: 0.72;
+		transform: scale(1.06);
+	}
+}
+
+.coalition-ambient__layer {
+	position: absolute;
+	inset: -8%;
+	will-change: transform, background-position;
+	/* Parallax piloté en rAF sur les refs : pas de transition CSS (sinon conflit / scintillement) */
+	transition: none;
+}
+
+.coalition-ambient__layer--deep {
+	filter: saturate(1.05) brightness(0.72) contrast(1.08);
+	opacity: 0.95;
+}
+
+.coalition-ambient__layer--mid {
+	mix-blend-mode: normal;
+	filter: saturate(1.08) brightness(0.88) contrast(1.05);
+	opacity: 0.42;
+	mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 0%, transparent 100%);
+	-webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 0%, transparent 100%);
+}
+
+.coalition-ambient__veil {
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		165deg,
+		rgba(2, 6, 18, 0.5) 0%,
+		rgba(2, 8, 22, 0.15) 38%,
+		rgba(4, 10, 26, 0.35) 100%
+	);
+}
+
+.coalition-ambient__vignette {
+	position: absolute;
+	inset: 0;
+	background: radial-gradient(ellipse 95% 90% at 50% 50%, transparent 40%, rgba(0, 0, 0, 0.55) 100%);
+	pointer-events: none;
+}
+
+.coalition-ambient__particles {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	display: block;
+	pointer-events: none;
+	/* mix-blend-mode retiré : provoquait du ghosting sur les éléments fixes (barre dev, timers) */
+	opacity: 0.88;
+}
+
+html[data-reduce-motion='true'] .coalition-ambient__glow {
+	animation: none;
+	opacity: 0.35;
+}
+
+html[data-reduce-motion='true'] .coalition-ambient--ready {
+	opacity: 1;
+}

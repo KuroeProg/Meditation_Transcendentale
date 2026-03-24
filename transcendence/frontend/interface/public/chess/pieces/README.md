@@ -1,10 +1,33 @@
 # Pièces PNG (manuel)
 
-Place ici tes fichiers exportés. Le Board charge :
+Même schéma pour **les 4 coalitions** : `eau`, `feu`, `terre`, `air`.
 
-`/{eau|feu}/{light|dark}/{nom}.png`
+## Chemin URL (servi par Vite depuis `public/`)
 
-**Fichiers attendus par variante** (même liste pour `light` et `dark`) :
+```
+/chess/pieces/<coalition>/<light|dark>/<fichier>.png
+```
+
+Exemples :
+
+| Coalition | Blancs (clair) | Noirs (sombre) |
+|-----------|----------------|----------------|
+| Eau | `/chess/pieces/eau/light/k.png` | `/chess/pieces/eau/dark/k.png` |
+| Feu | `/chess/pieces/feu/light/q.png` | `/chess/pieces/feu/dark/q.png` |
+| Terre | `/chess/pieces/terre/light/r.png` | `/chess/pieces/terre/dark/r.png` |
+| Air | `/chess/pieces/air/light/n.png` | `/chess/pieces/air/dark/n.png` |
+
+## Arborescence disque (`public/chess/pieces/`)
+
+```
+pieces/
+  eau/light/   + eau/dark/
+  feu/light/   + feu/dark/
+  terre/light/ + terre/dark/
+  air/light/   + air/dark/
+```
+
+## Fichiers attendus dans **chaque** dossier `light/` et `dark/`
 
 | Fichier | Pièce |
 |---------|--------|
@@ -16,4 +39,4 @@ Place ici tes fichiers exportés. Le Board charge :
 | `bg.png` | Fou sur **case claire** |
 | `bd.png` | Fou sur **case foncée** |
 
-**Terre / Air** : tant qu’il n’y a pas de dossiers dédiés, l’app retombe sur les assets **feu** (`ChessPiecePng.jsx`).
+Total : **7 fichiers × 2 variantes × 4 coalitions** = 56 PNG si tout est rempli.

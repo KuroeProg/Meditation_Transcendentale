@@ -8,6 +8,7 @@ import Sidebar from './components/sidebar.jsx'
 import ThemeSync from './components/ThemeSync.jsx'
 import DevAuthToolbar from './components/DevAuthToolbar.jsx'
 import CoalitionHtmlSync from './components/CoalitionHtmlSync.jsx'
+import CoalitionAmbient from './components/CoalitionAmbient.jsx'
 
 function App() {
 	return (
@@ -16,6 +17,7 @@ function App() {
 			<CoalitionHtmlSync />
 			<DevAuthToolbar />
 			<div className="aurora-bg" />
+			<CoalitionAmbient />
 			<Sidebar />
 			<div className="main-content">
 				<Routes>

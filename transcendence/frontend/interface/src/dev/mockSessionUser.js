@@ -23,8 +23,8 @@ export function getMockSessionUser() {
 			},
 		},
 		// ← Modifie cette valeur pour voir les pièces Feu / Eau / Terre / Air sur l’échiquier
-		coalition: 'eau',
-		coalition_name: 'eau',
+		coalition: 'air',
+		coalition_name: 'air',
 		cursus_level: 7,
 		level: 7,
 		stats: {
