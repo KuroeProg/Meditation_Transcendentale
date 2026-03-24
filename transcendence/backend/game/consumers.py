@@ -81,6 +81,13 @@ class ChessConsumer(AsyncWebsocketConsumer):
 	async def handle_play_move(self, game_state_json, data):
 		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
+
+		current_turn_player_id = game_state['white_player_id'] if board.turn else game_state['black_player_id']
+		sender_id = data.get('player_id') 
+
+		if sender_id != current_turn_player_id:
+			await self.send(text_data=json.dumps({'error': "Ce n'est pas votre tour !"}))
+			return
 		
 		attempted_move = data.get('move')
 		try:
