@@ -16,3 +16,11 @@ export const COALITION_ACCENTS = {
 	terre: '#98ab1b',
 	air: '#c084fc',
 }
+
+/** Bord du flash éclair : opaque (plus d’alpha 0 vers l’aurora), teinte lisible par coalition */
+export const COALITION_LIGHTNING_FLASH_EDGE = {
+	feu: 'rgba(18, 6, 10, 1)',
+	eau: 'rgba(6, 14, 22, 1)',
+	terre: 'rgba(10, 14, 6, 1)',
+	air: 'rgba(48, 32, 78, 1)',
+}

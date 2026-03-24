@@ -189,8 +189,6 @@ function getPopupContent(winner) {
 							theme={pieceTheme}
 							pieceType={piece.type}
 							pieceColor={piece.color}
-							rowIndex={rowIndex}
-							colIndex={colIndex}
 							className="piece"
 						/>
 					)}

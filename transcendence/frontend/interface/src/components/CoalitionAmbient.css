@@ -84,8 +84,36 @@
 	height: 100%;
 	display: block;
 	pointer-events: none;
-	/* mix-blend-mode retiré : provoquait du ghosting sur les éléments fixes (barre dev, timers) */
-	opacity: 0.88;
+	/* Pas de fond CSS ici : un fond sombre masquait le parallax derrière les zones transparentes du canvas */
+	opacity: 0.94;
+}
+
+/* Air : PNG déjà sombre — calques plus lumineux, voile moins lourd, moins de vignette */
+[data-coalition-scene='air'] .coalition-ambient__layer--deep {
+	filter: saturate(1.12) brightness(0.92) contrast(1.05);
+	opacity: 1;
+}
+
+[data-coalition-scene='air'] .coalition-ambient__layer--mid {
+	filter: saturate(1.15) brightness(1.02) contrast(1.04);
+	opacity: 0.52;
+}
+
+[data-coalition-scene='air'] .coalition-ambient__veil {
+	background: linear-gradient(
+		165deg,
+		rgba(18, 10, 38, 0.35) 0%,
+		rgba(30, 18, 55, 0.12) 42%,
+		rgba(22, 12, 42, 0.28) 100%
+	);
+}
+
+[data-coalition-scene='air'] .coalition-ambient__vignette {
+	background: radial-gradient(ellipse 95% 90% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.32) 100%);
+}
+
+[data-coalition-scene='air'] .coalition-ambient__glow {
+	opacity: 0.78;
 }
 
 html[data-reduce-motion='true'] .coalition-ambient__glow {
