@@ -804,6 +804,57 @@ animation-duration: 10s;
 	font-family: system-ui, sans-serif;
 }
 
+.card-title--with-logo42 {
+	gap: 0.65rem;
+}
+
+.logo-42-title {
+	width: 2rem;
+	height: 2rem;
+	flex-shrink: 0;
+	color: #f0f4ff;
+}
+
+.profile-coalition-value {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+}
+
+.profile-coalition-icon-wrap {
+	flex-shrink: 0;
+	width: 56px;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	background: rgba(0, 0, 0, 0.28);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-coalition-icon-wrap .coalition-icon {
+	width: 44px;
+	height: 44px;
+}
+
+.profile-coalition-text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.profile-coalition-label {
+	font-size: 1.15rem;
+	font-weight: 600;
+	color: #e8eaef;
+}
+
+.profile-coalition-raw {
+	display: block;
+}
+
 .btn {
 	font-family: system-ui, -apple-system, sans-serif;
 	font-size: 0.9rem;

@@ -51,12 +51,18 @@
 	opacity: 0.95;
 }
 
-.coalition-ambient__layer--mid {
-	mix-blend-mode: normal;
-	filter: saturate(1.08) brightness(0.88) contrast(1.05);
-	opacity: 0.42;
-	mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 0%, transparent 100%);
-	-webkit-mask-image: radial-gradient(ellipse 85% 75% at 50% 45%, black 0%, transparent 100%);
+/* Lumière centrale sans 2ᵉ copie du PNG → plus de couture masque / GPU */
+.coalition-ambient__punch {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	mix-blend-mode: soft-light;
+	opacity: 0.52;
+	background: radial-gradient(
+		ellipse 90% 85% at 50% 42%,
+		rgba(255, 255, 255, 0.18) 0%,
+		transparent 58%
+	);
 }
 
 .coalition-ambient__veil {
@@ -86,6 +92,8 @@
 	pointer-events: none;
 	/* Pas de fond CSS ici : un fond sombre masquait le parallax derrière les zones transparentes du canvas */
 	opacity: 0.94;
+	/* Couche GPU dédiée : limite les artefacts de fusion avec les calques dessous (Safari / iOS) */
+	transform: translateZ(0);
 }
 
 /* Air : PNG déjà sombre — calques plus lumineux, voile moins lourd, moins de vignette */
@@ -94,9 +102,15 @@
 	opacity: 1;
 }
 
-[data-coalition-scene='air'] .coalition-ambient__layer--mid {
-	filter: saturate(1.15) brightness(1.02) contrast(1.04);
-	opacity: 0.52;
+[data-coalition-scene='air'] .coalition-ambient__punch {
+	mix-blend-mode: screen;
+	opacity: 0.42;
+	background: radial-gradient(
+		ellipse 92% 86% at 50% 40%,
+		rgba(255, 236, 160, 0.22) 0%,
+		rgba(255, 220, 120, 0.08) 35%,
+		transparent 62%
+	);
 }
 
 [data-coalition-scene='air'] .coalition-ambient__veil {

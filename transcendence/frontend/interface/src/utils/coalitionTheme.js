@@ -27,6 +27,12 @@ export function isKnownCoalitionSlug(slug) {
 	return SLUGS.includes(slug)
 }
 
+/** Libellé court pour l’UI (profil, etc.) */
+export function coalitionSlugToLabel(slug) {
+	const labels = { feu: 'Feu', eau: 'Eau', terre: 'Terre', air: 'Air' }
+	return labels[slug] ?? slug ?? '—'
+}
+
 /**
  * @param {string} slug — feu | eau | terre | air
  * @param {'w'|'b'} color — blancs = clair, noirs = sombre

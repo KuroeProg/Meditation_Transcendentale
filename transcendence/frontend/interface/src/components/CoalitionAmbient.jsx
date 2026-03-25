@@ -7,7 +7,7 @@ import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'
 import './CoalitionAmbient.css'
 
 /**
- * Fond coalition + parallax + particules.
+ * Fond coalition (un seul PNG + punch CSS) + parallax + particules.
  * Désactivé sur `/`. Parallax en rAF direct (refs) pour éviter 60 re-renders/s React.
  * Masqué pendant le chargement session + jusqu’au decode du PNG → plus de flash au reload.
  */
@@ -20,7 +20,6 @@ export default function CoalitionAmbient() {
 	)
 	const [bgReady, setBgReady] = useState(false)
 	const deepRef = useRef(null)
-	const midRef = useRef(null)
 	const mouseRef = useRef({ x: 0, y: 0 })
 	const reducedMotionRef = useRef(reducedMotion)
 
@@ -78,14 +77,12 @@ export default function CoalitionAmbient() {
 		const px = rm ? 0 : m.x + driftX
 		const py = rm ? 0 : m.y + driftY
 		const d = deepRef.current
-		const mi = midRef.current
+		const posX = 50 + px * 5
+		const posY = 50 + py * 4
+		const tf = rm ? 'scale(1.14)' : `scale(1.18) translate(${px * 14}px, ${py * 10}px)`
 		if (d) {
-			d.style.backgroundPosition = `${50 + px * 5}% ${50 + py * 4}%`
-			d.style.transform = rm ? 'scale(1.14)' : `scale(1.18) translate(${px * 14}px, ${py * 10}px)`
-		}
-		if (mi) {
-			mi.style.backgroundPosition = `${50 + px * 2.8}% ${50 + py * 2.2}%`
-			mi.style.transform = rm ? 'scale(1.06)' : `scale(1.1) translate(${px * 7}px, ${py * 5}px)`
+			d.style.backgroundPosition = `${posX}% ${posY}%`
+			d.style.transform = tf
 		}
 	}
 
@@ -132,17 +129,8 @@ export default function CoalitionAmbient() {
 					backgroundPosition: '50% 50%',
 				}}
 			/>
-			<div
-				ref={midRef}
-				className="coalition-ambient__layer coalition-ambient__layer--mid"
-				style={{
-					backgroundImage: `url(${bg})`,
-					backgroundSize: 'cover',
-					backgroundRepeat: 'no-repeat',
-					transform: reducedMotion ? 'scale(1.06)' : 'scale(1.1)',
-					backgroundPosition: '50% 50%',
-				}}
-			/>
+			{/* Pas de 2ᵉ PNG (masque + parallax = coutures) : léger punch central en pur CSS */}
+			<div className="coalition-ambient__punch" />
 			<div className="coalition-ambient__veil" />
 			{showParticles && <CoalitionParticleCanvas slug={slug} reducedMotion={false} />}
 			<div className="coalition-ambient__vignette" />

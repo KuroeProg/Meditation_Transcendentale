@@ -571,9 +571,18 @@ class LightningField {
 			const fx = w * 0.68
 			const g = ctx.createRadialGradient(fx, 0, 0, fx, h * 0.32, h * 0.88)
 			g.addColorStop(0, 'rgba(255, 255, 255, 0.95)')
-			g.addColorStop(0.22, air ? 'rgba(245, 240, 255, 0.5)' : 'rgba(235, 242, 255, 0.42)')
-			g.addColorStop(0.5, air ? 'rgba(120, 85, 175, 0.42)' : 'rgba(55, 35, 88, 0.58)')
-			g.addColorStop(0.76, air ? 'rgba(55, 38, 88, 0.9)' : 'rgba(24, 14, 40, 0.92)')
+			g.addColorStop(
+				0.22,
+				air ? 'rgba(255, 236, 140, 0.58)' : 'rgba(235, 242, 255, 0.42)',
+			)
+			g.addColorStop(
+				0.5,
+				air ? 'rgba(255, 200, 55, 0.45)' : 'rgba(55, 35, 88, 0.58)',
+			)
+			g.addColorStop(
+				0.76,
+				air ? 'rgba(200, 130, 35, 0.88)' : 'rgba(24, 14, 40, 0.92)',
+			)
 			g.addColorStop(1, edge)
 			ctx.fillStyle = g
 			ctx.fillRect(0, 0, w, h)
@@ -644,16 +653,17 @@ class LightningBolt {
 		ctx.lineCap = 'round'
 		ctx.lineJoin = 'round'
 		/* Pas de shadowBlur : 3 passes épaisseur = glow lisible et GPU léger */
+		/* Air : éclairs jaune-or (le thème n’utilise LightningBolt qu’en coalition air) */
 		this.strokeGlowPath(ctx, this.points, a, [14, 6, 2.2], [
-			`rgba(200, 220, 255, ${0.2 * a})`,
-			`rgba(240, 248, 255, ${0.72 * a})`,
-			`rgba(255, 255, 255, ${0.15 + 0.85 * a})`,
+			`rgba(255, 210, 80, ${0.28 * a})`,
+			`rgba(255, 238, 160, ${0.78 * a})`,
+			`rgba(255, 252, 230, ${0.2 + 0.8 * a})`,
 		])
 		for (const br of this.branches) {
 			this.strokeGlowPath(ctx, br, a, [7, 3, 1.3], [
-				`rgba(190, 210, 255, ${0.18 * a})`,
-				`rgba(230, 240, 255, ${0.55 * a})`,
-				`rgba(255, 255, 255, ${0.5 * a})`,
+				`rgba(255, 200, 70, ${0.22 * a})`,
+				`rgba(255, 230, 140, ${0.6 * a})`,
+				`rgba(255, 248, 210, ${0.55 * a})`,
 			])
 		}
 		ctx.restore()

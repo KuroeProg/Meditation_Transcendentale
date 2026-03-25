@@ -1,4 +1,7 @@
 import { useAuth } from '../hooks/useAuth.js'
+import Logo42 from '../components/Logo42.jsx'
+import ProfileCoalitionIcon from '../components/ProfileCoalitionIcon.jsx'
+import { coalitionToSlug, coalitionSlugToLabel } from '../utils/coalitionTheme.js'
 import { get42AvatarUrl, getDisplayTitle } from '../utils/sessionUser.js'
 
 function PlaceholderStat({ label, value }) {
@@ -19,6 +22,22 @@ function Profile() {
 		: { primary: null, secondary: null }
 
 	const coalition = user?.coalition ?? user?.coalition_name ?? user?.coalition_slug
+	const hasCoalition = coalition != null && String(coalition).trim() !== ''
+	const coalitionSlug = hasCoalition ? coalitionToSlug(coalition) : 'feu'
+	const coalitionLabel = hasCoalition ? coalitionSlugToLabel(coalitionSlug) : null
+	const coalitionRaw = hasCoalition ? String(coalition).trim() : ''
+	const normCoal = (s) =>
+		s
+			.toLowerCase()
+			.normalize('NFD')
+			.replace(/[\u0300-\u036f]/g, '')
+			.replace(/['\u2019]/g, '')
+			.replace(/\s+/g, '')
+	const showCoalitionRaw =
+		hasCoalition &&
+		coalitionRaw !== '' &&
+		normCoal(coalitionRaw) !== coalitionSlug &&
+		normCoal(coalitionRaw) !== normCoal(coalitionLabel)
 	const levelCursus =
 		user?.cursus_level ?? user?.level ?? user?.pool_level ?? user?.intra_level
 
@@ -78,13 +97,32 @@ function Profile() {
 					</section>
 
 					<section className="surface-card surface-card--42">
-						<h2 className="card-title">
-							<span className="badge-42">42</span> Coalition &amp; niveau
+						<h2 className="card-title card-title--with-logo42">
+							<Logo42 className="logo-42-title" title="42" />
+							<span>Coalition &amp; niveau</span>
 						</h2>
 						<dl className="info-dl info-dl--compact">
-							<div>
+							<div className="profile-coalition-field">
 								<dt>Coalition</dt>
-								<dd>{coalition ?? '—'}</dd>
+								<dd
+									className={hasCoalition ? 'profile-coalition-value' : undefined}
+								>
+									{hasCoalition ? (
+										<>
+											<span className="profile-coalition-icon-wrap" aria-hidden>
+												<ProfileCoalitionIcon slug={coalitionSlug} />
+											</span>
+											<span className="profile-coalition-text">
+												<span className="profile-coalition-label">{coalitionLabel}</span>
+												{showCoalitionRaw && (
+													<span className="muted small profile-coalition-raw">{coalition}</span>
+												)}
+											</span>
+										</>
+									) : (
+										'—'
+									)}
+								</dd>
 							</div>
 							<div>
 								<dt>Niveau</dt>
