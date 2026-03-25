@@ -10,7 +10,9 @@ export default function DevAuthToolbar() {
 
 	return (
 		<div className="dev-auth-toolbar" role="status">
-			<span className="dev-auth-toolbar__label">Mode utilisateur fictif (sans backend OAuth)</span>
+			<span className="dev-auth-toolbar__label">
+				Mock user — J2 (noirs) : <code>src/dev/mockGameOpponent.js</code>
+			</span>
 			{!user && (
 				<button type="button" className="dev-auth-toolbar__btn" onClick={() => refetch()}>
 					Réinjecter l’utilisateur fictif

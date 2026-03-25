@@ -1,4 +1,12 @@
 # removed version (because Warning)
+
+# Limite la taille des logs Docker (évite des fichiers json géants sur le disque)
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "20m"
+    max-file: "3"
+
 networks:
   frontend_net:
   backend_net:
@@ -13,6 +21,7 @@ services:
       - ./database/data:/var/lib/postgresql/data
     env_file: .env # Les secrets ne sont pas sur Git 
     restart: always
+    logging: *default-logging
     networks:
       - backend_net
 
@@ -27,6 +36,7 @@ services:
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8202
     cap_add:
       - IPC_LOCK
+    logging: *default-logging
     networks:
       - monitor_net
 
@@ -38,6 +48,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
     volumes:
       - redis_data:/data
+    logging: *default-logging
     networks:
       - backend_net
 
@@ -59,6 +70,7 @@ services:
     networks:
       - backend_net
     restart: always
+    logging: *default-logging
 
   worker:
     build: ./data_script
@@ -72,6 +84,7 @@ services:
     volumes:
       - ./data_script:/app
       - shared_assets:/app/shared_plots:ro
+    logging: *default-logging
     networks:
       - backend_net
 
@@ -85,6 +98,7 @@ services:
     environment:
       - VITE_PORT=5173
     restart: always
+    logging: *default-logging
     networks:
       - backend_net
 
@@ -114,6 +128,7 @@ services:
       # .htpasswd pour prometheus
       - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
     restart: always
+    logging: *default-logging
     networks:
       - frontend_net
       - monitor_net
@@ -129,6 +144,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.external-url=https://localhost/prometheus'
+    logging: *default-logging
     networks:
       - monitor_net
       - backend_net
@@ -144,6 +160,7 @@ services:
       - '--path.procfs=/host/proc'
       - '--path.sysfs=/host/sys'
       - '--collector.filesystem.ignored-mount-points=^/(sys|proc|dev|host|etc)($|/)'
+    logging: *default-logging
     networks:
       - monitor_net
     restart: always
@@ -164,6 +181,7 @@ services:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
     restart: always
+    logging: *default-logging
     networks:
       - monitor_net
 
@@ -182,6 +200,7 @@ services:
       - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
       - elastic_data:/usr/share/elasticsearch/data
     restart: always
+    logging: *default-logging
     networks:
       - monitor_net
 
@@ -199,6 +218,7 @@ services:
     depends_on:
       - elasticsearch
     restart: always
+    logging: *default-logging
     # On expose pas le port 5601 sur le net on passe par le 443
     networks:
       - monitor_net
@@ -216,6 +236,7 @@ services:
       - "LS_JAVA_OPTS=-Xms512m -Xmx512m"
     depends_on:
       - elasticsearch
+    logging: *default-logging
     networks:
       - monitor_net
       - backend_net

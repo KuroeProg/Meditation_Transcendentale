@@ -1,59 +1,69 @@
 import '../index.css'
 import Board from '../objects/Board.jsx'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Chess } from 'chess.js'
 import { useChessTimer } from '../objects/Chrono.jsx'
+import { useAuth } from '../hooks/useAuth.js'
+import { get42AvatarUrl, getDisplayTitle } from '../utils/sessionUser.js'
+import { getMockGameOpponent, isMockGameOpponentActive } from '../dev/mockGameOpponent.js'
 
-	function App() {
+function App() {
+	useEffect(() => {
 		document.title = 'Transcendance Chess Game'
+	}, [])
 
-const GAME_DURATION = {
-	bullet: 60,
-	blitz: 300,
-	rapid: 600,
-	classNameic: 1800,
-}
+	const { user } = useAuth()
+	const devOpp = isMockGameOpponentActive() ? getMockGameOpponent() : null
 
-		const [game, setGame] = useState(() => new Chess())
-		const [winner, setWinner] = useState(null)
-		console.log('App render, winner:', winner)
+	const GAME_DURATION = {
+		bullet: 60,
+		blitz: 300,
+		rapid: 600,
+		classNameic: 1800,
+	}
 
-		const [duration, setDuration] = useState(GAME_DURATION.rapid)
+	const [game, setGame] = useState(() => new Chess())
+	const [winner, setWinner] = useState(null)
 
-		const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
-		const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
+	const [duration] = useState(GAME_DURATION.rapid)
+
+	const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () =>
+		setWinner('White-Timeout'),
+	)
+	const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () =>
+		setWinner('Black-Timeout'),
+	)
+
+	const whiteLabel = user ? getDisplayTitle(user).primary ?? 'Joueur Blanc' : 'Joueur Blanc'
+	const whiteAvatar = get42AvatarUrl(user)
+	const blackLabel = devOpp?.displayName ?? 'Joueur Noir'
+	const blackAvatar = devOpp?.avatarSrc ?? 'imgs/PawnLogoB.jpeg'
 
 	return (
-
 		<div>
-			<div className="header">
-			</div>
-
+			<div className="header" />
 			<div className="game-container">
-
-			<div className="player-bar">
-					<img className="player-avatar" src="imgs/PawnLogoB.jpeg"/>
-					<span className="player-nameB">Joueur Noir</span>
-					<span className="player-timerB">{blackTimer}</span>
-			</div>
-
-			<div className="board-frame">
-				<Board game={game} setGame={setGame} winner={winner} setWinner={setWinner}/>
-			</div>
-
 				<div className="player-bar">
-					<img className='player-avatar' src="imgs/Profile-Logo.png"/>
-					<span className="player-nameW">Joueur Blanc</span>
-					<span className="player-timerW">{whiteTimer}</span>
+					<img className="player-avatar" src={blackAvatar} alt="" />
+					<span className="player-nameB">{blackLabel}</span>
+					<span className="player-timerB">{blackTimer}</span>
 				</div>
 
-			</div>
+				<div className="board-frame">
+					<Board game={game} setGame={setGame} winner={winner} setWinner={setWinner} />
+				</div>
 
+				<div className="player-bar">
+					<img className="player-avatar" src={whiteAvatar} alt="" />
+					<span className="player-nameW">{whiteLabel}</span>
+					<span className="player-timerW">{whiteTimer}</span>
+				</div>
+			</div>
 		</div>
-	);
+	)
 }
 
-export default App;
+export default App
 
 
 // Todo, effectuer tout les calculs de chrono, réécrire la fonction principales

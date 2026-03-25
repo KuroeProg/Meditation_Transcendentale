@@ -2,8 +2,7 @@
  * Utilisateur fictif pour tester Profil / Paramètres / pièces coalition sans OAuth.
  * Activer : VITE_DEV_MOCK_USER=true dans .env.local
  *
- * Coalitions Perpignan (éléments) — change `coalition` pour tester les sets de pièces :
- *   "Feu" | "Eau" | "L'eau" | "Terre" | "Air"
+ * Coalition → pièces / tuiles des blancs. Les noirs : `src/dev/mockGameOpponent.js`.
  */
 
 export function isDevMockAuthEnabled() {
