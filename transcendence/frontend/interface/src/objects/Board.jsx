@@ -225,14 +225,16 @@ function getPopupContent(winner) {
 								onClick={() => handleClick(rowIndex, colIndex)}
 							>
 								{useTiles && tileSrc && (
-									<img
-										className="cell-tile"
-										src={tileSrc}
-										alt=""
-										draggable={false}
-										data-tile-theme={coalitionSlug}
-										data-tile-shade={isLight ? 'light' : 'dark'}
-									/>
+									<span className="cell-tile-stack" aria-hidden>
+										<img
+											className="cell-tile"
+											src={tileSrc}
+											alt=""
+											draggable={false}
+											data-tile-theme={coalitionSlug}
+											data-tile-shade={isLight ? 'light' : 'dark'}
+										/>
+									</span>
 								)}
 								{piece && (
 									<motion.div
