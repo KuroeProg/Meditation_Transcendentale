@@ -30,6 +30,7 @@ export function ChessPieceImg({ theme, pieceType, pieceColor, className, ...rest
 			alt=""
 			className={className}
 			draggable={false}
+			data-piece-type={pieceType}
 			{...rest}
 		/>
 	)

@@ -4,10 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "npm run generate:tiles-manifest",
+    "prebuild": "npm run generate:tiles-manifest",
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "generate:tiles-manifest": "node scripts/generate-board-tiles-manifest.mjs",
     "generate:coalition-svgs": "node scripts/generate-coalition-svgs.mjs"
   },
   "dependencies": {

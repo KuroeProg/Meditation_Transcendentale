@@ -288,15 +288,29 @@ html[data-reduce-motion='true'] .board-frame {
 	--board-dark:  #b58863;
 } */
 
+.piece-wrap {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
 .piece {
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
-	/* cursor: pointer; */
-	/* user-select: none; */
-	/* pointer-events: none; */
 	cursor: grab;
-	/* dragable="true"; */
+	/* Contraste sur le damier (tuiles chargées) */
+	filter:
+		drop-shadow(0 2px 5px rgba(0, 0, 0, 0.55))
+		drop-shadow(0 0 2px rgba(255, 255, 255, 0.22));
+}
+
+/* Toutes les pièces sauf les pions : plus petites pour ne pas coller aux bords de la case / tuile */
+.piece[data-piece-type]:not([data-piece-type='p']) {
+	width: 82%;
+	height: 82%;
 }
 
 #board {
@@ -315,46 +329,200 @@ html[data-reduce-motion='true'] .board-frame {
 		align-items: center;
 		justify-content: center;
 		position: relative;
+		isolation: isolate;
 }
 
 .cell.light { background: #f0d9b5}
 .cell.dark { background: #2b62a2}
-.cell.selected { background: #7fc97f !important;}
 
+/* Case de départ (style Chess.com : jaune, pas vert) */
+.cell.selected:not(.board-tiles) {
+	background: rgba(255, 232, 120, 0.72) !important;
+	box-shadow: inset 0 0 0 3px rgba(200, 165, 40, 0.55);
+}
 
+.cell .piece-wrap {
+	position: relative;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.cell .piece-wrap .piece {
+	pointer-events: auto;
+}
+
+/* --- Damier tuiles --- */
+.cell.board-tiles.light,
+.cell.board-tiles.dark {
+	background: transparent !important;
+}
+
+.cell.board-tiles.selected {
+	background: transparent !important;
+}
+
+.cell.board-tiles .cell-tile {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Départ : surcouche jaune (pas sur la case du roi en échec, gérée en rouge) */
+.cell.board-tiles.selected:not(.king-check)::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	border-radius: 1px;
+	background: rgba(255, 224, 102, 0.5);
+	box-shadow: inset 0 0 0 2px rgba(200, 160, 30, 0.55);
+}
+
+/* Roi en échec : rouge tant que le roi est attaqué */
+.cell.board-tiles.king-check::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	border-radius: 1px;
+	background: rgba(215, 48, 48, 0.42);
+	box-shadow: inset 0 0 0 2px rgba(180, 30, 30, 0.65);
+	animation: king-check-breathe 1.35s ease-in-out infinite;
+}
+
+.cell.board-tiles.king-check-attn::before {
+	animation: king-check-attn-pulse 0.28s ease-in-out 3, king-check-breathe 1.35s ease-in-out infinite;
+}
+
+/* Coup illégal : ::after (évite conflit avec ::before roi / sélection) */
+.cell.board-tiles.illegal-move-flash::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	pointer-events: none;
+	border-radius: 1px;
+	animation: illegal-square-flash 0.48s ease;
+	background: rgba(220, 40, 40, 0.62);
+}
+
+/* Coups légaux case vide : point vert (Chess.com-like) */
+.cell.board-tiles.possible-move::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: min(32%, 40px);
+	height: min(32%, 40px);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: rgba(46, 168, 92, 0.5);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+	z-index: 2;
+	pointer-events: none;
+}
+
+/* Prise : anneau vert autour de la case */
+.cell.board-tiles.possible-capture::after {
+	content: '';
+	position: absolute;
+	inset: 8%;
+	border-radius: 4px;
+	border: 4px solid rgba(32, 150, 78, 0.88);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+	z-index: 2;
+	pointer-events: none;
+}
+
+@keyframes king-check-breathe {
+	0%, 100% { opacity: 1; filter: brightness(1); }
+	50% { opacity: 0.88; filter: brightness(1.12); }
+}
+
+@keyframes king-check-attn-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.55; }
+}
+
+@keyframes illegal-square-flash {
+	0% { opacity: 0; }
+	20% { opacity: 1; }
+	100% { opacity: 0; }
+}
+
+/* --- Plateau classique (pas de tuiles) : mêmes codes couleur --- */
 .cell.possible-move {
 	display: flex;
 }
 
-.cell.possible-move::after {
+.cell:not(.board-tiles).possible-move::after {
 	content: '';
 	position: absolute;
-
-	width: 35%;
-	height: 35%;
+	left: 50%;
+	top: 50%;
+	transform: translate(-50%, -50%);
+	width: min(32%, 40px);
+	height: min(32%, 40px);
 	border-radius: 50%;
-	background: rgba(0, 0, 0, 0.25);
+	background: rgba(46, 168, 92, 0.5);
+	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+	z-index: 2;
+	pointer-events: none;
 }
 
-.cell.possible-capture::after {
+.cell:not(.board-tiles).possible-capture::after {
 	content: '';
 	position: absolute;
+	inset: 8%;
+	border-radius: 4px;
+	border: 4px solid rgba(32, 150, 78, 0.88);
+	z-index: 2;
+	pointer-events: none;
+}
 
+/* Roi en échec (plateau classique) */
+.cell:not(.board-tiles).king-check.light {
+	background: #f0d9b5 !important;
+}
+
+.cell:not(.board-tiles).king-check.dark {
+	background: #2b62a2 !important;
+}
+
+.cell:not(.board-tiles).king-check::before {
+	content: '';
+	position: absolute;
 	inset: 0;
-	border-radius: 50%;
-	border: 5px solid rgba(0, 0, 0, 0.25);
+	z-index: 1;
+	pointer-events: none;
+	background: rgba(215, 48, 48, 0.42);
+	box-shadow: inset 0 0 0 2px rgba(170, 35, 35, 0.65);
+	animation: king-check-breathe 1.35s ease-in-out infinite;
+	mix-blend-mode: multiply;
+	opacity: 0.92;
 }
 
-.king-check {
-  animation: flash-red 0.6s ease;
+.cell:not(.board-tiles).king-check-attn::before {
+	animation: king-check-attn-pulse 0.28s ease-in-out 3, king-check-breathe 1.35s ease-in-out infinite;
 }
 
-@keyframes flash-red {
-  0%   { background: #cc0000; }
-  25%  { background: inherit; }
-  50%  { background: #cc0000; }
-  75%  { background: inherit; }
-  100% { background: inherit; }
+.cell:not(.board-tiles).illegal-move-flash::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	pointer-events: none;
+	animation: illegal-square-flash 0.48s ease;
+	background: rgba(220, 40, 40, 0.55);
+	mix-blend-mode: multiply;
 }
 
 /* Winner PopUp */

@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { motion } from 'framer-motion'
 import { Chess } from 'chess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { coalitionToSlug } from '../utils/coalitionTheme.js'
 import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
+import { BOARD_TILES, buildTileUrlFlat, themeHasTileAssets } from '../chess/boardTiles.js'
 
 function toSquare(row, col) {
 	const files = 'abcdefgh';
@@ -23,7 +25,7 @@ function findKingSquare(game) {
 	return null;
 }
 
-	function Board({ game, setGame, winner, setWinner }) {
+	function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 	const { user } = useAuth()
 	const coalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 	const pieceTheme = coalitionSlug
@@ -31,8 +33,10 @@ function findKingSquare(game) {
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
 	const [kingFlash, setKingFlash] = useState(false);
+	const [illegalFlashSq, setIllegalFlashSq] = useState(null);
 
 	const [popupOpen, setPopupOpen] = useState(false);
+	const illegalTimerRef = useRef(null);
 
 	useEffect(() => {
 		if (winner) setPopupOpen(true)
@@ -47,6 +51,18 @@ function findKingSquare(game) {
 	function flashKing() {
 		setKingFlash(true);
 		setTimeout(() => setKingFlash(false), 600);
+	}
+
+	function flashIllegalSquare(square) {
+		if (illegalTimerRef.current) {
+			clearTimeout(illegalTimerRef.current)
+			illegalTimerRef.current = null
+		}
+		setIllegalFlashSq(square)
+		illegalTimerRef.current = setTimeout(() => {
+			setIllegalFlashSq(null)
+			illegalTimerRef.current = null
+		}, 480)
 	}
 
 	function handleClick(row, col) {
@@ -91,6 +107,7 @@ function findKingSquare(game) {
 			else {
 
 				if (!possibleMoves.includes(square)) {
+					flashIllegalSquare(square)
 					setSelected(null);
 					setPossibleMoves([]);
 					return ;
@@ -117,8 +134,15 @@ function findKingSquare(game) {
 	}
 }
 
-	const kingSquare = game.inCheck() ? findKingSquare(game) : null;
+	const kingCheckSquare = game.inCheck() ? findKingSquare(game) : null;
 	const position = game.board();
+
+	const useTiles = BOARD_TILES.active && themeHasTileAssets(coalitionSlug)
+	const tileSeed = tilePatternSeed ?? BOARD_TILES.seed
+	const tilePattern = useMemo(
+		() => (useTiles ? buildTileUrlFlat(tileSeed, coalitionSlug) : null),
+		[useTiles, tileSeed, coalitionSlug]
+	)
 
 function getPopupContent(winner) {
 	if (winner === 'Nulle') {
@@ -145,8 +169,19 @@ function getPopupContent(winner) {
 		setSelected(null);
 		setPossibleMoves([]);
 		setKingFlash(false);
+		setIllegalFlashSq(null);
+		if (illegalTimerRef.current) {
+			clearTimeout(illegalTimerRef.current)
+			illegalTimerRef.current = null
+		}
 	}
 	}, [popupOpen]);
+
+	useEffect(() => {
+		return () => {
+			if (illegalTimerRef.current) clearTimeout(illegalTimerRef.current)
+		}
+	}, [])
 
 	return (
 	<div>
@@ -163,39 +198,67 @@ function getPopupContent(winner) {
 		)}
 
 			<div id="board">
-				{position.map((row, rowIndex) =>
-				row.map((piece, colIndex) => {	//creating 8x8 board w chess.js so double for loop
-				const sq = toSquare(rowIndex, colIndex);
-				const isSelected = selected === sq;
-				const isPossibleMove = possibleMoves.includes(sq) && !piece; //add en-passant
-				const isPossibleCapture = possibleMoves.includes(sq) && piece;
-				const isKingInCheck = sq === kingSquare && kingFlash;
+				{position.flatMap((row, rowIndex) =>
+					row.map((piece, colIndex) => {
+						const sq = toSquare(rowIndex, colIndex);
+						const isLight = (rowIndex + colIndex) % 2 === 0
+						const isSelected = selected === sq;
+						const isPossibleMove = possibleMoves.includes(sq) && !piece;
+						const isPossibleCapture = possibleMoves.includes(sq) && piece;
+						const isKingCheckCell = kingCheckSquare != null && sq === kingCheckSquare
+						const isIllegalFlash = illegalFlashSq === sq
+						const tileSrc = tilePattern ? tilePattern[rowIndex * 8 + colIndex] : null
 
-				return (
-					<div
-						key={`${rowIndex}-${colIndex}`}
-						className={`cell
-						${(rowIndex + colIndex) % 2 === 0 ? 'light' : 'dark'}
-						${isSelected ? 'selected' : ''}
-						${isPossibleMove ? 'possible-move' : ''}
-						${isPossibleCapture ? 'possible-capture' : ''}
-						${isKingInCheck ? 'king-check' : ''}`}
-
-						onClick={() => handleClick(rowIndex, colIndex)}
-					>
-
-					{piece && (
-						<ChessPieceImg
-							theme={pieceTheme}
-							pieceType={piece.type}
-							pieceColor={piece.color}
-							className="piece"
-						/>
-					)}
-					</div>
-				);
-				})
-			)}
+						return (
+							<div
+								key={sq}
+								data-square={sq}
+								className={`cell
+								${isLight ? 'light' : 'dark'}
+								${useTiles ? 'board-tiles' : ''}
+								${isSelected ? 'selected' : ''}
+								${isPossibleMove ? 'possible-move' : ''}
+								${isPossibleCapture ? 'possible-capture' : ''}
+								${isKingCheckCell ? 'king-check' : ''}
+								${kingFlash && isKingCheckCell ? 'king-check-attn' : ''}
+								${isIllegalFlash ? 'illegal-move-flash' : ''}`}
+								onClick={() => handleClick(rowIndex, colIndex)}
+							>
+								{useTiles && tileSrc && (
+									<img
+										className="cell-tile"
+										src={tileSrc}
+										alt=""
+										draggable={false}
+										data-tile-theme={coalitionSlug}
+										data-tile-shade={isLight ? 'light' : 'dark'}
+									/>
+								)}
+								{piece && (
+									<motion.div
+										className="piece-wrap"
+										key={`${sq}-${piece.color}-${piece.type}`}
+										initial={{ scale: 0.9, opacity: 0.55 }}
+										animate={{ scale: 1, opacity: 1 }}
+										transition={{
+											type: 'spring',
+											stiffness: 420,
+											damping: 28,
+											mass: 0.82,
+										}}
+									>
+										<ChessPieceImg
+											theme={pieceTheme}
+											pieceType={piece.type}
+											pieceColor={piece.color}
+											className="piece"
+										/>
+									</motion.div>
+								)}
+							</div>
+						);
+					})
+				)}
 			</div>
 		</div>
 		);
