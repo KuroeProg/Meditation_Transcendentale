@@ -1,7 +1,4 @@
-/**
- * Logo 42 — géométrie issue de Wikimedia Commons « 42_Logo.svg » (formes simples, PD).
- * Trademark 42 : usage type projet / école ; ne pas altérer de façon trompeuse.
- */
+/** Tracé aligné sur Wikimedia « 42_Logo.svg » (usage projet / école). */
 export default function Logo42({ className, title = '42' }) {
 	return (
 		<svg

@@ -1,14 +1,11 @@
-/* Couche sous la sidebar (z-index 10) et le contenu (z-index 1), au-dessus de l’aurora (-1) */
 .coalition-ambient {
 	position: fixed;
 	inset: 0;
 	z-index: 0;
 	pointer-events: none;
 	overflow: hidden;
-	/* Contexte de composition isolé : évite les artefacts avec la barre fixe / texte au-dessus */
 	isolation: isolate;
 	opacity: 0;
-	/* Pas de fondu : superposition aurora + coalition pendant le transition = « fantômes » */
 }
 
 .coalition-ambient--ready {
@@ -42,7 +39,6 @@
 	position: absolute;
 	inset: -8%;
 	will-change: transform, background-position;
-	/* Parallax piloté en rAF sur les refs : pas de transition CSS (sinon conflit / scintillement) */
 	transition: none;
 }
 
@@ -51,7 +47,6 @@
 	opacity: 0.95;
 }
 
-/* Lumière centrale sans 2ᵉ copie du PNG → plus de couture masque / GPU */
 .coalition-ambient__punch {
 	position: absolute;
 	inset: 0;
@@ -90,13 +85,10 @@
 	height: 100%;
 	display: block;
 	pointer-events: none;
-	/* Pas de fond CSS ici : un fond sombre masquait le parallax derrière les zones transparentes du canvas */
 	opacity: 0.94;
-	/* Couche GPU dédiée : limite les artefacts de fusion avec les calques dessous (Safari / iOS) */
 	transform: translateZ(0);
 }
 
-/* Air : PNG déjà sombre — calques plus lumineux, voile moins lourd, moins de vignette */
 [data-coalition-scene='air'] .coalition-ambient__layer--deep {
 	filter: saturate(1.12) brightness(0.92) contrast(1.05);
 	opacity: 1;

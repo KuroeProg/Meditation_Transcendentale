@@ -6,11 +6,7 @@ import { COALITION_ACCENTS, COALITION_BACKGROUNDS } from '../theme/coalitionAmbi
 import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'
 import './CoalitionAmbient.css'
 
-/**
- * Fond coalition (un seul PNG + punch CSS) + parallax + particules.
- * Désactivé sur `/`. Parallax en rAF direct (refs) pour éviter 60 re-renders/s React.
- * Masqué pendant le chargement session + jusqu’au decode du PNG → plus de flash au reload.
- */
+/** Fond coalition : `/` exclus, masqué tant que la session ou le PNG ne sont pas prêts. */
 export default function CoalitionAmbient() {
 	const location = useLocation()
 	const { user, loading } = useAuth()
@@ -38,7 +34,6 @@ export default function CoalitionAmbient() {
 		return () => window.removeEventListener('transcendence-prefs-changed', sync)
 	}, [])
 
-	/* Pas d’ambiance tant que la session n’est pas résolue → évite feu puis eau au reload */
 	const onAppRoute = location.pathname !== '/'
 
 	useEffect(() => {
@@ -129,7 +124,6 @@ export default function CoalitionAmbient() {
 					backgroundPosition: '50% 50%',
 				}}
 			/>
-			{/* Pas de 2ᵉ PNG (masque + parallax = coutures) : léger punch central en pur CSS */}
 			<div className="coalition-ambient__punch" />
 			<div className="coalition-ambient__veil" />
 			{showParticles && <CoalitionParticleCanvas slug={slug} reducedMotion={false} />}

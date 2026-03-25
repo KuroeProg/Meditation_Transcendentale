@@ -1,6 +1,4 @@
-/**
- * Coalitions 42 Perpignan (éléments) — assets pièces sous /public/chess/coalitions/
- */
+/** Slugs coalition (thème pièces, fond, profil). */
 
 const SLUGS = ['feu', 'eau', 'terre', 'air']
 
@@ -19,7 +17,6 @@ export function coalitionToSlug(raw) {
 	if (s.includes('eau')) return 'eau'
 	if (s.includes('terre')) return 'terre'
 	if (s.includes('air')) return 'air'
-	// fallback sûr
 	return 'feu'
 }
 
@@ -27,7 +24,6 @@ export function isKnownCoalitionSlug(slug) {
 	return SLUGS.includes(slug)
 }
 
-/** Libellé court pour l’UI (profil, etc.) */
 export function coalitionSlugToLabel(slug) {
 	const labels = { feu: 'Feu', eau: 'Eau', terre: 'Terre', air: 'Air' }
 	return labels[slug] ?? slug ?? '—'

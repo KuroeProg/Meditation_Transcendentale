@@ -1,14 +1,8 @@
-/**
- * Damier en tuiles PNG par thème de coalition.
- * Motif généré avec **faible répétition locale** (pénalité si même tuile qu’un voisin orthogonal).
- *
- * Manifeste : npm run generate:tiles-manifest (predev / prebuild)
- */
+/** Grille de tuiles PNG par coalition ; manifeste via `npm run generate:tiles-manifest`. */
 
 import { isKnownCoalitionSlug } from '../utils/coalitionTheme.js'
 import boardTilesManifest from './boardTilesManifest.json'
 
-/** @param {string} str */
 export function hash32(str) {
 	let h = 1779033703 ^ str.length
 	for (let i = 0; i < str.length; i++) {
@@ -20,7 +14,6 @@ export function hash32(str) {
 	return (h ^ (h >>> 16)) >>> 0
 }
 
-/** Mélange déterministe (Fisher–Yates + seed) */
 function seededShuffle(items, seed) {
 	const out = [...items]
 	let s = hash32(seed)
@@ -56,13 +49,6 @@ export function themeHasTileAssets(slug) {
 	return light.length > 0 && dark.length > 0
 }
 
-/**
- * Remplit les cases d’une parité (clair ou foncé) en évitant les blocs de même tuile.
- * @param {number[][]} positions [row, col][]
- * @param {number[]} pool
- * @param {string} seed
- * @param {(number|null)[][]} grid
- */
 function assignTilesLowAdjacency(positions, pool, seed, grid) {
 	if (!pool.length) return
 	const order = seededShuffle(
@@ -83,7 +69,6 @@ function assignTilesLowAdjacency(positions, pool, seed, grid) {
 		for (const id of pool) {
 			const sameNeighbors = ortho.filter((n) => n === id).length
 			const noise = (hash32(`${seed}|${r}|${c}|${id}`) % 10000) / 10000
-			// Forte pénalité si voisin identique ; léger bruit pour départager
 			const score = -sameNeighbors * 1000 + noise
 			if (score > bestScore) {
 				bestScore = score
@@ -94,12 +79,6 @@ function assignTilesLowAdjacency(positions, pool, seed, grid) {
 	}
 }
 
-/**
- * Grille 8×8 d’URLs de tuiles (indices [row][col]), ou null si pas d’assets.
- * @param {string} seed
- * @param {string} coalitionSlug
- * @returns {string[][] | null}
- */
 export function buildTileUrlGrid(seed, coalitionSlug) {
 	const { light: lightPool, dark: darkPool } = tileManifestForSlug(coalitionSlug)
 	if (!lightPool.length || !darkPool.length) return null
@@ -131,10 +110,6 @@ export function buildTileUrlGrid(seed, coalitionSlug) {
 	return urlGrid
 }
 
-/**
- * Plateau aplati rangée par rangée (comme avant), pour Board.jsx
- * @returns {string[] | null}
- */
 export function buildTileUrlFlat(seed, coalitionSlug) {
 	const g = buildTileUrlGrid(seed, coalitionSlug)
 	if (!g) return null

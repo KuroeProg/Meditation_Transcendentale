@@ -1,10 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { COALITION_LIGHTNING_FLASH_EDGE } from '../theme/coalitionAmbience.js'
 
-/**
- * Canvas plein écran : particules thématiques + lueurs (feu / eau / terre / air + éclairs).
- * @param {{ slug: string, reducedMotion: boolean }} props
- */
+/** Particules plein écran par coalition (éclairs uniquement pour l’air). */
 export default function CoalitionParticleCanvas({ slug, reducedMotion }) {
 	const ref = useRef(null)
 	const raf = useRef(0)
@@ -552,7 +549,6 @@ class LightningField {
 		if (now >= this.nextStrikeAt && this.bolts.length < 4) {
 			this.bolts.push(new LightningBolt(w, h))
 			this.nextStrikeAt = now + 280 + Math.random() * 3400
-			/* Éclair bien lisible : flash quasi systématique, plus long */
 			this.flashScreen = 0.38 + Math.random() * 0.28
 		}
 
@@ -567,7 +563,6 @@ class LightningField {
 			const air = this.slug === 'air'
 			ctx.save()
 			ctx.globalAlpha = Math.min(0.55, this.flashScreen * 0.62)
-			/* Bords opaques (plus d’alpha 0). Air : tons plus clairs pour ne pas ternir le violet du fond */
 			const fx = w * 0.68
 			const g = ctx.createRadialGradient(fx, 0, 0, fx, h * 0.32, h * 0.88)
 			g.addColorStop(0, 'rgba(255, 255, 255, 0.95)')
@@ -652,8 +647,6 @@ class LightningBolt {
 		ctx.save()
 		ctx.lineCap = 'round'
 		ctx.lineJoin = 'round'
-		/* Pas de shadowBlur : 3 passes épaisseur = glow lisible et GPU léger */
-		/* Air : éclairs jaune-or (le thème n’utilise LightningBolt qu’en coalition air) */
 		this.strokeGlowPath(ctx, this.points, a, [14, 6, 2.2], [
 			`rgba(255, 210, 80, ${0.28 * a})`,
 			`rgba(255, 238, 160, ${0.78 * a})`,

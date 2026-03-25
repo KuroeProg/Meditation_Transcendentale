@@ -10,9 +10,6 @@ const BY_SLUG = {
 	terre: CoalitionEarth,
 }
 
-/**
- * @param {{ slug: 'feu'|'eau'|'terre'|'air' }} props
- */
 export default function ProfileCoalitionIcon({ slug }) {
 	const Cmp = BY_SLUG[slug] ?? CoalitionFire
 	return <Cmp />
