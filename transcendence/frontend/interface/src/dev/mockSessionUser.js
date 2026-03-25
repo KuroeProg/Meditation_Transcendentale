@@ -14,7 +14,7 @@ export function getMockSessionUser() {
 	return {
 		login: 'vb_demo',
 		email: 'vb_demo@student.42.fr',
-		first_name: 'Victor',
+		first_name: 'Vincent',
 		last_name: 'Démonstration',
 		image: {
 			link: 'https://picsum.photos/id/64/256/256',
@@ -23,8 +23,8 @@ export function getMockSessionUser() {
 			},
 		},
 		// ← Modifie cette valeur pour voir les pièces Feu / Eau / Terre / Air sur l’échiquier
-		coalition: 'air',
-		coalition_name: 'air',
+		coalition: 'terre',
+		coalition_name: 'terre',
 		cursus_level: 7,
 		level: 7,
 		stats: {
