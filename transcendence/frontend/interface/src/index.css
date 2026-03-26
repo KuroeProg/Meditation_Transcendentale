@@ -276,7 +276,9 @@ html[data-reduce-motion='true'] .board-frame {
     calc(100vw - var(--sidebar-width) - 8rem)
   );
   --cell: calc(var(--board-size) / 8);
-  --chess-piece-outline: 0.5px;
+  /* Contour pièces : 2 drop-shadow au lieu de 8 (beaucoup moins cher au paint) */
+  --chess-piece-shadow-tight: 0.75px;
+  --chess-piece-shadow-soft: 1.25px;
   --board-tile-overlay-alpha: 0.12;
 }
 
@@ -296,6 +298,9 @@ html[data-reduce-motion='true'] .board-frame {
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	/* Isole le calque pièce (filtres + repaints) du reste de la case */
+	transform: translateZ(0);
+	backface-visibility: hidden;
 }
 
 .piece {
@@ -304,14 +309,8 @@ html[data-reduce-motion='true'] .board-frame {
 	object-fit: contain;
 	cursor: grab;
 	filter:
-		drop-shadow(var(--chess-piece-outline) 0 0 #000)
-		drop-shadow(calc(-1 * var(--chess-piece-outline)) 0 0 #000)
-		drop-shadow(0 var(--chess-piece-outline) 0 #000)
-		drop-shadow(0 calc(-1 * var(--chess-piece-outline)) 0 #000)
-		drop-shadow(var(--chess-piece-outline) var(--chess-piece-outline) 0 #000)
-		drop-shadow(calc(-1 * var(--chess-piece-outline)) var(--chess-piece-outline) 0 #000)
-		drop-shadow(var(--chess-piece-outline) calc(-1 * var(--chess-piece-outline)) 0 #000)
-		drop-shadow(calc(-1 * var(--chess-piece-outline)) calc(-1 * var(--chess-piece-outline)) 0 #000);
+		drop-shadow(0 0 var(--chess-piece-shadow-tight) #000)
+		drop-shadow(0 0 var(--chess-piece-shadow-soft) rgba(0, 0, 0, 0.5));
 }
 
 .piece[data-piece-type]:not([data-piece-type='p']) {
@@ -434,13 +433,14 @@ html[data-reduce-motion='true'] .board-frame {
 	position: absolute;
 	left: 50%;
 	top: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate3d(-50%, -50%, 0);
 	width: min(32%, 40px);
 	height: min(32%, 40px);
 	aspect-ratio: 1;
 	border-radius: 50%;
-	background: rgba(46, 168, 92, 0.5);
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35);
+	background: rgba(46, 168, 92, 0.52);
+	outline: 1px solid rgba(255, 255, 255, 0.35);
+	outline-offset: -1px;
 	z-index: 2;
 	pointer-events: none;
 }
@@ -450,15 +450,15 @@ html[data-reduce-motion='true'] .board-frame {
 	position: absolute;
 	inset: 8%;
 	border-radius: 4px;
-	border: 4px solid rgba(32, 150, 78, 0.88);
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.2);
+	border: 3px solid rgba(32, 150, 78, 0.9);
 	z-index: 2;
 	pointer-events: none;
 }
 
+/* Pas de filter dans l’animation : le brightness forçait des repaints coûteux */
 @keyframes king-check-breathe {
-	0%, 100% { opacity: 1; filter: brightness(1); }
-	50% { opacity: 0.88; filter: brightness(1.12); }
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.82; }
 }
 
 @keyframes king-check-attn-pulse {
@@ -481,12 +481,13 @@ html[data-reduce-motion='true'] .board-frame {
 	position: absolute;
 	left: 50%;
 	top: 50%;
-	transform: translate(-50%, -50%);
+	transform: translate3d(-50%, -50%, 0);
 	width: min(32%, 40px);
 	height: min(32%, 40px);
 	border-radius: 50%;
-	background: rgba(46, 168, 92, 0.5);
-	box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.3);
+	background: rgba(46, 168, 92, 0.52);
+	outline: 1px solid rgba(255, 255, 255, 0.3);
+	outline-offset: -1px;
 	z-index: 2;
 	pointer-events: none;
 }
@@ -496,7 +497,7 @@ html[data-reduce-motion='true'] .board-frame {
 	position: absolute;
 	inset: 8%;
 	border-radius: 4px;
-	border: 4px solid rgba(32, 150, 78, 0.88);
+	border: 3px solid rgba(32, 150, 78, 0.9);
 	z-index: 2;
 	pointer-events: none;
 }
