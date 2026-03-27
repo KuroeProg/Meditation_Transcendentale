@@ -4,7 +4,7 @@ import { memo, useMemo } from 'react'
 import { isKnownCoalitionSlug } from '../utils/coalitionTheme.js'
 import { chessColorToVariant } from './chessColorVariant.js'
 
-function ChessPieceImgInner({ theme, pieceType, pieceColor, className, ...rest }) {
+function ChessPieceImgInner({ theme, pieceType, pieceColor, className, rowIndex, colIndex, ...rest }) {
 	const resolved = isKnownCoalitionSlug(theme) ? theme : 'feu'
 	const variant = chessColorToVariant(pieceColor)
 	const src = useMemo(
