@@ -1,5 +1,5 @@
 // hooks/useChessSocket.js
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 function getWebSocketOrigin() {
 	const explicitWsOrigin = import.meta.env.VITE_WS_ORIGIN;
@@ -31,19 +31,27 @@ export function useChessSocket(gameId) {
 			return undefined;
 		}
 
+		let isDisposed = false;
+
 		// Connexion au WebSocket
 		const wsOrigin = getWebSocketOrigin();
 		const url = `${wsOrigin}/ws/chess/${gameId}/`;
-		socketRef.current = new WebSocket(url);
+		const socket = new WebSocket(url);
+		socketRef.current = socket;
 
-		socketRef.current.onopen = () => {
+		socket.onopen = () => {
+			if (isDisposed) {
+				socket.close();
+				return;
+			}
 			console.log("WebSocket Connecté !");
 			setIsConnected(true);
 			setSocketError(null);
-			socketRef.current.send(JSON.stringify({ action: 'reconnect' }));
+			socket.send(JSON.stringify({ action: 'reconnect' }));
 		};
 
-		socketRef.current.onmessage = (event) => {
+		socket.onmessage = (event) => {
+			if (isDisposed) return;
 			try {
 				const data = JSON.parse(event.data);
 				setLastMessage(data);
@@ -52,30 +60,41 @@ export function useChessSocket(gameId) {
 			}
 		};
 
-		socketRef.current.onerror = () => {
+		socket.onerror = () => {
+			if (isDisposed) return;
 			setSocketError('Erreur WebSocket');
 		};
 
-		socketRef.current.onclose = () => {
+		socket.onclose = () => {
+			if (isDisposed) return;
 			console.log("WebSocket Déconnecté");
 			setIsConnected(false);
 		};
 
 		// Nettoyage à la fermeture du composant
 		return () => {
-			if (socketRef.current) {
-				socketRef.current.close();
+			isDisposed = true;
+			if (socketRef.current === socket) {
 				socketRef.current = null;
+			}
+
+			if (socket.readyState === WebSocket.OPEN) {
+				socket.close();
+			}
+
+			if (socket.readyState === WebSocket.CONNECTING) {
+				// Evite l'erreur navigateur "closed before the connection is established"
+				socket.onopen = () => socket.close();
 			}
 		};
 	}, [gameId]);
 
-	// Fonction pour envoyer des coups
-	const sendMove = (moveData) => {
+	// Fonction stable pour eviter les effets qui rebouclent sur une dependance fonction
+	const sendMove = useCallback((moveData) => {
 		if (socketRef.current && socketRef.current.readyState === WebSocket.OPEN) {
 			socketRef.current.send(JSON.stringify(moveData));
 		}
-	};
+	}, []);
 
 	return { isConnected, socketError, lastMessage, sendMove };
 }

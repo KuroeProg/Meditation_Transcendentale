@@ -73,10 +73,11 @@ function App() {
 	}, [lastMessage])
 
 	useEffect(() => {
+		if (gameId !== 'default_room') return
 		if (isConnected && gameState === null && userId && !moveFeedback?.includes('Partie introuvable')) {
 			sendMove({ action: 'create_game', white_id: userId, black_id: 999 })
 		}
-	}, [isConnected, gameState, userId, moveFeedback, sendMove])
+	}, [gameId, isConnected, gameState, userId, moveFeedback, sendMove])
 
 	const handleMoveRequest = ({ move }) => {
 		if (!userId) {

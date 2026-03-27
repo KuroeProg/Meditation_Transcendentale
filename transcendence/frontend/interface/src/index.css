@@ -674,7 +674,7 @@ animation-duration: 10s;
 	margin-left: 75px;
 	min-height: 100vh;
 	padding: 1.5rem 2rem 3rem;
-	max-width: 960px;
+	/* max-width: 960px; */
 	position: relative;
 	z-index: 1;
 	isolation: isolate;
