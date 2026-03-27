@@ -1,0 +1,5 @@
+# Requis pour Vite derrière nginx : sans ça, Connection: upgrade sur les GET normales peut provoquer des 502.
+map $http_upgrade $connection_upgrade {
+	default upgrade;
+	''      close;
+}

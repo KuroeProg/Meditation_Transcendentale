@@ -139,8 +139,10 @@ function Board({
 	winner,
 	setWinner,
 	tilePatternSeed,
+	onMove,
 	remoteMove = null,
 	onRemoteMoveConsumed,
+	viewFen = null,
 }) {
 	const { user } = useAuth()
 	const tileCoalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
@@ -150,13 +152,24 @@ function Board({
 	const [kingFlash, setKingFlash] = useState(false)
 	const [illegalFlashSq, setIllegalFlashSq] = useState(null)
 
-	const [popupOpen, setPopupOpen] = useState(false)
 	const illegalTimerRef = useRef(null)
 
 	const winnerRef = useRef(null)
 	useEffect(() => {
 		winnerRef.current = winner
 	}, [winner])
+
+	const previewGame = useMemo(() => {
+		if (!viewFen) return null
+		try {
+			return new Chess(viewFen)
+		} catch {
+			return null
+		}
+	}, [viewFen])
+
+	const boardGame = previewGame ?? game
+	const isViewOnly = previewGame != null
 
 	const boardRootRef = useRef(null)
 	const activeAnimRef = useRef(false)
@@ -185,10 +198,6 @@ function Board({
 		}
 	}, [user, tileCoalitionSlug, tileSeed])
 
-	useEffect(() => {
-		if (winner) queueMicrotask(() => setPopupOpen(true))
-	}, [winner])
-
 	const flashKing = useCallback(() => {
 		setKingFlash(true)
 		setTimeout(() => setKingFlash(false), 600)
@@ -206,8 +215,11 @@ function Board({
 		}, 480)
 	}, [])
 
+	const onMoveRef = useRef(onMove)
+	useEffect(() => { onMoveRef.current = onMove }, [onMove])
+
 	const beginAnimatedMove = useCallback(
-		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq }) => {
+		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq, san }) => {
 			finishAnimLockRef.current = false
 			setSelected(null)
 			setPossibleMoves([])
@@ -220,6 +232,7 @@ function Board({
 				themeSlug,
 				captureOnTo,
 				enPassantSq,
+				san,
 				phase: 'measure',
 			})
 		},
@@ -236,6 +249,13 @@ function Board({
 			queueMicrotask(() => {
 				const ng = new Chess(a.fenAfter)
 				setGame(ng)
+				onMoveRef.current?.({
+					color: a.moving.color,
+					piece: a.moving.type,
+					from: a.from,
+					to: a.to,
+					san: a.san ?? '',
+				})
 				checkEndGame(ng, setWinner)
 				setActiveMoveAnim(null)
 			})
@@ -283,6 +303,13 @@ function Board({
 		const ng = new Chess(a.fenAfter)
 		setActiveMoveAnim(null)
 		setGame(ng)
+		onMoveRef.current?.({
+			color: a.moving.color,
+			piece: a.moving.type,
+			from: a.from,
+			to: a.to,
+			san: a.san ?? '',
+		})
 		checkEndGame(ng, setWinner)
 		queueMicrotask(() => {
 			finishAnimLockRef.current = false
@@ -330,14 +357,22 @@ function Board({
 			themeSlug: getPieceThemeSlugForColor(pieceBefore.color, user),
 			captureOnTo: hadCaptureOnTo,
 			enPassantSq,
+			san: m.san,
 		})
 	}, [remoteMove, game, user, beginAnimatedMove, onRemoteMoveConsumed])
 
 	const runClickRef = useRef(() => {})
 
 	useEffect(() => {
+		if (isViewOnly) {
+			setSelected(null)
+			setPossibleMoves([])
+		}
+	}, [isViewOnly])
+
+	useEffect(() => {
 		runClickRef.current = (row, col) => {
-			if (winnerRef.current || activeAnimRef.current) return
+			if (isViewOnly || winnerRef.current || activeAnimRef.current) return
 
 			const square = toSquare(row, col)
 
@@ -396,6 +431,7 @@ function Board({
 						themeSlug: getPieceThemeSlugForColor(movingPiece.color, user),
 						captureOnTo: hadCaptureOnTo,
 						enPassantSq,
+						san: m.san,
 					})
 				}
 			}
@@ -408,6 +444,7 @@ function Board({
 		flashIllegalSquare,
 		beginAnimatedMove,
 		user,
+		isViewOnly,
 	])
 
 	const handleBoardClick = useCallback((e) => {
@@ -420,8 +457,8 @@ function Board({
 		runClickRef.current(row, col)
 	}, [])
 
-	const kingCheckSquare = game.inCheck() ? findKingSquare(game) : null
-	const position = game.board()
+	const kingCheckSquare = boardGame.inCheck() ? findKingSquare(boardGame) : null
+	const position = boardGame.board()
 
 	const useTiles = BOARD_TILES.active && themeHasTileAssets(tileCoalitionSlug)
 	const tilePattern = useMemo(
@@ -429,19 +466,8 @@ function Board({
 		[useTiles, tileSeed, tileCoalitionSlug],
 	)
 
-	function getPopupContent(w) {
-		if (w === 'Nulle') {
-			return { title: 'Draw !', subtitle: 'Equal position' }
-		}
-		if (w === 'White-Timeout' || w === 'Black-Timeout') {
-			const color = w === 'White-Timeout' ? 'White' : 'Black'
-			return { title: 'Time is up !', subtitle: `${color} wins on time` }
-		}
-		return { title: 'Checkmate !', subtitle: `${w} wins` }
-	}
-
 	useEffect(() => {
-		if (!popupOpen) return
+		if (!winner) return
 		queueMicrotask(() => {
 			setSelected(null)
 			setPossibleMoves([])
@@ -452,7 +478,7 @@ function Board({
 				illegalTimerRef.current = null
 			}
 		})
-	}, [popupOpen])
+	}, [winner])
 
 	useEffect(() => {
 		return () => {
@@ -471,6 +497,7 @@ function Board({
 	}, [activeMoveAnim?.key, activeMoveAnim?.phase, finishAnimatedMove])
 
 	const ghost =
+		!isViewOnly &&
 		activeMoveAnim &&
 		(activeMoveAnim.phase === 'slide' || activeMoveAnim.phase === 'sliding') &&
 		activeMoveAnim.size != null ? (
@@ -497,18 +524,6 @@ function Board({
 
 	return (
 		<div>
-			{popupOpen && (
-				<div className="popup-overlay">
-					<div className="popup-checkmate">
-						<button type="button" className="popup-close" onClick={() => setPopupOpen(false)}>
-							✕
-						</button>
-						<p className="popup-title">{getPopupContent(winner).title}</p>
-						<p className="popup-winner">{getPopupContent(winner).subtitle}</p>
-					</div>
-				</div>
-			)}
-
 			<div className="board-root" ref={boardRootRef}>
 				<div id="board" role="presentation" onClick={handleBoardClick}>
 					{position.flatMap((row, rowIndex) =>
@@ -521,7 +536,7 @@ function Board({
 							const isKingCheckCell = kingCheckSquare != null && sq === kingCheckSquare
 							const isIllegalFlash = illegalFlashSq === sq
 							const tileSrc = tilePattern ? tilePattern[rowIndex * 8 + colIndex] : null
-							const suppressPiece = pieceSuppressed(sq, activeMoveAnim)
+							const suppressPiece = isViewOnly ? false : pieceSuppressed(sq, activeMoveAnim)
 
 							return (
 								<BoardCell
