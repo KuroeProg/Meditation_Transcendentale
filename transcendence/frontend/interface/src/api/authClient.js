@@ -9,19 +9,19 @@ function readCookie(name) {
  * Récupère l’utilisateur connecté (cookie de session Django si endpoint présent).
  */
 export async function fetchSessionUser(signal) {
-	const res = await fetch(AUTH_PATHS.me, {
-		method: 'GET',
-		credentials: 'include',
-		headers: { Accept: 'application/json' },
-		signal,
-	})
-	if (res.status === 401 || res.status === 403 || res.status === 404) return null
-	if (!res.ok) throw new Error(`auth/me: ${res.status}`)
-	try {
-		return await res.json()
-	} catch {
-		return null
-	}
+	// const res = await fetch(AUTH_PATHS.me, {
+	// 	method: 'GET',
+	// 	credentials: 'include',
+	// 	headers: { Accept: 'application/json' },
+	// 	signal,
+	// })
+	// if (res.status === 401 || res.status === 403 || res.status === 404) return null
+	// if (!res.ok) throw new Error(`auth/me: ${res.status}`)
+	// try {
+	// 	return await res.json()
+	// } catch {
+	// 	return null
+	// }
 }
 
 /**

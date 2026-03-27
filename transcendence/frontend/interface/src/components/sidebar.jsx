@@ -16,7 +16,7 @@ function Sidebar() {
 					</Link>
 				</li>
 				<li>
-					<Link to="/game">
+					<Link to="/game/default_room">
 						<span className="icon">
 							<i className="fa-solid fa-house" />
 						</span>

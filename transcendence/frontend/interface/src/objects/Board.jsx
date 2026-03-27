@@ -1,5 +1,4 @@
 import { useState, useRef, useEffect } from 'react'
-import { Chess } from 'chess.js'
 import { useAuth } from '../hooks/useAuth.js'
 import { coalitionToSlug } from '../utils/coalitionTheme.js'
 import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
@@ -23,7 +22,16 @@ function findKingSquare(game) {
 	return null;
 }
 
-	function Board({ game, setGame, winner, setWinner }) {
+function buildUciMove(from, to, movingPiece) {
+	if (!from || !to) return null;
+	if (!movingPiece) return `${from}${to}`;
+
+	const destinationRank = to[1];
+	const isPromotion = movingPiece.type === 'p' && (destinationRank === '8' || destinationRank === '1');
+	return isPromotion ? `${from}${to}q` : `${from}${to}`;
+}
+
+	function Board({ game, winner, onMoveRequest, playerColor, moveFeedback }) {
 	const { user } = useAuth()
 	const coalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 	const pieceTheme = coalitionSlug
@@ -31,6 +39,7 @@ function findKingSquare(game) {
 	const [selected, setSelected] = useState(null);
 	const [possibleMoves, setPossibleMoves] = useState([]);
 	const [kingFlash, setKingFlash] = useState(false);
+	const [localFeedback, setLocalFeedback] = useState(null);
 
 	const [popupOpen, setPopupOpen] = useState(false);
 
@@ -51,13 +60,19 @@ function findKingSquare(game) {
 
 	function handleClick(row, col) {
 
-		console.log('winnerRef:', winnerRef.current, 'winner:', winner)
 		if (winnerRef.current) return;
 
 		const square = toSquare(row, col);
+		setLocalFeedback(null);
 
 		//nothing clicked on ->
 		if (selected === null) {
+			const clickedPiece = game.get(square);
+			if (clickedPiece && playerColor && clickedPiece.color !== playerColor) {
+				setLocalFeedback('Cette pièce ne vous appartient pas.');
+				return;
+			}
+
 		const moves = game.moves({ square, verbose: true });
 			if (moves.length > 0) {
 				setSelected(square);
@@ -75,6 +90,13 @@ function findKingSquare(game) {
 			const clickedPiece = game.get(square);
 			//if piece of great color
 			if (clickedPiece && clickedPiece.color === game.turn()) {
+				if (playerColor && clickedPiece.color !== playerColor) {
+					setLocalFeedback('Ce n\'est pas votre couleur.');
+					setSelected(null);
+					setPossibleMoves([]);
+					return;
+				}
+
 				const moves = game.moves({ square, verbose: true });
 				//if can moove
 				if (moves.length > 0) {
@@ -96,20 +118,17 @@ function findKingSquare(game) {
 					return ;
 				}
 
-				const newGame = new Chess(game.fen());
-				const move = newGame.move({ from: selected, to: square, promotion: 'q' });
-				if (move) {
-					setGame(newGame);
-					if (newGame.isCheckmate()) {
-						const gameWinner = newGame.turn() ==='b' ? 'White' : 'Black';
-						setWinner(gameWinner);
-					} else if (newGame.isStalemate()) {
-						setWinner('Nulle');
-					} else if (newGame.isInsufficientMaterial()) {
-						setWinner('Nulle');
-					} else if (newGame.isThreefoldRepetition()) {
-						setWinner('Nulle');
-					}
+				if (playerColor && game.turn() !== playerColor) {
+					setLocalFeedback('Ce n\'est pas votre tour.');
+					setSelected(null);
+					setPossibleMoves([]);
+					return;
+				}
+
+				const movingPiece = game.get(selected);
+				const uciMove = buildUciMove(selected, square, movingPiece);
+				if (uciMove && typeof onMoveRequest === 'function') {
+					onMoveRequest({ move: uciMove });
 				}
 				setSelected(null);
 				setPossibleMoves([]);
@@ -150,6 +169,9 @@ function getPopupContent(winner) {
 
 	return (
 	<div>
+		{(localFeedback || moveFeedback) && (
+			<p className="popup-winner">{localFeedback || moveFeedback}</p>
+		)}
 
 		{popupOpen && (
 		<div className="popup-overlay">
@@ -162,7 +184,7 @@ function getPopupContent(winner) {
 		</div>
 		)}
 
-			<div id="board">
+			<div id="board" style={{ transform: playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}>
 				{position.map((row, rowIndex) =>
 				row.map((piece, colIndex) => {	//creating 8x8 board w chess.js so double for loop
 				const sq = toSquare(rowIndex, colIndex);
@@ -192,6 +214,7 @@ function getPopupContent(winner) {
 							rowIndex={rowIndex}
 							colIndex={colIndex}
 							className="piece"
+							style={{ transform: playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s ease' }}
 						/>
 					)}
 					</div>

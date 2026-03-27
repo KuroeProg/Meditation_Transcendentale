@@ -1,4 +1,4 @@
-import { Routes, Route } from 'react-router-dom'
+import { Routes, Route, Navigate } from 'react-router-dom'
 import Home from './pages/Home.jsx'
 import Game from './pages/Game.jsx'
 import Dashboard from './pages/Dashboard.jsx'
@@ -22,7 +22,8 @@ function App() {
 			<div className="main-content">
 				<Routes>
 					<Route path="/" element={<Home />} />
-					<Route path="/game" element={<Game />} />
+					<Route path="/game" element={<Navigate to="/game/default_room" replace />} />
+					<Route path="/game/:gameId" element={<Game />} />
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/profile" element={<Profile />} />
 					<Route path="/settings" element={<Settings />} />

@@ -5,10 +5,6 @@ import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 
-# Connexion à Redis
-redis_url = settings.CACHES['default']['LOCATION']
-redis_client = redis.from_url(redis_url)
-
 class ChessConsumer(AsyncWebsocketConsumer):
 	_redis = None
 	
@@ -32,6 +28,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		)
 		await self.accept()
 
+		# A la reconnexion, renvoyer immédiatement l'état courant au client.
+		game_state_json = await self.get_redis().get(self.game_id)
+		if game_state_json is not None:
+			await self.handle_reconnect(game_state_json)
+
 	async def disconnect(self, close_code):
 		# QUITTER LE GROUPE
 		await self.channel_layer.group_discard(
@@ -43,9 +44,14 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		data = json.loads(text_data)
 		action = data.get('action')
 		# On utilise le game_id de l'URL comme clé Redis
-		game_state_json = await redis_client.get(self.game_id)
+		game_state_json = await self.get_redis().get(self.game_id)
 
-		if action == 'create_game' and game_state_json is None:
+		if action == 'create_game':
+			# Permet de créer une nouvelle partie ou de réinitialiser une existante
+			await self.handle_create_game(data)
+		elif action == 'reset_game':
+			# Réinitialise la partie et la crée vierge
+			await self.get_redis().delete(self.game_id)
 			await self.handle_create_game(data)
 		elif action == 'play_move':
 			await self.handle_play_move(game_state_json, data)
@@ -66,30 +72,77 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			"last_move_timestamp": time.time()
 		}
 		
-		await redis_client.set(self.game_id, json.dumps(new_game_state))
+		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		
 		# BROADCAST : On prévient tout le groupe qu'une partie commence
 		await self.channel_layer.group_send(
 			self.room_group_name,
 			{
 				'type': 'broadcast_game_state', # Nom de la fonction à appeler plus bas
-				'action': 'new_game_data',
+				'action': 'game_state',
 				'game_state': new_game_state
 			}
 		)
 
+	def _normalize_player_id(self, player_id):
+		if player_id is None:
+			return None
+		return str(player_id)
+
+	def _update_game_status(self, game_state, board):
+		# Priorité explicite: checkmate > stalemate > draw > active.
+		if board.is_checkmate():
+			winner_id = game_state['black_player_id'] if board.turn else game_state['white_player_id']
+			game_state['status'] = 'checkmate'
+			game_state['winner_player_id'] = winner_id
+			game_state['result'] = '1-0' if winner_id == game_state['white_player_id'] else '0-1'
+			return
+
+		if board.is_stalemate():
+			game_state['status'] = 'stalemate'
+			game_state['winner_player_id'] = None
+			game_state['result'] = '1/2-1/2'
+			return
+
+		is_draw = (
+			board.is_insufficient_material()
+			or board.is_fivefold_repetition()
+			or board.is_seventyfive_moves()
+			or board.can_claim_threefold_repetition()
+			or board.can_claim_fifty_moves()
+		)
+		if is_draw:
+			game_state['status'] = 'draw'
+			game_state['winner_player_id'] = None
+			game_state['result'] = '1/2-1/2'
+			return
+
+		game_state['status'] = 'active'
+		game_state['winner_player_id'] = None
+		game_state['result'] = '*'
+
 	async def handle_play_move(self, game_state_json, data):
+		if game_state_json is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+			return
+
 		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
 
 		current_turn_player_id = game_state['white_player_id'] if board.turn else game_state['black_player_id']
-		sender_id = data.get('player_id') 
+		sender_id = self._normalize_player_id(data.get('player_id'))
+		current_turn_player_id = self._normalize_player_id(current_turn_player_id)
 
 		if sender_id != current_turn_player_id:
 			await self.send(text_data=json.dumps({'error': "Ce n'est pas votre tour !"}))
 			return
 		
 		attempted_move = data.get('move')
+		if not isinstance(attempted_move, str):
+			await self.send(text_data=json.dumps({'error': 'Le coup doit être au format UCI'}))
+			return
+
+		attempted_move = attempted_move.strip().lower()
 		try:
 			move = chess.Move.from_uci(attempted_move)
 			if move in board.legal_moves:
@@ -97,17 +150,19 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				
 				# Mise à jour de l'état
 				game_state['fen'] = board.fen()
+				game_state['last_move_uci'] = attempted_move
 				game_state['last_move_timestamp'] = time.time()
+				self._update_game_status(game_state, board)
 				
 				# Sauvegarde Redis
-				await redis_client.set(self.game_id, json.dumps(game_state))
+				await self.get_redis().set(self.game_id, json.dumps(game_state))
 				
 				# BROADCAST : On envoie le nouveau coup aux DEUX joueurs
 				await self.channel_layer.group_send(
 					self.room_group_name,
 					{
 						'type': 'broadcast_game_state',
-						'action': 'move_data',
+						'action': 'game_state',
 						'game_state': game_state
 					}
 				)
@@ -120,7 +175,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		# Ici, pas besoin de broadcast, seul celui qui se reconnecte a besoin de l'info
 		game_state = json.loads(game_state_json)
 		await self.send(text_data=json.dumps({
-			'action': 'reconnect_data',
+			'action': 'game_state',
 			'game_state': game_state
 		}))
 
