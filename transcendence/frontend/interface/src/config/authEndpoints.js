@@ -28,8 +28,11 @@ export const API_PREFIX = ''
 
 export const AUTH_PATHS = {
 	me: `${API_PREFIX}/api/auth/me`,
+	csrf: `${API_PREFIX}/api/auth/csrf`,
+	loginDb: `${API_PREFIX}/api/auth/login`,
 	login42: '/api/auth/42/login',
 	logout: `${API_PREFIX}/api/auth/logout`,
+	seedUsers: `${API_PREFIX}/api/auth/seed-users`,
 }
 
 /** URL absolue pour rediriger le navigateur vers le login 42 (hors fetch). */

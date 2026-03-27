@@ -9,19 +9,57 @@ function readCookie(name) {
  * Récupère l’utilisateur connecté (cookie de session Django si endpoint présent).
  */
 export async function fetchSessionUser(signal) {
-	// const res = await fetch(AUTH_PATHS.me, {
-	// 	method: 'GET',
-	// 	credentials: 'include',
-	// 	headers: { Accept: 'application/json' },
-	// 	signal,
-	// })
-	// if (res.status === 401 || res.status === 403 || res.status === 404) return null
-	// if (!res.ok) throw new Error(`auth/me: ${res.status}`)
-	// try {
-	// 	return await res.json()
-	// } catch {
-	// 	return null
-	// }
+	const res = await fetch(AUTH_PATHS.me, {
+		method: 'GET',
+		credentials: 'include',
+		headers: { Accept: 'application/json' },
+		signal,
+	})
+	if (res.status === 401 || res.status === 403 || res.status === 404) return null
+	if (!res.ok) throw new Error(`auth/me: ${res.status}`)
+	try {
+		return await res.json()
+	} catch {
+		return null
+	}
+}
+
+async function ensureCsrfCookie() {
+	await fetch(AUTH_PATHS.csrf, {
+		method: 'GET',
+		credentials: 'include',
+		headers: { Accept: 'application/json' },
+	})
+}
+
+export async function loginDbRequest(username, password) {
+	await ensureCsrfCookie()
+	const csrf = readCookie('csrftoken')
+	const headers = {
+		Accept: 'application/json',
+		'Content-Type': 'application/json',
+	}
+	if (csrf) headers['X-CSRFToken'] = csrf
+
+	const res = await fetch(AUTH_PATHS.loginDb, {
+		method: 'POST',
+		credentials: 'include',
+		headers,
+		body: JSON.stringify({ username, password }),
+	})
+
+	let data = null
+	try {
+		data = await res.json()
+	} catch {
+		data = null
+	}
+
+	if (!res.ok) {
+		throw new Error(data?.error || `auth/login: ${res.status}`)
+	}
+
+	return data?.user ?? null
 }
 
 /**

@@ -1,8 +1,10 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { fetchSessionUser, logoutRequest } from '../api/authClient.js'
+import { fetchSessionUser, loginDbRequest, logoutRequest } from '../api/authClient.js'
 import { getLogin42AbsoluteUrl } from '../config/authEndpoints.js'
 import { AuthContext } from './authContext.js'
 import { getMockSessionUser, isDevMockAuthEnabled } from '../dev/mockSessionUser.js'
+
+const LOCAL_AUTH_USER_KEY = 'localAuthUser'
 
 export function AuthProvider({ children }) {
 	const [user, setUser] = useState(null)
@@ -20,6 +22,21 @@ export function AuthProvider({ children }) {
 			}
 			return
 		}
+
+		const localUserRaw = sessionStorage.getItem(LOCAL_AUTH_USER_KEY)
+		if (localUserRaw) {
+			try {
+				const localUser = JSON.parse(localUserRaw)
+				if (mounted.current) {
+					setUser(localUser)
+					setLoading(false)
+				}
+				return
+			} catch {
+				sessionStorage.removeItem(LOCAL_AUTH_USER_KEY)
+			}
+		}
+
 		setLoading(true)
 		try {
 			const data = await fetchSessionUser()
@@ -47,6 +64,14 @@ export function AuthProvider({ children }) {
 		window.location.assign(getLogin42AbsoluteUrl())
 	}, [])
 
+	const loginWithDb = useCallback(async ({ username, password }) => {
+		setError(null)
+		const userData = await loginDbRequest(username, password)
+		sessionStorage.setItem(LOCAL_AUTH_USER_KEY, JSON.stringify(userData))
+		if (mounted.current) setUser(userData)
+		return userData
+	}, [])
+
 	const logout = useCallback(async () => {
 		setError(null)
 		if (isDevMockAuthEnabled()) {
@@ -58,6 +83,7 @@ export function AuthProvider({ children }) {
 		} catch {
 			/* ignore */
 		}
+		sessionStorage.removeItem(LOCAL_AUTH_USER_KEY)
 		setUser(null)
 		await refetch()
 	}, [refetch])
@@ -71,9 +97,10 @@ export function AuthProvider({ children }) {
 			isDevMockAuth: isDevMockAuthEnabled(),
 			refetch,
 			loginWith42,
+			loginWithDb,
 			logout,
 		}),
-		[user, loading, error, refetch, loginWith42, logout],
+		[user, loading, error, refetch, loginWith42, loginWithDb, logout],
 	)
 
 	return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

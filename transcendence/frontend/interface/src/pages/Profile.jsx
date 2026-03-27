@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 import Logo42 from '../components/Logo42.jsx'
 import ProfileCoalitionIcon from '../components/ProfileCoalitionIcon.jsx'
@@ -14,7 +15,25 @@ function PlaceholderStat({ label, value }) {
 }
 
 function Profile() {
-	const { user, loading, error, loginWith42, isDevMockAuth } = useAuth()
+	const { user, loading, error, loginWith42, loginWithDb, isDevMockAuth } = useAuth()
+	const [username, setUsername] = useState('')
+	const [password, setPassword] = useState('')
+	const [loginError, setLoginError] = useState(null)
+	const [submitting, setSubmitting] = useState(false)
+
+	const handleDbLogin = async (event) => {
+		event.preventDefault()
+		setLoginError(null)
+		setSubmitting(true)
+		try {
+			await loginWithDb({ username, password })
+			setPassword('')
+		} catch (e) {
+			setLoginError(e?.message || 'Echec de connexion')
+		} finally {
+			setSubmitting(false)
+		}
+	}
 
 	const email = user?.email ?? null
 	const { primary: titlePrimary, secondary: titleSecondary } = user
@@ -70,7 +89,29 @@ function Profile() {
 				<p className="muted">Chargement du profil…</p>
 			) : !user ? (
 				<section className="surface-card surface-card--cta">
-					<p>Connecte-toi avec ton compte 42 pour afficher ton profil.</p>
+					<p>Connecte-toi avec la base de donnees pour afficher ton profil.</p>
+					<form onSubmit={handleDbLogin} style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
+						<input
+							type="text"
+							placeholder="username"
+							value={username}
+							onChange={(e) => setUsername(e.target.value)}
+							required
+						/>
+						<input
+							type="password"
+							placeholder="password"
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							required
+						/>
+						<button type="submit" className="btn btn-primary" disabled={submitting}>
+							{submitting ? 'Connexion...' : 'Se connecter (DB)'}
+						</button>
+					</form>
+					<p className="muted small">Comptes de test: white_player / white1234 et black_player / black1234</p>
+					{loginError && <p className="error-banner" role="alert">{loginError}</p>}
+					<p className="muted small">Ou via OAuth 42 si besoin:</p>
 					<button type="button" className="btn btn-primary" onClick={loginWith42}>
 						Se connecter avec 42
 					</button>
