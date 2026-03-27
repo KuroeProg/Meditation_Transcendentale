@@ -1,4 +1,6 @@
 import json
+import asyncio
+import contextlib
 import chess
 import time
 import secrets
@@ -40,6 +42,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		self.room_group_name = f'chess_{self.game_id}'
 		self.is_matchmaking_room = self.game_id == self.MATCHMAKING_ROOM_ID
 		self.matchmaking_player_id = None
+		self.clock_task = None
 
 		# REJOINDRE LE GROUPE (C'est ici que Redis connecte les deux joueurs)
 		await self.channel_layer.group_add(
@@ -53,6 +56,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if game_state_json is not None:
 			await self.handle_reconnect(game_state_json)
 
+		if not self.is_matchmaking_room:
+			self.clock_task = asyncio.create_task(self._clock_loop())
+
 	async def disconnect(self, close_code):
 		# QUITTER LE GROUPE
 		await self.channel_layer.group_discard(
@@ -63,6 +69,91 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if self.is_matchmaking_room and self.matchmaking_player_id is not None:
 			await self._remove_from_matchmaking_queue(self.matchmaking_player_id)
 			await self._broadcast_matchmaking_queue_size()
+
+		if self.clock_task is not None:
+			self.clock_task.cancel()
+			with contextlib.suppress(asyncio.CancelledError):
+				await self.clock_task
+			self.clock_task = None
+
+	def _ensure_clock_fields(self, game_state):
+		if 'white_time_left' not in game_state:
+			game_state['white_time_left'] = 600
+		if 'black_time_left' not in game_state:
+			game_state['black_time_left'] = 600
+		if 'last_move_timestamp' not in game_state:
+			game_state['last_move_timestamp'] = time.time()
+
+	def _apply_elapsed_for_active_turn(self, game_state, board, now_ts):
+		if game_state.get('status') != 'active':
+			return
+
+		last_ts = float(game_state.get('last_move_timestamp', now_ts))
+		elapsed = max(0.0, now_ts - last_ts)
+		if elapsed <= 0:
+			return
+
+		if board.turn:
+			key = 'white_time_left'
+		else:
+			key = 'black_time_left'
+
+		remaining = max(0.0, float(game_state.get(key, 0)) - elapsed)
+		game_state[key] = remaining
+		game_state['last_move_timestamp'] = now_ts
+
+	def _mark_timeout_if_needed(self, game_state, board):
+		if game_state.get('status') != 'active':
+			return False
+
+		turn_key = 'white_time_left' if board.turn else 'black_time_left'
+		remaining = float(game_state.get(turn_key, 0))
+		if remaining > 0:
+			return False
+
+		winner_id = game_state['black_player_id'] if board.turn else game_state['white_player_id']
+		game_state['status'] = 'timeout'
+		game_state['winner_player_id'] = winner_id
+		game_state['result'] = '1-0' if winner_id == game_state['white_player_id'] else '0-1'
+		return True
+
+	async def _tick_game_clock(self):
+		if self.is_matchmaking_room:
+			return
+
+		lock_key = f'clock_lock:{self.game_id}'
+		got_lock = await self.get_redis().set(lock_key, self.channel_name, ex=2, nx=True)
+		if not got_lock:
+			return
+
+		game_state_json = await self.get_redis().get(self.game_id)
+		if game_state_json is None:
+			return
+
+		game_state = json.loads(game_state_json)
+		if game_state.get('status') != 'active':
+			return
+
+		self._ensure_clock_fields(game_state)
+		board = chess.Board(game_state['fen'])
+		now_ts = time.time()
+		self._apply_elapsed_for_active_turn(game_state, board, now_ts)
+		self._mark_timeout_if_needed(game_state, board)
+
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self.channel_layer.group_send(
+			self.room_group_name,
+			{
+				'type': 'broadcast_game_state',
+				'action': 'game_state',
+				'game_state': game_state,
+			},
+		)
+
+	async def _clock_loop(self):
+		while True:
+			await asyncio.sleep(1)
+			await self._tick_game_clock()
 
 	async def receive(self, text_data):
 		data = json.loads(text_data)
@@ -264,11 +355,31 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
+		self._ensure_clock_fields(game_state)
 
 		if 'white_player_coalition' not in game_state:
 			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
 		if 'black_player_coalition' not in game_state:
 			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+
+		now_ts = time.time()
+		self._apply_elapsed_for_active_turn(game_state, board, now_ts)
+		if self._mark_timeout_if_needed(game_state, board):
+			await self.get_redis().set(self.game_id, json.dumps(game_state))
+			await self.channel_layer.group_send(
+				self.room_group_name,
+				{
+					'type': 'broadcast_game_state',
+					'action': 'game_state',
+					'game_state': game_state
+				}
+			)
+			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
+			return
+
+		if game_state.get('status') != 'active':
+			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+			return
 
 		current_turn_player_id = game_state['white_player_id'] if board.turn else game_state['black_player_id']
 		sender_id = self._normalize_player_id(data.get('player_id'))
@@ -315,12 +426,25 @@ class ChessConsumer(AsyncWebsocketConsumer):
 	async def handle_reconnect(self, game_state_json):
 		# Ici, pas besoin de broadcast, seul celui qui se reconnecte a besoin de l'info
 		game_state = json.loads(game_state_json)
+		self._ensure_clock_fields(game_state)
 		updated = False
 		if 'white_player_coalition' not in game_state:
 			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
 			updated = True
 		if 'black_player_coalition' not in game_state:
 			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+			updated = True
+
+		board = chess.Board(game_state['fen'])
+		now_ts = time.time()
+		before_white = float(game_state.get('white_time_left', 0))
+		before_black = float(game_state.get('black_time_left', 0))
+		self._apply_elapsed_for_active_turn(game_state, board, now_ts)
+		if self._mark_timeout_if_needed(game_state, board):
+			updated = True
+		if before_white != float(game_state.get('white_time_left', 0)):
+			updated = True
+		if before_black != float(game_state.get('black_time_left', 0)):
 			updated = True
 		if updated:
 			await self.get_redis().set(self.game_id, json.dumps(game_state))

@@ -40,6 +40,7 @@ const BoardCell = memo(function BoardCell({
         useTiles,
         tileCoalitionSlug,
         tileSrc,
+        tileRotation,
         pieceType,
         pieceColor,
         pieceThemeSlug,
@@ -74,6 +75,7 @@ const BoardCell = memo(function BoardCell({
                                                 alt=""
                                                 draggable={false}
                                                 decoding="async"
+                                                style={{ transform: tileRotation }}
                                                 data-tile-theme={tileCoalitionSlug}
                                                 data-tile-shade={isLight ? 'light' : 'dark'}
                                         />
@@ -87,7 +89,7 @@ const BoardCell = memo(function BoardCell({
                                                 pieceType={pieceType}
                                                 pieceColor={pieceColor}
                                                 className="piece"
-                                                style={{ transform: pieceRotation, transition: 'transform 0.3s ease' }}
+                                                style={{ transform: pieceRotation }}
                                         />
                                 </div>
                         )}
@@ -110,6 +112,7 @@ function Board({ game, winner, onMoveRequest, playerColor, whiteCoalition, black
         const illegalTimerRef = useRef(null)
 
         const pieceRotation = playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
+        const tileRotation = playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
         const tileSeed = BOARD_TILES.seed
 
         const whitePieceThemeSlug = whiteCoalition
@@ -298,7 +301,6 @@ function Board({ game, winner, onMoveRequest, playerColor, whiteCoalition, black
                                 id="board"
                                 style={{
                                         transform: playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)',
-                                        transition: 'transform 0.3s ease',
                                 }}
                         >
                                 {position.map((row, rowIndex) =>
@@ -320,6 +322,7 @@ function Board({ game, winner, onMoveRequest, playerColor, whiteCoalition, black
                                                                 useTiles={useTiles}
                                                                 tileCoalitionSlug={tileCoalitionSlug}
                                                                 tileSrc={tileSrc}
+                                                                tileRotation={tileRotation}
                                                                 pieceType={piece ? piece.type : null}
                                                                 pieceColor={piece ? piece.color : null}
                                                                 pieceThemeSlug={

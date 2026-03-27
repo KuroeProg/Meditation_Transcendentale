@@ -2,7 +2,7 @@ import '../index.css'
 import Board from '../objects/Board.jsx'
 import { useEffect, useMemo, useState } from 'react'
 import { Chess } from 'chess.js'
-import { useChessTimer } from '../objects/Chrono.jsx'
+import { useSynchronizedChessTimers } from '../objects/Chrono.jsx'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { useChessSocket } from '../hooks/useChessSocket.js'
@@ -16,19 +16,10 @@ function App() {
 
 	const [showDebug, setShowDebug] = useState(false)
 
-	const GAME_DURATION = {
-		bullet: 60,
-		blitz: 300,
-		rapid: 600,
-		classNameic: 1800,
-	}
-
 	const [game, setGame] = useState(() => new Chess())
 	const [gameState, setGameState] = useState(null)
 	const [winner, setWinner] = useState(null)
 	const [moveFeedback, setMoveFeedback] = useState(null)
-
-	const [duration] = useState(GAME_DURATION.rapid)
 	const { gameId } = useParams()
 	const { user } = useAuth()
 	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(gameId)
@@ -64,6 +55,9 @@ function App() {
 			if (incomingState.status === 'checkmate') {
 				const isWhiteWinner = String(incomingState.winner_player_id) === String(incomingState.white_player_id)
 				setWinner(isWhiteWinner ? 'White' : 'Black')
+			} else if (incomingState.status === 'timeout') {
+				const isWhiteWinner = String(incomingState.winner_player_id) === String(incomingState.white_player_id)
+				setWinner(isWhiteWinner ? 'White-Timeout' : 'Black-Timeout')
 			} else if (incomingState.status === 'stalemate' || incomingState.status === 'draw') {
 				setWinner('Nulle')
 			} else {
@@ -102,8 +96,9 @@ function App() {
 		}
 	}
 
-	const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
-	const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
+	const syncedTimers = useSynchronizedChessTimers(gameState, game.turn())
+	const blackTimer = syncedTimers.blackTime
+	const whiteTimer = syncedTimers.whiteTime
 
 	const whiteLabel = user ? getDisplayTitle(user).primary ?? 'Joueur Blanc' : 'Joueur Blanc'
 	const whiteAvatar = get42AvatarUrl(user)

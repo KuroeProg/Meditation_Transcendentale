@@ -50,3 +50,45 @@ export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 
 	return formatTime(timeLeft)
 }
+
+function toNumber(value, fallback = 0) {
+	const n = Number(value)
+	return Number.isFinite(n) ? n : fallback
+}
+
+export function useSynchronizedChessTimers(gameState, currentTurn) {
+	const [nowMs, setNowMs] = useState(() => Date.now())
+
+	useEffect(() => {
+		if (!gameState || gameState.status !== 'active') return undefined
+
+		const id = window.setInterval(() => {
+			setNowMs(Date.now())
+		}, 250)
+
+		return () => window.clearInterval(id)
+	}, [gameState?.status, gameState?.last_move_timestamp])
+
+	const whiteBase = toNumber(gameState?.white_time_left, 600)
+	const blackBase = toNumber(gameState?.black_time_left, 600)
+	const lastMoveTs = toNumber(gameState?.last_move_timestamp, nowMs / 1000)
+	const elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
+
+	let whiteSeconds = whiteBase
+	let blackSeconds = blackBase
+
+	if (gameState?.status === 'active') {
+		if (currentTurn === 'w') {
+			whiteSeconds = Math.max(0, whiteBase - elapsed)
+		} else if (currentTurn === 'b') {
+			blackSeconds = Math.max(0, blackBase - elapsed)
+		}
+	}
+
+	return {
+		whiteSeconds,
+		blackSeconds,
+		whiteTime: formatTime(Math.floor(whiteSeconds)),
+		blackTime: formatTime(Math.floor(blackSeconds)),
+	}
+}
