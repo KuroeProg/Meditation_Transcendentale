@@ -7,10 +7,6 @@ import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useChessSocket } from "../hooks/useChessSocket.js";
 import { get42AvatarUrl, getDisplayTitle } from "../utils/sessionUser.js";
-import {
-  getMockGameOpponent,
-  isMockGameOpponentActive,
-} from "../dev/mockGameOpponent.js";
 import { randomTilePatternSeed } from "../chess/boardTiles.js";
 import GameStatsPanel from "../components/GameStatsPanel.jsx";
 import {
@@ -70,7 +66,11 @@ function App() {
   const { user } = useAuth();
   const { isConnected, socketError, lastMessage, sendMove } =
     useChessSocket(gameId);
-  const devOpp = isMockGameOpponentActive() ? getMockGameOpponent() : null;
+
+  const normalizeId = useCallback((value) => {
+    if (value == null) return null;
+    return String(value);
+  }, []);
 
   useEffect(() => {
     moveLogLenRef.current = moveLog.length;
@@ -91,6 +91,8 @@ function App() {
     if (String(gameState.black_player_id) === String(userId)) return "b";
     return null;
   }, [gameState, userId]);
+
+  const normalizedUserId = useMemo(() => normalizeId(userId), [normalizeId, userId]);
 
   const handleMove = useCallback(({ color, piece, from, to, san }) => {
     const now = Date.now();
@@ -190,7 +192,7 @@ function App() {
   const goReplayLast = useCallback(() => {
     const len = moveLogLenRef.current;
     if (len === 0) return;
-    setViewPlies(len);
+    setViewPlies(null);
   }, []);
 
   const handleResign = useCallback(() => {
@@ -308,12 +310,34 @@ function App() {
   // Sync timers from server state
   const syncedTimers = useSynchronizedChessTimers(gameState, game.turn());
 
-  const whiteLabel = user
-    ? (getDisplayTitle(user).primary ?? "Joueur Blanc")
+  const whitePlayerId = normalizeId(gameState?.white_player_id);
+  const blackPlayerId = normalizeId(gameState?.black_player_id);
+  const whiteProfileFromState =
+    gameState?.white_player_profile && typeof gameState.white_player_profile === "object"
+      ? gameState.white_player_profile
+      : null;
+  const blackProfileFromState =
+    gameState?.black_player_profile && typeof gameState.black_player_profile === "object"
+      ? gameState.black_player_profile
+      : null;
+
+  const whiteUserProfile =
+    whitePlayerId && whitePlayerId === normalizedUserId
+      ? user
+      : whiteProfileFromState;
+  const blackUserProfile =
+    blackPlayerId && blackPlayerId === normalizedUserId
+      ? user
+      : blackProfileFromState;
+
+  const whiteLabel = whiteUserProfile
+    ? (getDisplayTitle(whiteUserProfile).primary ?? "Joueur Blanc")
     : "Joueur Blanc";
-  const whiteAvatar = get42AvatarUrl(user);
-  const blackLabel = devOpp?.displayName ?? "Joueur Noir";
-  const blackAvatar = devOpp?.avatarSrc ?? "imgs/PawnLogoB.jpeg";
+  const whiteAvatar = get42AvatarUrl(whiteUserProfile);
+  const blackLabel = blackUserProfile
+    ? (getDisplayTitle(blackUserProfile).primary ?? "Joueur Noir")
+    : "Joueur Noir";
+  const blackAvatar = get42AvatarUrl(blackUserProfile);
 
   const topPlayerColor = playerColor === "b" ? "w" : "b";
   const bottomPlayerColor = playerColor === "b" ? "b" : "w";
@@ -340,7 +364,6 @@ function App() {
 
   const topPlayer = getPlayerBarData(topPlayerColor);
   const bottomPlayer = getPlayerBarData(bottomPlayerColor);
-  const normalizedUserId = userId == null ? null : String(userId);
   const drawOfferFrom = gameState?.draw_offer_from_player_id;
   const normalizedDrawOfferFrom =
     drawOfferFrom == null ? null : String(drawOfferFrom);

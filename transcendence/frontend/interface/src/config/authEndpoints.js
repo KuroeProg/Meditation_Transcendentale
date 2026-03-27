@@ -32,6 +32,7 @@ export const AUTH_PATHS = {
 	loginDb: `${API_PREFIX}/api/auth/login`,
 	login42: '/api/auth/42/login',
 	logout: `${API_PREFIX}/api/auth/logout`,
+	userByIdBase: `${API_PREFIX}/api/auth/users`,
 	seedUsers: `${API_PREFIX}/api/auth/seed-users`,
 }
 

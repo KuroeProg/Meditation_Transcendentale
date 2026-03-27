@@ -76,3 +76,19 @@ export async function logoutRequest() {
 	})
 	return res.ok
 }
+
+export async function fetchUserById(userId, signal) {
+	const res = await fetch(`${AUTH_PATHS.userByIdBase}/${encodeURIComponent(String(userId))}`, {
+		method: 'GET',
+		credentials: 'include',
+		headers: { Accept: 'application/json' },
+		signal,
+	})
+	if (res.status === 401 || res.status === 403 || res.status === 404) return null
+	if (!res.ok) throw new Error(`auth/user/${userId}: ${res.status}`)
+	try {
+		return await res.json()
+	} catch {
+		return null
+	}
+}
