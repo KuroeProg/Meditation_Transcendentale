@@ -1,11 +1,17 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import './MenuHome.css'
+import { tryPlayHomeBgm } from '../audio/homeBgm.js'
 
 function MenuHome() {
 	const navigate = useNavigate()
 
 	return (
-		<nav className="top-bar">
+		<nav
+			className="top-bar"
+			onPointerDown={() => {
+				void tryPlayHomeBgm()
+			}}
+		>
 		<div className="top-bar-actions">
 			<button className="button-signin" onClick={() => navigate('/signin')}>
 			Sign in

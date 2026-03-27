@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { Link } from 'react-router-dom'
-import { loadGameAudioPrefs, saveGameAudioPrefs } from '../config/gameAudioPrefs.js'
+import { loadGameAudioPrefs, saveGameAudioPrefs, effectiveBgmVolume } from '../config/gameAudioPrefs.js'
 import { useGameAudioPrefsLive } from '../hooks/useGameAudioPrefs.js'
 import {
 	registerGameBgmElement,
@@ -12,16 +12,6 @@ const BGM_SRC = `${import.meta.env.BASE_URL}sounds/game/Midnight_Basin.mp3`.repl
 
 /** Durée de la boucle (secondes) — seules les 29 premières secondes sont rejouées. */
 export const BGM_LOOP_DURATION_SEC = 29
-
-/**
- * Courbe de volume : le fichier peut être mixé bas ; on compense légèrement tout en restant ≤ 1.
- * À 100 % du curseur → volume navigateur = 1.
- */
-function effectiveBgmVolume(prefs) {
-	if (prefs.bgmMuted) return 0
-	const raw = Math.min(1, Math.max(0, prefs.bgmVolume))
-	return Math.min(1, raw * 2.15)
-}
 
 /** Musique d’ambiance : page partie uniquement, boucle 0–29 s. */
 export function GameAmbientBgm() {

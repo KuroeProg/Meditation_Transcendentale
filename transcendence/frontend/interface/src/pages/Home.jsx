@@ -1,5 +1,7 @@
 import './Home.css'
 import MenuHome from '../components/MenuHome'
+import { HomeAmbientBgm } from '../components/HomePageAudio.jsx'
+import { tryPlayHomeBgm } from '../audio/homeBgm.js'
 import CoalitionFire from '../Coalition_symbol/Coalition_Fire'
 import CoalitionEarth from '../Coalition_symbol/Colation_Earth'
 import CoalitionWater from '../Coalition_symbol/Coalition_Water'
@@ -11,7 +13,13 @@ function Home() {
 	// const navigate = useNavigate()
 
 	return (
-		<div className="home">
+		<div
+			className="home"
+			onPointerDown={() => {
+				void tryPlayHomeBgm()
+			}}
+		>
+			<HomeAmbientBgm />
 			<div className="HomeMenu">
 				<MenuHome />
 			</div>

@@ -24,6 +24,15 @@ import { tryPlayGameBgm } from '../audio/gameBgm.js'
 
 const MOVE_ANIM_MS = 200
 
+const PROMOTION_PIECE_ORDER = ['q', 'r', 'b', 'n']
+
+const PROMOTION_LABELS = {
+	q: 'Dame',
+	r: 'Tour',
+	b: 'Fou',
+	n: 'Cavalier',
+}
+
 function toSquare(row, col) {
 	const files = 'abcdefgh'
 	const ranks = '87654321'
@@ -162,7 +171,8 @@ function Board({
 	const tileCoalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 
 	const [selected, setSelected] = useState(null)
-	const [possibleMoves, setPossibleMoves] = useState([])
+	const [possibleDestSquares, setPossibleDestSquares] = useState([])
+	const [promotionPick, setPromotionPick] = useState(null)
 	const [kingFlash, setKingFlash] = useState(false)
 	const [illegalFlashSq, setIllegalFlashSq] = useState(null)
 
@@ -237,7 +247,7 @@ function Board({
 		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq, san, moveFlags }) => {
 			finishAnimLockRef.current = false
 			setSelected(null)
-			setPossibleMoves([])
+			setPossibleDestSquares([])
 			setActiveMoveAnim({
 				key: Date.now(),
 				from,
@@ -253,6 +263,35 @@ function Board({
 			})
 		},
 		[],
+	)
+
+	const executePlayerMove = useCallback(
+		(from, to, promotion) => {
+			if (winnerRef.current || activeAnimRef.current) return false
+			const movingPiece = game.get(from)
+			if (!movingPiece) return false
+			const g = new Chess(game.fen())
+			const m = g.move(promotion ? { from, to, promotion } : { from, to })
+			if (!m) return false
+			const hadCaptureOnTo = !!game.get(to)
+			let enPassantSq = null
+			if (typeof m.flags === 'string' && m.flags.includes('e')) {
+				enPassantSq = enPassantCapturedSquare(m.from, m.to)
+			}
+			beginAnimatedMove({
+				from,
+				to,
+				fenAfter: g.fen(),
+				movingPiece,
+				themeSlug: getPieceThemeSlugForColor(movingPiece.color, user),
+				captureOnTo: hadCaptureOnTo,
+				enPassantSq,
+				san: m.san,
+				moveFlags: m.flags,
+			})
+			return true
+		},
+		[game, beginAnimatedMove, user],
 	)
 
 	useLayoutEffect(() => {
@@ -384,9 +423,19 @@ function Board({
 	useEffect(() => {
 		if (isViewOnly) {
 			setSelected(null)
-			setPossibleMoves([])
+			setPossibleDestSquares([])
+			setPromotionPick(null)
 		}
 	}, [isViewOnly])
+
+	useEffect(() => {
+		if (!promotionPick) return
+		const onKey = (e) => {
+			if (e.key === 'Escape') setPromotionPick(null)
+		}
+		window.addEventListener('keydown', onKey)
+		return () => window.removeEventListener('keydown', onKey)
+	}, [promotionPick])
 
 	useEffect(() => {
 		runClickRef.current = (row, col) => {
@@ -398,69 +447,80 @@ function Board({
 				const moves = game.moves({ square, verbose: true })
 				if (moves.length > 0) {
 					setSelected(square)
-					setPossibleMoves(moves.map((m) => m.to))
+					setPossibleDestSquares([...new Set(moves.map((m) => m.to))])
 				} else if (game.inCheck()) {
 					flashKing()
 				}
 			} else if (selected === square) {
 				setSelected(null)
-				setPossibleMoves([])
+				setPossibleDestSquares([])
 			} else {
 				const clickedPiece = game.get(square)
 				if (clickedPiece && clickedPiece.color === game.turn()) {
 					const moves = game.moves({ square, verbose: true })
 					if (moves.length > 0) {
 						setSelected(square)
-						setPossibleMoves(moves.map((m) => m.to))
+						setPossibleDestSquares([...new Set(moves.map((m) => m.to))])
 					} else {
 						setSelected(null)
-						setPossibleMoves([])
+						setPossibleDestSquares([])
 					}
 				} else {
-					if (!possibleMoves.includes(square)) {
+					if (!possibleDestSquares.includes(square)) {
 						flashIllegalSquare(square)
 						setSelected(null)
-						setPossibleMoves([])
+						setPossibleDestSquares([])
 						return
 					}
 
 					const movingPiece = game.get(selected)
 					if (!movingPiece) return
 
-					const g = new Chess(game.fen())
-					const m = g.move({ from: selected, to: square, promotion: 'q' })
-					if (!m) {
+					const candidates = game
+						.moves({ square: selected, verbose: true })
+						.filter((m) => m.to === square)
+					if (!candidates.length) {
 						setSelected(null)
-						setPossibleMoves([])
+						setPossibleDestSquares([])
 						return
 					}
 
-					const hadCaptureOnTo = !!game.get(square)
-					let enPassantSq = null
-					if (typeof m.flags === 'string' && m.flags.includes('e')) {
-						enPassantSq = enPassantCapturedSquare(m.from, m.to)
+					const promoCodes = [
+						...new Set(candidates.filter((m) => m.promotion).map((m) => m.promotion)),
+					].sort(
+						(a, b) => PROMOTION_PIECE_ORDER.indexOf(a) - PROMOTION_PIECE_ORDER.indexOf(b),
+					)
+
+					if (promoCodes.length >= 1) {
+						setPromotionPick({
+							from: selected,
+							to: square,
+							color: movingPiece.color,
+							themeSlug: getPieceThemeSlugForColor(movingPiece.color, user),
+							options: promoCodes,
+						})
+						setSelected(null)
+						setPossibleDestSquares([])
+						return
 					}
 
-					beginAnimatedMove({
-						from: selected,
-						to: square,
-						fenAfter: g.fen(),
-						movingPiece,
-						themeSlug: getPieceThemeSlugForColor(movingPiece.color, user),
-						captureOnTo: hadCaptureOnTo,
-						enPassantSq,
-						san: m.san,
-					})
+					if (!executePlayerMove(selected, square, undefined)) {
+						setSelected(null)
+						setPossibleDestSquares([])
+						return
+					}
+					setSelected(null)
+					setPossibleDestSquares([])
 				}
 			}
 		}
 	}, [
 		game,
 		selected,
-		possibleMoves,
+		possibleDestSquares,
 		flashKing,
 		flashIllegalSquare,
-		beginAnimatedMove,
+		executePlayerMove,
 		user,
 		isViewOnly,
 	])
@@ -490,7 +550,8 @@ function Board({
 		if (!winner) return
 		queueMicrotask(() => {
 			setSelected(null)
-			setPossibleMoves([])
+			setPossibleDestSquares([])
+			setPromotionPick(null)
 			setKingFlash(false)
 			setIllegalFlashSq(null)
 			if (illegalTimerRef.current) {
@@ -551,8 +612,8 @@ function Board({
 							const sq = toSquare(rowIndex, colIndex)
 							const isLight = (rowIndex + colIndex) % 2 === 0
 							const isSelected = selected === sq
-							const isPossibleMove = possibleMoves.includes(sq) && !piece
-							const isPossibleCapture = possibleMoves.includes(sq) && !!piece
+							const isPossibleMove = possibleDestSquares.includes(sq) && !piece
+							const isPossibleCapture = possibleDestSquares.includes(sq) && !!piece
 							const isKingCheckCell = kingCheckSquare != null && sq === kingCheckSquare
 							const isIllegalFlash = illegalFlashSq === sq
 							const tileSrc = tilePattern ? tilePattern[rowIndex * 8 + colIndex] : null
@@ -584,6 +645,48 @@ function Board({
 					)}
 				</div>
 				{ghost}
+				{promotionPick && !isViewOnly ? (
+					<div
+						className="board-promotion-overlay"
+						role="dialog"
+						aria-modal="true"
+						aria-label="Choisir la pièce de promotion"
+					>
+						<button
+							type="button"
+							className="board-promotion-backdrop"
+							aria-label="Annuler la promotion"
+							onClick={() => setPromotionPick(null)}
+						/>
+						<div className="board-promotion-toolbar">
+							<p className="board-promotion-title">Promotion du pion</p>
+							<div className="board-promotion-choices">
+								{promotionPick.options.map((code) => (
+									<button
+										key={code}
+										type="button"
+										className="board-promotion-btn"
+										aria-label={PROMOTION_LABELS[code] ?? code}
+										onClick={() => {
+											executePlayerMove(promotionPick.from, promotionPick.to, code)
+											setPromotionPick(null)
+										}}
+									>
+										<ChessPieceImg
+											theme={promotionPick.themeSlug}
+											pieceType={code}
+											pieceColor={promotionPick.color}
+											className="board-promotion-piece"
+										/>
+										<span className="board-promotion-label">
+											{PROMOTION_LABELS[code] ?? code}
+										</span>
+									</button>
+								))}
+							</div>
+						</div>
+					</div>
+				) : null}
 			</div>
 		</div>
 	)
