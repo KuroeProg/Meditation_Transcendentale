@@ -84,6 +84,40 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		if 'last_move_timestamp' not in game_state:
 			game_state['last_move_timestamp'] = time.time()
 
+	def _ensure_draw_fields(self, game_state):
+		if 'draw_offer_from_player_id' not in game_state:
+			game_state['draw_offer_from_player_id'] = None
+
+	def _clear_draw_offer(self, game_state):
+		game_state['draw_offer_from_player_id'] = None
+
+	def _normalize_game_player_ids(self, game_state):
+		white_id = self._normalize_player_id(game_state.get('white_player_id'))
+		black_id = self._normalize_player_id(game_state.get('black_player_id'))
+		return white_id, black_id
+
+	def _is_player_in_game(self, sender_id, game_state):
+		white_id, black_id = self._normalize_game_player_ids(game_state)
+		return sender_id == white_id or sender_id == black_id
+
+	def _get_other_player_id(self, sender_id, game_state):
+		white_id, black_id = self._normalize_game_player_ids(game_state)
+		if sender_id == white_id:
+			return black_id
+		if sender_id == black_id:
+			return white_id
+		return None
+
+	async def _broadcast_current_game_state(self, game_state):
+		await self.channel_layer.group_send(
+			self.room_group_name,
+			{
+				'type': 'broadcast_game_state',
+				'action': 'game_state',
+				'game_state': game_state,
+			},
+		)
+
 	def _apply_elapsed_for_active_turn(self, game_state, board, now_ts):
 		if game_state.get('status') != 'active':
 			return
@@ -157,7 +191,21 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 	async def receive(self, text_data):
 		data = json.loads(text_data)
-		action = data.get('action')
+		raw_action = data.get('action', data.get('type'))
+		action = str(raw_action).lower() if raw_action is not None else None
+		action_aliases = {
+			'play': 'play_move',
+			'move': 'play_move',
+			'resign_game': 'resign',
+			'surrender': 'resign',
+			'draw': 'draw_offer',
+			'offer_draw': 'draw_offer',
+			'propose_draw': 'draw_offer',
+			'respond_draw': 'draw_response',
+			'accept_draw': 'draw_response',
+			'refuse_draw': 'draw_response',
+		}
+		action = action_aliases.get(action, action)
 
 		if action == 'join_queue':
 			await self.handle_join_queue(data)
@@ -178,6 +226,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			await self.handle_create_game(data)
 		elif action == 'play_move':
 			await self.handle_play_move(game_state_json, data)
+		elif action == 'resign':
+			await self.handle_resign(game_state_json, data)
+		elif action == 'draw_offer':
+			await self.handle_draw_offer(game_state_json, data)
+		elif action == 'draw_response':
+			await self.handle_draw_response(game_state_json, data)
 		elif action == 'reconnect':
 			if game_state_json is not None:
 				await self.handle_reconnect(game_state_json)
@@ -226,6 +280,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'white_time_left': 600,
 				'black_time_left': 600,
 				'last_move_timestamp': time.time(),
+				'draw_offer_from_player_id': None,
 			}
 			await self.get_redis().set(new_game_id, json.dumps(new_game_state))
 
@@ -286,7 +341,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			"black_player_coalition": black_coalition,
 			"white_time_left": 600,
 			"black_time_left": 600,
-			"last_move_timestamp": time.time()
+			"last_move_timestamp": time.time(),
+			"draw_offer_from_player_id": None,
 		}
 		
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
@@ -356,6 +412,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
 		self._ensure_clock_fields(game_state)
+		self._ensure_draw_fields(game_state)
 
 		if 'white_player_coalition' not in game_state:
 			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
@@ -404,29 +461,120 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				game_state['fen'] = board.fen()
 				game_state['last_move_uci'] = attempted_move
 				game_state['last_move_timestamp'] = time.time()
+				self._clear_draw_offer(game_state)
 				self._update_game_status(game_state, board)
 				
 				# Sauvegarde Redis
 				await self.get_redis().set(self.game_id, json.dumps(game_state))
 				
 				# BROADCAST : On envoie le nouveau coup aux DEUX joueurs
-				await self.channel_layer.group_send(
-					self.room_group_name,
-					{
-						'type': 'broadcast_game_state',
-						'action': 'game_state',
-						'game_state': game_state
-					}
-				)
+				await self._broadcast_current_game_state(game_state)
 			else:
 				await self.send(text_data=json.dumps({'error': 'Coup illégal'}))
 		except ValueError:
 			await self.send(text_data=json.dumps({'error': 'Format de coup invalide'}))
 
+	async def handle_resign(self, game_state_json, data):
+		if game_state_json is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+			return
+
+		game_state = json.loads(game_state_json)
+		self._ensure_draw_fields(game_state)
+
+		if game_state.get('status') != 'active':
+			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+			return
+
+		sender_id = self._normalize_player_id(data.get('player_id'))
+		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
+			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
+			return
+
+		winner_id = self._get_other_player_id(sender_id, game_state)
+		if winner_id is None:
+			await self.send(text_data=json.dumps({'error': 'Impossible de determiner le vainqueur'}))
+			return
+
+		game_state['status'] = 'resigned'
+		game_state['winner_player_id'] = winner_id
+		game_state['result'] = '1-0' if winner_id == self._normalize_player_id(game_state.get('white_player_id')) else '0-1'
+		self._clear_draw_offer(game_state)
+
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
+
+	async def handle_draw_offer(self, game_state_json, data):
+		if game_state_json is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+			return
+
+		game_state = json.loads(game_state_json)
+		self._ensure_draw_fields(game_state)
+
+		if game_state.get('status') != 'active':
+			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+			return
+
+		sender_id = self._normalize_player_id(data.get('player_id'))
+		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
+			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
+			return
+
+		if game_state.get('draw_offer_from_player_id') is not None:
+			await self.send(text_data=json.dumps({'error': 'Une proposition de nulle est deja en cours'}))
+			return
+
+		game_state['draw_offer_from_player_id'] = sender_id
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
+
+	async def handle_draw_response(self, game_state_json, data):
+		if game_state_json is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+			return
+
+		game_state = json.loads(game_state_json)
+		self._ensure_draw_fields(game_state)
+
+		if game_state.get('status') != 'active':
+			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+			return
+
+		offer_from = self._normalize_player_id(game_state.get('draw_offer_from_player_id'))
+		if offer_from is None:
+			await self.send(text_data=json.dumps({'error': 'Aucune proposition de nulle en cours'}))
+			return
+
+		sender_id = self._normalize_player_id(data.get('player_id'))
+		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
+			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
+			return
+
+		if sender_id == offer_from:
+			await self.send(text_data=json.dumps({'error': 'Vous ne pouvez pas repondre a votre propre proposition'}))
+			return
+
+		accept_raw = data.get('accept')
+		if isinstance(accept_raw, bool):
+			accept = accept_raw
+		else:
+			accept = str(data.get('response', '')).lower() in ('accept', 'accepted', 'yes', 'true', '1')
+
+		if accept:
+			game_state['status'] = 'draw'
+			game_state['winner_player_id'] = None
+			game_state['result'] = '1/2-1/2'
+
+		self._clear_draw_offer(game_state)
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
+
 	async def handle_reconnect(self, game_state_json):
 		# Ici, pas besoin de broadcast, seul celui qui se reconnecte a besoin de l'info
 		game_state = json.loads(game_state_json)
 		self._ensure_clock_fields(game_state)
+		self._ensure_draw_fields(game_state)
 		updated = False
 		if 'white_player_coalition' not in game_state:
 			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
