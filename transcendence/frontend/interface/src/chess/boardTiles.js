@@ -28,7 +28,16 @@ function seededShuffle(items, seed) {
 export const BOARD_TILES = {
 	active: true,
 	rootPath: '/chess/tiles',
+	/** Seed par défaut si aucun seed n’est fourni (tests / Storybook). */
 	seed: 'default-board-seed',
+}
+
+/** Seed unique pour une disposition aléatoire des dalles (chaque partie). */
+export function randomTilePatternSeed() {
+	if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+		return `board-${crypto.randomUUID()}`
+	}
+	return `board-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 }
 
 export function safeTileThemeSlug(slug) {

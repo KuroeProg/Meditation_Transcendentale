@@ -1,0 +1,61 @@
+{
+	"project": "Transcendance",
+	"basePath": "/sounds/game/",
+	"format": "wav",
+	"assets": [
+		{
+			"id": "move_legal",
+			"file": "move_legal.wav",
+			"durationMs": 150,
+			"usage": "Pose sur case vide"
+		},
+		{
+			"id": "move_capture",
+			"file": "move_capture.wav",
+			"durationMs": 250,
+			"usage": "Capture (y compris à traiter comme +3 dB vs move_legal)"
+		},
+		{
+			"id": "move_castling",
+			"file": "move_castling.wav",
+			"durationMs": 300,
+			"usage": "Roque"
+		},
+		{
+			"id": "move_check",
+			"file": "move_check.wav",
+			"durationMs": 400,
+			"usage": "Roi adverse en échec (hors mat)"
+		},
+		{
+			"id": "game_win",
+			"file": "game_win.wav",
+			"durationMs": 2500,
+			"usage": "Mat / victoire"
+		},
+		{
+			"id": "game_draw",
+			"file": "game_draw.wav",
+			"durationMs": 2000,
+			"usage": "Pat / nulle"
+		},
+		{
+			"id": "game_resign",
+			"file": "game_resign.wav",
+			"durationMs": 1500,
+			"usage": "Abandon"
+		},
+		{
+			"id": "clock_timeout",
+			"file": "clock_timeout.wav",
+			"durationMs": 800,
+			"usage": "Fin du temps"
+		},
+		{
+			"id": "ui_error_deny",
+			"file": "ui_error_deny.wav",
+			"durationMs": 100,
+			"usage": "Coup illégal / action refusée"
+		}
+	]
+}

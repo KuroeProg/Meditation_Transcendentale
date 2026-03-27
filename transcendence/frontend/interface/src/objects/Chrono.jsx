@@ -8,8 +8,9 @@ function formatTime(seconds) {
 
 /**
  * Compte à rebours. Un interval par hook, nettoyé à la désactivation ou à la fin du temps.
+ * @param {number} [resetVersion] — incrémenter pour remettre le chrono à `initialSeconds` (ex. nouvelle partie).
  */
-export function useChessTimer(initialSeconds, isActive, onTimeOut) {
+export function useChessTimer(initialSeconds, isActive, onTimeOut, resetVersion = 0) {
 	const [timeLeft, setTimeLeft] = useState(initialSeconds)
 	const hasTimedOutRef = useRef(false)
 	const onTimeOutRef = useRef(onTimeOut)
@@ -23,7 +24,7 @@ export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 			setTimeLeft(initialSeconds)
 			hasTimedOutRef.current = false
 		})
-	}, [initialSeconds])
+	}, [initialSeconds, resetVersion])
 
 	useEffect(() => {
 		if (!isActive) return undefined

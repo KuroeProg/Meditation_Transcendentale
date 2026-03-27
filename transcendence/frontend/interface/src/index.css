@@ -151,16 +151,158 @@ html, body, #root {
 
 
 .game-container {
+  position: relative;
   flex: 1;
+  display: flex;
+  flex-direction: row;
+  align-items: stretch;
+  justify-content: flex-start;
+  width: 100%;
+  min-height: calc(100vh - 1.5rem);
+  max-height: 100vh;
+  margin-left: 0;
+  padding-left: 0;
+  padding-right: 0;
+  gap: 1rem;
+  box-sizing: border-box;
+}
+
+/* Musique d’ambiance — contrôle en partie */
+.game-music-panel-wrap {
+	position: absolute;
+	top: 0.35rem;
+	right: 0.35rem;
+	z-index: 30;
+}
+
+.game-music-fab {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(26, 35, 50, 0.92);
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 1.15rem;
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease,
+		border-color 0.15s ease;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.game-music-fab:hover {
+	background: rgba(40, 52, 72, 0.95);
+	color: #fff;
+	border-color: rgba(125, 211, 252, 0.35);
+}
+
+.game-music-fab--muted {
+	color: rgba(255, 255, 255, 0.45);
+}
+
+.game-music-popover {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	width: min(240px, calc(100vw - 2rem));
+	padding: 0.75rem 0.85rem;
+	background: #1a2332;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 10px;
+	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.game-music-popover__title {
+	margin: 0 0 0.25rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #fff;
+}
+
+.game-music-popover__hint {
+	margin: 0 0 0.65rem;
+	font-size: 0.68rem;
+	line-height: 1.35;
+	color: rgba(255, 255, 255, 0.45);
+}
+
+.game-music-slider-label {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.72rem;
+	color: rgba(255, 255, 255, 0.55);
+	margin-bottom: 0.25rem;
+}
+
+.game-music-slider-value {
+	font-variant-numeric: tabular-nums;
+	color: rgba(125, 211, 252, 0.9);
+}
+
+.game-music-slider {
+	width: 100%;
+	height: 6px;
+	margin: 0 0 0.65rem;
+	accent-color: rgba(125, 211, 252, 0.85);
+	cursor: pointer;
+}
+
+.game-music-mute-row {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.75rem;
+	color: rgba(255, 255, 255, 0.7);
+	cursor: pointer;
+	margin: 0;
+}
+
+.game-music-mute-row input {
+	accent-color: rgba(125, 211, 252, 0.85);
+}
+
+.game-music-popover__settings-link {
+	display: inline-block;
+	margin-top: 0.65rem;
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: rgba(125, 211, 252, 0.85);
+	text-decoration: none;
+}
+
+.game-music-popover__settings-link:hover {
+	text-decoration: underline;
+	color: #7dd3fc;
+}
+
+.game-audio-prefs-form--settings {
+	margin-top: 0.35rem;
+}
+
+.settings-audio-card {
+	margin-bottom: 1rem;
+}
+
+.game-board-col {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  justify-content: center;
-  height: 100vh;
-  margin-left: 75px;
-  padding-left: 4rem;
-   padding-right: 4rem;  /* ← matches left side exactly */
+  flex-shrink: 0;
   gap: 0.4rem;
+}
+
+.game-stats-panel-wrap {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
 }
 
 /* Halo échiquier selon coalition (fond d’ambiance actif hors Home) */
@@ -616,6 +758,21 @@ html[data-reduce-motion='true'] .board-frame {
 	font-size: 1.1rem;
 }
 
+.popup-play-again {
+	margin-top: 1.25rem;
+	padding: 0.55rem 1.25rem;
+	font-family: 'Georgia', serif;
+	font-size: 1rem;
+	color: #1e2a35;
+	background: #f0d9b5;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+}
+
+.popup-play-again:hover {
+	filter: brightness(1.05);
+}
 
 /* augmenter inline border quand une piece se déplace dessus + */
 
@@ -668,9 +825,13 @@ animation-duration: 10s;
 .app-layout {
 	min-height: 100vh;
 	position: relative;
+	display: flex;
+	align-items: stretch;
 }
 
 .main-content {
+	flex: 1;
+	min-width: 0;
 	margin-left: 75px;
 	min-height: 100vh;
 	padding: 1.5rem 2rem 3rem;
@@ -678,6 +839,13 @@ animation-duration: 10s;
 	position: relative;
 	z-index: 1;
 	isolation: isolate;
+}
+
+/* Page jeu : pleine largeur restante (échiquier + panneau stats sans coupure) */
+.main-content:has(.game-container) {
+	max-width: none;
+	width: auto;
+	padding: 0.75rem 1rem 1rem 1.5rem;
 }
 
 .page-shell {

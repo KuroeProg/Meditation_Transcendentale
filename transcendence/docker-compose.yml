@@ -101,6 +101,23 @@ services:
       - /app/interface/node_modules
     environment:
       - VITE_PORT=5173
+      # HMR via https://localhost (nginx) — sans ça, le hot-reload vise :5173 depuis le navigateur
+      - VITE_HMR_NGINX=1
+    ports:
+      # Test direct sans nginx : http://localhost:5173 (si 502 sur :443, vérifie ici d’abord)
+      - "5173:5173"
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:5173/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 180s
     restart: always
     logging: *default-logging
     networks:

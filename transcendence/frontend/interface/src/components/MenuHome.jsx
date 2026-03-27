@@ -1,6 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
 import './MenuHome.css'
-import 'remixicon/fonts/remixicon.css'
 
 function MenuHome() {
 	const navigate = useNavigate()

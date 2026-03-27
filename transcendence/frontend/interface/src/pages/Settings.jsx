@@ -6,6 +6,7 @@ import {
 	applyDocumentUiPrefs,
 	notifyPrefsChanged,
 } from '../config/uiPrefs.js'
+import { GameAudioPrefsForm } from '../components/GameAudioPrefsForm.jsx'
 
 function Settings() {
 	const { user, loading, loginWith42 } = useAuth()
@@ -27,58 +28,67 @@ function Settings() {
 
 			{loading ? (
 				<p className="muted">Chargement…</p>
-			) : !user ? (
-				<section className="surface-card surface-card--cta">
-					<p>Connecte-toi pour accéder aux paramètres liés au compte.</p>
-					<button type="button" className="btn btn-primary" onClick={loginWith42}>
-						Se connecter avec 42
-					</button>
-				</section>
 			) : (
-				<div className="settings-stack">
-					<section className="surface-card">
-						<h2 className="card-title">Double authentification (2FA)</h2>
-						<p className="muted small card-hint">
-							Interrupteur préparé pour l’UI ; la persistance et les codes TOTP seront gérés côté backend.
-						</p>
-						<label className="toggle-row">
-							<input
-								type="checkbox"
-								checked={twoFAEnabled}
-								onChange={(e) => setTwoFAEnabled(e.target.checked)}
-							/>
-							<span>Activer la 2FA sur mon compte</span>
-						</label>
+				<>
+					<section className="surface-card settings-audio-card">
+						<h2 className="card-title">Audio — partie d’échecs</h2>
+						<GameAudioPrefsForm variant="settings" />
 					</section>
 
-					<section className="surface-card">
-						<h2 className="card-title">Préférences d’interface</h2>
-						<p className="muted small card-hint settings-coalition-note">
-							Les <strong>couleurs et le style par coalition</strong> (sidebar, fonds, accents) seront gérés
-							à part : rien ici ne les remplace, pour laisser la place à la DA 42.
-						</p>
-						<label className="toggle-row">
-							<input
-								type="checkbox"
-								checked={prefs.reduceMotion}
-								onChange={(e) =>
-									setPrefs((p) => ({ ...p, reduceMotion: e.target.checked }))
-								}
-							/>
-							<span>Réduire les animations (accessibilité)</span>
-						</label>
-						<label className="toggle-row">
-							<input
-								type="checkbox"
-								checked={prefs.notificationsEnabled}
-								onChange={(e) =>
-									setPrefs((p) => ({ ...p, notificationsEnabled: e.target.checked }))
-								}
-							/>
-							<span>Notifications (interface)</span>
-						</label>
-					</section>
-				</div>
+					{!user ? (
+						<section className="surface-card surface-card--cta">
+							<p>Connecte-toi pour accéder aux paramètres liés au compte.</p>
+							<button type="button" className="btn btn-primary" onClick={loginWith42}>
+								Se connecter avec 42
+							</button>
+						</section>
+					) : (
+						<div className="settings-stack">
+							<section className="surface-card">
+								<h2 className="card-title">Double authentification (2FA)</h2>
+								<p className="muted small card-hint">
+									Interrupteur préparé pour l’UI ; la persistance et les codes TOTP seront gérés côté backend.
+								</p>
+								<label className="toggle-row">
+									<input
+										type="checkbox"
+										checked={twoFAEnabled}
+										onChange={(e) => setTwoFAEnabled(e.target.checked)}
+									/>
+									<span>Activer la 2FA sur mon compte</span>
+								</label>
+							</section>
+
+							<section className="surface-card">
+								<h2 className="card-title">Préférences d’interface</h2>
+								<p className="muted small card-hint settings-coalition-note">
+									Les <strong>couleurs et le style par coalition</strong> (sidebar, fonds, accents) seront gérés
+									à part : rien ici ne les remplace, pour laisser la place à la DA 42.
+								</p>
+								<label className="toggle-row">
+									<input
+										type="checkbox"
+										checked={prefs.reduceMotion}
+										onChange={(e) =>
+											setPrefs((p) => ({ ...p, reduceMotion: e.target.checked }))
+										}
+									/>
+									<span>Réduire les animations (accessibilité)</span>
+								</label>
+								<label className="toggle-row">
+									<input
+										type="checkbox"
+										checked={prefs.notificationsEnabled}
+										onChange={(e) =>
+											setPrefs((p) => ({ ...p, notificationsEnabled: e.target.checked }))
+										}
+									/>
+									<span>Notifications (interface)</span>
+								</label>
+							</section>
+						</div>
+					)}
+				</>
 			)}
 		</div>
 	)

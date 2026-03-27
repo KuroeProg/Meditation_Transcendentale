@@ -36,15 +36,16 @@ export function getMockSessionUser() {
 				medium: 'https://picsum.photos/id/64/256/256',
 			},
 		},
-		coalition: isWhite ? 'feu' : 'eau',
-		coalition_name: isWhite ? 'feu' : 'eau',
-		cursus_level: 7,
-		level: 7,
-		stats: {
-			wins: 12,
-			losses: 8,
-			rank: 42,
-			level: 3,
-		},
-	}
+		// ← Modifie cette valeur pour voir les pièces Feu / Eau / Terre / Air sur l'échiquier
+coalition: isWhite ? 'feu' : 'eau',
+coalition_name: isWhite ? 'feu' : 'eau',
+cursus_level: 7,
+level: 7,
+stats: {
+wins: 12,
+losses: 8,
+rank: 42,
+level: 3,
+},
+}
 }
