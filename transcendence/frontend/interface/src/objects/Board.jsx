@@ -95,7 +95,7 @@ const BoardCell = memo(function BoardCell({
         )
 })
 
-function Board({ game, winner, onMoveRequest, playerColor, moveFeedback }) {
+function Board({ game, winner, onMoveRequest, playerColor, whiteCoalition, blackCoalition, moveFeedback }) {
         const { user } = useAuth()
         const tileCoalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 
@@ -111,6 +111,13 @@ function Board({ game, winner, onMoveRequest, playerColor, moveFeedback }) {
 
         const pieceRotation = playerColor === 'b' ? 'rotate(180deg)' : 'rotate(0deg)'
         const tileSeed = BOARD_TILES.seed
+
+        const whitePieceThemeSlug = whiteCoalition
+                ? coalitionToSlug(whiteCoalition)
+                : getPieceThemeSlugForColor('w', user)
+        const blackPieceThemeSlug = blackCoalition
+                ? coalitionToSlug(blackCoalition)
+                : getPieceThemeSlugForColor('b', user)
 
         useEffect(() => {
                 if (winner) setPopupOpen(true)
@@ -315,7 +322,13 @@ function Board({ game, winner, onMoveRequest, playerColor, moveFeedback }) {
                                                                 tileSrc={tileSrc}
                                                                 pieceType={piece ? piece.type : null}
                                                                 pieceColor={piece ? piece.color : null}
-                                                                pieceThemeSlug={piece ? getPieceThemeSlugForColor(piece.color, user) : ''}
+                                                                pieceThemeSlug={
+                                                                        piece
+                                                                                ? piece.color === 'w'
+                                                                                        ? whitePieceThemeSlug
+                                                                                        : blackPieceThemeSlug
+                                                                                : ''
+                                                                }
                                                                 isSelected={isSelected}
                                                                 isPossibleMove={isPossibleMove}
                                                                 isPossibleCapture={isPossibleCapture}

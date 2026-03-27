@@ -216,6 +216,8 @@ function App() {
 						winner={winner}
 						onMoveRequest={handleMoveRequest}
 						playerColor={playerColor}
+						whiteCoalition={gameState?.white_player_coalition}
+						blackCoalition={gameState?.black_player_coalition}
 						moveFeedback={moveFeedback || socketError}
 					/>
 				</div>

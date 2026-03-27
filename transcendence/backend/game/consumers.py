@@ -4,7 +4,22 @@ import time
 import secrets
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.db import database_sync_to_async
 from django.conf import settings
+from accounts.models import LocalUser
+
+
+@database_sync_to_async
+def _fetch_user_coalition(player_id):
+	if player_id is None:
+		return 'feu'
+	try:
+		user = LocalUser.objects.filter(id=player_id).only('coalition').first()
+		if user and user.coalition:
+			return str(user.coalition)
+	except Exception:
+		pass
+	return 'feu'
 
 class ChessConsumer(AsyncWebsocketConsumer):
 	_redis = None
@@ -106,6 +121,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				continue
 
 			white_id, black_id = first_id, second_id
+			white_coalition = await _fetch_user_coalition(white_id)
+			black_coalition = await _fetch_user_coalition(black_id)
 			board = chess.Board()
 			new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
 			new_game_state = {
@@ -113,6 +130,8 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				'status': 'active',
 				'white_player_id': white_id,
 				'black_player_id': black_id,
+				'white_player_coalition': white_coalition,
+				'black_player_coalition': black_coalition,
 				'white_time_left': 600,
 				'black_time_left': 600,
 				'last_move_timestamp': time.time(),
@@ -163,11 +182,17 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 	async def handle_create_game(self, data):
 		board = chess.Board()
+		white_id = data.get('white_id', 42)
+		black_id = data.get('black_id', 84)
+		white_coalition = await _fetch_user_coalition(white_id)
+		black_coalition = await _fetch_user_coalition(black_id)
 		new_game_state = {
 			"fen": board.fen(),
 			"status": "active",
-			"white_player_id": data.get('white_id', 42),
-			"black_player_id": data.get('black_id', 84),
+			"white_player_id": white_id,
+			"black_player_id": black_id,
+			"white_player_coalition": white_coalition,
+			"black_player_coalition": black_coalition,
 			"white_time_left": 600,
 			"black_time_left": 600,
 			"last_move_timestamp": time.time()
@@ -240,6 +265,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
 
+		if 'white_player_coalition' not in game_state:
+			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
+		if 'black_player_coalition' not in game_state:
+			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+
 		current_turn_player_id = game_state['white_player_id'] if board.turn else game_state['black_player_id']
 		sender_id = self._normalize_player_id(data.get('player_id'))
 		current_turn_player_id = self._normalize_player_id(current_turn_player_id)
@@ -285,6 +315,15 @@ class ChessConsumer(AsyncWebsocketConsumer):
 	async def handle_reconnect(self, game_state_json):
 		# Ici, pas besoin de broadcast, seul celui qui se reconnecte a besoin de l'info
 		game_state = json.loads(game_state_json)
+		updated = False
+		if 'white_player_coalition' not in game_state:
+			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
+			updated = True
+		if 'black_player_coalition' not in game_state:
+			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+			updated = True
+		if updated:
+			await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self.send(text_data=json.dumps({
 			'action': 'game_state',
 			'game_state': game_state
