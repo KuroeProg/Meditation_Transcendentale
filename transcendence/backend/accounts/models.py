@@ -8,6 +8,7 @@ class LocalUser(models.Model):
     first_name = models.CharField(max_length=150, blank=True)
     last_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(blank=True)
+    image_url = models.URLField(blank=True, default='')
     coalition = models.CharField(max_length=50, blank=True, default='feu')
 
     class Meta:
@@ -20,6 +21,7 @@ class LocalUser(models.Model):
         return check_password(raw_password, self.password_hash)
 
     def to_public_dict(self):
+        image_link = self.image_url or 'https://picsum.photos/seed/local-user/256/256'
         return {
             'id': self.id,
             'login': self.username,
@@ -30,7 +32,7 @@ class LocalUser(models.Model):
             'coalition': self.coalition,
             'coalition_name': self.coalition,
             'image': {
-                'link': 'https://picsum.photos/seed/local-user/256/256',
-                'versions': {'medium': 'https://picsum.photos/seed/local-user/256/256'},
+                'link': image_link,
+                'versions': {'medium': image_link},
             },
         }
