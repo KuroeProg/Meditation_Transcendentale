@@ -6,11 +6,7 @@ import { COALITION_ACCENTS, COALITION_BACKGROUNDS } from '../theme/coalitionAmbi
 import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'
 import './CoalitionAmbient.css'
 
-/**
- * Fond coalition + parallax + particules.
- * Désactivé sur `/`. Parallax en rAF direct (refs) pour éviter 60 re-renders/s React.
- * Masqué pendant le chargement session + jusqu’au decode du PNG → plus de flash au reload.
- */
+/** Fond coalition : `/` exclus, masqué tant que la session ou le PNG ne sont pas prêts. */
 export default function CoalitionAmbient() {
 	const location = useLocation()
 	const { user, loading } = useAuth()
@@ -20,7 +16,6 @@ export default function CoalitionAmbient() {
 	)
 	const [bgReady, setBgReady] = useState(false)
 	const deepRef = useRef(null)
-	const midRef = useRef(null)
 	const mouseRef = useRef({ x: 0, y: 0 })
 	const reducedMotionRef = useRef(reducedMotion)
 
@@ -39,22 +34,34 @@ export default function CoalitionAmbient() {
 		return () => window.removeEventListener('transcendence-prefs-changed', sync)
 	}, [])
 
-	/* Pas d’ambiance tant que la session n’est pas résolue → évite feu puis eau au reload */
 	const onAppRoute = location.pathname !== '/'
 
 	useEffect(() => {
-		if (!onAppRoute || loading) {
-			setBgReady(false)
-			return
+		let cancelled = false
+		const markNotReady = () => {
+			void Promise.resolve().then(() => {
+				if (!cancelled) setBgReady(false)
+			})
 		}
-		setBgReady(false)
+		if (!onAppRoute || loading) {
+			markNotReady()
+			return () => {
+				cancelled = true
+			}
+		}
+		markNotReady()
 		const url = COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
 		const img = new Image()
 		img.decoding = 'async'
-		const done = () => setBgReady(true)
+		const done = () => {
+			if (!cancelled) setBgReady(true)
+		}
 		img.onload = done
 		img.onerror = done
 		img.src = url
+		return () => {
+			cancelled = true
+		}
 	}, [slug, onAppRoute, loading])
 
 	useEffect(() => {
@@ -78,14 +85,12 @@ export default function CoalitionAmbient() {
 		const px = rm ? 0 : m.x + driftX
 		const py = rm ? 0 : m.y + driftY
 		const d = deepRef.current
-		const mi = midRef.current
+		const posX = 50 + px * 5
+		const posY = 50 + py * 4
+		const tf = rm ? 'scale(1.14)' : `scale(1.18) translate(${px * 14}px, ${py * 10}px)`
 		if (d) {
-			d.style.backgroundPosition = `${50 + px * 5}% ${50 + py * 4}%`
-			d.style.transform = rm ? 'scale(1.14)' : `scale(1.18) translate(${px * 14}px, ${py * 10}px)`
-		}
-		if (mi) {
-			mi.style.backgroundPosition = `${50 + px * 2.8}% ${50 + py * 2.2}%`
-			mi.style.transform = rm ? 'scale(1.06)' : `scale(1.1) translate(${px * 7}px, ${py * 5}px)`
+			d.style.backgroundPosition = `${posX}% ${posY}%`
+			d.style.transform = tf
 		}
 	}
 
@@ -132,17 +137,7 @@ export default function CoalitionAmbient() {
 					backgroundPosition: '50% 50%',
 				}}
 			/>
-			<div
-				ref={midRef}
-				className="coalition-ambient__layer coalition-ambient__layer--mid"
-				style={{
-					backgroundImage: `url(${bg})`,
-					backgroundSize: 'cover',
-					backgroundRepeat: 'no-repeat',
-					transform: reducedMotion ? 'scale(1.06)' : 'scale(1.1)',
-					backgroundPosition: '50% 50%',
-				}}
-			/>
+			<div className="coalition-ambient__punch" />
 			<div className="coalition-ambient__veil" />
 			{showParticles && <CoalitionParticleCanvas slug={slug} reducedMotion={false} />}
 			<div className="coalition-ambient__vignette" />

@@ -2,9 +2,7 @@ import { useEffect } from 'react'
 import { useAuth } from '../hooks/useAuth.js'
 import { coalitionToSlug } from '../utils/coalitionTheme.js'
 
-/**
- * Expose la coalition courante sur <html data-coalition="feu|eau|terre|air"> pour une future DA globale.
- */
+/** `data-coalition` sur `<html>` pour le CSS thème. */
 export default function CoalitionHtmlSync() {
 	const { user } = useAuth()
 

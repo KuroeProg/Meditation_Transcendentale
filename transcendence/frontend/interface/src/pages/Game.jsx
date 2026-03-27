@@ -6,160 +6,193 @@ import { useChessTimer } from '../objects/Chrono.jsx'
 import { useParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { useChessSocket } from '../hooks/useChessSocket.js'
+import { get42AvatarUrl, getDisplayTitle } from '../utils/sessionUser.js'
+import { getMockGameOpponent, isMockGameOpponentActive } from '../dev/mockGameOpponent.js'
 
-	function App() {
+function App() {
+	useEffect(() => {
 		document.title = 'Transcendance Chess Game'
-		const [showDebug, setShowDebug] = useState(false)
+	}, [])
 
-const GAME_DURATION = {
-	bullet: 60,
-	blitz: 300,
-	rapid: 600,
-	classNameic: 1800,
-}
+	const [showDebug, setShowDebug] = useState(false)
 
-		const [game, setGame] = useState(() => new Chess())
-		const [gameState, setGameState] = useState(null)
-		const [winner, setWinner] = useState(null)
-		const [moveFeedback, setMoveFeedback] = useState(null)
-		// console.log('App render, winner:', winner)
+	const GAME_DURATION = {
+		bullet: 60,
+		blitz: 300,
+		rapid: 600,
+		classNameic: 1800,
+	}
 
-		const [duration] = useState(GAME_DURATION.rapid)
-		const { gameId } = useParams()
-		const { user } = useAuth()
-		const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(gameId)
+	const [game, setGame] = useState(() => new Chess())
+	const [gameState, setGameState] = useState(null)
+	const [winner, setWinner] = useState(null)
+	const [moveFeedback, setMoveFeedback] = useState(null)
 
-		const userId = useMemo(() => {
-			if (!user) return null
-			return user.id ?? user.user_id ?? user.pk ?? user.sub ?? null
-		}, [user])
+	const [duration] = useState(GAME_DURATION.rapid)
+	const { gameId } = useParams()
+	const { user } = useAuth()
+	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(gameId)
+	const devOpp = isMockGameOpponentActive() ? getMockGameOpponent() : null
 
-		const playerColor = useMemo(() => {
-			if (!gameState || userId == null) return null
-			if (String(gameState.white_player_id) === String(userId)) return 'w'
-			if (String(gameState.black_player_id) === String(userId)) return 'b'
-			return null
-		}, [gameState, userId])
+	const userId = useMemo(() => {
+		if (!user) return null
+		return user.id ?? user.user_id ?? user.pk ?? user.sub ?? null
+	}, [user])
 
-		useEffect(() => {
-			if (!lastMessage) return
+	const playerColor = useMemo(() => {
+		if (!gameState || userId == null) return null
+		if (String(gameState.white_player_id) === String(userId)) return 'w'
+		if (String(gameState.black_player_id) === String(userId)) return 'b'
+		return null
+	}, [gameState, userId])
 
-			if (lastMessage.error) {
-				setMoveFeedback(lastMessage.error)
-				return
-			}
+	useEffect(() => {
+		if (!lastMessage) return
 
-			if (lastMessage.action === 'game_state' && lastMessage.game_state) {
-				const incomingState = lastMessage.game_state
-				setGameState(incomingState)
-				if (incomingState.fen) {
-					setGame(new Chess(incomingState.fen))
-				}
-
-				if (incomingState.status === 'checkmate') {
-					const isWhiteWinner = String(incomingState.winner_player_id) === String(incomingState.white_player_id)
-					setWinner(isWhiteWinner ? 'White' : 'Black')
-				} else if (incomingState.status === 'stalemate' || incomingState.status === 'draw') {
-					setWinner('Nulle')
-				} else {
-					setWinner(null)
-				}
-			}
-		}, [lastMessage])
-
-		// Auto-bootstrap: create game on first socket connection if not exists
-		useEffect(() => {
-			if (isConnected && gameState === null && userId && !moveFeedback?.includes('Partie introuvable')) {
-				sendMove({ action: 'create_game', white_id: userId, black_id: 999 })
-			}
-		}, [isConnected, gameState, userId, moveFeedback, sendMove])
-
-		const handleMoveRequest = ({ move }) => {
-			if (!userId) {
-				setMoveFeedback('Utilisateur non connecté')
-				return
-			}
-
-			if (!isConnected) {
-				setMoveFeedback('Connexion WebSocket indisponible')
-				return
-			}
-
-			setMoveFeedback(null)
-			sendMove({ action: 'play_move', move, player_id: userId })
+		if (lastMessage.error) {
+			setMoveFeedback(lastMessage.error)
+			return
 		}
 
-		const handleResetGame = () => {
-			if (isConnected && userId) {
-				sendMove({ action: 'reset_game', white_id: userId, black_id: 999 })
-				setMoveFeedback('Jeu réinitialisé...')
-				setTimeout(() => setMoveFeedback(null), 2000)
+		if (lastMessage.action === 'game_state' && lastMessage.game_state) {
+			const incomingState = lastMessage.game_state
+			setGameState(incomingState)
+			if (incomingState.fen) {
+				setGame(new Chess(incomingState.fen))
+			}
+
+			if (incomingState.status === 'checkmate') {
+				const isWhiteWinner = String(incomingState.winner_player_id) === String(incomingState.white_player_id)
+				setWinner(isWhiteWinner ? 'White' : 'Black')
+			} else if (incomingState.status === 'stalemate' || incomingState.status === 'draw') {
+				setWinner('Nulle')
+			} else {
+				setWinner(null)
 			}
 		}
+	}, [lastMessage])
 
-		const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
-		const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
+	useEffect(() => {
+		if (isConnected && gameState === null && userId && !moveFeedback?.includes('Partie introuvable')) {
+			sendMove({ action: 'create_game', white_id: userId, black_id: 999 })
+		}
+	}, [isConnected, gameState, userId, moveFeedback, sendMove])
 
-		const topPlayerColor = playerColor === 'b' ? 'w' : 'b'
-		const bottomPlayerColor = playerColor === 'b' ? 'b' : 'w'
+	const handleMoveRequest = ({ move }) => {
+		if (!userId) {
+			setMoveFeedback('Utilisateur non connecte')
+			return
+		}
 
-		const getPlayerBarData = (color) => {
-			if (color === 'b') {
-				return {
-					avatar: 'imgs/PawnLogoB.jpeg',
-					name: 'Joueur Noir',
-					nameClass: 'player-nameB',
-					timerClass: 'player-timerB',
-					timer: blackTimer,
-				}
-			}
+		if (!isConnected) {
+			setMoveFeedback('Connexion WebSocket indisponible')
+			return
+		}
 
+		setMoveFeedback(null)
+		sendMove({ action: 'play_move', move, player_id: userId })
+	}
+
+	const handleResetGame = () => {
+		if (isConnected && userId) {
+			sendMove({ action: 'reset_game', white_id: userId, black_id: 999 })
+			setMoveFeedback('Jeu reinitialise...')
+			setTimeout(() => setMoveFeedback(null), 2000)
+		}
+	}
+
+	const blackTimer = useChessTimer(duration, !winner && game.turn() === 'b', () => setWinner('White-Timeout'))
+	const whiteTimer = useChessTimer(duration, !winner && game.turn() === 'w', () => setWinner('Black-Timeout'))
+
+	const whiteLabel = user ? getDisplayTitle(user).primary ?? 'Joueur Blanc' : 'Joueur Blanc'
+	const whiteAvatar = get42AvatarUrl(user)
+	const blackLabel = devOpp?.displayName ?? 'Joueur Noir'
+	const blackAvatar = devOpp?.avatarSrc ?? 'imgs/PawnLogoB.jpeg'
+
+	const topPlayerColor = playerColor === 'b' ? 'w' : 'b'
+	const bottomPlayerColor = playerColor === 'b' ? 'b' : 'w'
+
+	const getPlayerBarData = (color) => {
+		if (color === 'b') {
 			return {
-				avatar: 'imgs/Profile-Logo.png',
-				name: 'Joueur Blanc',
-				nameClass: 'player-nameW',
-				timerClass: 'player-timerW',
-				timer: whiteTimer,
+				avatar: blackAvatar,
+				name: blackLabel,
+				nameClass: 'player-nameB',
+				timerClass: 'player-timerB',
+				timer: blackTimer,
 			}
 		}
 
-		const topPlayer = getPlayerBarData(topPlayerColor)
-		const bottomPlayer = getPlayerBarData(bottomPlayerColor)
+		return {
+			avatar: whiteAvatar,
+			name: whiteLabel,
+			nameClass: 'player-nameW',
+			timerClass: 'player-timerW',
+			timer: whiteTimer,
+		}
+	}
+
+	const topPlayer = getPlayerBarData(topPlayerColor)
+	const bottomPlayer = getPlayerBarData(bottomPlayerColor)
 
 	return (
-
 		<div>
-			{/* Debug Panel */}
-			<div style={{
-				position: 'fixed', bottom: 10, right: 10, zIndex: 999,
-				background: showDebug ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)',
-				color: '#0f0', padding: '10px', fontSize: '11px', fontFamily: 'monospace',
-				border: '1px solid #0f0', cursor: 'pointer', maxWidth: '400px', maxHeight: '300px', overflow: 'auto'
-			}} onClick={() => setShowDebug(!showDebug)}>
+			<div
+				style={{
+					position: 'fixed',
+					bottom: 10,
+					right: 10,
+					zIndex: 999,
+					background: showDebug ? 'rgba(0,0,0,0.85)' : 'rgba(0,0,0,0.6)',
+					color: '#0f0',
+					padding: '10px',
+					fontSize: '11px',
+					fontFamily: 'monospace',
+					border: '1px solid #0f0',
+					cursor: 'pointer',
+					maxWidth: '400px',
+					maxHeight: '300px',
+					overflow: 'auto',
+				}}
+				onClick={() => setShowDebug(!showDebug)}
+			>
 				{!showDebug ? (
-					<div>Debug ▼</div>
+					<div>Debug v</div>
 				) : (
 					<div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: '10px' }}>
-						User ID: {userId || 'null'}<br/>
-						Auth: {user ? 'OK' : 'auth-err'}<br/>
-						WS: {isConnected ? '✓' : '✗'}<br/>
-						Error: {socketError || 'none'}<br/>
-						Game: {gameId}<br/>
-						Color: {playerColor || '-'}<br/>
-						Status: {gameState?.status || '-'}<br/>
-						---<br/>
-						user: {JSON.stringify(user ? { id: user.id, login: user.login } : null)}<br/>
-						---<br/>
-						<button 
-							onClick={(e) => { e.stopPropagation(); handleResetGame(); }}
-							style={{ 
-								padding: '4px 8px', 
-								marginTop: '5px', 
-								background: '#0f0', 
-								color: '#000', 
-								border: 'none', 
+						User ID: {userId || 'null'}
+						<br />
+						Auth: {user ? 'OK' : 'auth-err'}
+						<br />
+						WS: {isConnected ? 'ok' : 'ko'}
+						<br />
+						Error: {socketError || 'none'}
+						<br />
+						Game: {gameId}
+						<br />
+						Color: {playerColor || '-'}
+						<br />
+						Status: {gameState?.status || '-'}
+						<br />
+						---
+						<br />
+						user: {JSON.stringify(user ? { id: user.id, login: user.login } : null)}
+						<br />
+						---
+						<br />
+						<button
+							onClick={(e) => {
+								e.stopPropagation()
+								handleResetGame()
+							}}
+							style={{
+								padding: '4px 8px',
+								marginTop: '5px',
+								background: '#0f0',
+								color: '#000',
+								border: 'none',
 								cursor: 'pointer',
-								width: '100%'
+								width: '100%',
 							}}
 						>
 							Reset Game
@@ -167,42 +200,33 @@ const GAME_DURATION = {
 					</div>
 				)}
 			</div>
-			<div className="header">
-			</div>
+			<div className="header" />
 
 			<div className="game-container">
-
-			<div className="player-bar">
-					<img className="player-avatar" src={topPlayer.avatar}/>
+				<div className="player-bar">
+					<img className="player-avatar" src={topPlayer.avatar} alt="" />
 					<span className={topPlayer.nameClass}>{topPlayer.name}</span>
 					<span className={topPlayer.timerClass}>{topPlayer.timer}</span>
-			</div>
+				</div>
 
-			<div className="board-frame">
-				<Board
-					game={game}
-					winner={winner}
-					onMoveRequest={handleMoveRequest}
-					playerColor={playerColor}
-					moveFeedback={moveFeedback || socketError}
-				/>
-			</div>
+				<div className="board-frame">
+					<Board
+						game={game}
+						winner={winner}
+						onMoveRequest={handleMoveRequest}
+						playerColor={playerColor}
+						moveFeedback={moveFeedback || socketError}
+					/>
+				</div>
 
 				<div className="player-bar">
-					<img className='player-avatar' src={bottomPlayer.avatar}/>
+					<img className="player-avatar" src={bottomPlayer.avatar} alt="" />
 					<span className={bottomPlayer.nameClass}>{bottomPlayer.name}</span>
 					<span className={bottomPlayer.timerClass}>{bottomPlayer.timer}</span>
 				</div>
-
 			</div>
-
 		</div>
-	);
+	)
 }
 
-export default App;
-
-
-// Todo, effectuer tout les calculs de chrono, réécrire la fonction principales
-// Ecran de win, (popup) / Lose
-// Checkmate
+export default App

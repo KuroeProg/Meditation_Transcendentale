@@ -36,7 +36,6 @@ pieces/
 | `r.png` | Tour |
 | `n.png` | Cavalier |
 | `p.png` | Pion |
-| `bg.png` | Fou sur **case claire** |
-| `bd.png` | Fou sur **case foncée** |
+| `b.png` | Fou |
 
-Total : **7 fichiers × 2 variantes × 4 coalitions** = 56 PNG si tout est rempli.
+Total : **6 fichiers × 2 variantes × 4 coalitions** = 48 PNG si tout est rempli.

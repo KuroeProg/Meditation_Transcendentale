@@ -1,0 +1,11 @@
+{
+  "name": "meditation-transcendentale",
+  "private": true,
+  "description": "Le frontend Vite vit dans transcendence/frontend/interface — ces scripts y délèguent.",
+  "scripts": {
+    "dev": "npm run dev --prefix transcendence/frontend/interface",
+    "build": "npm run build --prefix transcendence/frontend/interface",
+    "lint": "npm run lint --prefix transcendence/frontend/interface",
+    "generate:tiles-manifest": "npm run generate:tiles-manifest --prefix transcendence/frontend/interface"
+  }
+}

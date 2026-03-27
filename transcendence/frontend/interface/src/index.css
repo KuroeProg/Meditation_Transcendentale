@@ -274,8 +274,12 @@ html[data-reduce-motion='true'] .board-frame {
   --board-size: min(
     calc(100vh - (var(--player-bar-height) * 2)),
     calc(100vw - var(--sidebar-width) - 8rem)
-  );  /* add space for the top and bottom player bar*/
+  );
   --cell: calc(var(--board-size) / 8);
+  /* Contour pièces : 2 drop-shadow au lieu de 8 (beaucoup moins cher au paint) */
+  --chess-piece-shadow-tight: 0.75px;
+  --chess-piece-shadow-soft: 1.25px;
+  --board-tile-overlay-alpha: 0.12;
 }
 
 
@@ -288,15 +292,36 @@ html[data-reduce-motion='true'] .board-frame {
 	--board-dark:  #b58863;
 } */
 
+.piece-wrap {
+	width: 100%;
+	height: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	/* Isole le calque pièce (filtres + repaints) du reste de la case */
+	transform: translateZ(0);
+	backface-visibility: hidden;
+}
+
 .piece {
 	width: 100%;
 	height: 100%;
 	object-fit: contain;
-	/* cursor: pointer; */
-	/* user-select: none; */
-	/* pointer-events: none; */
 	cursor: grab;
-	/* dragable="true"; */
+	filter:
+		drop-shadow(0 0 var(--chess-piece-shadow-tight) #000)
+		drop-shadow(0 0 var(--chess-piece-shadow-soft) rgba(0, 0, 0, 0.5));
+}
+
+.piece[data-piece-type]:not([data-piece-type='p']) {
+	width: 82%;
+	height: 82%;
+}
+
+.board-root {
+	position: relative;
+	display: inline-block;
+	vertical-align: top;
 }
 
 #board {
@@ -308,6 +333,30 @@ html[data-reduce-motion='true'] .board-frame {
 	height: var(--board-size);
 }
 
+/* Fantôme : un seul calque animé en transform (style chess.com, léger GPU) */
+.board-move-ghost {
+	position: absolute;
+	left: var(--ghost-x0);
+	top: var(--ghost-y0);
+	width: var(--ghost-size);
+	height: var(--ghost-size);
+	z-index: 12;
+	pointer-events: none;
+	will-change: transform;
+	transform: translate(-50%, -50%);
+	transition: transform var(--ghost-dur, 200ms) cubic-bezier(0.25, 0.1, 0.25, 1);
+}
+
+.board-move-ghost--sliding {
+	transform: translate(calc(-50% + var(--ghost-dx)), calc(-50% + var(--ghost-dy)));
+}
+
+.board-move-ghost__img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+}
 
 .cell { width: var(--cell);
 		height: var(--cell);
@@ -315,46 +364,208 @@ html[data-reduce-motion='true'] .board-frame {
 		align-items: center;
 		justify-content: center;
 		position: relative;
+		isolation: isolate;
 }
 
 .cell.light { background: #f0d9b5}
 .cell.dark { background: #2b62a2}
-.cell.selected { background: #7fc97f !important;}
 
+.cell.selected:not(.board-tiles) {
+	background: rgba(255, 232, 120, 0.72) !important;
+	box-shadow: inset 0 0 0 3px rgba(200, 165, 40, 0.55);
+}
+
+.cell .piece-wrap {
+	position: relative;
+	z-index: 3;
+	pointer-events: none;
+}
+
+.cell .piece-wrap .piece {
+	pointer-events: auto;
+}
+
+.cell.board-tiles.light,
+.cell.board-tiles.dark {
+	background: transparent !important;
+}
+
+.cell-tile-stack {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	pointer-events: none;
+	overflow: hidden;
+	border-radius: 1px;
+}
+
+.cell-tile-stack .cell-tile {
+	position: absolute;
+	inset: 0;
+	z-index: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	object-position: center;
+	display: block;
+}
+
+.cell-tile-stack::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	background: rgba(0, 0, 0, var(--board-tile-overlay-alpha));
+}
+
+.cell.board-tiles.selected:not(.king-check)::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	border-radius: 1px;
+	background: rgba(255, 224, 102, 0.5);
+	box-shadow: inset 0 0 0 2px rgba(200, 160, 30, 0.55);
+}
+
+.cell.board-tiles.king-check::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+	border-radius: 1px;
+	background: rgba(215, 48, 48, 0.42);
+	box-shadow: inset 0 0 0 2px rgba(180, 30, 30, 0.65);
+	animation: king-check-breathe 1.35s ease-in-out infinite;
+}
+
+.cell.board-tiles.king-check-attn::before {
+	animation: king-check-attn-pulse 0.28s ease-in-out 3, king-check-breathe 1.35s ease-in-out infinite;
+}
+
+/* coup illégal : ::after pour ne pas écraser roi / sélection (::before) */
+.cell.board-tiles.illegal-move-flash::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	pointer-events: none;
+	border-radius: 1px;
+	animation: illegal-square-flash 0.48s ease;
+	background: rgba(220, 40, 40, 0.62);
+}
+
+.cell.board-tiles.possible-move::after {
+	content: '';
+	position: absolute;
+	left: 50%;
+	top: 50%;
+	transform: translate3d(-50%, -50%, 0);
+	width: min(32%, 40px);
+	height: min(32%, 40px);
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: rgba(46, 168, 92, 0.52);
+	outline: 1px solid rgba(255, 255, 255, 0.35);
+	outline-offset: -1px;
+	z-index: 2;
+	pointer-events: none;
+}
+
+.cell.board-tiles.possible-capture::after {
+	content: '';
+	position: absolute;
+	inset: 8%;
+	border-radius: 4px;
+	border: 3px solid rgba(32, 150, 78, 0.9);
+	z-index: 2;
+	pointer-events: none;
+}
+
+/* Pas de filter dans l’animation : le brightness forçait des repaints coûteux */
+@keyframes king-check-breathe {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.82; }
+}
+
+@keyframes king-check-attn-pulse {
+	0%, 100% { opacity: 1; }
+	50% { opacity: 0.55; }
+}
+
+@keyframes illegal-square-flash {
+	0% { opacity: 0; }
+	20% { opacity: 1; }
+	100% { opacity: 0; }
+}
 
 .cell.possible-move {
 	display: flex;
 }
 
-.cell.possible-move::after {
+.cell:not(.board-tiles).possible-move::after {
 	content: '';
 	position: absolute;
-
-	width: 35%;
-	height: 35%;
+	left: 50%;
+	top: 50%;
+	transform: translate3d(-50%, -50%, 0);
+	width: min(32%, 40px);
+	height: min(32%, 40px);
 	border-radius: 50%;
-	background: rgba(0, 0, 0, 0.25);
+	background: rgba(46, 168, 92, 0.52);
+	outline: 1px solid rgba(255, 255, 255, 0.3);
+	outline-offset: -1px;
+	z-index: 2;
+	pointer-events: none;
 }
 
-.cell.possible-capture::after {
+.cell:not(.board-tiles).possible-capture::after {
 	content: '';
 	position: absolute;
+	inset: 8%;
+	border-radius: 4px;
+	border: 3px solid rgba(32, 150, 78, 0.9);
+	z-index: 2;
+	pointer-events: none;
+}
 
+.cell:not(.board-tiles).king-check.light {
+	background: #f0d9b5 !important;
+}
+
+.cell:not(.board-tiles).king-check.dark {
+	background: #2b62a2 !important;
+}
+
+.cell:not(.board-tiles).king-check::before {
+	content: '';
+	position: absolute;
 	inset: 0;
-	border-radius: 50%;
-	border: 5px solid rgba(0, 0, 0, 0.25);
+	z-index: 1;
+	pointer-events: none;
+	background: rgba(215, 48, 48, 0.42);
+	box-shadow: inset 0 0 0 2px rgba(170, 35, 35, 0.65);
+	animation: king-check-breathe 1.35s ease-in-out infinite;
+	mix-blend-mode: multiply;
+	opacity: 0.92;
 }
 
-.king-check {
-  animation: flash-red 0.6s ease;
+.cell:not(.board-tiles).king-check-attn::before {
+	animation: king-check-attn-pulse 0.28s ease-in-out 3, king-check-breathe 1.35s ease-in-out infinite;
 }
 
-@keyframes flash-red {
-  0%   { background: #cc0000; }
-  25%  { background: inherit; }
-  50%  { background: #cc0000; }
-  75%  { background: inherit; }
-  100% { background: inherit; }
+.cell:not(.board-tiles).illegal-move-flash::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 5;
+	pointer-events: none;
+	animation: illegal-square-flash 0.48s ease;
+	background: rgba(220, 40, 40, 0.55);
+	mix-blend-mode: multiply;
 }
 
 /* Winner PopUp */
@@ -609,6 +820,57 @@ animation-duration: 10s;
 	font-weight: 700;
 	color: #fff;
 	font-family: system-ui, sans-serif;
+}
+
+.card-title--with-logo42 {
+	gap: 0.65rem;
+}
+
+.logo-42-title {
+	width: 2rem;
+	height: 2rem;
+	flex-shrink: 0;
+	color: #f0f4ff;
+}
+
+.profile-coalition-value {
+	display: flex;
+	align-items: center;
+	gap: 0.85rem;
+}
+
+.profile-coalition-icon-wrap {
+	flex-shrink: 0;
+	width: 56px;
+	height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 14px;
+	background: rgba(0, 0, 0, 0.28);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.profile-coalition-icon-wrap .coalition-icon {
+	width: 44px;
+	height: 44px;
+}
+
+.profile-coalition-text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.profile-coalition-label {
+	font-size: 1.15rem;
+	font-weight: 600;
+	color: #e8eaef;
+}
+
+.profile-coalition-raw {
+	display: block;
 }
 
 .btn {

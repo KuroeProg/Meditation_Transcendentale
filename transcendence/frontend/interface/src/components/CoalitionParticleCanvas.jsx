@@ -1,9 +1,7 @@
 import { useEffect, useRef } from 'react'
+import { COALITION_LIGHTNING_FLASH_EDGE } from '../theme/coalitionAmbience.js'
 
-/**
- * Canvas plein écran : particules thématiques + lueurs (feu / eau / terre / air + éclairs).
- * @param {{ slug: string, reducedMotion: boolean }} props
- */
+/** Particules plein écran par coalition (éclairs uniquement pour l’air). */
 export default function CoalitionParticleCanvas({ slug, reducedMotion }) {
 	const ref = useRef(null)
 	const raf = useRef(0)
@@ -126,7 +124,7 @@ function initParticles(slug, w, h) {
 		}
 		case 'terre':
 			return [
-				...Array.from({ length: 44 }, () => new Leaf(w, h)),
+				...Array.from({ length: 72 }, () => new Leaf(w, h)),
 				...Array.from({ length: 40 }, () => new Firefly(w, h)),
 			]
 		case 'air':
@@ -134,7 +132,7 @@ function initParticles(slug, w, h) {
 				kind: 'air',
 				streaks: Array.from({ length: 58 }, () => new WindStreak(w, h)),
 				dust: Array.from({ length: 52 }, () => new DustMote(w, h)),
-				lightning: new LightningField(w, h),
+				lightning: new LightningField(w, h, slug),
 			}
 		default:
 			return []
@@ -410,7 +408,7 @@ class SplashSpark {
 	}
 }
 
-/* --- Terre : feuille avec liseré lumineux --- */
+/* --- Terre : petites feuilles (silhouette, pas des ellipses « boules ») --- */
 class Leaf {
 	constructor(w, h) {
 		this.w = w
@@ -422,41 +420,57 @@ class Leaf {
 		const h = this.h
 		this.x = Math.random() * w
 		this.y = initial ? Math.random() * h : -40 - Math.random() * 200
-		this.vx = (Math.random() - 0.5) * 0.6
-		this.vy = 0.35 + Math.random() * 0.85
+		this.vx = (Math.random() - 0.5) * 0.55
+		this.vy = 0.32 + Math.random() * 0.75
 		this.rot = Math.random() * Math.PI * 2
-		this.spin = (Math.random() - 0.5) * 0.008
-		this.wid = 5 + Math.random() * 7
-		this.hei = 7 + Math.random() * 10
-		const hues = [88, 95, 35, 42, 28]
+		this.spin = (Math.random() - 0.5) * 0.012
+		/* Longueur / demi-largeur max au plus large — tout petit sur l’écran */
+		this.len = 2.4 + Math.random() * 4.2
+		this.halfW = 0.55 + Math.random() * 1.15
+		const hues = [92, 88, 38, 42, 32, 48]
 		this.hue = hues[(Math.random() * hues.length) | 0]
-		this.sat = 35 + Math.random() * 40
-		this.light = 22 + Math.random() * 28
-		this.alpha = 0.25 + Math.random() * 0.45
+		this.sat = 38 + Math.random() * 38
+		this.light = 24 + Math.random() * 26
+		this.alpha = 0.38 + Math.random() * 0.42
 	}
 	update(w, h, dt) {
 		this.w = w
 		this.h = h
 		this.rot += this.spin * dt * 0.08
-		this.x += (this.vx + Math.sin(this.y * 0.015) * 0.8) * dt * 0.05
+		this.x += (this.vx + Math.sin(this.y * 0.015) * 0.65) * dt * 0.05
 		this.y += this.vy * dt * 0.08
 		if (this.y > h + 30 || this.x < -40 || this.x > w + 40) this.reset(false)
 	}
 	draw(ctx) {
+		const L = this.len
+		const W = this.halfW
 		ctx.save()
 		ctx.translate(this.x, this.y)
 		ctx.rotate(this.rot)
 		ctx.globalAlpha = this.alpha
-		ctx.shadowBlur = 6
-		ctx.shadowColor = `hsla(${this.hue + 15}, 60%, 45%, 0.35)`
-		const g = ctx.createRadialGradient(-this.wid * 0.2, -this.hei * 0.2, 0, 0, 0, this.hei * 1.2)
-		g.addColorStop(0, `hsla(${this.hue + 25}, ${this.sat + 15}%, ${this.light + 22}%, 0.95)`)
-		g.addColorStop(0.55, `hsl(${this.hue}, ${this.sat}%, ${this.light}%)`)
-		g.addColorStop(1, `hsla(${this.hue - 8}, ${this.sat}%, ${this.light - 8}%, 0.85)`)
+		/* Dégradé le long de la feuille (pointe → pétiole) */
+		const g = ctx.createLinearGradient(0, -L, 0, L * 0.42)
+		g.addColorStop(0, `hsla(${this.hue + 12}, ${Math.min(85, this.sat + 12)}%, ${this.light + 14}%, 0.92)`)
+		g.addColorStop(0.5, `hsl(${this.hue}, ${this.sat}%, ${this.light}%)`)
+		g.addColorStop(1, `hsla(${this.hue - 6}, ${this.sat}%, ${this.light - 12}%, 0.88)`)
 		ctx.fillStyle = g
 		ctx.beginPath()
-		ctx.ellipse(0, 0, this.wid, this.hei, 0.3, 0, Math.PI * 2)
+		/* Pointe en haut (0,-L), pétiole vers le bas — bords en courbes de Bézier */
+		ctx.moveTo(0, -L)
+		ctx.bezierCurveTo(W * 1.15, -L * 0.38, W, L * 0.05, W * 0.28, L * 0.34)
+		ctx.quadraticCurveTo(0, L * 0.4, -W * 0.28, L * 0.34)
+		ctx.bezierCurveTo(-W, L * 0.05, -W * 1.15, -L * 0.38, 0, -L)
+		ctx.closePath()
 		ctx.fill()
+		/* Nervure centrale discrète */
+		ctx.globalAlpha = this.alpha * 0.55
+		ctx.strokeStyle = `hsla(${this.hue - 8}, ${this.sat * 0.75}%, ${this.light - 18}%, 0.5)`
+		ctx.lineWidth = Math.max(0.25, W * 0.22)
+		ctx.lineCap = 'round'
+		ctx.beginPath()
+		ctx.moveTo(0, -L * 0.82)
+		ctx.lineTo(0, L * 0.28)
+		ctx.stroke()
 		ctx.restore()
 	}
 }
@@ -519,9 +533,10 @@ class Firefly {
 
 /* --- Air : éclairs + vent --- */
 class LightningField {
-	constructor(w, h) {
+	constructor(w, h, slug = 'air') {
 		this.w = w
 		this.h = h
+		this.slug = slug
 		this.bolts = []
 		this.flashScreen = 0
 		this.nextStrikeAt = performance.now() + 400 + Math.random() * 1000
@@ -534,7 +549,6 @@ class LightningField {
 		if (now >= this.nextStrikeAt && this.bolts.length < 4) {
 			this.bolts.push(new LightningBolt(w, h))
 			this.nextStrikeAt = now + 280 + Math.random() * 3400
-			/* Éclair bien lisible : flash quasi systématique, plus long */
 			this.flashScreen = 0.38 + Math.random() * 0.28
 		}
 
@@ -544,14 +558,27 @@ class LightningField {
 	draw(ctx) {
 		const { w, h } = this
 		if (this.flashScreen > 0) {
+			const edge =
+				COALITION_LIGHTNING_FLASH_EDGE[this.slug] ?? COALITION_LIGHTNING_FLASH_EDGE.air
+			const air = this.slug === 'air'
 			ctx.save()
 			ctx.globalAlpha = Math.min(0.55, this.flashScreen * 0.62)
-			/* Centre du flash vers la droite : même zone que les éclairs (hors échiquier) */
 			const fx = w * 0.68
 			const g = ctx.createRadialGradient(fx, 0, 0, fx, h * 0.32, h * 0.88)
 			g.addColorStop(0, 'rgba(255, 255, 255, 0.95)')
-			g.addColorStop(0.25, 'rgba(230, 240, 255, 0.35)')
-			g.addColorStop(1, 'rgba(30, 40, 80, 0)')
+			g.addColorStop(
+				0.22,
+				air ? 'rgba(255, 236, 140, 0.58)' : 'rgba(235, 242, 255, 0.42)',
+			)
+			g.addColorStop(
+				0.5,
+				air ? 'rgba(255, 200, 55, 0.45)' : 'rgba(55, 35, 88, 0.58)',
+			)
+			g.addColorStop(
+				0.76,
+				air ? 'rgba(200, 130, 35, 0.88)' : 'rgba(24, 14, 40, 0.92)',
+			)
+			g.addColorStop(1, edge)
 			ctx.fillStyle = g
 			ctx.fillRect(0, 0, w, h)
 			ctx.restore()
@@ -620,17 +647,16 @@ class LightningBolt {
 		ctx.save()
 		ctx.lineCap = 'round'
 		ctx.lineJoin = 'round'
-		/* Pas de shadowBlur : 3 passes épaisseur = glow lisible et GPU léger */
 		this.strokeGlowPath(ctx, this.points, a, [14, 6, 2.2], [
-			`rgba(200, 220, 255, ${0.2 * a})`,
-			`rgba(240, 248, 255, ${0.72 * a})`,
-			`rgba(255, 255, 255, ${0.15 + 0.85 * a})`,
+			`rgba(255, 210, 80, ${0.28 * a})`,
+			`rgba(255, 238, 160, ${0.78 * a})`,
+			`rgba(255, 252, 230, ${0.2 + 0.8 * a})`,
 		])
 		for (const br of this.branches) {
 			this.strokeGlowPath(ctx, br, a, [7, 3, 1.3], [
-				`rgba(190, 210, 255, ${0.18 * a})`,
-				`rgba(230, 240, 255, ${0.55 * a})`,
-				`rgba(255, 255, 255, ${0.5 * a})`,
+				`rgba(255, 200, 70, ${0.22 * a})`,
+				`rgba(255, 230, 140, ${0.6 * a})`,
+				`rgba(255, 248, 210, ${0.55 * a})`,
 			])
 		}
 		ctx.restore()
