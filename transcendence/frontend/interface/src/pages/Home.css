@@ -75,3 +75,70 @@
 		padding-top: 5rem;
 	}
 }
+authClient.js:12  GET https://localhost/api/auth/me 502 (Bad Gateway)
+fetchSessionUser @ authClient.js:12
+(anonymous) @ AuthProvider.jsx:42
+(anonymous) @ AuthProvider.jsx:57
+react_stack_bottom_frame @ react-dom_client.js?v=282fd951:18567
+runWithFiberInDEV @ react-dom_client.js?v=282fd951:997
+commitHookEffectListMount @ react-dom_client.js?v=282fd951:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=282fd951:9465
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11040
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11033
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11201
+recursivelyTraversePassiveMountEffects @ react-dom_client.js?v=282fd951:11010
+commitPassiveMountOnFiber @ react-dom_client.js?v=282fd951:11066
+flushPassiveEffects @ react-dom_client.js?v=282fd951:13150
+(anonymous) @ react-dom_client.js?v=282fd951:12776
+performWorkUntilDeadline @ react-dom_client.js?v=282fd951:36
+<AuthProvider>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=07040dbf:247
+(anonymous) @ main.jsx:11
+authClient.js:12  GET https://localhost/api/auth/me 502 (Bad Gateway)
+fetchSessionUser @ authClient.js:12
+(anonymous) @ AuthProvider.jsx:42
+(anonymous) @ AuthProvider.jsx:57
+react_stack_bottom_frame @ react-dom_client.js?v=282fd951:18567
+runWithFiberInDEV @ react-dom_client.js?v=282fd951:997
+commitHookEffectListMount @ react-dom_client.js?v=282fd951:9411
+commitHookPassiveMountEffects @ react-dom_client.js?v=282fd951:9465
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11273
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=282fd951:11240
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11317
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=282fd951:11240
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11317
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=282fd951:11240
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11265
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=282fd951:11240
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11265
+recursivelyTraverseReconnectPassiveEffects @ react-dom_client.js?v=282fd951:11240
+reconnectPassiveEffects @ react-dom_client.js?v=282fd951:11317
+doubleInvokeEffectsOnFiber @ react-dom_client.js?v=282fd951:13339
+runWithFiberInDEV @ react-dom_client.js?v=282fd951:997
+recursivelyTraverseAndDoubleInvokeEffectsInDEV @ react-dom_client.js?v=282fd951:13312
+commitDoubleInvokeEffectsInDEV @ react-dom_client.js?v=282fd951:13347
+flushPassiveEffects @ react-dom_client.js?v=282fd951:13157
+(anonymous) @ react-dom_client.js?v=282fd951:12776
+performWorkUntilDeadline @ react-dom_client.js?v=282fd951:36
+<AuthProvider>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=07040dbf:247
+(anonymous) @ main.jsx:11
+2bootstrap-autofill-overlay.js:9562 Uncaught (in promise) TypeError: Cannot read properties of null (reading 'includes')
+    at AutofillOverlayContentService.<anonymous> (bootstrap-autofill-overlay.js:9562:81)
+    at Generator.next (<anonymous>)
+    at bootstrap-autofill-overlay.js:8522:71
+    at new Promise (<anonymous>)
+    at autofill_overlay_content_service_awaiter (bootstrap-autofill-overlay.js:8518:12)
+    at AutofillOverlayContentService.setQualifiedLoginFillType (bootstrap-autofill-overlay.js:9555:16)
+    at AutofillOverlayContentService.isIgnoredField (bootstrap-autofill-overlay.js:9530:23)
+    at AutofillOverlayContentService.<anonymous> (bootstrap-autofill-overlay.js:8981:22)
+    at Generator.next (<anonymous>)
+    at bootstrap-autofill-overlay.js:8522:71

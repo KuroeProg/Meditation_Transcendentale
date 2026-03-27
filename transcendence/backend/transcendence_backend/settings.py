@@ -38,7 +38,6 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'corsheaders',
     'accounts',
     'django.contrib.admin',
@@ -49,6 +48,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_prometheus',
 ]
+
+# Petit hack car daphne ne s'import pas a tous les coups. @TODO Trouver une solution plus propre.
+try:
+    import daphne  # noqa: F401
+except ImportError:
+    daphne = None
+else:
+    INSTALLED_APPS.insert(0, 'daphne')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
