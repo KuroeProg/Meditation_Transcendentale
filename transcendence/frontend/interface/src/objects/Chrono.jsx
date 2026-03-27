@@ -13,11 +13,16 @@ export function useChessTimer(initialSeconds, isActive, onTimeOut) {
 	const [timeLeft, setTimeLeft] = useState(initialSeconds)
 	const hasTimedOutRef = useRef(false)
 	const onTimeOutRef = useRef(onTimeOut)
-	onTimeOutRef.current = onTimeOut
 
 	useEffect(() => {
-		setTimeLeft(initialSeconds)
-		hasTimedOutRef.current = false
+		onTimeOutRef.current = onTimeOut
+	}, [onTimeOut])
+
+	useEffect(() => {
+		queueMicrotask(() => {
+			setTimeLeft(initialSeconds)
+			hasTimedOutRef.current = false
+		})
 	}, [initialSeconds])
 
 	useEffect(() => {

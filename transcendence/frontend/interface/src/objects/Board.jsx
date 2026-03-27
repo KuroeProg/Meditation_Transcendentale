@@ -2,6 +2,7 @@ import {
 	useState,
 	useRef,
 	useEffect,
+	useLayoutEffect,
 	useMemo,
 	useCallback,
 	memo,
@@ -13,6 +14,8 @@ import { getPieceThemeSlugForColor } from '../dev/mockGameOpponent.js'
 import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
 import { BOARD_TILES, buildTileUrlFlat, themeHasTileAssets } from '../chess/boardTiles.js'
 import { collectChessGamePreloadUrls, preloadChessImages } from '../chess/chessAssetPreload.js'
+
+const MOVE_ANIM_MS = 200
 
 function toSquare(row, col) {
 	const files = 'abcdefgh'
@@ -39,6 +42,31 @@ function findKingSquare(game) {
 	return null
 }
 
+/** Case du pion capturé en prise en passant (coordonnées from/to SAN). */
+function enPassantCapturedSquare(from, to) {
+	return to[0] + from[1]
+}
+
+function checkEndGame(newGame, setWinner) {
+	if (newGame.isCheckmate()) {
+		setWinner(newGame.turn() === 'b' ? 'White' : 'Black')
+	} else if (newGame.isStalemate()) {
+		setWinner('Nulle')
+	} else if (newGame.isInsufficientMaterial()) {
+		setWinner('Nulle')
+	} else if (newGame.isThreefoldRepetition()) {
+		setWinner('Nulle')
+	}
+}
+
+function pieceSuppressed(sq, anim) {
+	if (!anim || anim.phase === 'done') return false
+	if (sq === anim.from) return true
+	if (anim.enPassantSq && sq === anim.enPassantSq) return true
+	if (anim.captureOnTo && sq === anim.to) return true
+	return false
+}
+
 const BoardCell = memo(function BoardCell({
 	sq,
 	isLight,
@@ -54,6 +82,7 @@ const BoardCell = memo(function BoardCell({
 	isKingCheckCell,
 	kingCheckAttn,
 	isIllegalFlash,
+	suppressPiece,
 }) {
 	const className = [
 		'cell',
@@ -68,6 +97,8 @@ const BoardCell = memo(function BoardCell({
 	]
 		.filter(Boolean)
 		.join(' ')
+
+	const showPiece = pieceType && pieceColor && !suppressPiece
 
 	return (
 		<div data-square={sq} className={className}>
@@ -84,7 +115,7 @@ const BoardCell = memo(function BoardCell({
 					/>
 				</span>
 			)}
-			{pieceType && pieceColor && (
+			{showPiece && (
 				<div className="piece-wrap">
 					<ChessPieceImg
 						theme={pieceThemeSlug}
@@ -98,7 +129,19 @@ const BoardCell = memo(function BoardCell({
 	)
 })
 
-function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
+/**
+ * @typedef {{ from: string, to: string, promotion?: string }} RemoteMove
+ */
+
+function Board({
+	game,
+	setGame,
+	winner,
+	setWinner,
+	tilePatternSeed,
+	remoteMove = null,
+	onRemoteMoveConsumed,
+}) {
 	const { user } = useAuth()
 	const tileCoalitionSlug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 
@@ -115,6 +158,18 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 		winnerRef.current = winner
 	}, [winner])
 
+	const boardRootRef = useRef(null)
+	const activeAnimRef = useRef(false)
+	const animRef = useRef(null)
+	const finishAnimLockRef = useRef(false)
+
+	const [activeMoveAnim, setActiveMoveAnim] = useState(null)
+
+	useEffect(() => {
+		activeAnimRef.current = activeMoveAnim != null
+		animRef.current = activeMoveAnim
+	}, [activeMoveAnim])
+
 	const tileSeed = tilePatternSeed ?? BOARD_TILES.seed
 
 	useEffect(() => {
@@ -130,12 +185,9 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 		}
 	}, [user, tileCoalitionSlug, tileSeed])
 
-	/* Sync UI : fin de partie → popup (pattern déjà utilisé dans ce composant) */
-	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
-		if (winner) setPopupOpen(true)
+		if (winner) queueMicrotask(() => setPopupOpen(true))
 	}, [winner])
-	/* eslint-enable react-hooks/set-state-in-effect */
 
 	const flashKing = useCallback(() => {
 		setKingFlash(true)
@@ -154,11 +206,138 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 		}, 480)
 	}, [])
 
+	const beginAnimatedMove = useCallback(
+		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq }) => {
+			finishAnimLockRef.current = false
+			setSelected(null)
+			setPossibleMoves([])
+			setActiveMoveAnim({
+				key: Date.now(),
+				from,
+				to,
+				fenAfter,
+				moving: movingPiece,
+				themeSlug,
+				captureOnTo,
+				enPassantSq,
+				phase: 'measure',
+			})
+		},
+		[],
+	)
+
+	useLayoutEffect(() => {
+		const a = activeMoveAnim
+		if (!a || a.phase !== 'measure') return
+		const board = boardRootRef.current
+		const elFrom = board?.querySelector(`[data-square="${a.from}"]`)
+		const elTo = board?.querySelector(`[data-square="${a.to}"]`)
+		if (!board || !elFrom || !elTo) {
+			queueMicrotask(() => {
+				const ng = new Chess(a.fenAfter)
+				setGame(ng)
+				checkEndGame(ng, setWinner)
+				setActiveMoveAnim(null)
+			})
+			return
+		}
+		const br = board.getBoundingClientRect()
+		const rf = elFrom.getBoundingClientRect()
+		const rt = elTo.getBoundingClientRect()
+		const x0 = rf.left + rf.width / 2 - br.left
+		const y0 = rf.top + rf.height / 2 - br.top
+		const x1 = rt.left + rt.width / 2 - br.left
+		const y1 = rt.top + rt.height / 2 - br.top
+		const size = Math.min(rf.width, rf.height) * 0.88
+		const dx = x1 - x0
+		const dy = y1 - y0
+		setActiveMoveAnim((prev) =>
+			prev && prev.key === a.key ? { ...prev, phase: 'slide', x0, y0, dx, dy, size } : prev,
+		)
+	}, [activeMoveAnim, setGame, setWinner])
+
+	useEffect(() => {
+		const a = activeMoveAnim
+		if (!a || a.phase !== 'slide') return
+		let id2
+		const id1 = requestAnimationFrame(() => {
+			id2 = requestAnimationFrame(() => {
+				setActiveMoveAnim((prev) =>
+					prev && prev.key === a.key ? { ...prev, phase: 'sliding' } : prev,
+				)
+			})
+		})
+		return () => {
+			cancelAnimationFrame(id1)
+			if (id2) cancelAnimationFrame(id2)
+		}
+		// Dépendances volontairement réduites : éviter de relancer la phase slide à chaque update d’anim
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- activeMoveAnim?.key / phase suffisent
+	}, [activeMoveAnim?.key, activeMoveAnim?.phase])
+
+	const finishAnimatedMove = useCallback(() => {
+		if (finishAnimLockRef.current) return
+		const a = animRef.current
+		if (!a) return
+		finishAnimLockRef.current = true
+		const ng = new Chess(a.fenAfter)
+		setActiveMoveAnim(null)
+		setGame(ng)
+		checkEndGame(ng, setWinner)
+		queueMicrotask(() => {
+			finishAnimLockRef.current = false
+		})
+	}, [setGame, setWinner])
+
+	const onGhostTransitionEnd = useCallback(
+		(e) => {
+			if (e.target !== e.currentTarget) return
+			if (e.propertyName !== 'transform') return
+			finishAnimatedMove()
+		},
+		[finishAnimatedMove],
+	)
+
+	/** Coup reçu (WebSocket / API) : même animation que le coup local. */
+	useEffect(() => {
+		if (!remoteMove) return
+		if (winnerRef.current || activeAnimRef.current) return
+
+		const pieceBefore = game.get(remoteMove.from)
+		if (!pieceBefore) return
+
+		const g = new Chess(game.fen())
+		const m = g.move({
+			from: remoteMove.from,
+			to: remoteMove.to,
+			promotion: remoteMove.promotion ?? 'q',
+		})
+		if (!m) return
+
+		onRemoteMoveConsumed?.()
+
+		const hadCaptureOnTo = !!game.get(remoteMove.to)
+		let enPassantSq = null
+		if (typeof m.flags === 'string' && m.flags.includes('e')) {
+			enPassantSq = enPassantCapturedSquare(m.from, m.to)
+		}
+
+		beginAnimatedMove({
+			from: remoteMove.from,
+			to: remoteMove.to,
+			fenAfter: g.fen(),
+			movingPiece: pieceBefore,
+			themeSlug: getPieceThemeSlugForColor(pieceBefore.color, user),
+			captureOnTo: hadCaptureOnTo,
+			enPassantSq,
+		})
+	}, [remoteMove, game, user, beginAnimatedMove, onRemoteMoveConsumed])
+
 	const runClickRef = useRef(() => {})
 
 	useEffect(() => {
 		runClickRef.current = (row, col) => {
-			if (winnerRef.current) return
+			if (winnerRef.current || activeAnimRef.current) return
 
 			const square = toSquare(row, col)
 
@@ -192,27 +371,44 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 						return
 					}
 
-					const newGame = new Chess(game.fen())
-					const move = newGame.move({ from: selected, to: square, promotion: 'q' })
-					if (move) {
-						setGame(newGame)
-						if (newGame.isCheckmate()) {
-							const gameWinner = newGame.turn() === 'b' ? 'White' : 'Black'
-							setWinner(gameWinner)
-						} else if (newGame.isStalemate()) {
-							setWinner('Nulle')
-						} else if (newGame.isInsufficientMaterial()) {
-							setWinner('Nulle')
-						} else if (newGame.isThreefoldRepetition()) {
-							setWinner('Nulle')
-						}
+					const movingPiece = game.get(selected)
+					if (!movingPiece) return
+
+					const g = new Chess(game.fen())
+					const m = g.move({ from: selected, to: square, promotion: 'q' })
+					if (!m) {
+						setSelected(null)
+						setPossibleMoves([])
+						return
 					}
-					setSelected(null)
-					setPossibleMoves([])
+
+					const hadCaptureOnTo = !!game.get(square)
+					let enPassantSq = null
+					if (typeof m.flags === 'string' && m.flags.includes('e')) {
+						enPassantSq = enPassantCapturedSquare(m.from, m.to)
+					}
+
+					beginAnimatedMove({
+						from: selected,
+						to: square,
+						fenAfter: g.fen(),
+						movingPiece,
+						themeSlug: getPieceThemeSlugForColor(movingPiece.color, user),
+						captureOnTo: hadCaptureOnTo,
+						enPassantSq,
+					})
 				}
 			}
 		}
-	}, [game, selected, possibleMoves, setGame, setWinner, flashKing, flashIllegalSquare])
+	}, [
+		game,
+		selected,
+		possibleMoves,
+		flashKing,
+		flashIllegalSquare,
+		beginAnimatedMove,
+		user,
+	])
 
 	const handleBoardClick = useCallback((e) => {
 		const el = e.target.closest?.('.cell[data-square]')
@@ -244,9 +440,9 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 		return { title: 'Checkmate !', subtitle: `${w} wins` }
 	}
 
-	/* eslint-disable react-hooks/set-state-in-effect */
 	useEffect(() => {
-		if (popupOpen) {
+		if (!popupOpen) return
+		queueMicrotask(() => {
 			setSelected(null)
 			setPossibleMoves([])
 			setKingFlash(false)
@@ -255,15 +451,49 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 				clearTimeout(illegalTimerRef.current)
 				illegalTimerRef.current = null
 			}
-		}
+		})
 	}, [popupOpen])
-	/* eslint-enable react-hooks/set-state-in-effect */
 
 	useEffect(() => {
 		return () => {
 			if (illegalTimerRef.current) clearTimeout(illegalTimerRef.current)
 		}
 	}, [])
+
+	/** Si transform ne déclenche pas (dx=dy=0), appliquer le coup au bout du délai anim. */
+	useEffect(() => {
+		if (!activeMoveAnim || activeMoveAnim.phase !== 'sliding') return
+		const t = window.setTimeout(() => {
+			if (animRef.current?.phase === 'sliding') finishAnimatedMove()
+		}, MOVE_ANIM_MS + 80)
+		return () => window.clearTimeout(t)
+		// eslint-disable-next-line react-hooks/exhaustive-deps -- idem : pas tout activeMoveAnim
+	}, [activeMoveAnim?.key, activeMoveAnim?.phase, finishAnimatedMove])
+
+	const ghost =
+		activeMoveAnim &&
+		(activeMoveAnim.phase === 'slide' || activeMoveAnim.phase === 'sliding') &&
+		activeMoveAnim.size != null ? (
+			<div
+				className={`board-move-ghost ${activeMoveAnim.phase === 'sliding' ? 'board-move-ghost--sliding' : ''}`}
+				style={{
+					'--ghost-x0': `${activeMoveAnim.x0}px`,
+					'--ghost-y0': `${activeMoveAnim.y0}px`,
+					'--ghost-dx': `${activeMoveAnim.dx}px`,
+					'--ghost-dy': `${activeMoveAnim.dy}px`,
+					'--ghost-size': `${activeMoveAnim.size}px`,
+					'--ghost-dur': `${MOVE_ANIM_MS}ms`,
+				}}
+				onTransitionEnd={onGhostTransitionEnd}
+			>
+				<ChessPieceImg
+					theme={activeMoveAnim.themeSlug}
+					pieceType={activeMoveAnim.moving.type}
+					pieceColor={activeMoveAnim.moving.color}
+					className="piece board-move-ghost__img"
+				/>
+			</div>
+		) : null
 
 	return (
 		<div>
@@ -279,41 +509,46 @@ function Board({ game, setGame, winner, setWinner, tilePatternSeed }) {
 				</div>
 			)}
 
-			<div id="board" role="presentation" onClick={handleBoardClick}>
-				{position.flatMap((row, rowIndex) =>
-					row.map((piece, colIndex) => {
-						const sq = toSquare(rowIndex, colIndex)
-						const isLight = (rowIndex + colIndex) % 2 === 0
-						const isSelected = selected === sq
-						const isPossibleMove = possibleMoves.includes(sq) && !piece
-						const isPossibleCapture = possibleMoves.includes(sq) && !!piece
-						const isKingCheckCell = kingCheckSquare != null && sq === kingCheckSquare
-						const isIllegalFlash = illegalFlashSq === sq
-						const tileSrc = tilePattern ? tilePattern[rowIndex * 8 + colIndex] : null
+			<div className="board-root" ref={boardRootRef}>
+				<div id="board" role="presentation" onClick={handleBoardClick}>
+					{position.flatMap((row, rowIndex) =>
+						row.map((piece, colIndex) => {
+							const sq = toSquare(rowIndex, colIndex)
+							const isLight = (rowIndex + colIndex) % 2 === 0
+							const isSelected = selected === sq
+							const isPossibleMove = possibleMoves.includes(sq) && !piece
+							const isPossibleCapture = possibleMoves.includes(sq) && !!piece
+							const isKingCheckCell = kingCheckSquare != null && sq === kingCheckSquare
+							const isIllegalFlash = illegalFlashSq === sq
+							const tileSrc = tilePattern ? tilePattern[rowIndex * 8 + colIndex] : null
+							const suppressPiece = pieceSuppressed(sq, activeMoveAnim)
 
-						return (
-							<BoardCell
-								key={sq}
-								sq={sq}
-								isLight={isLight}
-								useTiles={useTiles}
-								tileCoalitionSlug={tileCoalitionSlug}
-								tileSrc={tileSrc}
-								pieceType={piece ? piece.type : null}
-								pieceColor={piece ? piece.color : null}
-								pieceThemeSlug={
-									piece ? getPieceThemeSlugForColor(piece.color, user) : ''
-								}
-								isSelected={isSelected}
-								isPossibleMove={isPossibleMove}
-								isPossibleCapture={isPossibleCapture}
-								isKingCheckCell={isKingCheckCell}
-								kingCheckAttn={kingFlash && isKingCheckCell}
-								isIllegalFlash={isIllegalFlash}
-							/>
-						)
-					}),
-				)}
+							return (
+								<BoardCell
+									key={sq}
+									sq={sq}
+									isLight={isLight}
+									useTiles={useTiles}
+									tileCoalitionSlug={tileCoalitionSlug}
+									tileSrc={tileSrc}
+									pieceType={piece ? piece.type : null}
+									pieceColor={piece ? piece.color : null}
+									pieceThemeSlug={
+										piece ? getPieceThemeSlugForColor(piece.color, user) : ''
+									}
+									isSelected={isSelected}
+									isPossibleMove={isPossibleMove}
+									isPossibleCapture={isPossibleCapture}
+									isKingCheckCell={isKingCheckCell}
+									kingCheckAttn={kingFlash && isKingCheckCell}
+									isIllegalFlash={isIllegalFlash}
+									suppressPiece={suppressPiece}
+								/>
+							)
+						}),
+					)}
+				</div>
+				{ghost}
 			</div>
 		</div>
 	)

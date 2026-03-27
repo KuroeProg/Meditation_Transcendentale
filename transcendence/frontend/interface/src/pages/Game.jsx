@@ -24,6 +24,8 @@ function App() {
 
 	const [game, setGame] = useState(() => new Chess())
 	const [winner, setWinner] = useState(null)
+	/** Coup adverse reçu (WS / API) : { from, to, promotion? } — consommé par Board puis remis à null */
+	const [remoteMove, setRemoteMove] = useState(null)
 
 	const [duration] = useState(GAME_DURATION.rapid)
 
@@ -50,7 +52,14 @@ function App() {
 				</div>
 
 				<div className="board-frame">
-					<Board game={game} setGame={setGame} winner={winner} setWinner={setWinner} />
+					<Board
+						game={game}
+						setGame={setGame}
+						winner={winner}
+						setWinner={setWinner}
+						remoteMove={remoteMove}
+						onRemoteMoveConsumed={() => setRemoteMove(null)}
+					/>
 				</div>
 
 				<div className="player-bar">

@@ -37,18 +37,31 @@ export default function CoalitionAmbient() {
 	const onAppRoute = location.pathname !== '/'
 
 	useEffect(() => {
-		if (!onAppRoute || loading) {
-			setBgReady(false)
-			return
+		let cancelled = false
+		const markNotReady = () => {
+			void Promise.resolve().then(() => {
+				if (!cancelled) setBgReady(false)
+			})
 		}
-		setBgReady(false)
+		if (!onAppRoute || loading) {
+			markNotReady()
+			return () => {
+				cancelled = true
+			}
+		}
+		markNotReady()
 		const url = COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
 		const img = new Image()
 		img.decoding = 'async'
-		const done = () => setBgReady(true)
+		const done = () => {
+			if (!cancelled) setBgReady(true)
+		}
 		img.onload = done
 		img.onerror = done
 		img.src = url
+		return () => {
+			cancelled = true
+		}
 	}, [slug, onAppRoute, loading])
 
 	useEffect(() => {
