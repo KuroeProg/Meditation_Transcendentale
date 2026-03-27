@@ -37,6 +37,8 @@ function materialBalance(chess) {
 function getResultInfo(winner) {
 	if (!winner) return { title: 'Partie en cours', subtitle: '' }
 	if (winner === 'Nulle') return { title: 'Draw!', subtitle: 'Equal position' }
+	if (winner === 'Black-Resign') return { title: 'Abandon', subtitle: 'Victoire des noirs' }
+	if (winner === 'White-Resign') return { title: 'Abandon', subtitle: 'Victoire des blancs' }
 	if (winner === 'White-Timeout' || winner === 'Black-Timeout') {
 		const color = winner === 'White-Timeout' ? 'White' : 'Black'
 		return { title: 'Time is up!', subtitle: `${color} wins on time` }
@@ -48,7 +50,8 @@ function resultShortNotation(winner) {
 	if (!winner) return null
 	if (winner === 'Nulle') return '½–½'
 	if (winner === 'White' || winner === 'White-Timeout') return '1–0'
-	if (winner === 'Black' || winner === 'Black-Timeout') return '0–1'
+	if (winner === 'Black' || winner === 'Black-Timeout' || winner === 'Black-Resign') return '0–1'
+	if (winner === 'White-Resign') return '1–0'
 	return null
 }
 

@@ -14,6 +14,13 @@ import { getPieceThemeSlugForColor } from '../dev/mockGameOpponent.js'
 import { ChessPieceImg } from '../chess/ChessPiecePng.jsx'
 import { BOARD_TILES, buildTileUrlFlat, themeHasTileAssets } from '../chess/boardTiles.js'
 import { collectChessGamePreloadUrls, preloadChessImages } from '../chess/chessAssetPreload.js'
+import {
+	unlockGameAudio,
+	playPieceMoveFromFlags,
+	playMoveCheck,
+	playUiErrorDeny,
+} from '../audio/gameSfx.js'
+import { tryPlayGameBgm } from '../audio/gameBgm.js'
 
 const MOVE_ANIM_MS = 200
 
@@ -56,6 +63,13 @@ function checkEndGame(newGame, setWinner) {
 		setWinner('Nulle')
 	} else if (newGame.isThreefoldRepetition()) {
 		setWinner('Nulle')
+	}
+}
+
+function playAfterMoveSfx(ng, moveFlags) {
+	playPieceMoveFromFlags(moveFlags ?? '')
+	if (!ng.isCheckmate() && !ng.isStalemate() && ng.inCheck()) {
+		playMoveCheck()
 	}
 }
 
@@ -204,6 +218,7 @@ function Board({
 	}, [])
 
 	const flashIllegalSquare = useCallback((square) => {
+		playUiErrorDeny()
 		if (illegalTimerRef.current) {
 			clearTimeout(illegalTimerRef.current)
 			illegalTimerRef.current = null
@@ -219,7 +234,7 @@ function Board({
 	useEffect(() => { onMoveRef.current = onMove }, [onMove])
 
 	const beginAnimatedMove = useCallback(
-		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq, san }) => {
+		({ from, to, fenAfter, movingPiece, themeSlug, captureOnTo, enPassantSq, san, moveFlags }) => {
 			finishAnimLockRef.current = false
 			setSelected(null)
 			setPossibleMoves([])
@@ -233,6 +248,7 @@ function Board({
 				captureOnTo,
 				enPassantSq,
 				san,
+				moveFlags: moveFlags ?? '',
 				phase: 'measure',
 			})
 		},
@@ -301,6 +317,7 @@ function Board({
 		if (!a) return
 		finishAnimLockRef.current = true
 		const ng = new Chess(a.fenAfter)
+		playAfterMoveSfx(ng, a.moveFlags)
 		setActiveMoveAnim(null)
 		setGame(ng)
 		onMoveRef.current?.({
@@ -358,6 +375,7 @@ function Board({
 			captureOnTo: hadCaptureOnTo,
 			enPassantSq,
 			san: m.san,
+			moveFlags: m.flags,
 		})
 	}, [remoteMove, game, user, beginAnimatedMove, onRemoteMoveConsumed])
 
@@ -448,6 +466,8 @@ function Board({
 	])
 
 	const handleBoardClick = useCallback((e) => {
+		unlockGameAudio()
+		void tryPlayGameBgm()
 		const el = e.target.closest?.('.cell[data-square]')
 		if (!el || !(el instanceof HTMLElement)) return
 		const sq = el.dataset.square

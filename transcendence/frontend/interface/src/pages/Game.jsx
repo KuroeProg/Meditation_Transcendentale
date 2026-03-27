@@ -8,6 +8,14 @@ import { get42AvatarUrl, getDisplayTitle } from '../utils/sessionUser.js'
 import { getMockGameOpponent, isMockGameOpponentActive } from '../dev/mockGameOpponent.js'
 import { randomTilePatternSeed } from '../chess/boardTiles.js'
 import GameStatsPanel from '../components/GameStatsPanel.jsx'
+import {
+	playGameWin,
+	playGameDraw,
+	playGameResign,
+	playClockTimeout,
+	unlockGameAudio,
+} from '../audio/gameSfx.js'
+import { GameAmbientBgm, GameMusicPanel } from '../components/GamePageAudio.jsx'
 
 function fenAfterPlies(moveLog, count) {
 	const c = new Chess()
@@ -107,7 +115,19 @@ function App() {
 
 	const handleResign = useCallback(() => {
 		if (winner) return
-		setWinner('Black')
+		setWinner('Black-Resign')
+	}, [winner])
+
+	const prevWinnerRef = useRef(null)
+	useEffect(() => {
+		if (winner === prevWinnerRef.current) return
+		prevWinnerRef.current = winner
+		if (!winner) return
+		unlockGameAudio()
+		if (winner === 'White' || winner === 'Black') playGameWin()
+		else if (winner === 'Nulle') playGameDraw()
+		else if (winner === 'Black-Resign' || winner === 'White-Resign') playGameResign()
+		else if (winner === 'White-Timeout' || winner === 'Black-Timeout') playClockTimeout()
 	}, [winner])
 
 	const startNewMatch = useCallback(() => {
@@ -142,6 +162,8 @@ function App() {
 		<div>
 			<div className="header" />
 			<div className="game-container">
+				<GameAmbientBgm />
+				<GameMusicPanel />
 				<div className="game-board-col">
 					<div className="player-bar">
 						<img className="player-avatar" src={blackAvatar} alt="" />
