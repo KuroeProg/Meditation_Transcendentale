@@ -10,6 +10,7 @@ class LocalUser(models.Model):
     email = models.EmailField(blank=True)
     image_url = models.URLField(blank=True, default='')
     coalition = models.CharField(max_length=50, blank=True, default='feu')
+    is_2fa_verified = models.BooleanField(default=True)  # Default True for existing users; new users start unverified
 
     class Meta:
         db_table = 'local_users'

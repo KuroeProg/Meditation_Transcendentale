@@ -7,11 +7,18 @@ import requests
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
-from django.views.decorators.csrf import ensure_csrf_cookie
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 from django.views.decorators.http import require_GET, require_POST
+from django.utils.decorators import method_decorator
 from urllib.parse import urlencode
 
 from accounts.models import LocalUser
+from utils.two_factor import (
+    generate_2fa_code,
+    verify_2fa_code,
+    send_2fa_email,
+    is_user_blocked,
+)
 
 
 def _normalize_label(value):
@@ -261,19 +268,28 @@ def auth_csrf(request):
     return JsonResponse({'ok': True})
 
 
-@require_POST
 def auth_login_db(request):
+    if request.method == 'GET':
+        return redirect('/auth')
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
     payload = _read_json_body(request)
-    username = str(payload.get('username', '')).strip()
+    # Backward compatibility: older frontend payload used "username".
+    email = str(payload.get('email', '') or payload.get('username', '')).strip()
     password = str(payload.get('password', ''))
 
-    if not username or not password:
-        return JsonResponse({'error': 'Username et mot de passe requis'}, status=400)
+    if not email or not password:
+        return JsonResponse({'error': 'Email et mot de passe requis'}, status=400)
 
-    try:
-        user = LocalUser.objects.get(username=username)
-    except LocalUser.DoesNotExist:
+    users = LocalUser.objects.filter(email__iexact=email)
+    if not users.exists():
         return JsonResponse({'error': 'Identifiants invalides'}, status=401)
+
+    if users.count() > 1:
+        return JsonResponse({'error': 'Plusieurs comptes utilisent cet email. Contacte le support.'}, status=409)
+
+    user = users.first()
 
     if not user.check_password(password):
         return JsonResponse({'error': 'Identifiants invalides'}, status=401)
@@ -360,3 +376,238 @@ def auth_seed_users(request):
             created.append(user.username)
 
     return JsonResponse({'ok': True, 'created': created})
+
+
+# ============================================================================
+# Two-Factor Authentication (2FA) Views
+# ============================================================================
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class RegisterView(View):
+    """
+    Handle user registration with 2FA flow.
+    
+    POST /api/auth/register/
+    Body: {
+        "username": "john_doe",
+        "password": "securepass123",
+        "first_name": "John",
+        "last_name": "Doe",
+        "email": "john@example.com"
+    }
+    
+    Returns 2FA pending status with user_id for subsequent verification.
+    """
+    
+    def post(self, request):
+        payload = _read_json_body(request)
+        
+        # Validate input
+        username = str(payload.get('username', '')).strip()
+        password = str(payload.get('password', '')).strip()
+        email = str(payload.get('email', '')).strip()
+        first_name = str(payload.get('first_name', '')).strip()
+        last_name = str(payload.get('last_name', '')).strip()
+        
+        # Required fields
+        if not username or not password or not email:
+            return JsonResponse({
+                'error': 'Username, password, and email are required'
+            }, status=400)
+        
+        # Check if username already exists
+        if LocalUser.objects.filter(username=username).exists():
+            return JsonResponse({
+                'error': 'Username already taken'
+            }, status=409)
+        
+        # Check if email already exists
+        if LocalUser.objects.filter(email=email).exists():
+            return JsonResponse({
+                'error': 'Email already registered'
+            }, status=409)
+        
+        try:
+            # Create user with is_2fa_verified=False
+            user = LocalUser.objects.create(
+                username=username,
+                email=email,
+                first_name=first_name,
+                last_name=last_name,
+                coalition='feu',  # Default coalition
+                is_2fa_verified=False,
+            )
+            user.set_password(password)
+            user.save()
+            
+            # Generate 2FA code
+            code = generate_2fa_code(user.id)
+            if not code:
+                # Rollback user creation if code generation fails
+                user.delete()
+                return JsonResponse({
+                    'error': 'Failed to generate verification code'
+                }, status=500)
+            
+            # Send 2FA code via email
+            email_sent = send_2fa_email(email, code)
+            if not email_sent:
+                # Log warning but continue - user can request new code
+                import logging
+                logger = logging.getLogger(__name__)
+                logger.warning(f"Failed to send 2FA email to {email} for user {user.id}")
+            
+            return JsonResponse({
+                'status': '2fa_pending',
+                'user_id': user.id,
+                'message': f'Verification code sent to {email}. Check your email.'
+            }, status=201)
+            
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Registration error: {e}")
+            return JsonResponse({
+                'error': 'Registration failed. Please try again.'
+            }, status=500)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class Verify2FAView(View):
+    """
+    Verify 2FA code and finalize registration.
+    
+    POST /api/auth/verify-2fa/
+    Body: {
+        "user_id": 123,
+        "code": "123456"
+    }
+    
+    Returns user data and establishes session on success.
+    """
+    
+    def post(self, request):
+        payload = _read_json_body(request)
+        
+        # Validate input
+        user_id = payload.get('user_id')
+        code = str(payload.get('code', '')).strip()
+        
+        if not user_id or not code:
+            return JsonResponse({
+                'error': 'user_id and code are required'
+            }, status=400)
+        
+        # Get user
+        try:
+            user = LocalUser.objects.get(id=user_id)
+        except LocalUser.DoesNotExist:
+            return JsonResponse({
+                'error': 'User not found'
+            }, status=404)
+        
+        # Check if already verified (shouldn't call this endpoint again)
+        if user.is_2fa_verified:
+            return JsonResponse({
+                'error': 'User already verified. Please login instead.'
+            }, status=400)
+        
+        # Check if use is rate-limited
+        if is_user_blocked(user_id):
+            return JsonResponse({
+                'error': 'Too many failed attempts. Please try again later.'
+            }, status=429)
+        
+        # Verify code
+        result = verify_2fa_code(user_id, code)
+        
+        if not result['valid']:
+            error_msg = result.get('error', 'Verification failed')
+            status_code = 429 if result.get('blocked') else 400
+            return JsonResponse({
+                'error': error_msg
+            }, status=status_code)
+        
+        # Success: Mark user as 2FA verified and set active
+        user.is_2fa_verified = True
+        user.save(update_fields=['is_2fa_verified'])
+        
+        # Create session
+        request.session['local_user_id'] = user.id
+        request.session.modified = True
+        
+        import logging
+        logger = logging.getLogger(__name__)
+        logger.info(f"User {user.id} ({user.username}) successfully completed 2FA registration")
+        
+        return JsonResponse({
+            'status': 'registered',
+            'user': user.to_public_dict(),
+            'message': 'Registration complete. Welcome!'
+        }, status=200)
+
+
+@method_decorator(csrf_exempt, name='dispatch')
+class ResendVerificationCodeView(View):
+    """
+    Resend 2FA verification code (for users who didn't receive email).
+    
+    POST /api/auth/resend-code/
+    Body: {
+        "user_id": 123,
+        "email": "user@example.com"
+    }
+    
+    Returns new code generation status.
+    """
+    
+    def post(self, request):
+        payload = _read_json_body(request)
+        
+        user_id = payload.get('user_id')
+        email = str(payload.get('email', '')).strip()
+        
+        if not user_id or not email:
+            return JsonResponse({
+                'error': 'user_id and email are required'
+            }, status=400)
+        
+        # Get user
+        try:
+            user = LocalUser.objects.get(id=user_id)
+        except LocalUser.DoesNotExist:
+            return JsonResponse({
+                'error': 'User not found'
+            }, status=404)
+        
+        # Verify email matches
+        if user.email != email:
+            return JsonResponse({
+                'error': 'Email does not match'
+            }, status=400)
+        
+        # Check if already verified
+        if user.is_2fa_verified:
+            return JsonResponse({
+                'error': 'User already verified'
+            }, status=400)
+        
+        # Generate new code (replaces old one)
+        code = generate_2fa_code(user.id)
+        if not code:
+            return JsonResponse({
+                'error': 'Failed to generate verification code'
+            }, status=500)
+        
+        # Send email
+        email_sent = send_2fa_email(email, code)
+        if not email_sent:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.warning(f"Failed to resend 2FA email to {email}")
+        
+        return JsonResponse({
+            'status': '2fa_pending',
+            'message': 'Verification code sent. Check your email.'
+        }, status=200)

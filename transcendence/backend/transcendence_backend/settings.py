@@ -160,6 +160,25 @@ CHANNEL_LAYERS = {
 }
 
 
+# Email Configuration
+# https://docs.djangoproject.com/en/5.0/topics/email/
+
+# For development: output emails to console
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+) if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@transcendence.local')
+
+# SMTP configuration (for production)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+
+
 # Internationalization
 # https://docs.djangoproject.com/en/5.0/topics/i18n/
 
