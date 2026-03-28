@@ -87,7 +87,7 @@ npm run dev
 - **`npm run lint`** — ESLint.
 - **`scripts/generate-board-tiles-manifest.mjs`** — regenerates chess tile manifests from `public/` assets (invoked automatically before dev/build).
 
-See **`transcendence/frontend/interface/README.md`** for more detail on npm scripts and optional tooling.
+See **`transcendence/frontend/interface/README.md`** for npm script details (tile manifest generation, etc.).
 
 ---
 

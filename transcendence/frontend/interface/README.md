@@ -1,12 +1,12 @@
 # Interface Transcendance (React + Vite)
 
-## Scripts npm utiles
+## Scripts npm
 
-- **`npm run dev` / `npm run build`** — avant lancement, `predev` / `prebuild` exécutent **`generate:tiles-manifest`** (`scripts/generate-board-tiles-manifest.mjs`) pour régénérer `src/chess/boardTilesManifest.json` à partir des PNG dans `public/chess/tiles/`. **Le dossier `scripts/` est donc nécessaire au build**, pas du bruit.
-- **`npm run generate:coalition-svgs`** — génération optionnelle d’assets SVG (`scripts/generate-coalition-svgs.mjs`).
-- **`scripts/measure-board-terre.mjs`** — utilitaire ponctuel de mesure sur une image ; hors runtime navigateur.
+- **`npm run dev` / `npm run build`** — `predev` / `prebuild` lancent **`generate:tiles-manifest`** (`scripts/generate-board-tiles-manifest.mjs`), qui régénère `src/chess/boardTilesManifest.json` à partir des tuiles dans `public/chess/tiles/`. **Indispensable au build.**
 
-Les environnements Python locaux pour outils graphiques (ex. **`.venv-sprites`**) ne sont **pas** utilisés par npm ; ils sont listés dans `.gitignore` pour éviter de les versionner.
+- **`npm run lint`**, **`npm run preview`** — qualité et prévisualisation du bundle.
+
+Les environnements Python locaux pour outils graphiques (ex. **`.venv-sprites`**) ne sont **pas** utilisés par npm ; le dossier est ignoré par Git (voir `.gitignore` du package interface).
 
 ---
 

@@ -10,8 +10,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "generate:tiles-manifest": "node scripts/generate-board-tiles-manifest.mjs",
-    "generate:coalition-svgs": "node scripts/generate-coalition-svgs.mjs"
+    "generate:tiles-manifest": "node scripts/generate-board-tiles-manifest.mjs"
   },
   "dependencies": {
     "chess.js": "^1.4.0",
