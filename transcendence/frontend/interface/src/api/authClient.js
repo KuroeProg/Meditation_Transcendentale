@@ -32,7 +32,7 @@ async function ensureCsrfCookie() {
 	})
 }
 
-export async function loginDbRequest(username, password) {
+export async function loginDbRequest(emailOrUsername, password) {
 	await ensureCsrfCookie()
 	const csrf = readCookie('csrftoken')
 	const headers = {
@@ -45,7 +45,7 @@ export async function loginDbRequest(username, password) {
 		method: 'POST',
 		credentials: 'include',
 		headers,
-		body: JSON.stringify({ username, password }),
+		body: JSON.stringify({ email: emailOrUsername, password }),
 	})
 
 	let data = null

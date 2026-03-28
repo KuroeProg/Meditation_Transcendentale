@@ -16,7 +16,7 @@ function PlaceholderStat({ label, value }) {
 
 function Profile() {
 	const { user, loading, error, loginWith42, loginWithDb, isDevMockAuth } = useAuth()
-	const [username, setUsername] = useState('')
+	const [emailInput, setEmailInput] = useState('')
 	const [password, setPassword] = useState('')
 	const [loginError, setLoginError] = useState(null)
 	const [submitting, setSubmitting] = useState(false)
@@ -26,7 +26,7 @@ function Profile() {
 		setLoginError(null)
 		setSubmitting(true)
 		try {
-			await loginWithDb({ username, password })
+			await loginWithDb({ email: emailInput, password })
 			setPassword('')
 		} catch (e) {
 			setLoginError(e?.message || 'Echec de connexion')
@@ -92,10 +92,10 @@ function Profile() {
 					<p>Connecte-toi avec la base de donnees pour afficher ton profil.</p>
 					<form onSubmit={handleDbLogin} style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
 						<input
-							type="text"
-							placeholder="username"
-							value={username}
-							onChange={(e) => setUsername(e.target.value)}
+							type="email"
+							placeholder="email"
+							value={emailInput}
+							onChange={(e) => setEmailInput(e.target.value)}
 							required
 						/>
 						<input
@@ -109,7 +109,7 @@ function Profile() {
 							{submitting ? 'Connexion...' : 'Se connecter (DB)'}
 						</button>
 					</form>
-					<p className="muted small">Comptes de test: white_player / white1234 et black_player / black1234</p>
+					<p className="muted small">Comptes de test: white@transcendence.local / white1234 et black@transcendence.local / black1234</p>
 					{loginError && <p className="error-banner" role="alert">{loginError}</p>}
 					<p className="muted small">Ou via OAuth 42 si besoin:</p>
 					<button type="button" className="btn btn-primary" onClick={loginWith42}>

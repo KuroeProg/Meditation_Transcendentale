@@ -21,6 +21,16 @@ import {
   GameMusicPanel,
 } from "../components/GamePageAudio.jsx";
 
+const ACTIVE_GAME_STORAGE_KEY = "activeGameId";
+const ACTIVE_MATCH_STATUSES = new Set(["active"]);
+const FINISHED_MATCH_STATUSES = new Set([
+  "checkmate",
+  "stalemate",
+  "draw",
+  "resigned",
+  "timeout",
+]);
+
 function uciToMoveObject(uci) {
   if (typeof uci !== "string" || uci.length < 4) return null;
   const from = uci.slice(0, 2);
@@ -93,6 +103,23 @@ function App() {
   }, [gameState, userId]);
 
   const normalizedUserId = useMemo(() => normalizeId(userId), [normalizeId, userId]);
+
+  useEffect(() => {
+    const status = gameState?.status;
+    if (!status) return;
+
+    if (ACTIVE_MATCH_STATUSES.has(status)) {
+      sessionStorage.setItem(ACTIVE_GAME_STORAGE_KEY, gameId);
+      return;
+    }
+
+    if (FINISHED_MATCH_STATUSES.has(status)) {
+      const lockedGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY);
+      if (lockedGameId === gameId) {
+        sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY);
+      }
+    }
+  }, [gameId, gameState?.status]);
 
   const handleMove = useCallback(({ color, piece, from, to, san }) => {
     const now = Date.now();

@@ -1,8 +1,14 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 
 function Sidebar() {
+	const navigate = useNavigate()
 	const { logout, isAuthenticated } = useAuth()
+
+	const handleLogout = async () => {
+		await logout()
+		navigate('/auth', { replace: true })
+	}
 
 	return (
 		<div className="sidebar">
@@ -49,7 +55,7 @@ function Sidebar() {
 				</li>
 				<li>
 					{isAuthenticated ? (
-						<button type="button" className="sidebar-btn" onClick={() => logout()}>
+						<button type="button" className="sidebar-btn" onClick={handleLogout}>
 							<span className="icon">
 								<i className="fa-solid fa-right-from-bracket" />
 							</span>
