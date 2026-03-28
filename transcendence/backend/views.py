@@ -268,7 +268,7 @@ PRE_AUTH_TOKEN_SALT = 'preauth-2fa'
 PRE_AUTH_TOKEN_MAX_AGE_SECONDS = 300
 TRUSTED_2FA_COOKIE_NAME = 'trusted_2fa_device'
 TRUSTED_2FA_COOKIE_SALT = 'trusted-2fa-device'
-TRUSTED_2FA_MAX_AGE_SECONDS = int(os.environ.get('TRUSTED_2FA_MAX_AGE_SECONDS', '600'))
+TRUSTED_2FA_MAX_AGE_SECONDS = int(os.environ.get('TRUSTED_2FA_MAX_AGE_SECONDS', '31536000'))
 
 
 def _issue_pre_auth_token(user_id: int, flow: str = 'login'):

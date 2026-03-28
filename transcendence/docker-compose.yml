@@ -69,12 +69,30 @@ services:
       - FORTYTWO_CLIENT_SECRET=${FORTYTWO_CLIENT_SECRET}
       - FORTYTWO_REDIRECT_URI=${FORTYTWO_REDIRECT_URI}
       - FRONTEND_DASHBOARD_URL=${FRONTEND_DASHBOARD_URL}
+      - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
+      - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@transcendence.local}
+      - EMAIL_HOST=${EMAIL_HOST:-mailhog}
+      - EMAIL_PORT=${EMAIL_PORT:-1025}
+      - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
+      - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
+      - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
     ports:
     # A voir avec Cloe
       - "8000:8000"
     depends_on:
       - db
       - redis
+      - mailhog
+    networks:
+      - backend_net
+    restart: always
+    logging: *default-logging
+
+  mailhog:
+    image: mailhog/mailhog:v1.0.1
+    container_name: transcendence_mailhog
+    ports:
+      - "8025:8025"
     networks:
       - backend_net
     restart: always

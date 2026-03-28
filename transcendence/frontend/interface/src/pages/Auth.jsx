@@ -314,7 +314,7 @@ function Verify2FAForm({ userId, email, preAuthToken, onVerificationSuccess }) {
             onChange={(e) => setRememberDevice(e.target.checked)}
             disabled={loading}
           />
-          <span>Se souvenir de cet appareil pendant 10 minutes</span>
+          <span>Se souvenir de cet appareil</span>
         </label>
       )}
 
