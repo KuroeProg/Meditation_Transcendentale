@@ -285,6 +285,20 @@
   margin: 10px 0;
 }
 
+.remember-device-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #bbb;
+  font-size: 0.9rem;
+  margin: 10px 0 14px;
+  justify-content: center;
+}
+
+.remember-device-row input {
+  accent-color: #ff8c42;
+}
+
 .loading-screen {
   display: flex;
   flex-direction: column;

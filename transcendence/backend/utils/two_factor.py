@@ -25,6 +25,15 @@ FAILED_ATTEMPTS_WINDOW = 600  # 10 minutes
 BLOCK_DURATION = 600  # 10 minutes
 
 
+def _sanitize_purpose(purpose: str) -> str:
+    value = str(purpose or "registration").strip().lower()
+    return value if value else "registration"
+
+
+def _build_key(prefix: str, user_id: int, purpose: str) -> str:
+    return f"{prefix}:{_sanitize_purpose(purpose)}:{user_id}"
+
+
 def get_redis_connection_safe():
     """
     Safely retrieve Redis connection with error handling.
@@ -39,7 +48,7 @@ def get_redis_connection_safe():
         return None
 
 
-def generate_2fa_code(user_id: int) -> str:
+def generate_2fa_code(user_id: int, purpose: str = "registration") -> str:
     """
     Generate a 6-digit random 2FA code and store in Redis with TTL.
     
@@ -62,7 +71,7 @@ def generate_2fa_code(user_id: int) -> str:
         code = "".join([str(random.randint(0, 9)) for _ in range(CODE_LENGTH)])
         
         # Store in Redis with TTL
-        redis_key = f"{REDIS_2FA_CODE_PREFIX}:{user_id}"
+        redis_key = _build_key(REDIS_2FA_CODE_PREFIX, user_id, purpose)
         redis_conn.setex(redis_key, CODE_TTL, code)
         
         logger.info(f"Generated 2FA code for user {user_id}")
@@ -73,7 +82,7 @@ def generate_2fa_code(user_id: int) -> str:
         return ""
 
 
-def verify_2fa_code(user_id: int, submitted_code: str) -> dict:
+def verify_2fa_code(user_id: int, submitted_code: str, purpose: str = "registration") -> dict:
     """
     Verify a 2FA code against the one stored in Redis.
     Handles rate limiting: blocks after 3 failed attempts for 10 minutes.
@@ -99,7 +108,7 @@ def verify_2fa_code(user_id: int, submitted_code: str) -> dict:
             }
         
         # Check if user is blocked due to rate limiting
-        blocked_key = f"{REDIS_2FA_BLOCKED_PREFIX}:{user_id}"
+        blocked_key = _build_key(REDIS_2FA_BLOCKED_PREFIX, user_id, purpose)
         if redis_conn.exists(blocked_key):
             logger.warning(f"User {user_id} is rate-limited for 2FA attempts")
             return {
@@ -109,7 +118,7 @@ def verify_2fa_code(user_id: int, submitted_code: str) -> dict:
             }
         
         # Get stored code
-        code_key = f"{REDIS_2FA_CODE_PREFIX}:{user_id}"
+        code_key = _build_key(REDIS_2FA_CODE_PREFIX, user_id, purpose)
         stored_code = redis_conn.get(code_key)
         
         if not stored_code:
@@ -131,7 +140,7 @@ def verify_2fa_code(user_id: int, submitted_code: str) -> dict:
             # Success: delete the code to prevent reuse
             redis_conn.delete(code_key)
             # Clear failed attempts counter
-            failed_key = f"{REDIS_2FA_FAILED_PREFIX}:{user_id}"
+            failed_key = _build_key(REDIS_2FA_FAILED_PREFIX, user_id, purpose)
             redis_conn.delete(failed_key)
             logger.info(f"User {user_id} successfully verified 2FA code")
             return {
@@ -141,7 +150,7 @@ def verify_2fa_code(user_id: int, submitted_code: str) -> dict:
             }
         else:
             # Failed attempt: increment counter
-            failed_key = f"{REDIS_2FA_FAILED_PREFIX}:{user_id}"
+            failed_key = _build_key(REDIS_2FA_FAILED_PREFIX, user_id, purpose)
             failed_count = redis_conn.incr(failed_key)
             
             # Set expiry on first failure
@@ -233,7 +242,7 @@ Transcendence Team
         return False
 
 
-def clear_2fa_verification(user_id: int) -> None:
+def clear_2fa_verification(user_id: int, purpose: str = "registration") -> None:
     """
     Clear all 2FA-related Redis keys for a user (code, failed attempts, block).
     Useful for cleanup or manual verification reset.
@@ -246,9 +255,9 @@ def clear_2fa_verification(user_id: int) -> None:
         if not redis_conn:
             return
         
-        code_key = f"{REDIS_2FA_CODE_PREFIX}:{user_id}"
-        failed_key = f"{REDIS_2FA_FAILED_PREFIX}:{user_id}"
-        blocked_key = f"{REDIS_2FA_BLOCKED_PREFIX}:{user_id}"
+        code_key = _build_key(REDIS_2FA_CODE_PREFIX, user_id, purpose)
+        failed_key = _build_key(REDIS_2FA_FAILED_PREFIX, user_id, purpose)
+        blocked_key = _build_key(REDIS_2FA_BLOCKED_PREFIX, user_id, purpose)
         
         redis_conn.delete(code_key, failed_key, blocked_key)
         logger.info(f"Cleared 2FA verification state for user {user_id}")
@@ -257,7 +266,7 @@ def clear_2fa_verification(user_id: int) -> None:
         logger.error(f"Error clearing 2FA state for user {user_id}: {e}")
 
 
-def is_user_blocked(user_id: int) -> bool:
+def is_user_blocked(user_id: int, purpose: str = "registration") -> bool:
     """
     Check if a user is currently blocked from 2FA attempts.
     
@@ -272,7 +281,7 @@ def is_user_blocked(user_id: int) -> bool:
         if not redis_conn:
             return False
         
-        blocked_key = f"{REDIS_2FA_BLOCKED_PREFIX}:{user_id}"
+        blocked_key = _build_key(REDIS_2FA_BLOCKED_PREFIX, user_id, purpose)
         return redis_conn.exists(blocked_key) > 0
         
     except Exception as e:

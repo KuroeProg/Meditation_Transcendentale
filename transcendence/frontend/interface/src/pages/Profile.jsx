@@ -90,9 +90,11 @@ function Profile() {
 			) : !user ? (
 				<section className="surface-card surface-card--cta">
 					<p>Connecte-toi avec la base de donnees pour afficher ton profil.</p>
-					<form onSubmit={handleDbLogin} style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
+					<form onSubmit={handleDbLogin} autoComplete="on" data-lpignore="true" style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
 						<input
 							type="email"
+							name="email"
+							autoComplete="email"
 							placeholder="email"
 							value={emailInput}
 							onChange={(e) => setEmailInput(e.target.value)}
@@ -100,6 +102,8 @@ function Profile() {
 						/>
 						<input
 							type="password"
+							name="password"
+							autoComplete="current-password"
 							placeholder="password"
 							value={password}
 							onChange={(e) => setPassword(e.target.value)}

@@ -4,6 +4,8 @@ import secrets
 import json
 import unicodedata
 import requests
+from django.conf import settings
+from django.core import signing
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
@@ -262,6 +264,73 @@ def _read_json_body(request):
         return {}
 
 
+PRE_AUTH_TOKEN_SALT = 'preauth-2fa'
+PRE_AUTH_TOKEN_MAX_AGE_SECONDS = 300
+TRUSTED_2FA_COOKIE_NAME = 'trusted_2fa_device'
+TRUSTED_2FA_COOKIE_SALT = 'trusted-2fa-device'
+TRUSTED_2FA_MAX_AGE_SECONDS = int(os.environ.get('TRUSTED_2FA_MAX_AGE_SECONDS', '600'))
+
+
+def _issue_pre_auth_token(user_id: int, flow: str = 'login'):
+    payload = {'user_id': int(user_id), 'flow': flow}
+    return signing.dumps(payload, salt=PRE_AUTH_TOKEN_SALT)
+
+
+def _read_pre_auth_token(token: str):
+    try:
+        payload = signing.loads(
+            str(token),
+            salt=PRE_AUTH_TOKEN_SALT,
+            max_age=PRE_AUTH_TOKEN_MAX_AGE_SECONDS,
+        )
+        return payload
+    except signing.BadSignature:
+        return None
+
+
+def _build_trusted_2fa_token(user):
+    payload = {
+        'user_id': int(user.id),
+        # Invalidate trusted-device token when password changes.
+        'password_fingerprint': str(user.password_hash or '')[-24:],
+    }
+    return signing.dumps(payload, salt=TRUSTED_2FA_COOKIE_SALT)
+
+
+def _is_trusted_2fa_cookie_valid(request, user):
+    token = request.COOKIES.get(TRUSTED_2FA_COOKIE_NAME)
+    if not token:
+        return False
+
+    try:
+        payload = signing.loads(
+            str(token),
+            salt=TRUSTED_2FA_COOKIE_SALT,
+            max_age=TRUSTED_2FA_MAX_AGE_SECONDS,
+        )
+    except signing.BadSignature:
+        return False
+
+    if payload.get('user_id') != int(user.id):
+        return False
+
+    expected_fingerprint = str(user.password_hash or '')[-24:]
+    return payload.get('password_fingerprint') == expected_fingerprint
+
+
+def _set_trusted_2fa_cookie(response, user):
+    token = _build_trusted_2fa_token(user)
+    response.set_cookie(
+        TRUSTED_2FA_COOKIE_NAME,
+        token,
+        max_age=TRUSTED_2FA_MAX_AGE_SECONDS,
+        httponly=True,
+        secure=not settings.DEBUG,
+        samesite='Lax',
+        path='/',
+    )
+
+
 @require_GET
 @ensure_csrf_cookie
 def auth_csrf(request):
@@ -292,6 +361,34 @@ def auth_login_db(request):
 
     if not user.check_password(password):
         return JsonResponse({'error': 'Identifiants invalides'}, status=401)
+
+    if user.is_2fa_enabled:
+        if _is_trusted_2fa_cookie_valid(request, user):
+            request.session['local_user_id'] = user.id
+            request.session.modified = True
+            return JsonResponse({'status': 'authenticated', 'user': user.to_public_dict()})
+
+        if is_user_blocked(user.id, purpose='login'):
+            return JsonResponse({
+                'error': 'Too many failed attempts. Please try again later.'
+            }, status=429)
+
+        code = generate_2fa_code(user.id, purpose='login')
+        if not code:
+            return JsonResponse({'error': 'Failed to generate verification code'}, status=500)
+
+        email_sent = send_2fa_email(user.email, code)
+        if not email_sent:
+            return JsonResponse({'error': 'Failed to send verification code'}, status=500)
+
+        pre_auth_token = _issue_pre_auth_token(user.id, flow='login')
+        return JsonResponse({
+            'status': '2fa_required',
+            'user_id': user.id,
+            'pre_auth_token': pre_auth_token,
+            'message': 'Code sent to email',
+            'email': user.email,
+        }, status=200)
 
     request.session['local_user_id'] = user.id
     return JsonResponse({'user': user.to_public_dict()})
@@ -435,13 +532,14 @@ class RegisterView(View):
                 first_name=first_name,
                 last_name=last_name,
                 coalition='feu',  # Default coalition
+                is_2fa_enabled=True,
                 is_2fa_verified=False,
             )
             user.set_password(password)
             user.save()
             
             # Generate 2FA code
-            code = generate_2fa_code(user.id)
+            code = generate_2fa_code(user.id, purpose='registration')
             if not code:
                 # Rollback user creation if code generation fails
                 user.delete()
@@ -492,6 +590,18 @@ class Verify2FAView(View):
         # Validate input
         user_id = payload.get('user_id')
         code = str(payload.get('code', '')).strip()
+        pre_auth_token = str(payload.get('pre_auth_token', '')).strip()
+        remember_device = bool(payload.get('remember_device', True))
+        is_login_flow = False
+
+        if pre_auth_token:
+            token_payload = _read_pre_auth_token(pre_auth_token)
+            if not token_payload:
+                return JsonResponse({'error': 'Invalid or expired pre-auth token'}, status=401)
+            if token_payload.get('flow') != 'login':
+                return JsonResponse({'error': 'Invalid pre-auth token flow'}, status=401)
+            user_id = token_payload.get('user_id')
+            is_login_flow = True
         
         if not user_id or not code:
             return JsonResponse({
@@ -506,20 +616,25 @@ class Verify2FAView(View):
                 'error': 'User not found'
             }, status=404)
         
-        # Check if already verified (shouldn't call this endpoint again)
-        if user.is_2fa_verified:
+        # Registration flow should only verify not-yet-verified accounts.
+        if not is_login_flow and user.is_2fa_verified:
             return JsonResponse({
                 'error': 'User already verified. Please login instead.'
             }, status=400)
+
+        if is_login_flow and not user.is_2fa_enabled:
+            return JsonResponse({'error': '2FA is not enabled for this user'}, status=400)
         
         # Check if use is rate-limited
-        if is_user_blocked(user_id):
+        purpose = 'login' if is_login_flow else 'registration'
+
+        if is_user_blocked(user_id, purpose=purpose):
             return JsonResponse({
                 'error': 'Too many failed attempts. Please try again later.'
             }, status=429)
         
         # Verify code
-        result = verify_2fa_code(user_id, code)
+        result = verify_2fa_code(user_id, code, purpose=purpose)
         
         if not result['valid']:
             error_msg = result.get('error', 'Verification failed')
@@ -528,9 +643,10 @@ class Verify2FAView(View):
                 'error': error_msg
             }, status=status_code)
         
-        # Success: Mark user as 2FA verified and set active
-        user.is_2fa_verified = True
-        user.save(update_fields=['is_2fa_verified'])
+        # Success: registration marks account verified; login just confirms second factor.
+        if not is_login_flow:
+            user.is_2fa_verified = True
+            user.save(update_fields=['is_2fa_verified'])
         
         # Create session
         request.session['local_user_id'] = user.id
@@ -538,8 +654,18 @@ class Verify2FAView(View):
         
         import logging
         logger = logging.getLogger(__name__)
+        if is_login_flow:
+            logger.info(f"User {user.id} ({user.username}) successfully completed 2FA login")
+            response = JsonResponse({
+                'status': 'authenticated',
+                'user': user.to_public_dict(),
+                'message': 'Login complete.'
+            }, status=200)
+            if remember_device:
+                _set_trusted_2fa_cookie(response, user)
+            return response
+
         logger.info(f"User {user.id} ({user.username}) successfully completed 2FA registration")
-        
         return JsonResponse({
             'status': 'registered',
             'user': user.to_public_dict(),
@@ -566,6 +692,17 @@ class ResendVerificationCodeView(View):
         
         user_id = payload.get('user_id')
         email = str(payload.get('email', '')).strip()
+        pre_auth_token = str(payload.get('pre_auth_token', '')).strip()
+        is_login_flow = False
+
+        if pre_auth_token:
+            token_payload = _read_pre_auth_token(pre_auth_token)
+            if not token_payload:
+                return JsonResponse({'error': 'Invalid or expired pre-auth token'}, status=401)
+            if token_payload.get('flow') != 'login':
+                return JsonResponse({'error': 'Invalid pre-auth token flow'}, status=401)
+            user_id = token_payload.get('user_id')
+            is_login_flow = True
         
         if not user_id or not email:
             return JsonResponse({
@@ -587,13 +724,17 @@ class ResendVerificationCodeView(View):
             }, status=400)
         
         # Check if already verified
-        if user.is_2fa_verified:
+        if not is_login_flow and user.is_2fa_verified:
             return JsonResponse({
                 'error': 'User already verified'
             }, status=400)
+
+        if is_login_flow and not user.is_2fa_enabled:
+            return JsonResponse({'error': '2FA is not enabled for this user'}, status=400)
         
         # Generate new code (replaces old one)
-        code = generate_2fa_code(user.id)
+        purpose = 'login' if is_login_flow else 'registration'
+        code = generate_2fa_code(user.id, purpose=purpose)
         if not code:
             return JsonResponse({
                 'error': 'Failed to generate verification code'
@@ -607,6 +748,6 @@ class ResendVerificationCodeView(View):
             logger.warning(f"Failed to resend 2FA email to {email}")
         
         return JsonResponse({
-            'status': '2fa_pending',
+            'status': '2fa_required' if is_login_flow else '2fa_pending',
             'message': 'Verification code sent. Check your email.'
         }, status=200)

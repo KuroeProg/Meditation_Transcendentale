@@ -81,8 +81,21 @@ export function AuthProvider({ children }) {
         return false
       }
 
+      if (data?.status === '2fa_required') {
+        return {
+          status: '2fa_required',
+          user_id: data.user_id,
+          pre_auth_token: data.pre_auth_token,
+          email: data.email,
+          message: data.message,
+        }
+      }
+
       setUser(data.user)
-      return true
+      return {
+        status: 'authenticated',
+        user: data.user,
+      }
     } catch (err) {
       setError('Network error. Please try again.')
       return false
@@ -120,14 +133,22 @@ export function AuthProvider({ children }) {
     }
   }
 
-  async function verify2FA(userId, code) {
+  async function verify2FA(userId, code, preAuthToken = null, rememberDevice = true) {
     setError(null)
     try {
+      const payload = { code }
+      if (preAuthToken) {
+        payload.pre_auth_token = preAuthToken
+        payload.remember_device = Boolean(rememberDevice)
+      } else {
+        payload.user_id = userId
+      }
+
       const response = await fetch('/api/auth/verify-2fa', {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, code }),
+        body: JSON.stringify(payload),
       })
 
       const data = await response.json()

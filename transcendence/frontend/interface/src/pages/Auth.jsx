@@ -3,7 +3,7 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import './Auth.css'
 
-function LoginForm() {
+function LoginForm({ on2FARequired }) {
   const { loginLocal, error, setError } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
@@ -21,21 +21,30 @@ function LoginForm() {
     setError(null)
     setLoading(true)
 
-    const success = await loginLocal(formData.email, formData.password)
+    const result = await loginLocal(formData.email, formData.password)
+
+    if (result?.status === '2fa_required') {
+      on2FARequired({
+        userId: result.user_id,
+        email: result.email,
+        preAuthToken: result.pre_auth_token,
+      })
+    }
 
     setLoading(false)
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className="auth-form" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
       <h2>Login</h2>
 
       <div className="form-group">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="login-email">Email</label>
         <input
-          id="email"
+          id="login-email"
           type="email"
           name="email"
+          autoComplete="email"
           value={formData.email}
           onChange={handleChange}
           placeholder="Enter your email"
@@ -45,11 +54,12 @@ function LoginForm() {
       </div>
 
       <div className="form-group">
-        <label htmlFor="password">Password</label>
+        <label htmlFor="login-password">Password</label>
         <input
-          id="password"
+          id="login-password"
           type="password"
           name="password"
+          autoComplete="current-password"
           value={formData.password}
           onChange={handleChange}
           placeholder="Enter your password"
@@ -104,7 +114,7 @@ function RegisterForm({ onRegistrationSuccess }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit}>
+    <form className="auth-form" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
       <h2>Register</h2>
 
       <div className="form-row">
@@ -114,6 +124,7 @@ function RegisterForm({ onRegistrationSuccess }) {
             id="firstName"
             type="text"
             name="firstName"
+            autoComplete="given-name"
             value={formData.firstName}
             onChange={handleChange}
             placeholder="First name"
@@ -127,6 +138,7 @@ function RegisterForm({ onRegistrationSuccess }) {
             id="lastName"
             type="text"
             name="lastName"
+            autoComplete="family-name"
             value={formData.lastName}
             onChange={handleChange}
             placeholder="Last name"
@@ -141,6 +153,7 @@ function RegisterForm({ onRegistrationSuccess }) {
           id="reg-username"
           type="text"
           name="username"
+          autoComplete="username"
           value={formData.username}
           onChange={handleChange}
           placeholder="Choose a username"
@@ -150,11 +163,12 @@ function RegisterForm({ onRegistrationSuccess }) {
       </div>
 
       <div className="form-group">
-        <label htmlFor="email">Email</label>
+        <label htmlFor="reg-email">Email</label>
         <input
-          id="email"
+          id="reg-email"
           type="email"
           name="email"
+          autoComplete="email"
           value={formData.email}
           onChange={handleChange}
           placeholder="Enter your email"
@@ -169,6 +183,7 @@ function RegisterForm({ onRegistrationSuccess }) {
           id="reg-password"
           type="password"
           name="password"
+          autoComplete="new-password"
           value={formData.password}
           onChange={handleChange}
           placeholder="Choose a strong password"
@@ -186,10 +201,11 @@ function RegisterForm({ onRegistrationSuccess }) {
   )
 }
 
-function Verify2FAForm({ userId, email, onVerificationSuccess }) {
+function Verify2FAForm({ userId, email, preAuthToken, onVerificationSuccess }) {
   const { verify2FA, error, setError } = useAuth()
   const [loading, setLoading] = useState(false)
   const [code, setCode] = useState('')
+  const [rememberDevice, setRememberDevice] = useState(true)
   const [attemptsLeft, setAttemptsLeft] = useState(null)
   const [canResend, setCanResend] = useState(true)
   const [resendLoading, setResendLoading] = useState(false)
@@ -218,7 +234,7 @@ function Verify2FAForm({ userId, email, onVerificationSuccess }) {
     setLoading(true)
     setError(null)
 
-    const success = await verify2FA(userId, codeToVerify)
+    const success = await verify2FA(userId, codeToVerify, preAuthToken, rememberDevice)
 
     setLoading(false)
 
@@ -243,7 +259,11 @@ function Verify2FAForm({ userId, email, onVerificationSuccess }) {
         method: 'POST',
         credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: userId, email }),
+        body: JSON.stringify(
+          preAuthToken
+            ? { pre_auth_token: preAuthToken, email }
+            : { user_id: userId, email }
+        ),
       })
 
       const data = await response.json()
@@ -286,6 +306,18 @@ function Verify2FAForm({ userId, email, onVerificationSuccess }) {
 
       {error && <div className="error-message">{error}</div>}
 
+      {preAuthToken && (
+        <label className="remember-device-row">
+          <input
+            type="checkbox"
+            checked={rememberDevice}
+            onChange={(e) => setRememberDevice(e.target.checked)}
+            disabled={loading}
+          />
+          <span>Se souvenir de cet appareil pendant 10 minutes</span>
+        </label>
+      )}
+
       <button
         onClick={() => handleVerify(code)}
         disabled={loading || code.length !== 6}
@@ -313,7 +345,7 @@ export default function AuthPage() {
   const { isAuthenticated } = useAuth()
   const [stage, setStage] = useState('select') // select, login, register, 2fa
   const [authMode, setAuthMode] = useState(null) // local
-  const [userInfo, setUserInfo] = useState(null) // { userId, email }
+  const [userInfo, setUserInfo] = useState(null) // { userId, email, preAuthToken? }
 
   // Redirect if already authenticated
   if (isAuthenticated) {
@@ -322,6 +354,11 @@ export default function AuthPage() {
 
   const handleRegistrationSuccess = (userId, email) => {
     setUserInfo({ userId, email })
+    setStage('2fa')
+  }
+
+  const handleLogin2FARequired = ({ userId, email, preAuthToken }) => {
+    setUserInfo({ userId, email, preAuthToken })
     setStage('2fa')
   }
 
@@ -379,7 +416,7 @@ export default function AuthPage() {
 
           {stage === 'login' && authMode === 'local' && (
             <div>
-              <LoginForm />
+              <LoginForm on2FARequired={handleLogin2FARequired} />
               <button
                 onClick={() => setStage('select')}
                 className="btn-back"
@@ -406,6 +443,7 @@ export default function AuthPage() {
               <Verify2FAForm
                 userId={userInfo.userId}
                 email={userInfo.email}
+                preAuthToken={userInfo.preAuthToken}
                 onVerificationSuccess={handleVerificationSuccess}
               />
               <button
