@@ -1,7 +1,7 @@
 import CoalitionFire from '../Coalition_symbol/Coalition_Fire.jsx'
 import CoalitionWater from '../Coalition_symbol/Coalition_Water.jsx'
 import CoalitionWind from '../Coalition_symbol/Coalition_Wind.jsx'
-import CoalitionEarth from '../Coalition_symbol/Colation_Earth.jsx'
+import CoalitionEarth from '../Coalition_symbol/Coalition_Earth.jsx'
 
 const BY_SLUG = {
 	feu: CoalitionFire,

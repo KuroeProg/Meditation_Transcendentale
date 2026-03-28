@@ -28,15 +28,3 @@ export function coalitionSlugToLabel(slug) {
 	const labels = { feu: 'Feu', eau: 'Eau', terre: 'Terre', air: 'Air' }
 	return labels[slug] ?? slug ?? '—'
 }
-
-/**
- * @param {string} slug — feu | eau | terre | air
- * @param {'w'|'b'} color — blancs = clair, noirs = sombre
- * @param {string} type — p r n b q k
- */
-export function getCoalitionPiecePath(slug, color, type) {
-	const safeSlug = isKnownCoalitionSlug(slug) ? slug : 'feu'
-	const shade = color === 'w' ? 'clair' : 'sombre'
-	const t = String(type).toLowerCase()
-	return `/chess/coalitions/${safeSlug}/${shade}/${t}.svg`
-}

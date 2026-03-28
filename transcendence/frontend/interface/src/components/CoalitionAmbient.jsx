@@ -101,6 +101,10 @@ export default function CoalitionAmbient() {
 
 	useEffect(() => {
 		if (!onAppRoute || loading || !bgReady) return
+		if (reducedMotion) {
+			applyParallax(performance.now(), performance.now())
+			return undefined
+		}
 		const t0 = performance.now()
 		let id = 0
 		function tick(now) {
@@ -109,7 +113,7 @@ export default function CoalitionAmbient() {
 		}
 		id = requestAnimationFrame(tick)
 		return () => cancelAnimationFrame(id)
-	}, [onAppRoute, loading, bgReady])
+	}, [onAppRoute, loading, bgReady, reducedMotion])
 
 	if (!onAppRoute) return null
 	if (loading) return null

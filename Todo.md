@@ -51,7 +51,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 
 | Exigence (résumé PDF)                                                                                                                               | Statut   | Owner               | Notes / preuve                              |
 | --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------- | ------------------------------------------- |
-| `README.md` complet (VI) — **en anglais**, équipe, gestion de projet, stack, schéma DB, **liste features**, **modules + calcul pts**, contributions | À faire  | Équipe              |                                             |
+| `README.md` complet (VI) — **en anglais**, équipe, gestion de projet, stack, schéma DB, **liste features**, **modules + calcul pts**, contributions | Quasi    | Équipe              | **Racine** : README structuré (EN) — usage, limites honnêtes, équipe, licence/credits, modules ; détail npm dans `interface/README.md`. Compléter schéma DB + Privacy/ToS dans README si pas encore fait. |
 | App web : **frontend + backend + base de données**                                                                                                  | Quasi    | Vyke, Fey + Even    |                                             |
 | **Git** : commits de tous, messages clairs, répartition du travail                                                                                  | En cours | Équipe              |                                             |
 | **Docker** (ou équivalent) : lancement **en une commande**                                                                                          | Quasi    | Even, Cloé + équipe | `Makefile` / `docker compose`               |
@@ -111,7 +111,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | **OAuth 2.0** (42, Google, GitHub…)                                                              | Minor | 1   | Quasi           | Even + Vyke, Fey                | Finir branchement réel vs mock dev |
 | **Stats & historique de parties** (nécessite jeu fonctionnel)                                    | Minor | 1   | Quasi, bonus | Mileum (Théo), Even + Vyke, Fey | **Front** : page `/statistics` (stats perso, graphiques Recharts, thème coalition, mock JSON) ; **reste** : persistance / API parties réelles (Even) |
 | **Analytics d’activité utilisateur** + tableau de bord d’insights                                 | Minor | 1   | À faire, bonus  | Mileum (Théo), Even + Vyke, Fey | *User activity analytics and insights dashboard* (bonus) |
-| **2FA** complet                                                                                  | Minor | 1   | En cours        | Even + Vyke, Fey                |                                    |
+| **2FA** complet                                                                                  | Minor | 1   | En cours        | Even + Vyke, Fey                | **Front** : toggle placeholder retiré des Paramètres tant que pas de backend ; réintégrer UI quand TOTP/API prêts. |
 
 
 ---
@@ -204,6 +204,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | 27/03/2026 | Sections 100 % hors périmètre retirées ; bonus intégré au statut (suffixe `, bonus`) |
 | 27/03/2026 | Nettoyage lignes vides / troncatures ; bonus : analytics users (IV.3), multijoueur 3+ (IV.6), health/PRA (IV.7) |
 | 28/03/2026 | **Front** : page **Statistiques** perso (`/statistics`, sidebar), winrates donuts, perf time/advantage, usage pièces %/raw, tableau métriques, thème **coalition** ; fin de partie **GameStatsPanel** ; **audio** BGM (jeu + home, prefs partagées) ; **logo** marque + favicon ; **promotion** au choix avec skins coalition |
+| 28/03/2026 | **README racine (EN)** : sections usage, architecture, limitations honnêtes, équipe, licence/credits, grading ; **`.gitignore`** : `.cursor/` (règles Cursor locales non partagées). **Paramètres** : retrait **2FA** / **notifications** (non fonctionnels) ; **« Réduire les animations »** branché (hook + Home, Recharts stats, CSS, CoalitionAmbient sans rAF si actif). Renommage **`Coalition_Earth`** (typo Colation). **`interface/README.md`** : rôle des `scripts/` npm vs `.venv-sprites`. Restauration scripts optionnels coalition / mesure tuile si supprimés par erreur. |
 
 ---
 

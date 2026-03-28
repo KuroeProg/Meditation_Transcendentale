@@ -6,6 +6,14 @@
 	scroll-behavior: smooth;
 }
 
+html[data-reduce-motion='true'] .home {
+	scroll-behavior: auto;
+}
+
+html[data-reduce-motion='true'] .title-gradient {
+	animation: none;
+}
+
 .HomeMenu {
 	position: absolute;
 	top: 0;

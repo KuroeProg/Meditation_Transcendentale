@@ -8,6 +8,10 @@ pnpm-debug.log*
 lerna-debug.log*
 
 node_modules
+
+# Environnement Python local (outils sprites / one-off), non utilisé par npm
+.venv-sprites/
+
 dist
 dist-ssr
 *.local

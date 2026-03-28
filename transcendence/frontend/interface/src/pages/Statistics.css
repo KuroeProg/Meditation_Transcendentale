@@ -24,6 +24,10 @@
 	transition: color 0.25s ease, border-color 0.25s ease;
 }
 
+html[data-reduce-motion='true'] .pstats-page {
+	transition: none;
+}
+
 /* ── Left column : graphes centrés (pas de width:100% sur les blocs = sinon alignés à gauche) ── */
 .pstats-left {
 	flex: 1 1 0;

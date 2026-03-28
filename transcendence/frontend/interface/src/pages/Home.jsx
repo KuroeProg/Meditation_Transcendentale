@@ -4,14 +4,14 @@ import SiteBrandLogo from '../components/SiteBrandLogo.jsx'
 import { HomeAmbientBgm } from '../components/HomePageAudio.jsx'
 import { tryPlayHomeBgm } from '../audio/homeBgm.js'
 import CoalitionFire from '../Coalition_symbol/Coalition_Fire'
-import CoalitionEarth from '../Coalition_symbol/Colation_Earth'
+import CoalitionEarth from '../Coalition_symbol/Coalition_Earth'
 import CoalitionWater from '../Coalition_symbol/Coalition_Water'
 import CoalitionWind from '../Coalition_symbol/Coalition_Wind'
 import { motion as Motion } from 'framer-motion'
-// import { useNavigate } from 'react-router-dom'
+import { useReduceMotionPref } from '../hooks/useReduceMotionPref.js'
 
 function Home() {
-	// const navigate = useNavigate()
+	const reduceMotion = useReduceMotionPref()
 
 	return (
 		<div
@@ -32,18 +32,18 @@ function Home() {
 				<div className="second-left">
 					<Motion.h2
 						className="home-section-title"
-						initial={{ opacity: 0, x: -30 }}
+						initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
 						whileInView={{ opacity: 1, x: 0 }}
-						transition={{ duration: 0.8 }}
+						transition={{ duration: reduceMotion ? 0 : 0.8 }}
 						viewport={{ once: false }}
 					>
 						Plus qu&apos;un jeu d&apos;échecs
 					</Motion.h2>
 
 					<Motion.p
-						initial={{ opacity: 0, x: -30 }}
+						initial={reduceMotion ? { opacity: 1, x: 0 } : { opacity: 0, x: -30 }}
 						whileInView={{ opacity: 1, x: 0 }}
-						transition={{ duration: 0.8, delay: 0.2 }}
+						transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 0.2 }}
 						viewport={{ once: false }}
 					>
 						Transcendance réinvente l&apos;expérience des jeux d&apos;échecs en ligne pour 42.
@@ -55,9 +55,9 @@ function Home() {
 
 					<Motion.div
 						className="coalition-icons"
-						initial={{ opacity: 0, y: 20 }}
+						initial={reduceMotion ? { opacity: 1, y: 0 } : { opacity: 0, y: 20 }}
 						whileInView={{ opacity: 1, y: 0 }}
-						transition={{ duration: 0.8, delay: 0.4 }}
+						transition={{ duration: reduceMotion ? 0 : 0.8, delay: reduceMotion ? 0 : 0.4 }}
 						viewport={{ once: false, amount: 0.3 }}
 					>
 						<CoalitionFire />

@@ -344,6 +344,10 @@ html[data-reduce-motion='true'] .board-frame {
 	transition: none;
 }
 
+html[data-reduce-motion='true'] .board-move-ghost {
+	transition: none !important;
+}
+
 
 
 .player-bar {

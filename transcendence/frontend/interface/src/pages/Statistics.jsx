@@ -15,12 +15,13 @@ import {
 	ResponsiveContainer,
 } from 'recharts'
 import { useAuth } from '../hooks/useAuth.js'
+import { useReduceMotionPref } from '../hooks/useReduceMotionPref.js'
 import { coalitionToSlug } from '../utils/coalitionTheme.js'
 import { getPstatsTheme } from '../utils/coalitionPstatsTheme.js'
 import data from '../dev/mockPersonalStats.json'
 import './Statistics.css'
 
-function WinrateDonut({ pct, size = 110, label, strokeWidth = 10, accent, track }) {
+function WinrateDonut({ pct, size = 110, label, strokeWidth = 10, accent, track, chartAnim }) {
 	const d = [{ v: pct }, { v: 100 - pct }]
 	return (
 		<div className="pstats-donut">
@@ -37,6 +38,7 @@ function WinrateDonut({ pct, size = 110, label, strokeWidth = 10, accent, track 
 						endAngle={-270}
 						paddingAngle={0}
 						stroke="none"
+						isAnimationActive={chartAnim}
 					>
 						<Cell fill={accent} />
 						<Cell fill={track} />
@@ -49,7 +51,7 @@ function WinrateDonut({ pct, size = 110, label, strokeWidth = 10, accent, track 
 	)
 }
 
-function MiniDonut({ pct, size = 56, strokeWidth = 6, accent, track }) {
+function MiniDonut({ pct, size = 56, strokeWidth = 6, accent, track, chartAnim }) {
 	const d = [{ v: pct }, { v: 100 - pct }]
 	return (
 		<div className="pstats-mini-donut">
@@ -66,6 +68,7 @@ function MiniDonut({ pct, size = 56, strokeWidth = 6, accent, track }) {
 						endAngle={-270}
 						paddingAngle={0}
 						stroke="none"
+						isAnimationActive={chartAnim}
 					>
 						<Cell fill={accent} />
 						<Cell fill={track} />
@@ -77,18 +80,18 @@ function MiniDonut({ pct, size = 56, strokeWidth = 6, accent, track }) {
 	)
 }
 
-function WinrateGroup({ title, playerPct, allPct, accent, track, allMuted }) {
+function WinrateGroup({ title, playerPct, allPct, accent, track, allMuted, chartAnim }) {
 	return (
 		<div className="pstats-wr-group">
 			<p className="pstats-wr-group__title">{title}</p>
-			<WinrateDonut pct={playerPct} label="WINRATE" accent={accent} track={track} />
+			<WinrateDonut pct={playerPct} label="WINRATE" accent={accent} track={track} chartAnim={chartAnim} />
 			<div className="pstats-wr-group__subs">
 				<div className="pstats-wr-sub">
-					<MiniDonut pct={playerPct} accent={accent} track={track} />
+					<MiniDonut pct={playerPct} accent={accent} track={track} chartAnim={chartAnim} />
 					<span className="pstats-wr-sub__label">PLAYER</span>
 				</div>
 				<div className="pstats-wr-sub">
-					<MiniDonut pct={allPct} accent={allMuted} track={track} />
+					<MiniDonut pct={allPct} accent={allMuted} track={track} chartAnim={chartAnim} />
 					<span className="pstats-wr-sub__label">ALL PLAYERS</span>
 				</div>
 			</div>
@@ -151,7 +154,7 @@ function PieceTooltip({ active, payload, label, pieceMode }) {
 	)
 }
 
-function PerfChart({ theme }) {
+function PerfChart({ theme, chartAnim }) {
 	const [perfMode, setPerfMode] = useState('time')
 	const chartData = perfMode === 'time' ? data.perfOverTime : data.perfAdvantage
 	const isAdv = perfMode === 'advantage'
@@ -223,6 +226,7 @@ function PerfChart({ theme }) {
 						dot={{ r: 3, strokeWidth: 0, fill: theme.accent }}
 						activeDot={{ r: 5 }}
 						name="Toi (moyenne)"
+						isAnimationActive={chartAnim}
 					/>
 					<Line
 						type="monotone"
@@ -232,6 +236,7 @@ function PerfChart({ theme }) {
 						strokeDasharray="6 4"
 						dot={{ r: 2, fill: theme.allPlayersLine }}
 						name="Moyenne tous les joueurs"
+						isAnimationActive={chartAnim}
 					/>
 				</LineChart>
 			</ResponsiveContainer>
@@ -239,7 +244,7 @@ function PerfChart({ theme }) {
 	)
 }
 
-function PieceUsageChart({ theme }) {
+function PieceUsageChart({ theme, chartAnim }) {
 	const [pieceMode, setPieceMode] = useState('percentage')
 	const barData = useMemo(
 		() =>
@@ -321,6 +326,7 @@ function PieceUsageChart({ theme }) {
 						name="Toi"
 						radius={[3, 3, 0, 0]}
 						maxBarSize={28}
+						isAnimationActive={chartAnim}
 					/>
 					<Bar
 						dataKey="barAll"
@@ -328,6 +334,7 @@ function PieceUsageChart({ theme }) {
 						name="Moyenne tous les joueurs"
 						radius={[3, 3, 0, 0]}
 						maxBarSize={28}
+						isAnimationActive={chartAnim}
 					/>
 				</BarChart>
 			</ResponsiveContainer>
@@ -359,6 +366,8 @@ export default function Statistics() {
 	const slug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
 	const theme = getPstatsTheme(slug)
 	const wr = data.winrates
+	const reduceMotion = useReduceMotionPref()
+	const chartAnim = !reduceMotion
 
 	const pageStyle = useMemo(
 		() => ({
@@ -381,6 +390,7 @@ export default function Statistics() {
 						accent={theme.accent}
 						track={theme.donutTrack}
 						allMuted={theme.allPlayersLine}
+						chartAnim={chartAnim}
 					/>
 					<WinrateGroup
 						title="GLOBAL WINRATE — WITH WHITE PLAYER vs. GLOBAL ALL PLAYERS"
@@ -389,6 +399,7 @@ export default function Statistics() {
 						accent={theme.accent}
 						track={theme.donutTrack}
 						allMuted={theme.allPlayersLine}
+						chartAnim={chartAnim}
 					/>
 					<WinrateGroup
 						title="GLOBAL WINRATE — WITH BLACK PLAYER vs. GLOBAL ALL PLAYERS"
@@ -397,10 +408,11 @@ export default function Statistics() {
 						accent={theme.accent}
 						track={theme.donutTrack}
 						allMuted={theme.allPlayersLine}
+						chartAnim={chartAnim}
 					/>
 				</div>
-				<PerfChart theme={theme} />
-				<PieceUsageChart theme={theme} />
+				<PerfChart theme={theme} chartAnim={chartAnim} />
+				<PieceUsageChart theme={theme} chartAnim={chartAnim} />
 			</div>
 			<div className="pstats-right">
 				<MetricsTable />
