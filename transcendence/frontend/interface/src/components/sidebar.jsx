@@ -22,7 +22,7 @@ function Sidebar() {
 					</Link>
 				</li>
 				<li>
-					<Link to="/game/default_room">
+					<Link to="/dashboard">
 						<span className="icon">
 							<i className="fa-solid fa-house" />
 						</span>

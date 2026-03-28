@@ -1,120 +1,69 @@
 import './Home.css'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../hooks/useAuth.js'
-import { useChessSocket } from '../hooks/useChessSocket.js'
-
-const MATCHMAKING_ROOM_ID = 'matchmaking'
-
-function normalizeWirePlayerId(value) {
-	if (value == null) return null
-	const raw = String(value)
-	const legacyBytesMatch = raw.match(/^b['"](.+)['"]$/)
-	return legacyBytesMatch ? legacyBytesMatch[1] : raw
-}
+import MenuHome from '../components/MenuHome'
+import CoalitionFire from '../Coalition_symbol/Coalition_Fire'
+import CoalitionEarth from '../Coalition_symbol/Colation_Earth'
+import CoalitionWater from '../Coalition_symbol/Coalition_Water'
+import CoalitionWind from '../Coalition_symbol/Coalition_Wind'
+import { motion as Motion } from 'framer-motion'
+// import { useNavigate } from 'react-router-dom'
 
 function Home() {
-	const navigate = useNavigate()
-	const { user, isAuthenticated } = useAuth()
-	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID)
-	const [searching, setSearching] = useState(false)
-	const [queueSize, setQueueSize] = useState(0)
-	const [statusMessage, setStatusMessage] = useState('Pret a chercher une partie')
-	const hasJoinedQueueRef = useRef(false)
-
-	const userId = useMemo(() => {
-		if (!user) return null
-		return user.id ?? user.user_id ?? user.pk ?? user.sub ?? null
-	}, [user])
-
-	useEffect(() => {
-		if (!searching || !isConnected || !userId || hasJoinedQueueRef.current) return
-		sendMove({ action: 'join_queue', player_id: userId })
-		hasJoinedQueueRef.current = true
-		setStatusMessage('Recherche en cours...')
-	}, [searching, isConnected, userId, sendMove])
-
-	useEffect(() => {
-		if (!lastMessage) return
-		if (lastMessage.error) {
-			setStatusMessage(lastMessage.error)
-			return
-		}
-
-		if (lastMessage.action === 'queue_status') {
-			setQueueSize(Number(lastMessage.queue_size) || 0)
-		}
-
-		if (lastMessage.action === 'match_found' && userId != null) {
-			const whiteId = normalizeWirePlayerId(lastMessage.white_player_id)
-			const blackId = normalizeWirePlayerId(lastMessage.black_player_id)
-			const currentId = normalizeWirePlayerId(userId)
-			if (currentId === whiteId || currentId === blackId) {
-				setSearching(false)
-				hasJoinedQueueRef.current = false
-				setStatusMessage('Match trouve, redirection...')
-				navigate(`/game/${lastMessage.game_id}`)
-			}
-		}
-	}, [lastMessage, navigate, userId])
-
-	useEffect(() => {
-		return () => {
-			if (hasJoinedQueueRef.current && userId != null) {
-				sendMove({ action: 'leave_queue', player_id: userId })
-			}
-		}
-	}, [sendMove, userId])
-
-	const startSearch = () => {
-		if (!isAuthenticated || userId == null) {
-			setStatusMessage('Connecte-toi pour lancer une recherche')
-			return
-		}
-		if (!isConnected) {
-			setStatusMessage('WebSocket non connecte, reessaie dans quelques secondes')
-			return
-		}
-		setSearching(true)
-		setStatusMessage('Mise en file...')
-	}
-
-	const cancelSearch = () => {
-		if (userId != null && hasJoinedQueueRef.current) {
-			sendMove({ action: 'leave_queue', player_id: userId })
-		}
-		hasJoinedQueueRef.current = false
-		setSearching(false)
-		setStatusMessage('Recherche annulee')
-	}
+	// const navigate = useNavigate()
 
 	return (
-		<div className="home home-matchmaking">
-			<div className="matchmaking-card">
-				<h1 className="matchmaking-title">Recherche de partie</h1>
-				<p className="matchmaking-subtitle">
-					Lance la file d&apos;attente et rejoins automatiquement une partie des qu&apos;un adversaire est disponible.
-				</p>
+		<div className="home">
+			<div className="HomeMenu">
+				<MenuHome />
+			</div>
+			<div className="front-page">
+				<h1 className="title-gradient">TRANSCENDANCE</h1>
+			</div>
 
-				<div className="matchmaking-stats">
-					<p>Connexion WS: {isConnected ? 'connecte' : 'deconnecte'}</p>
-					<p>Joueurs en file: {queueSize}</p>
-					{socketError && <p className="matchmaking-error">{socketError}</p>}
-					<p>{statusMessage}</p>
+			<div className="second-section">
+				<div className="second-left">
+					<Motion.h2
+						className="home-section-title"
+						initial={{ opacity: 0, x: -30 }}
+						whileInView={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.8 }}
+						viewport={{ once: false }}
+					>
+						Plus qu&apos;un jeu d&apos;échecs
+					</Motion.h2>
+
+					<Motion.p
+						initial={{ opacity: 0, x: -30 }}
+						whileInView={{ opacity: 1, x: 0 }}
+						transition={{ duration: 0.8, delay: 0.2 }}
+						viewport={{ once: false }}
+					>
+						Transcendance réinvente l&apos;expérience des jeux d&apos;échecs en ligne pour 42.
+						Affrontez les joueurs de votre école partout dans le monde. Au travers de vos
+						coalitions, jouez des parties prenantes vous permettant d&apos;apprendre, progresser
+						et vous améliorer Participez à des tournois et remportez des points pour vos
+						coalitions!
+					</Motion.p>
+
+					<Motion.div
+						className="coalition-icons"
+						initial={{ opacity: 0, y: 20 }}
+						whileInView={{ opacity: 1, y: 0 }}
+						transition={{ duration: 0.8, delay: 0.4 }}
+						viewport={{ once: false, amount: 0.3 }}
+					>
+						<CoalitionFire />
+						<CoalitionWater />
+						<CoalitionWind />
+						<CoalitionEarth />
+					</Motion.div>
 				</div>
 
-				<div className="matchmaking-actions">
-					{!searching ? (
-						<button className="matchmaking-btn primary" type="button" onClick={startSearch}>
-							Rechercher une partie
-						</button>
-					) : (
-						<button className="matchmaking-btn" type="button" onClick={cancelSearch}>
-							Annuler la recherche
-						</button>
-					)}
+				<div className="second-right">
+					<img src="imgs/ChessLogo.jpg" alt="Chess preview" />
 				</div>
 			</div>
+
+			<div className="third-section" />
 		</div>
 	)
 }
