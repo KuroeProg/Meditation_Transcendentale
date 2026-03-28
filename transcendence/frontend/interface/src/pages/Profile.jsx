@@ -130,7 +130,7 @@ function Profile() {
 							<h2 className="profile-name">{titlePrimary}</h2>
 							{titleSecondary && (
 								<p className="profile-login42 muted">
-									Login 42 : <strong>{titleSecondary}</strong>
+									Nom d'utilisateur : <strong>{titleSecondary}</strong>
 								</p>
 							)}
 							{email && (
