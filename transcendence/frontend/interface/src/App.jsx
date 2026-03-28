@@ -4,6 +4,7 @@ import Game from './pages/Game.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
+import Statistics from './pages/Statistics.jsx'
 import Sidebar from './components/sidebar.jsx'
 import ThemeSync from './components/ThemeSync.jsx'
 import DevAuthToolbar from './components/DevAuthToolbar.jsx'
@@ -26,6 +27,7 @@ function App() {
 					<Route path="/dashboard" element={<Dashboard />} />
 					<Route path="/profile" element={<Profile />} />
 					<Route path="/settings" element={<Settings />} />
+					<Route path="/statistics" element={<Statistics />} />
 				</Routes>
 			</div>
 		</div>

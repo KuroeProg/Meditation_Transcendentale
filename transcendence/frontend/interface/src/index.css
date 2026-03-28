@@ -957,6 +957,14 @@ animation-duration: 10s;
 	padding: 0.75rem 1rem 1rem 1.5rem;
 }
 
+/* Page statistiques perso : pleine largeur pour centrer les graphes + colonne metrics à droite */
+.main-content:has(.pstats-page) {
+	max-width: none;
+	width: 100%;
+	padding: 1rem 1.25rem 2rem;
+	box-sizing: border-box;
+}
+
 .page-shell {
 	font-family: 'Crimson Pro', Georgia, serif;
 	color: #e8eaef;

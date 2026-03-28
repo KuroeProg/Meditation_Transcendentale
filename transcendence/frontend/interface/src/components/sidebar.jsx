@@ -49,6 +49,14 @@ function Sidebar() {
 					</Link>
 				</li>
 				<li>
+					<Link to="/statistics">
+						<span className="icon">
+							<i className="fa-solid fa-chart-pie" />
+						</span>
+						<span className="text">Statistics</span>
+					</Link>
+				</li>
+				<li>
 					{isAuthenticated ? (
 						<button type="button" className="sidebar-btn" onClick={() => logout()}>
 							<span className="icon">

@@ -84,7 +84,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | **WebSockets** (temps réel, déconnexions, diffusion efficace)                        | Major | 2   | En cours       | Even + Vyke, Fey | Serveur : Even ; client : Vyke, Fey                                |
 | **Interaction utilisateurs** (chat minimal, profil visible, amis add/remove + liste) | Major | 2   | À faire, bonus | Vyke, Fey + Even | UI : Vyke, Fey ; API : Even                                        |
 | ORM                                                                                  | Minor | 1   | Quasi          | Even             | Django ORM                                                         |
-| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | À cadrer / documenter dans README                                  |
+| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | Panneau fin de partie, page stats, audio préfs, logo marque — **à cadrer / documenter** dans README |
 
 
 **Sous-total Web (périmètre retenu)** : Majors FE+BE, WebSockets, interaction users + ORM + design system (selon démo).
@@ -97,6 +97,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | Module (PDF)                      | Type  | Pts | Statut         | Owner              | Notes |
 | --------------------------------- | ----- | --- | -------------- | ------------------ | ----- |
 | **≥ 3 langues** + i18n + switcher | Minor | 1   | À faire, bonus | Vyke, Fey + équipe |       |
+| **Navigateurs additionnels** (compatibilité étendue) | Minor | 1   | À faire, bonus | Vyke, Fey + équipe | **EN (PDF)** : *Support for additional browsers* — compatibilité pleine avec **au moins 2 navigateurs** en plus de la base (Firefox, Safari, Edge, etc.) ; tester et corriger toutes les fonctionnalités sur chaque navigateur ; documenter les limites spécifiques ; **UI/UX cohérente** sur tous les navigateurs supportés. |
 
 
 ---
@@ -108,7 +109,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | ------------------------------------------------------------------------------------------------ | ----- | --- | --------------- | ------------------------------- | ---------------------------------- |
 | Gestion **standard** (profil éditable, avatar + défaut, **amis** + statut en ligne, page profil) | Major | 2   | En cours        | Vyke, Fey + Even                | Major dans le PDF                  |
 | **OAuth 2.0** (42, Google, GitHub…)                                                              | Minor | 1   | Quasi           | Even + Vyke, Fey                | Finir branchement réel vs mock dev |
-| **Stats & historique de parties** (nécessite jeu fonctionnel)                                    | Minor | 1   | En cours, bonus | Mileum (Théo), Even + Vyke, Fey |                                    |
+| **Stats & historique de parties** (nécessite jeu fonctionnel)                                    | Minor | 1   | Quasi, bonus | Mileum (Théo), Even + Vyke, Fey | **Front** : page `/statistics` (stats perso, graphiques Recharts, thème coalition, mock JSON) ; **reste** : persistance / API parties réelles (Even) |
 | **Analytics d’activité utilisateur** + tableau de bord d’insights                                 | Minor | 1   | À faire, bonus  | Mileum (Théo), Even + Vyke, Fey | *User activity analytics and insights dashboard* (bonus) |
 | **2FA** complet                                                                                  | Minor | 1   | En cours        | Even + Vyke, Fey                |                                    |
 
@@ -133,7 +134,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | **Jeu web complet** (règles, conditions victoire, parties live) | Major | 2   | Quasi    | Vyke, Fey + Even | UI : Vyke, Fey ; sync : Even       |
 | **Remote players** (2 machines, latence, déco, **reconnexion**) | Major | 2   | En cours       | Even + Vyke, Fey | **Cœur du gap** vs hot-seat / mock |
 | **Multijoueur 3+** (Major PDF : jeu **>2 joueurs**, synchro tous clients, équité) | Major | 2   | À faire, bonus | Even + Vyke, Fey | EN : *Multiplayer game (more than two players). Support for three or more players simultaneously. Fair gameplay mechanics for all participants. Proper synchronization across all clients.* — bonus |
-| **Customisation** jeu (thèmes, options…)                        | Minor | 1   | Quasi          | Vyke, Fey (+ Even) | Tuiles / coalitions                |
+| **Customisation** jeu (thèmes, options…)                        | Minor | 1   | Quasi          | Vyke, Fey (+ Even) | Tuiles / coalitions ; **promotion** pion au choix (Dame/Tour/Fou/Cavalier) ; BGM/SFX ; logo site + favicon |
 | **Mode spectateur**                                             | Minor | 1   | En cours, bonus | Even + Vyke, Fey |                                    |
 
 
@@ -157,7 +158,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 
 | Module (PDF)                                                               | Type  | Pts | Statut   | Owner                           | Notes                                      |
 | -------------------------------------------------------------------------- | ----- | --- | -------- | ------------------------------- | ------------------------------------------ |
-| Dashboard analytique avancé (charts, temps réel, export, filtres)          | Major | 2   | En cours | Mileum (Théo), Even + Vyke, Fey |                                    |
+| Dashboard analytique avancé (charts, temps réel, export, filtres)          | Major | 2   | En cours | Mileum (Théo), Even + Vyke, Fey | **Front** : écran stats perso avec graphiques (complémentaire au dashboard global IV.8) |
 | Export / import données (formats, validation, bulk)                        | Minor | 1   | À faire  | Mileum (Théo), Even             |                                    |
 | **RGPD** (accès données, suppression, export lisible, emails confirmation) | Minor | 1   | À faire  | Mileum (Théo), Even + Vyke, Fey | Écrans : Vyke, Fey                 |
 
@@ -202,7 +203,7 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | 27/03/2026 | Owners : Vyke + Fey (front), Even (back), Cloé (cyber), Mileum (Théo) (data)         |
 | 27/03/2026 | Sections 100 % hors périmètre retirées ; bonus intégré au statut (suffixe `, bonus`) |
 | 27/03/2026 | Nettoyage lignes vides / troncatures ; bonus : analytics users (IV.3), multijoueur 3+ (IV.6), health/PRA (IV.7) |
-
+| 28/03/2026 | **Front** : page **Statistiques** perso (`/statistics`, sidebar), winrates donuts, perf time/advantage, usage pièces %/raw, tableau métriques, thème **coalition** ; fin de partie **GameStatsPanel** ; **audio** BGM (jeu + home, prefs partagées) ; **logo** marque + favicon ; **promotion** au choix avec skins coalition |
 
 ---
 
