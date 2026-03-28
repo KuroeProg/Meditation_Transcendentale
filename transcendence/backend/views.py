@@ -275,8 +275,7 @@ def auth_login_db(request):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     payload = _read_json_body(request)
-    # Backward compatibility: older frontend payload used "username".
-    email = str(payload.get('email', '') or payload.get('username', '')).strip()
+    email = str(payload.get('email', '')).strip()
     password = str(payload.get('password', ''))
 
     if not email or not password:

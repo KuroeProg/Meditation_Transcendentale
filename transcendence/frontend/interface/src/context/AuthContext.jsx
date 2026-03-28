@@ -171,8 +171,8 @@ export function AuthProvider({ children }) {
     window.location.href = '/api/auth/42/login'
   }
 
-  async function loginWithDb({ email, username, password }) {
-    return loginLocal(email || username, password)
+  async function loginWithDb({ email, password }) {
+    return loginLocal(email, password)
   }
 
   const value = {
