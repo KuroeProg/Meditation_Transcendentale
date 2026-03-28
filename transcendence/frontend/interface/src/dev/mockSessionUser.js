@@ -3,13 +3,17 @@
  * Activer : VITE_DEV_MOCK_USER=true dans .env.local
  *
  * Coalition → pièces / tuiles des blancs. Les noirs : `src/dev/mockGameOpponent.js`.
+ * Stats profil : alignées sur `mockPersonalStats.json` → `profileSummary` (page Statistiques).
  */
+
+import mockPersonalStats from './mockPersonalStats.json'
 
 export function isDevMockAuthEnabled() {
 	return import.meta.env.DEV === true && import.meta.env.VITE_DEV_MOCK_USER === 'true'
 }
 
 export function getMockSessionUser() {
+	const ps = mockPersonalStats.profileSummary
 	return {
 		login: 'vb_demo',
 		email: 'vb_demo@student.42.fr',
@@ -27,10 +31,10 @@ export function getMockSessionUser() {
 		cursus_level: 7,
 		level: 7,
 		stats: {
-			wins: 12,
-			losses: 8,
-			rank: 42,
-			level: 3,
+			wins: ps.wins,
+			losses: ps.losses,
+			rank: ps.rank,
+			level: ps.level,
 		},
 	}
 }

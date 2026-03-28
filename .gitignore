@@ -21,5 +21,5 @@ node_modules/
 dist/
 .DS_Store
 
-# Local-only Cursor rules (personal workflow; not shared with the team)
-.cursor/
+# Cursor : règles personnelles locales (non partagées). Les commandes projet sont dans .cursor/commands/
+.cursor/rules/

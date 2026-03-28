@@ -7,6 +7,7 @@ import {
 	notifyPrefsChanged,
 } from '../config/uiPrefs.js'
 import { GameAudioPrefsForm } from '../components/GameAudioPrefsForm.jsx'
+import GameStatsSummarySection from '../components/GameStatsSummarySection.jsx'
 
 function Settings() {
 	const { user, loading, loginWith42 } = useAuth()
@@ -43,6 +44,7 @@ function Settings() {
 						</section>
 					) : (
 						<div className="settings-stack">
+							<GameStatsSummarySection user={user} />
 							<section className="surface-card">
 								<h2 className="card-title">Préférences d’interface</h2>
 								<p className="muted small card-hint settings-coalition-note">

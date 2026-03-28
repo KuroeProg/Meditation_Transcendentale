@@ -12,7 +12,9 @@ import {
 	Legend,
 	ResponsiveContainer,
 } from 'recharts'
-import mockStats from '../dev/mockPlayerStats.json'
+import mockPersonalStats from '../dev/mockPersonalStats.json'
+
+const mockStats = mockPersonalStats.gamePanel
 import './GameStatsPanel.css'
 
 const PIECE_LABELS = { p: 'Pawn', n: 'Knight', b: 'Bishop', r: 'Rook', q: 'Queen', k: 'King' }

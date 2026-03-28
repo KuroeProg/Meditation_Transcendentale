@@ -3,15 +3,7 @@ import Logo42 from '../components/Logo42.jsx'
 import ProfileCoalitionIcon from '../components/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../utils/coalitionTheme.js'
 import { get42AvatarUrl, getDisplayTitle } from '../utils/sessionUser.js'
-
-function PlaceholderStat({ label, value }) {
-	return (
-		<div className="stat-tile">
-			<span className="stat-label">{label}</span>
-			<span className="stat-value">{value ?? '—'}</span>
-		</div>
-	)
-}
+import GameStatsSummarySection from '../components/GameStatsSummarySection.jsx'
 
 function Profile() {
 	const { user, loading, error, loginWith42, isDevMockAuth } = useAuth()
@@ -40,12 +32,6 @@ function Profile() {
 		normCoal(coalitionRaw) !== normCoal(coalitionLabel)
 	const levelCursus =
 		user?.cursus_level ?? user?.level ?? user?.pool_level ?? user?.intra_level
-
-	const stats = user?.stats ?? {}
-	const wins = stats.wins ?? stats.victoires
-	const losses = stats.losses ?? stats.defaites
-	const rank = stats.rank ?? stats.classement
-	const levelGame = stats.level ?? stats.niveau
 
 	const avatarSrc = get42AvatarUrl(user)
 
@@ -131,18 +117,7 @@ function Profile() {
 						</dl>
 					</section>
 
-					<section className="surface-card">
-						<h2 className="card-title">Statistiques de jeu</h2>
-						<p className="muted small card-hint">
-							Remplies quand le module stats / historique sera branché côté API.
-						</p>
-						<div className="stats-grid">
-							<PlaceholderStat label="Victoires" value={wins} />
-							<PlaceholderStat label="Défaites" value={losses} />
-							<PlaceholderStat label="Classement" value={rank} />
-							<PlaceholderStat label="Niveau" value={levelGame} />
-						</div>
-					</section>
+					<GameStatsSummarySection user={user} />
 				</div>
 			)}
 		</div>
