@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
+import SiteBrandLogo from './SiteBrandLogo.jsx'
 
 function Sidebar() {
 	const { logout, isAuthenticated } = useAuth()
@@ -10,7 +11,7 @@ function Sidebar() {
 				<li>
 					<Link to="/" className="logo">
 						<span className="icon">
-							<img src="imgs/ChessLogo.jpg" className="Profile-logo" alt="" />
+							<SiteBrandLogo className="Profile-logo site-brand-logo" alt="" />
 						</span>
 						<span className="text">Transcendance</span>
 					</Link>

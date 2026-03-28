@@ -1,5 +1,6 @@
 import './Home.css'
 import MenuHome from '../components/MenuHome'
+import SiteBrandLogo from '../components/SiteBrandLogo.jsx'
 import { HomeAmbientBgm } from '../components/HomePageAudio.jsx'
 import { tryPlayHomeBgm } from '../audio/homeBgm.js'
 import CoalitionFire from '../Coalition_symbol/Coalition_Fire'
@@ -67,7 +68,7 @@ function Home() {
 				</div>
 
 				<div className="second-right">
-					<img src="imgs/ChessLogo.jpg" alt="Chess preview" />
+					<SiteBrandLogo className="home-second-logo" alt="Transcendance" />
 				</div>
 			</div>
 
