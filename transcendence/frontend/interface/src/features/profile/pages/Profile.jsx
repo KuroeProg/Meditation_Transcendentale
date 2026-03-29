@@ -3,6 +3,7 @@ import { useAuth } from '../../auth/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'
+import { deriveCoalitionPresentation, deriveCursusLevel } from '../services/profileService.js'
 import { get42AvatarUrl, getDisplayTitle } from '../../../utils/sessionUser.js'
 import GameStatsSummarySection from '../../stats/components/GameStatsSummarySection.jsx'
 
@@ -32,25 +33,14 @@ function Profile() {
 		? getDisplayTitle(user)
 		: { primary: null, secondary: null }
 
-	const coalition = user?.coalition ?? user?.coalition_name ?? user?.coalition_slug
-	const hasCoalition = coalition != null && String(coalition).trim() !== ''
-	const coalitionSlug = hasCoalition ? coalitionToSlug(coalition) : 'feu'
-	const coalitionLabel = hasCoalition ? coalitionSlugToLabel(coalitionSlug) : null
-	const coalitionRaw = hasCoalition ? String(coalition).trim() : ''
-	const normCoal = (s) =>
-		s
-			.toLowerCase()
-			.normalize('NFD')
-			.replace(/[\u0300-\u036f]/g, '')
-			.replace(/['\u2019]/g, '')
-			.replace(/\s+/g, '')
-	const showCoalitionRaw =
-		hasCoalition &&
-		coalitionRaw !== '' &&
-		normCoal(coalitionRaw) !== coalitionSlug &&
-		normCoal(coalitionRaw) !== normCoal(coalitionLabel)
-	const levelCursus =
-		user?.cursus_level ?? user?.level ?? user?.pool_level ?? user?.intra_level
+	const {
+		coalition,
+		hasCoalition,
+		coalitionSlug,
+		coalitionLabel,
+		showCoalitionRaw,
+	} = deriveCoalitionPresentation(user, coalitionToSlug, coalitionSlugToLabel)
+	const levelCursus = deriveCursusLevel(user)
 
 	const avatarSrc = get42AvatarUrl(user)
 

@@ -18,6 +18,7 @@ import { useAuth } from '../../auth/index.js'
 import { useReduceMotionPref } from '../../../config/useReduceMotionPref.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { getPstatsTheme } from '../services/coalitionPstatsTheme.js'
+import { buildPieceUsageRows, buildStatsPageStyle } from '../services/statsCalculator.js'
 import data from '../assets/mockPersonalStats.json'
 import '../styles/Statistics.css'
 
@@ -246,15 +247,7 @@ function PerfChart({ theme, chartAnim }) {
 
 function PieceUsageChart({ theme, chartAnim }) {
 	const [pieceMode, setPieceMode] = useState('percentage')
-	const barData = useMemo(
-		() =>
-			data.pieceUsage.map((p) => ({
-				...p,
-				barPlayer: pieceMode === 'percentage' ? p.player : p.playerRaw,
-				barAll: pieceMode === 'percentage' ? p.allPlayers : p.allPlayersRaw,
-			})),
-		[pieceMode],
-	)
+	const barData = useMemo(() => buildPieceUsageRows(data.pieceUsage, pieceMode), [pieceMode])
 	const isPct = pieceMode === 'percentage'
 
 	return (
@@ -369,15 +362,7 @@ export default function Statistics() {
 	const reduceMotion = useReduceMotionPref()
 	const chartAnim = !reduceMotion
 
-	const pageStyle = useMemo(
-		() => ({
-			'--pstats-accent': theme.accent,
-			'--pstats-accent-soft': theme.accentSoft,
-			'--pstats-accent-border': theme.accentBorder,
-			'--pstats-all-line': theme.allPlayersLine,
-		}),
-		[theme],
-	)
+	const pageStyle = useMemo(() => buildStatsPageStyle(theme), [theme])
 
 	return (
 		<div className="pstats-page" style={pageStyle} data-pstats-coalition={slug}>

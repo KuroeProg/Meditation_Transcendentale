@@ -1,23 +1,22 @@
-// 🆕 Stats Calculator - Business Logic
-// Purpose: Pure functions for statistics calculations
-// Moved from GameStatsPanel component logic
-
-import { statsCalculator as calculator } from './preexisting-logic'
-
-// TODO: Extract statistics calculation logic from GameStatsPanel.jsx
-// This will improve testability and reusability
-
-export const calculateWinrate = (games) => {
-  // TODO: Implement
-  return calculator.calculateWinrate?.(games) || 0
+export function buildPieceUsageRows(pieceUsage, pieceMode) {
+  return pieceUsage.map((piece) => ({
+    ...piece,
+    barPlayer: pieceMode === 'percentage' ? piece.player : piece.playerRaw,
+    barAll: pieceMode === 'percentage' ? piece.allPlayers : piece.allPlayersRaw,
+  }))
 }
 
-export const calculateMaterialBalance = (position) => {
-  // TODO: Implement
-  return calculator.calculateMaterialBalance?.(position) || {}
+export function buildStatsPageStyle(theme) {
+  return {
+    '--pstats-accent': theme.accent,
+    '--pstats-accent-soft': theme.accentSoft,
+    '--pstats-accent-border': theme.accentBorder,
+    '--pstats-all-line': theme.allPlayersLine,
+  }
 }
 
-export const calculateTimeStatistics = (playerMoves) => {
-  // TODO: Implement
-  return calculator.calculateTimeStatistics?.(playerMoves) || {}
+export function calculateWinrate(wins, losses, draws = 0) {
+  const total = Number(wins || 0) + Number(losses || 0) + Number(draws || 0)
+  if (total <= 0) return 0
+  return Math.round((Number(wins || 0) / total) * 100)
 }
