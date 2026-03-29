@@ -1,7 +1,7 @@
 import '../styles/Dashboard.css'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import { useChessSocket } from '../../chess/hooks/useChessSocket.js'
 
 const MATCHMAKING_ROOM_ID = 'matchmaking'

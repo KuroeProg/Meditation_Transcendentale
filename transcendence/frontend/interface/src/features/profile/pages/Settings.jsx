@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import {
 	PREFS_STORAGE_KEY,
 	loadUiPrefs,

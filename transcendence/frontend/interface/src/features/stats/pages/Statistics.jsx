@@ -14,7 +14,7 @@ import {
 	Legend,
 	ResponsiveContainer,
 } from 'recharts'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import { useReduceMotionPref } from '../../../config/useReduceMotionPref.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { getPstatsTheme } from '../services/coalitionPstatsTheme.js'

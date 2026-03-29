@@ -8,7 +8,7 @@ import {
   useLayoutEffect,
 } from "react";
 import { Chess } from "chess.js";
-import { useAuth } from "../../auth/hooks/useAuth.js";
+import { useAuth } from "../../auth/index.js";
 import { coalitionToSlug } from "../../theme/services/coalitionTheme.js";
 import { getPieceThemeSlugForColor } from "../mock/mockGameOpponent.js";
 import { ChessPieceImg } from "./ChessPiecePng.jsx";

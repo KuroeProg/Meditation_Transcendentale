@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../services/coalitionTheme.js'
 
 /** `data-coalition` sur `<html>` pour le CSS thème. */

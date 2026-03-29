@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'

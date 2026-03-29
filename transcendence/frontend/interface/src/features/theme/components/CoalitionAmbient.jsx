@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
-import { useAuth } from '../../auth/hooks/useAuth.js'
+import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../services/coalitionTheme.js'
 import { COALITION_ACCENTS, COALITION_BACKGROUNDS } from '../services/coalitionAmbience.js'
 import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'

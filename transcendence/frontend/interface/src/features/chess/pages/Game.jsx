@@ -2,7 +2,7 @@ import Board from "../components/Board.jsx";
 import { useEffect, useCallback, useMemo } from "react";
 import { useSynchronizedChessTimers } from "../components/Chrono.jsx";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../../auth/hooks/useAuth.js";
+import { useAuth } from "../../auth/index.js";
 import { useChessSocket } from "../hooks/useChessSocket.js";
 import { get42AvatarUrl, getDisplayTitle } from "../../../utils/sessionUser.js";
 import GameStatsPanel from "../../stats/components/GameStatsPanel.jsx";
