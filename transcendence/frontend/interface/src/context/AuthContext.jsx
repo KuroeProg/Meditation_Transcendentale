@@ -31,6 +31,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
+  const [twoFactorChallenge, setTwoFactorChallenge] = useState(null)
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -46,12 +47,15 @@ export function AuthProvider({ children }) {
       if (response.ok) {
         const userData = await response.json()
         setUser(userData)
+        setTwoFactorChallenge(null)
       } else {
         setUser(null)
+        setTwoFactorChallenge(null)
       }
     } catch (err) {
       console.error('Auth check failed:', err)
       setUser(null)
+      setTwoFactorChallenge(null)
     } finally {
       setIsLoading(false)
     }
@@ -78,27 +82,32 @@ export function AuthProvider({ children }) {
 
       if (!response.ok) {
         setError(data?.error || 'Login failed')
-        return false
+        return { ok: false, status: 'error' }
       }
 
       if (data?.status === '2fa_required') {
-        return {
+        const challenge = {
           status: '2fa_required',
           user_id: data.user_id,
           pre_auth_token: data.pre_auth_token,
           email: data.email,
           message: data.message,
         }
+        setUser(null)
+        setTwoFactorChallenge(challenge)
+        return { ok: false, ...challenge }
       }
 
       setUser(data.user)
+      setTwoFactorChallenge(null)
       return {
+        ok: true,
         status: 'authenticated',
         user: data.user,
       }
     } catch (err) {
       setError('Network error. Please try again.')
-      return false
+      return { ok: false, status: 'error' }
     }
   }
 
@@ -122,14 +131,38 @@ export function AuthProvider({ children }) {
 
       if (!response.ok) {
         setError(data?.error || 'Registration failed')
-        return null
+        return { ok: false, status: 'error' }
       }
 
-      // Return user_id for 2FA step
-      return data.user_id
+      const challenge = {
+        status: '2fa_required',
+        user_id: data?.user_id ?? null,
+        pre_auth_token: data?.pre_auth_token ?? null,
+        email: data?.email ?? email,
+        message: data?.message ?? null,
+      }
+
+      if (data?.status === '2fa_required' || challenge.user_id != null) {
+        setUser(null)
+        setTwoFactorChallenge(challenge)
+        return { ok: false, ...challenge }
+      }
+
+      if (data?.user) {
+        setUser(data.user)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: data.user,
+        }
+      }
+
+      setError('Registration response missing challenge')
+      return { ok: false, status: 'error' }
     } catch (err) {
       setError('Network error. Please try again.')
-      return null
+      return { ok: false, status: 'error' }
     }
   }
 
@@ -155,15 +188,20 @@ export function AuthProvider({ children }) {
 
       if (!response.ok) {
         setError(data?.error || 'Verification failed')
-        return false
+        return { ok: false, status: 'error', error: data?.error || 'Verification failed' }
       }
 
       setUser(data.user)
-      return true
+      setTwoFactorChallenge(null)
+      return { ok: true, status: 'authenticated', user: data.user }
     } catch (err) {
       setError('Network error. Please try again.')
-      return false
+      return { ok: false, status: 'error', error: 'Network error. Please try again.' }
     }
+  }
+
+  function clearTwoFactorChallenge() {
+    setTwoFactorChallenge(null)
   }
 
   async function logout() {
@@ -185,6 +223,7 @@ export function AuthProvider({ children }) {
     } finally {
       sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
       setUser(null)
+      setTwoFactorChallenge(null)
     }
   }
 
@@ -207,10 +246,13 @@ export function AuthProvider({ children }) {
     loginWith42,
     registerLocal,
     verify2FA,
+    twoFactorChallenge,
+    clearTwoFactorChallenge,
     logout,
     refetch: checkAuth,
     isDevMockAuth: false,
-    isAuthenticated: !!user,
+    isTwoFactorVerified: !!user && !twoFactorChallenge,
+    isAuthenticated: !!user && !twoFactorChallenge,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
