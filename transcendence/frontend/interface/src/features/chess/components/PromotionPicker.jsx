@@ -1,9 +1,50 @@
-// 🆕 PromotionPicker Component
-// Extracted from Board.jsx in Phase 4
-// Interactive UI for pawn promotion selection
+import { ChessPieceImg } from './ChessPiecePng.jsx'
 
-export function PromotionPicker({ isOpen, onSelect, promotionCodes }) {
-  // TODO: Extract from Board.jsx
-  // This will be populated during Phase 4 refactoring
-  return null
+const PROMOTION_LABELS = {
+  q: 'Dame',
+  r: 'Tour',
+  b: 'Fou',
+  n: 'Cavalier',
+}
+
+export function PromotionPicker({ promotionPick, isViewOnly, onCancel, onChoose }) {
+  if (!promotionPick || isViewOnly) return null
+
+  return (
+    <div
+      className="board-promotion-overlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Choisir la piece de promotion"
+    >
+      <button
+        type="button"
+        className="board-promotion-backdrop"
+        aria-label="Annuler la promotion"
+        onClick={onCancel}
+      />
+      <div className="board-promotion-toolbar">
+        <p className="board-promotion-title">Promotion du pion</p>
+        <div className="board-promotion-choices">
+          {promotionPick.options.map((code) => (
+            <button
+              key={code}
+              type="button"
+              className="board-promotion-btn"
+              aria-label={PROMOTION_LABELS[code] ?? code}
+              onClick={() => onChoose(code)}
+            >
+              <ChessPieceImg
+                theme={promotionPick.themeSlug}
+                pieceType={code}
+                pieceColor={promotionPick.color}
+                className="board-promotion-piece"
+              />
+              <span className="board-promotion-label">{PROMOTION_LABELS[code] ?? code}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
 }

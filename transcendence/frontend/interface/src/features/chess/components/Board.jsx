@@ -12,6 +12,8 @@ import { useAuth } from "../../auth/index.js";
 import { coalitionToSlug } from "../../theme/services/coalitionTheme.js";
 import { getPieceThemeSlugForColor } from "../mock/mockGameOpponent.js";
 import { ChessPieceImg } from "./ChessPiecePng.jsx";
+import { MoveGhost } from "./MoveGhost.jsx";
+import { PromotionPicker } from "./PromotionPicker.jsx";
 import {
   BOARD_TILES,
   buildTileUrlFlat,
@@ -25,13 +27,6 @@ import {
 const MOVE_ANIM_MS = 200;
 
 const PROMOTION_PIECE_ORDER = ["q", "r", "b", "n"];
-
-const PROMOTION_LABELS = {
-  q: "Dame",
-  r: "Tour",
-  b: "Fou",
-  n: "Cavalier",
-};
 
 function toSquare(row, col) {
   const files = "abcdefgh";
@@ -603,32 +598,6 @@ function Board({
     };
   }, []);
 
-  const ghost =
-    activeMoveAnim &&
-    (activeMoveAnim.phase === "slide" || activeMoveAnim.phase === "sliding") &&
-    activeMoveAnim.size != null ? (
-      <div
-        className={`board-move-ghost ${activeMoveAnim.phase === "sliding" ? "board-move-ghost--sliding" : ""}`}
-        style={{
-          "--ghost-x0": `${activeMoveAnim.x0}px`,
-          "--ghost-y0": `${activeMoveAnim.y0}px`,
-          "--ghost-dx": `${activeMoveAnim.dx}px`,
-          "--ghost-dy": `${activeMoveAnim.dy}px`,
-          "--ghost-size": `${activeMoveAnim.size}px`,
-          "--ghost-dur": `${MOVE_ANIM_MS}ms`,
-        }}
-        onTransitionEnd={onGhostTransitionEnd}
-      >
-        <ChessPieceImg
-          theme={activeMoveAnim.themeSlug}
-          pieceType={activeMoveAnim.moving.type}
-          pieceColor={activeMoveAnim.moving.color}
-          className="board-move-ghost__img"
-          style={{ transform: pieceRotation }}
-        />
-      </div>
-    ) : null;
-
   return (
     <div>
       {(localFeedback || moveFeedback) && (
@@ -700,55 +669,27 @@ function Board({
           )}
         </div>
 
-        {ghost}
+        <MoveGhost
+          activeMoveAnim={activeMoveAnim}
+          durationMs={MOVE_ANIM_MS}
+          pieceRotation={pieceRotation}
+          onTransitionEnd={onGhostTransitionEnd}
+        />
 
-        {promotionPick && !isViewOnly ? (
-          <div
-            className="board-promotion-overlay"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Choisir la piece de promotion"
-          >
-            <button
-              type="button"
-              className="board-promotion-backdrop"
-              aria-label="Annuler la promotion"
-              onClick={() => setPromotionPick(null)}
-            />
-            <div className="board-promotion-toolbar">
-              <p className="board-promotion-title">Promotion du pion</p>
-              <div className="board-promotion-choices">
-                {promotionPick.options.map((code) => (
-                  <button
-                    key={code}
-                    type="button"
-                    className="board-promotion-btn"
-                    aria-label={PROMOTION_LABELS[code] ?? code}
-                    onClick={() => {
-                      submitMoveRequest(
-                        promotionPick.from,
-                        promotionPick.to,
-                        game.get(promotionPick.from),
-                        code,
-                      );
-                      setPromotionPick(null);
-                    }}
-                  >
-                    <ChessPieceImg
-                      theme={promotionPick.themeSlug}
-                      pieceType={code}
-                      pieceColor={promotionPick.color}
-                      className="board-promotion-piece"
-                    />
-                    <span className="board-promotion-label">
-                      {PROMOTION_LABELS[code] ?? code}
-                    </span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          </div>
-        ) : null}
+        <PromotionPicker
+          promotionPick={promotionPick}
+          isViewOnly={isViewOnly}
+          onCancel={() => setPromotionPick(null)}
+          onChoose={(code) => {
+            submitMoveRequest(
+              promotionPick.from,
+              promotionPick.to,
+              game.get(promotionPick.from),
+              code,
+            );
+            setPromotionPick(null);
+          }}
+        />
       </div>
     </div>
   );
