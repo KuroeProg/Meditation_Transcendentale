@@ -32,6 +32,10 @@
 	}
 }
 
+html[data-reduce-motion='true'] .game-stats-panel {
+	animation: none;
+}
+
 /* ── Stat cards row ── */
 
 .stats-cards {

@@ -1,19 +1,21 @@
 import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
 import { Chess } from "chess.js";
 import {
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import mockStats from "../dev/mockPlayerStats.json";
-import "./GameStatsPanel.css";
+	LineChart,
+	Line,
+	BarChart,
+	Bar,
+	XAxis,
+	YAxis,
+	CartesianGrid,
+	Tooltip,
+	Legend,
+	ResponsiveContainer,
+} from 'recharts'
+import mockPersonalStats from '../dev/mockPersonalStats.json'
+
+const mockStats = mockPersonalStats.gamePanel
+import './GameStatsPanel.css'
 
 const PIECE_LABELS = {
   p: "Pawn",

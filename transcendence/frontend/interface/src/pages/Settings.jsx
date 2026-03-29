@@ -7,11 +7,11 @@ import {
 	notifyPrefsChanged,
 } from '../config/uiPrefs.js'
 import { GameAudioPrefsForm } from '../components/GameAudioPrefsForm.jsx'
+import GameStatsSummarySection from '../components/GameStatsSummarySection.jsx'
 
 function Settings() {
 	const { user, loading, loginWith42 } = useAuth()
 	const [prefs, setPrefs] = useState(loadUiPrefs)
-	const [twoFAEnabled, setTwoFAEnabled] = useState(false)
 
 	useEffect(() => {
 		localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs))
@@ -23,7 +23,7 @@ function Settings() {
 		<div className="page-shell">
 			<div className="page-header">
 				<h1 className="page-title">Paramètres</h1>
-				<p className="page-subtitle">Sécurité (2FA) et préférences d’affichage — l’avatar reste celui de ton compte 42.</p>
+				<p className="page-subtitle">Audio de partie et préférences d’affichage — l’avatar reste celui de ton compte 42.</p>
 			</div>
 
 			{loading ? (
@@ -44,21 +44,7 @@ function Settings() {
 						</section>
 					) : (
 						<div className="settings-stack">
-							<section className="surface-card">
-								<h2 className="card-title">Double authentification (2FA)</h2>
-								<p className="muted small card-hint">
-									Interrupteur préparé pour l’UI ; la persistance et les codes TOTP seront gérés côté backend.
-								</p>
-								<label className="toggle-row">
-									<input
-										type="checkbox"
-										checked={twoFAEnabled}
-										onChange={(e) => setTwoFAEnabled(e.target.checked)}
-									/>
-									<span>Activer la 2FA sur mon compte</span>
-								</label>
-							</section>
-
+							<GameStatsSummarySection user={user} />
 							<section className="surface-card">
 								<h2 className="card-title">Préférences d’interface</h2>
 								<p className="muted small card-hint settings-coalition-note">
@@ -74,16 +60,6 @@ function Settings() {
 										}
 									/>
 									<span>Réduire les animations (accessibilité)</span>
-								</label>
-								<label className="toggle-row">
-									<input
-										type="checkbox"
-										checked={prefs.notificationsEnabled}
-										onChange={(e) =>
-											setPrefs((p) => ({ ...p, notificationsEnabled: e.target.checked }))
-										}
-									/>
-									<span>Notifications (interface)</span>
 								</label>
 							</section>
 						</div>

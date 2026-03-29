@@ -2,11 +2,18 @@
  * Utilisateur fictif pour tester Profil / Paramètres / pièces coalition sans OAuth.
  * Activer : VITE_DEV_MOCK_USER=true dans .env.local
  *
+<<<<<<< HEAD
  * Coalition → pièces / tuiles des blancs. Les noirs sont simulés via sessionStorage.
  *
  * Chaque onglet/fenêtre reçoit un ID utilisateur différent (blanc: 42, noir: 999)
  * pour permettre des tests multi-joueurs.
+=======
+ * Coalition → pièces / tuiles des blancs. Les noirs : `src/dev/mockGameOpponent.js`.
+ * Stats profil : alignées sur `mockPersonalStats.json` → `profileSummary` (page Statistiques).
+>>>>>>> main
  */
+
+import mockPersonalStats from './mockPersonalStats.json'
 
 export function isDevMockAuthEnabled() {
 	return import.meta.env.DEV === true && import.meta.env.VITE_DEV_MOCK_USER === 'true'
@@ -22,8 +29,7 @@ function getMockUserId() {
 }
 
 export function getMockSessionUser() {
-	const userId = getMockUserId()
-	const isWhite = userId === 42
+	const ps = mockPersonalStats.profileSummary
 	return {
 		id: userId,
 		login: isWhite ? 'white_player' : 'black_player',
@@ -36,15 +42,16 @@ export function getMockSessionUser() {
 				medium: 'https://picsum.photos/id/64/256/256',
 			},
 		},
-		coalition: isWhite ? 'feu' : 'eau',
-		coalition_name: isWhite ? 'feu' : 'eau',
+		// ← Modifie cette valeur pour voir les pièces Feu / Eau / Terre / Air sur l’échiquier
+		coalition: 'air',
+		coalition_name: 'air',
 		cursus_level: 7,
 		level: 7,
 		stats: {
-			wins: 12,
-			losses: 8,
-			rank: 42,
-			level: 3,
+			wins: ps.wins,
+			losses: ps.losses,
+			rank: ps.rank,
+			level: ps.level,
 		},
 	}
 }

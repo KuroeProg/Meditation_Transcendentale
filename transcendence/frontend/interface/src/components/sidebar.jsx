@@ -1,5 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
+import SiteBrandLogo from './SiteBrandLogo.jsx'
 
 function Sidebar() {
 	const navigate = useNavigate()
@@ -16,7 +17,7 @@ function Sidebar() {
 				<li>
 					<Link to="/" className="logo">
 						<span className="icon">
-							<img src="imgs/ChessLogo.jpg" className="Profile-logo" alt="" />
+							<SiteBrandLogo className="Profile-logo site-brand-logo" alt="" />
 						</span>
 						<span className="text">Transcendance</span>
 					</Link>
@@ -51,6 +52,14 @@ function Sidebar() {
 							<i className="fa-solid fa-gear" />
 						</span>
 						<span className="text">Settings</span>
+					</Link>
+				</li>
+				<li>
+					<Link to="/statistics">
+						<span className="icon">
+							<i className="fa-solid fa-chart-pie" />
+						</span>
+						<span className="text">Statistics</span>
 					</Link>
 				</li>
 				<li>

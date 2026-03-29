@@ -23,6 +23,15 @@ import {
 
 const MOVE_ANIM_MS = 200;
 
+const PROMOTION_PIECE_ORDER = ['q', 'r', 'b', 'n']
+
+const PROMOTION_LABELS = {
+	q: 'Dame',
+	r: 'Tour',
+	b: 'Fou',
+	n: 'Cavalier',
+}
+
 function toSquare(row, col) {
   const files = "abcdefgh";
   const ranks = "87654321";

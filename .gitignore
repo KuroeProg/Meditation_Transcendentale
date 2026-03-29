@@ -20,3 +20,6 @@ __pycache__/
 node_modules/
 dist/
 .DS_Store
+
+# Cursor : règles personnelles locales (non partagées). Les commandes projet sont dans .cursor/commands/
+.cursor/rules/

@@ -3,7 +3,6 @@ export const PREFS_STORAGE_KEY = 'transcendence_ui_prefs'
 /** Pas de thème global clair/sombre ici : réservé à la future DA par coalition (sidebar, fonds, accents). */
 const defaultPrefs = {
 	reduceMotion: false,
-	notificationsEnabled: true,
 }
 
 export function loadUiPrefs() {
@@ -13,6 +12,7 @@ export function loadUiPrefs() {
 		const parsed = { ...defaultPrefs, ...JSON.parse(raw) }
 		// Ancienne clé "theme" ignorée — ne pas recolorer toute l’app par-dessus les coalitions
 		delete parsed.theme
+		delete parsed.notificationsEnabled
 		return parsed
 	} catch {
 		return { ...defaultPrefs }

@@ -32,13 +32,13 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ## Légende des statuts
 
 
-| Statut / repère | Signification                                                                                                                                                                                                   |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Fait**        | Démo possible, exigences du PDF couvertes.                                                                                                                                                                      |
-| **Quasi**       | Presque prêt ; reste polish, tests, doc README.                                                                                                                                                                 |
-| **En cours**    | Implémentation active.                                                                                                                                                                                          |
-| **À faire**     | Pas commencé ou insuffisant pour revendiquer le point.                                                                                                                                                          |
-| **Buffer**      | Optionnel : uniquement pour marge si un autre module saute.                                                                                                                                                     |
+| Statut / repère       | Signification                                                                                                                                                                                                   |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Fait**              | Démo possible, exigences du PDF couvertes.                                                                                                                                                                      |
+| **Quasi**             | Presque prêt ; reste polish, tests, doc README.                                                                                                                                                                 |
+| **En cours**          | Implémentation active.                                                                                                                                                                                          |
+| **À faire**           | Pas commencé ou insuffisant pour revendiquer le point.                                                                                                                                                          |
+| **Buffer**            | Optionnel : uniquement pour marge si un autre module saute.                                                                                                                                                     |
 | **Suffixe `, bonus`** | Ajouter après le statut (ex. `En cours, bonus`) : module prévu **après** les **14 pts** du socle (repère **bleu** sur les slides), dans la limite **+5** (ch. VII). Sans suffixe = compte pour le socle des 14. |
 
 
@@ -49,22 +49,22 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 À traiter comme une **checklist séparée** du barème IV.
 
 
-| Exigence (résumé PDF)                                                                                                                               | Statut   | Owner               | Notes / preuve                              |
-| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------- | ------------------------------------------- |
-| `README.md` complet (VI) — **en anglais**, équipe, gestion de projet, stack, schéma DB, **liste features**, **modules + calcul pts**, contributions | À faire  | Équipe              |                                             |
-| App web : **frontend + backend + base de données**                                                                                                  | Quasi    | Vyke, Fey + Even    |                                             |
-| **Git** : commits de tous, messages clairs, répartition du travail                                                                                  | En cours | Équipe              |                                             |
-| **Docker** (ou équivalent) : lancement **en une commande**                                                                                          | Quasi    | Even, Cloé + équipe | `Makefile` / `docker compose`               |
-| Compatible **Chrome** stable récent                                                                                                                 | Quasi    | Équipe              |                                             |
-| **Aucune erreur / warning** console navigateur (requis sujet)                                                                                       | En cours | Vyke, Fey + Even    |                                             |
-| **Privacy Policy** + **Terms of Service** : contenu réel, accessibles depuis l’app (ex. footer)                                                     | Quasi    | Vyke, Fey + équipe  | Vérifier liens UI + contenu non placeholder |
-| **Multi-utilisateurs** : plusieurs users simultanés, pas de corruption évidente                                                                     | À faire  | Even + Vyke, Fey    | Lié temps réel / backend                    |
-| Front **clair, responsive** ; solution **CSS** (framework ou autre)                                                                                 | Quasi    | Vyke, Fey           |                                             |
-| `**.env.example`** ; secrets **hors Git**                                                                                                           | Quasi    | Even, Cloé (Vault)  |                                             |
-| Schéma DB **clair** + relations                                                                                                                     | En cours | Even, Mileum        | Documenter dans README                      |
-| **Compte utilisateur minimal** : **inscription / connexion email + mot de passe** (hash + sel, etc.)                                                | À faire  | Even + Vyke, Fey    | **Requis III** même si OAuth en module      |
-| Validation **front + back** des formulaires / entrées                                                                                               | En cours | Vyke, Fey + Even    |                                             |
-| Backend servi en **HTTPS**                                                                                                                          | Quasi    | Cloé + Even         | Nginx TLS                                   |
+| Exigence (résumé PDF)                                                                                                                               | Statut   | Owner               | Notes / preuve                                                                                                                                                                                            |
+| --------------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `README.md` complet (VI) — **en anglais**, équipe, gestion de projet, stack, schéma DB, **liste features**, **modules + calcul pts**, contributions | Quasi    | Équipe              | **Racine** : README structuré (EN) — usage, limites honnêtes, équipe, licence/credits, modules ; détail npm dans `interface/README.md`. Compléter schéma DB + Privacy/ToS dans README si pas encore fait. |
+| App web : **frontend + backend + base de données**                                                                                                  | Quasi    | Vyke, Fey + Even    |                                                                                                                                                                                                           |
+| **Git** : commits de tous, messages clairs, répartition du travail                                                                                  | En cours | Équipe              |                                                                                                                                                                                                           |
+| **Docker** (ou équivalent) : lancement **en une commande**                                                                                          | Quasi    | Even, Cloé + équipe | `Makefile` / `docker compose`                                                                                                                                                                             |
+| Compatible **Chrome** stable récent                                                                                                                 | Quasi    | Équipe              |                                                                                                                                                                                                           |
+| **Aucune erreur / warning** console navigateur (requis sujet)                                                                                       | En cours | Vyke, Fey + Even    |                                                                                                                                                                                                           |
+| **Privacy Policy** + **Terms of Service** : contenu réel, accessibles depuis l’app (ex. footer)                                                     | Quasi    | Vyke, Fey + équipe  | Vérifier liens UI + contenu non placeholder                                                                                                                                                               |
+| **Multi-utilisateurs** : plusieurs users simultanés, pas de corruption évidente                                                                     | À faire  | Even + Vyke, Fey    | Lié temps réel / backend                                                                                                                                                                                  |
+| Front **clair, responsive** ; solution **CSS** (framework ou autre)                                                                                 | Quasi    | Vyke, Fey           |                                                                                                                                                                                                           |
+| `**.env.example`** ; secrets **hors Git**                                                                                                           | Quasi    | Even, Cloé (Vault)  |                                                                                                                                                                                                           |
+| Schéma DB **clair** + relations                                                                                                                     | En cours | Even, Mileum        | Documenter dans README                                                                                                                                                                                    |
+| **Compte utilisateur minimal** : **inscription / connexion email + mot de passe** (hash + sel, etc.)                                                | À faire  | Even + Vyke, Fey    | **Requis III** même si OAuth en module                                                                                                                                                                    |
+| Validation **front + back** des formulaires / entrées                                                                                               | En cours | Vyke, Fey + Even    |                                                                                                                                                                                                           |
+| Backend servi en **HTTPS**                                                                                                                          | Quasi    | Cloé + Even         | Nginx TLS                                                                                                                                                                                                 |
 
 
 ---
@@ -78,13 +78,13 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.1 Web
 
 
-| Module (PDF)                                                                         | Type  | Pts | Statut         | Owner            | Notes / preuve démo                                                |
-| ------------------------------------------------------------------------------------ | ----- | --- | -------------- | ---------------- | ------------------------------------------------------------------ |
-| Framework **frontend + backend** (un Major couvrant les deux)                        | Major | 2   | Quasi          | Vyke, Fey + Even | React + Django — **confirmer** avec évaluateur vs 2× Minor séparés |
-| **WebSockets** (temps réel, déconnexions, diffusion efficace)                        | Major | 2   | En cours       | Even + Vyke, Fey | Serveur : Even ; client : Vyke, Fey                                |
-| **Interaction utilisateurs** (chat minimal, profil visible, amis add/remove + liste) | Major | 2   | À faire, bonus | Vyke, Fey + Even | UI : Vyke, Fey ; API : Even                                        |
-| ORM                                                                                  | Minor | 1   | Quasi          | Even             | Django ORM                                                         |
-| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | À cadrer / documenter dans README                                  |
+| Module (PDF)                                                                         | Type  | Pts | Statut         | Owner            | Notes / preuve démo                                                                                 |
+| ------------------------------------------------------------------------------------ | ----- | --- | -------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
+| Framework **frontend + backend** (un Major couvrant les deux)                        | Major | 2   | Quasi          | Vyke, Fey + Even | React + Django — **confirmer** avec évaluateur vs 2× Minor séparés                                  |
+| **WebSockets** (temps réel, déconnexions, diffusion efficace)                        | Major | 2   | En cours       | Even + Vyke, Fey | Serveur : Even ; client : Vyke, Fey                                                                 |
+| **Interaction utilisateurs** (chat minimal, profil visible, amis add/remove + liste) | Major | 2   | À faire, bonus | Vyke, Fey + Even | UI : Vyke, Fey ; API : Even                                                                         |
+| ORM                                                                                  | Minor | 1   | Quasi          | Even             | Django ORM                                                                                          |
+| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | Panneau fin de partie, page stats, audio préfs, logo marque — **à cadrer / documenter** dans README |
 
 
 **Sous-total Web (périmètre retenu)** : Majors FE+BE, WebSockets, interaction users + ORM + design system (selon démo).
@@ -94,9 +94,10 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.2 Accessibilité & internationalisation
 
 
-| Module (PDF)                      | Type  | Pts | Statut         | Owner              | Notes |
-| --------------------------------- | ----- | --- | -------------- | ------------------ | ----- |
-| **≥ 3 langues** + i18n + switcher | Minor | 1   | À faire, bonus | Vyke, Fey + équipe |       |
+| Module (PDF)                                         | Type  | Pts | Statut         | Owner              | Notes                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------------------- | ----- | --- | -------------- | ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **≥ 3 langues** + i18n + switcher                    | Minor | 1   | À faire, bonus | Vyke, Fey + équipe |                                                                                                                                                                                                                                                                                                                               |
+| **Navigateurs additionnels** (compatibilité étendue) | Minor | 1   | À faire, bonus | Vyke, Fey + équipe | **EN (PDF)** : *Support for additional browsers* — compatibilité pleine avec **au moins 2 navigateurs** en plus de la base (Firefox, Safari, Edge, etc.) ; tester et corriger toutes les fonctionnalités sur chaque navigateur ; documenter les limites spécifiques ; **UI/UX cohérente** sur tous les navigateurs supportés. |
 
 
 ---
@@ -104,13 +105,13 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.3 User management
 
 
-| Module (PDF)                                                                                     | Type  | Pts | Statut          | Owner                           | Notes                              |
-| ------------------------------------------------------------------------------------------------ | ----- | --- | --------------- | ------------------------------- | ---------------------------------- |
-| Gestion **standard** (profil éditable, avatar + défaut, **amis** + statut en ligne, page profil) | Major | 2   | En cours        | Vyke, Fey + Even                | Major dans le PDF                  |
-| **OAuth 2.0** (42, Google, GitHub…)                                                              | Minor | 1   | Quasi           | Even + Vyke, Fey                | Finir branchement réel vs mock dev |
-| **Stats & historique de parties** (nécessite jeu fonctionnel)                                    | Minor | 1   | En cours, bonus | Mileum (Théo), Even + Vyke, Fey |                                    |
-| **Analytics d’activité utilisateur** + tableau de bord d’insights                                 | Minor | 1   | À faire, bonus  | Mileum (Théo), Even + Vyke, Fey | *User activity analytics and insights dashboard* (bonus) |
-| **2FA** complet                                                                                  | Minor | 1   | En cours        | Even + Vyke, Fey                |                                    |
+| Module (PDF)                                                                                     | Type  | Pts | Statut         | Owner                           | Notes                                                                                                                                                |
+| ------------------------------------------------------------------------------------------------ | ----- | --- | -------------- | ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Gestion **standard** (profil éditable, avatar + défaut, **amis** + statut en ligne, page profil) | Major | 2   | En cours       | Vyke, Fey + Even                | Major dans le PDF                                                                                                                                    |
+| **OAuth 2.0** (42, Google, GitHub…)                                                              | Minor | 1   | Quasi          | Even + Vyke, Fey                | Finir branchement réel vs mock dev                                                                                                                   |
+| **Stats & historique de parties** (nécessite jeu fonctionnel)                                    | Minor | 1   | Quasi, bonus   | Mileum (Théo), Even + Vyke, Fey | **Front** : page `/statistics` (stats perso, graphiques Recharts, thème coalition, mock JSON) ; **reste** : persistance / API parties réelles (Even) |
+| **Analytics d’activité utilisateur** + tableau de bord d’insights                                | Minor | 1   | À faire, bonus | Mileum (Théo), Even + Vyke, Fey | *User activity analytics and insights dashboard* (bonus)                                                                                             |
+| **2FA** complet                                                                                  | Minor | 1   | En cours       | Even + Vyke, Fey                | **Front** : toggle placeholder retiré des Paramètres tant que pas de backend ; réintégrer UI quand TOTP/API prêts.                                   |
 
 
 ---
@@ -128,13 +129,13 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.6 Gaming & expérience
 
 
-| Module (PDF)                                                    | Type  | Pts | Statut   | Owner            | Notes                              |
-| --------------------------------------------------------------- | ----- | --- | -------- | ---------------- | ---------------------------------- |
-| **Jeu web complet** (règles, conditions victoire, parties live) | Major | 2   | Quasi    | Vyke, Fey + Even | UI : Vyke, Fey ; sync : Even       |
-| **Remote players** (2 machines, latence, déco, **reconnexion**) | Major | 2   | En cours       | Even + Vyke, Fey | **Cœur du gap** vs hot-seat / mock |
-| **Multijoueur 3+** (Major PDF : jeu **>2 joueurs**, synchro tous clients, équité) | Major | 2   | À faire, bonus | Even + Vyke, Fey | EN : *Multiplayer game (more than two players). Support for three or more players simultaneously. Fair gameplay mechanics for all participants. Proper synchronization across all clients.* — bonus |
-| **Customisation** jeu (thèmes, options…)                        | Minor | 1   | Quasi          | Vyke, Fey (+ Even) | Tuiles / coalitions                |
-| **Mode spectateur**                                             | Minor | 1   | En cours, bonus | Even + Vyke, Fey |                                    |
+| Module (PDF)                                                                      | Type  | Pts | Statut          | Owner              | Notes                                                                                                                                                                                               |
+| --------------------------------------------------------------------------------- | ----- | --- | --------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Jeu web complet** (règles, conditions victoire, parties live)                   | Major | 2   | Quasi           | Vyke, Fey + Even   | UI : Vyke, Fey ; sync : Even                                                                                                                                                                        |
+| **Remote players** (2 machines, latence, déco, **reconnexion**)                   | Major | 2   | En cours        | Even + Vyke, Fey   | **Cœur du gap** vs hot-seat / mock                                                                                                                                                                  |
+| **Multijoueur 3+** (Major PDF : jeu **>2 joueurs**, synchro tous clients, équité) | Major | 2   | À faire, bonus  | Even + Vyke, Fey   | EN : *Multiplayer game (more than two players). Support for three or more players simultaneously. Fair gameplay mechanics for all participants. Proper synchronization across all clients.* — bonus |
+| **Customisation** jeu (thèmes, options…)                                          | Minor | 1   | Quasi           | Vyke, Fey (+ Even) | Tuiles / coalitions ; **promotion** pion au choix (Dame/Tour/Fou/Cavalier) ; BGM/SFX ; logo site + favicon                                                                                          |
+| **Mode spectateur**                                                               | Minor | 1   | En cours, bonus | Even + Vyke, Fey   |                                                                                                                                                                                                     |
 
 
 ---
@@ -142,12 +143,12 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.7 DevOps
 
 
-| Module (PDF)                                                                   | Type  | Pts | Statut   | Owner                     | Notes                             |
-| ------------------------------------------------------------------------------ | ----- | --- | -------- | ------------------------- | --------------------------------- |
-| **ELK** (ES + Logstash + Kibana, rétention, sécurisation)                      | Major | 2   | Quasi    | Cloé, Mileum (Théo), Even | Finaliser rétention / accès       |
-| **Prometheus + Grafana** (metrics, dashboards, **alerting**, sécurité Grafana) | Major | 2   | Quasi    | Cloé, Mileum (Théo), Even | **Alerting** à finaliser          |
-| **Microservices** (découplage, interfaces claires, REST ou files, **SRP**)     | Major | 2   | En cours | Even (+ Mileum)           | Argumenter frontières de services |
-| **Health checks**, page de statut, **sauvegardes auto** + **PRA / reprise** | Minor | 1   | À faire, bonus | Even, Cloé (+ Mileum) | EN : *Health check and status page system with automated backups and disaster recovery procedures.* — bonus |
+| Module (PDF)                                                                   | Type  | Pts | Statut         | Owner                     | Notes                                                                                                       |
+| ------------------------------------------------------------------------------ | ----- | --- | -------------- | ------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **ELK** (ES + Logstash + Kibana, rétention, sécurisation)                      | Major | 2   | Quasi          | Cloé, Mileum (Théo), Even | Finaliser rétention / accès                                                                                 |
+| **Prometheus + Grafana** (metrics, dashboards, **alerting**, sécurité Grafana) | Major | 2   | Quasi          | Cloé, Mileum (Théo), Even | **Alerting** à finaliser                                                                                    |
+| **Microservices** (découplage, interfaces claires, REST ou files, **SRP**)     | Major | 2   | En cours       | Even (+ Mileum)           | Argumenter frontières de services                                                                           |
+| **Health checks**, page de statut, **sauvegardes auto** + **PRA / reprise**    | Minor | 1   | À faire, bonus | Even, Cloé (+ Mileum)     | EN : *Health check and status page system with automated backups and disaster recovery procedures.* — bonus |
 
 
 ---
@@ -155,11 +156,11 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.8 Data & Analytics
 
 
-| Module (PDF)                                                               | Type  | Pts | Statut   | Owner                           | Notes                                      |
-| -------------------------------------------------------------------------- | ----- | --- | -------- | ------------------------------- | ------------------------------------------ |
-| Dashboard analytique avancé (charts, temps réel, export, filtres)          | Major | 2   | En cours | Mileum (Théo), Even + Vyke, Fey |                                    |
-| Export / import données (formats, validation, bulk)                        | Minor | 1   | À faire  | Mileum (Théo), Even             |                                    |
-| **RGPD** (accès données, suppression, export lisible, emails confirmation) | Minor | 1   | À faire  | Mileum (Théo), Even + Vyke, Fey | Écrans : Vyke, Fey                 |
+| Module (PDF)                                                               | Type  | Pts | Statut   | Owner                           | Notes                                                                                   |
+| -------------------------------------------------------------------------- | ----- | --- | -------- | ------------------------------- | --------------------------------------------------------------------------------------- |
+| Dashboard analytique avancé (charts, temps réel, export, filtres)          | Major | 2   | En cours | Mileum (Théo), Even + Vyke, Fey | **Front** : écran stats perso avec graphiques (complémentaire au dashboard global IV.8) |
+| Export / import données (formats, validation, bulk)                        | Minor | 1   | À faire  | Mileum (Théo), Even             |                                                                                         |
+| **RGPD** (accès données, suppression, export lisible, emails confirmation) | Minor | 1   | À faire  | Mileum (Théo), Even + Vyke, Fey | Écrans : Vyke, Fey                                                                      |
 
 
 ---
@@ -196,12 +197,18 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ## Historique
 
 
-| Date       | Changement                                                                           |
-| ---------- | ------------------------------------------------------------------------------------ |
-| 27/03/2026 | Création du fichier                                                                  |
-| 27/03/2026 | Owners : Vyke + Fey (front), Even (back), Cloé (cyber), Mileum (Théo) (data)         |
-| 27/03/2026 | Sections 100 % hors périmètre retirées ; bonus intégré au statut (suffixe `, bonus`) |
-| 27/03/2026 | Nettoyage lignes vides / troncatures ; bonus : analytics users (IV.3), multijoueur 3+ (IV.6), health/PRA (IV.7) |
+| Date       | Changement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| 27/03/2026 | Création du fichier                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| 27/03/2026 | Owners : Vyke + Fey (front), Even (back), Cloé (cyber), Mileum (Théo) (data)                                                                                                                                                                                                                                                                                                                                                                                                                           |
+| 27/03/2026 | Sections 100 % hors périmètre retirées ; bonus intégré au statut (suffixe `, bonus`)                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| 27/03/2026 | Nettoyage lignes vides / troncatures ; bonus : analytics users (IV.3), multijoueur 3+ (IV.6), health/PRA (IV.7)                                                                                                                                                                                                                                                                                                                                                                                        |
+| 28/03/2026 | **Front** : page **Statistiques** perso (`/statistics`, sidebar), winrates donuts, perf time/advantage, usage pièces %/raw, tableau métriques, thème **coalition** ; fin de partie **GameStatsPanel** ; **audio** BGM (jeu + home, prefs partagées) ; **logo** marque + favicon ; **promotion** au choix avec skins coalition                                                                                                                                                                          |
+| 28/03/2026 | **README racine (EN)** : sections usage, architecture, limitations honnêtes, équipe, licence/credits, grading ; `**.gitignore`** : `.cursor/` (règles Cursor locales non partagées). **Paramètres** : retrait **2FA** / **notifications** (non fonctionnels) ; **« Réduire les animations »** branché (hook + Home, Recharts stats, CSS, CoalitionAmbient sans rAF si actif). Renommage `**Coalition_Earth`** (typo Colation). `**interface/README.md**` : rôle des `scripts/` npm vs `.venv-sprites`. |
+| 28/03/2026 | **Scripts front** optionnels retirés volontairement (`generate-coalition-svgs`, `measure-board-terre`, asset source) ; `**package.json`** et READMEs alignés — reste `**generate-board-tiles-manifest**` (build). **Règle Cursor locale** : mise à jour `**Todo.md`** + **README** (racine EN + interface) quand utile.                                                                                                                                                                                |
+| 28/03/2026 | **Stats** : `profileSummary` dans `**mockPersonalStats.json`** ; `**resolveProfileGameStats**` + composant `**GameStatsSummarySection**` (Profil + Paramètres) alignés sur le même mock que la page Statistiques. **Statistics** : espacement vertical colonne graphes (`padding` / `gap`) pour mieux s’aligner avec le panneau métriques.                                                                                                                                                             |
+| 28/03/2026 | **Mocks** : fusion `**mockPlayerStats.json`** → clé `**gamePanel**` dans `**mockPersonalStats.json**` (une seule source) ; chiffres panneau fin de partie alignés sur winrate global / parties totales / ELO courbe ; `**GameStatsPanel**` importe ce fichier.                                                                                                                                                                                                                                         |
+|            |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 
 ---

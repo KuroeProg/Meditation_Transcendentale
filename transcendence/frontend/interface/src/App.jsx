@@ -6,6 +6,7 @@ import Dashboard from './pages/Dashboard.jsx'
 import Profile from './pages/Profile.jsx'
 import Settings from './pages/Settings.jsx'
 import Auth from './pages/Auth.jsx'
+import Statistics from './pages/Statistics.jsx'
 import Sidebar from './components/sidebar.jsx'
 import ThemeSync from './components/ThemeSync.jsx'
 import DevAuthToolbar from './components/DevAuthToolbar.jsx'
@@ -85,6 +86,14 @@ function AppContent() {
 						element={
 							<ProtectedRoute>
 								<Settings />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/statistics"
+						element={
+							<ProtectedRoute>
+								<Statistics />
 							</ProtectedRoute>
 						}
 					/>
