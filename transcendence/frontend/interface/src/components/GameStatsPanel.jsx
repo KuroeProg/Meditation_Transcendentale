@@ -89,12 +89,21 @@ function buildMaterialChartData(moveLog) {
   const data = [];
   for (let i = 0; i < moveLog.length; i++) {
     const m = moveLog[i];
-    const r = chess.move(m.san);
-    if (!r) break;
-    data.push({
-      ply: i + 1,
-      material: materialBalance(chess),
-    });
+    if (!m || !m.san) {
+      break;
+    }
+    try {
+      const r = chess.move(m.san, { sloppy: false });
+      if (!r) {
+        break;
+      }
+      data.push({
+        ply: i + 1,
+        material: materialBalance(chess),
+      });
+    } catch (error) {
+      break;
+    }
   }
   return data;
 }

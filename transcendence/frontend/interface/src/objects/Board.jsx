@@ -20,13 +20,6 @@ import {
   collectChessGamePreloadUrls,
   preloadChessImages,
 } from "../chess/chessAssetPreload.js";
-import {
-  unlockGameAudio,
-  playPieceMoveFromFlags,
-  playMoveCheck,
-  playUiErrorDeny,
-} from "../audio/gameSfx.js";
-import { tryPlayGameBgm } from "../audio/gameBgm.js";
 
 const MOVE_ANIM_MS = 200;
 
@@ -204,7 +197,6 @@ function Board({
   }, []);
 
   const flashIllegalSquare = useCallback((square) => {
-    playUiErrorDeny();
     if (illegalTimerRef.current) {
       clearTimeout(illegalTimerRef.current);
       illegalTimerRef.current = null;
@@ -218,8 +210,6 @@ function Board({
 
   const handleBoardClick = useCallback(
     (e) => {
-      unlockGameAudio();
-      void tryPlayGameBgm();
       const el = e.target.closest?.(".cell[data-square]");
       if (!el || !(el instanceof HTMLElement)) return;
       const sq = el.dataset.square;
@@ -236,7 +226,6 @@ function Board({
       if (selected === null) {
         const clickedPiece = game.get(square);
         if (clickedPiece && playerColor && clickedPiece.color !== playerColor) {
-          playUiErrorDeny();
           setLocalFeedback("Cette pièce ne vous appartient pas.");
           return;
         }
@@ -260,7 +249,6 @@ function Board({
       const clickedPiece = game.get(square);
       if (clickedPiece && clickedPiece.color === game.turn()) {
         if (playerColor && clickedPiece.color !== playerColor) {
-          playUiErrorDeny();
           setLocalFeedback("Ce n'est pas votre couleur.");
           setSelected(null);
           setPossibleMoves([]);
@@ -286,7 +274,6 @@ function Board({
       }
 
       if (playerColor && game.turn() !== playerColor) {
-        playUiErrorDeny();
         setLocalFeedback("Ce n'est pas votre tour.");
         setSelected(null);
         setPossibleMoves([]);
@@ -294,15 +281,6 @@ function Board({
       }
 
       const movingPiece = game.get(selected);
-      const moves = game.moves({ square: selected, verbose: true });
-      const move = moves.find((m) => m.to === square);
-
-      if (move) {
-        playPieceMoveFromFlags(move.flags ?? "");
-        if (!game.inCheck() && game.inCheck()) {
-          playMoveCheck();
-        }
-      }
 
       const uciMove = buildUciMove(selected, square, movingPiece);
       if (uciMove && typeof onMoveRequest === "function") {
