@@ -1,341 +1,100 @@
 import "../index.css";
 import Board from "../objects/Board.jsx";
-import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { Chess } from "chess.js";
+import { useEffect, useCallback, useMemo } from "react";
 import { useSynchronizedChessTimers } from "../objects/Chrono.jsx";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth.js";
 import { useChessSocket } from "../hooks/useChessSocket.js";
 import { get42AvatarUrl, getDisplayTitle } from "../utils/sessionUser.js";
-import { randomTilePatternSeed } from "../chess/boardTiles.js";
 import GameStatsPanel from "../components/GameStatsPanel.jsx";
-import {
-  playGameWin,
-  playGameDraw,
-  playGameResign,
-  playClockTimeout,
-  unlockGameAudio,
-} from "../audio/gameSfx.js";
 import {
   GameAmbientBgm,
   GameMusicPanel,
 } from "../components/GamePageAudio.jsx";
-
-const ACTIVE_GAME_STORAGE_KEY = "activeGameId";
-const ACTIVE_MATCH_STATUSES = new Set(["active"]);
-const FINISHED_MATCH_STATUSES = new Set([
-  "checkmate",
-  "stalemate",
-  "draw",
-  "resigned",
-  "timeout",
-]);
-
-function uciToMoveObject(uci) {
-  if (typeof uci !== "string" || uci.length < 4) return null;
-  const from = uci.slice(0, 2);
-  const to = uci.slice(2, 4);
-  const promotion = uci.length > 4 ? uci.slice(4, 5) : undefined;
-  return { from, to, promotion };
-}
-
-function fenAfterPlies(moveLog, count) {
-  const c = new Chess();
-  for (let i = 0; i < count; i++) {
-    const m = moveLog[i];
-    if (!m?.san) return null;
-    const r = c.move(m.san);
-    if (!r) return null;
-  }
-  return c.fen();
-}
+import {
+  normalizeId,
+} from "../game/core/chessSelectors.js";
+import { useChessEngine } from "../game/hooks/useChessEngine.js";
+import { useChessAudio } from "../game/hooks/useChessAudio.js";
 
 function App() {
   useEffect(() => {
     document.title = "Transcendance Chess Game";
   }, []);
 
-  const [showDebug, setShowDebug] = useState(false);
-
-  const [game, setGame] = useState(() => new Chess());
-  const [gameState, setGameState] = useState(null);
-  const [winner, setWinner] = useState(null);
-  const [moveFeedback, setMoveFeedback] = useState(null);
-  const [tilePatternSeed, setTilePatternSeed] = useState(() =>
-    randomTilePatternSeed(),
-  );
-  const [matchGeneration, setMatchGeneration] = useState(0);
-  const [moveLog, setMoveLog] = useState([]);
-  const [viewPlies, setViewPlies] = useState(null);
-  const lastMoveTs = useRef(null);
-  const moveLogLenRef = useRef(0);
-  const lastLoggedFenRef = useRef(new Chess().fen());
-  const lastLoggedUciRef = useRef(null);
-
   const { gameId } = useParams();
   const { user } = useAuth();
+  const mode = useMemo(() => {
+    const id = String(gameId ?? "").toLowerCase();
+    if (id === "training" || id === "local" || id.startsWith("training_")) {
+      return "training";
+    }
+    return "online";
+  }, [gameId]);
+
   const { isConnected, socketError, lastMessage, sendMove } =
-    useChessSocket(gameId);
+    useChessSocket(mode === "online" ? gameId : null);
 
-  const normalizeId = useCallback((value) => {
-    if (value == null) return null;
-    return String(value);
-  }, []);
+  const {
+    state,
+    userId,
+    playerColor,
+    displayedGame,
+    toggleDebug,
+    handleMoveRequest,
+    handleResign,
+    handleOfferDraw,
+    handleRespondDraw,
+    startNewMatch,
+    setViewPlies,
+    drawOfferIncoming,
+    drawOfferOutgoing,
+    goReplayFirst,
+    goReplayPrev,
+    goReplayNext,
+    goReplayLast,
+  } = useChessEngine({
+    mode,
+    gameId,
+    user,
+    lastMessage,
+    sendMove,
+  });
 
-  useEffect(() => {
-    moveLogLenRef.current = moveLog.length;
-  }, [moveLog.length]);
+  const {
+    showDebug,
+    game,
+    gameState,
+    winner,
+    moveFeedback,
+    moveLog,
+    viewPlies,
+  } = state;
 
-  useEffect(() => {
-    lastMoveTs.current = Date.now();
-  }, [matchGeneration]);
+  const normalizedUserId = useMemo(() => normalizeId(userId), [userId]);
 
-  const userId = useMemo(() => {
-    if (!user) return null;
-    return user.id ?? user.user_id ?? user.pk ?? user.sub ?? null;
-  }, [user]);
-
-  const playerColor = useMemo(() => {
-    if (!gameState || userId == null) return null;
-    if (String(gameState.white_player_id) === String(userId)) return "w";
-    if (String(gameState.black_player_id) === String(userId)) return "b";
-    return null;
-  }, [gameState, userId]);
-
-  const normalizedUserId = useMemo(() => normalizeId(userId), [normalizeId, userId]);
-
-  useEffect(() => {
-    const status = gameState?.status;
-    if (!status) return;
-
-    if (ACTIVE_MATCH_STATUSES.has(status)) {
-      sessionStorage.setItem(ACTIVE_GAME_STORAGE_KEY, gameId);
-      return;
-    }
-
-    if (FINISHED_MATCH_STATUSES.has(status)) {
-      const lockedGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY);
-      if (lockedGameId === gameId) {
-        sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY);
-      }
-    }
-  }, [gameId, gameState?.status]);
-
-  const handleMove = useCallback(({ color, piece, from, to, san }) => {
-    const now = Date.now();
-    const timeSpentMs =
-      lastMoveTs.current != null ? now - lastMoveTs.current : 0;
-    lastMoveTs.current = now;
-    setMoveLog((prev) => [
-      ...prev,
-      {
-        moveNumber: Math.floor(prev.length / 2) + 1,
-        color,
-        piece,
-        from,
-        to,
-        san,
-        timeSpentMs,
-      },
-    ]);
-    setViewPlies(null);
-  }, []);
-
-  const logMoveFromServerState = useCallback(
-    (incomingState) => {
-      const nextFen = incomingState?.fen;
-      const nextUci = incomingState?.last_move_uci;
-
-      if (!nextFen || !nextUci) return;
-      if (nextFen === lastLoggedFenRef.current) return;
-      if (nextUci === lastLoggedUciRef.current) return;
-
-      try {
-        const prevBoard = new Chess(lastLoggedFenRef.current);
-        const parsedMove = uciToMoveObject(nextUci);
-        if (!parsedMove) return;
-
-        const madeMove = prevBoard.move(parsedMove);
-        if (!madeMove) return;
-
-        handleMove({
-          color: madeMove.color,
-          piece: madeMove.piece,
-          from: madeMove.from,
-          to: madeMove.to,
-          san: madeMove.san,
-        });
-
-        lastLoggedUciRef.current = nextUci;
-      } catch {
-        // Ignore malformed/unsynchronized states and keep UI responsive.
-      }
-    },
-    [handleMove],
-  );
-
-  const viewFen = useMemo(() => {
-    if (viewPlies == null) return null;
-    if (viewPlies === 0) return new Chess().fen();
-    if (!moveLog.length) return null;
-    const n = Math.min(viewPlies, moveLog.length);
-    return fenAfterPlies(moveLog, n);
-  }, [moveLog, viewPlies]);
-
-  const displayedGame = useMemo(() => {
-    if (viewFen == null) return game;
-    try {
-      return new Chess(viewFen);
-    } catch {
-      return game;
-    }
-  }, [game, viewFen]);
-
-  const goReplayFirst = useCallback(() => {
-    if (moveLogLenRef.current === 0) return;
-    setViewPlies(0);
-  }, []);
-
-  const goReplayPrev = useCallback(() => {
-    setViewPlies((v) => {
-      const len = moveLogLenRef.current;
-      if (len === 0) return v;
-      if (v === null) return len > 0 ? len - 1 : v;
-      if (v <= 0) return 0;
-      return v - 1;
-    });
-  }, []);
-
-  const goReplayNext = useCallback(() => {
-    setViewPlies((v) => {
-      const len = moveLogLenRef.current;
-      if (len === 0) return v;
-      if (v === null) return v;
-      if (v >= len) return null;
-      return v + 1;
-    });
-  }, []);
-
-  const goReplayLast = useCallback(() => {
-    const len = moveLogLenRef.current;
-    if (len === 0) return;
-    setViewPlies(null);
-  }, []);
-
-  const handleResign = useCallback(() => {
-    if (winner || userId == null) return;
-    sendMove({ action: "resign", player_id: userId });
-  }, [winner, userId, sendMove]);
-
-  const handleOfferDraw = useCallback(() => {
-    if (winner || userId == null) return;
-    sendMove({ action: "draw_offer", player_id: userId });
-  }, [winner, userId, sendMove]);
-
-  const handleRespondDraw = useCallback(
-    (accept) => {
-      if (winner || userId == null) return;
-      sendMove({ action: "draw_response", player_id: userId, accept });
-    },
-    [winner, userId, sendMove],
-  );
-
-  const startNewMatch = useCallback(() => {
-    setGame(new Chess());
-    setWinner(null);
-    setTilePatternSeed(randomTilePatternSeed());
-    setMatchGeneration((g) => g + 1);
-    setMoveLog([]);
-    setViewPlies(null);
-    lastLoggedFenRef.current = new Chess().fen();
-    lastLoggedUciRef.current = null;
-    lastMoveTs.current = Date.now();
-  }, []);
-
-  // Monitor gameState changes from WebSocket
-  useEffect(() => {
-    if (!lastMessage) return;
-
-    if (lastMessage.error) {
-      setMoveFeedback(lastMessage.error);
-      return;
-    }
-
-    if (lastMessage.action === "game_state" && lastMessage.game_state) {
-      const incomingState = lastMessage.game_state;
-      setGameState(incomingState);
-
-      logMoveFromServerState(incomingState);
-
-      // Handle status transitions from server
-      if (
-        incomingState.status === "checkmate" ||
-        incomingState.status === "stalemate"
-      ) {
-        const winnerColor =
-          incomingState.status === "checkmate"
-            ? incomingState.winner_player_id === incomingState?.white_player_id
-              ? "White"
-              : "Black"
-            : "Nulle";
-        setWinner(winnerColor);
-      } else if (incomingState.status === "draw") {
-        setWinner("Nulle");
-      } else if (incomingState.status === "resigned") {
-        setWinner(
-          incomingState.winner_player_id === incomingState?.white_player_id
-            ? "White-Resign"
-            : "Black-Resign",
-        );
-      } else if (incomingState.status === "timeout") {
-        setWinner(
-          incomingState.winner_player_id === incomingState?.white_player_id
-            ? "White-Timeout"
-            : "Black-Timeout",
-        );
-      }
-
-      // Update local game state to reflect server state
-      try {
-        const g = new Chess(incomingState.fen);
-        setGame(g);
-        lastLoggedFenRef.current = g.fen();
-      } catch (err) {
-        console.error(
-          "[chess] Invalid FEN from server:",
-          incomingState.fen,
-          err,
-        );
-      }
-    }
-
-    if (lastMessage.action === "move_response") {
-      setMoveFeedback(null);
-    }
-  }, [lastMessage, gameState?.white_player_id, logMoveFromServerState]);
-
-  // Play audio effects when game ends
-  const prevWinnerRef = useRef(null);
-  useEffect(() => {
-    if (winner === prevWinnerRef.current) return;
-    prevWinnerRef.current = winner;
-    if (!winner) return;
-    unlockGameAudio();
-    if (winner === "White" || winner === "Black") playGameWin();
-    else if (winner === "Nulle") playGameDraw();
-    else if (winner === "Black-Resign" || winner === "White-Resign")
-      playGameResign();
-    else if (winner === "White-Timeout" || winner === "Black-Timeout")
-      playClockTimeout();
-  }, [winner]);
+  useChessAudio({
+    moveLog,
+    winner,
+    moveFeedback,
+    enabled: true,
+  });
 
   const handleResetGame = useCallback(() => {
     startNewMatch();
-    setMoveFeedback(null);
   }, [startNewMatch]);
 
   // Sync timers from server state
-  const syncedTimers = useSynchronizedChessTimers(gameState, game.turn());
+  const onlineTimers = useSynchronizedChessTimers(gameState, game.turn());
+  const syncedTimers =
+    mode === "training"
+      ? {
+          whiteSeconds: 0,
+          blackSeconds: 0,
+          whiteTime: "--:--",
+          blackTime: "--:--",
+        }
+      : onlineTimers;
 
   const whitePlayerId = normalizeId(gameState?.white_player_id);
   const blackPlayerId = normalizeId(gameState?.black_player_id);
@@ -391,15 +150,6 @@ function App() {
 
   const topPlayer = getPlayerBarData(topPlayerColor);
   const bottomPlayer = getPlayerBarData(bottomPlayerColor);
-  const drawOfferFrom = gameState?.draw_offer_from_player_id;
-  const normalizedDrawOfferFrom =
-    drawOfferFrom == null ? null : String(drawOfferFrom);
-  const drawOfferIncoming =
-    normalizedUserId != null &&
-    normalizedDrawOfferFrom != null &&
-    normalizedDrawOfferFrom !== normalizedUserId;
-  const drawOfferOutgoing =
-    normalizedUserId != null && normalizedDrawOfferFrom === normalizedUserId;
 
   return (
     <div>
@@ -420,7 +170,7 @@ function App() {
           maxHeight: "300px",
           overflow: "auto",
         }}
-        onClick={() => setShowDebug(!showDebug)}
+        onClick={toggleDebug}
       >
         {!showDebug ? (
           <div>Debug v</div>
@@ -489,13 +239,7 @@ function App() {
             <Board
               game={displayedGame}
               winner={winner}
-              onMoveRequest={(payload) =>
-                sendMove({
-                  action: "play_move",
-                  player_id: userId,
-                  ...payload,
-                })
-              }
+              onMoveRequest={handleMoveRequest}
               playerColor={playerColor}
               whiteCoalition={gameState?.white_player_coalition}
               blackCoalition={gameState?.black_player_coalition}
