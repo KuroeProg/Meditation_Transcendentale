@@ -1,7 +1,7 @@
 /**
  * Scanne public/chess/tiles/<feu|eau|terre|air>/{light,dark}/*.png
  * (fichiers nommés uniquement par un nombre : 1.png, 12.png, …)
- * et écrit src/chess/boardTilesManifest.json
+ * et écrit src/features/chess/assets/boardTilesManifest.json
  */
 import fs from 'fs'
 import path from 'path'
@@ -10,7 +10,7 @@ import { fileURLToPath } from 'url'
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const root = path.join(__dirname, '..')
 const tilesRoot = path.join(root, 'public', 'chess', 'tiles')
-const outFile = path.join(root, 'src', 'chess', 'boardTilesManifest.json')
+const outFile = path.join(root, 'src', 'features', 'chess', 'assets', 'boardTilesManifest.json')
 
 const SLUGS = ['feu', 'eau', 'terre', 'air']
 const SHADES = ['light', 'dark']

@@ -1,18 +1,18 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { ProtectedRoute } from './components/shared/ProtectedRoute/ProtectedRoute'
-import Home from './features/home/pages/Home.jsx'
-import Game from './features/chess/pages/Game.jsx'
-import Dashboard from './features/profile/pages/Dashboard.jsx'
-import Profile from './features/profile/pages/Profile.jsx'
-import Settings from './features/profile/pages/Settings.jsx'
-import Auth from './features/auth/pages/Auth.jsx'
-import Statistics from './features/stats/pages/Statistics.jsx'
-import Sidebar from './components/shared/Sidebar/sidebar.jsx'
-import ThemeSync from './features/theme/components/ThemeSync.jsx'
-import DevAuthToolbar from './components/shared/DevToolbar/DevAuthToolbar.jsx'
-import CoalitionHtmlSync from './features/theme/components/CoalitionHtmlSync.jsx'
-import CoalitionAmbient from './features/theme/components/CoalitionAmbient.jsx'
-import { useAuth } from './features/auth/hooks/useAuth.js'
+import { ProtectedRoute, Sidebar, DevAuthToolbar } from './components/shared/index.js'
+import {
+	HomePage,
+	GamePage,
+	DashboardPage,
+	ProfilePage,
+	SettingsPage,
+	AuthPage,
+	StatisticsPage,
+	ThemeSync,
+	CoalitionHtmlSync,
+	CoalitionAmbient,
+	useAuth,
+} from './features/index.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -40,12 +40,12 @@ function AppContent() {
 			{!isAuthRoute && <Sidebar />}
 			<div className={`main-content ${isAuthRoute ? 'full-width' : ''}`}>
 				<Routes>
-					<Route path="/auth" element={<Auth />} />
+					<Route path="/auth" element={<AuthPage />} />
 					<Route
 						path="/"
 						element={
 							<ProtectedRoute>
-								<Home />
+								<HomePage />
 							</ProtectedRoute>
 						}
 					/>
@@ -61,7 +61,7 @@ function AppContent() {
 						path="/game/:gameId"
 						element={
 							<ProtectedRoute>
-								<Game />
+								<GamePage />
 							</ProtectedRoute>
 						}
 					/>
@@ -69,7 +69,7 @@ function AppContent() {
 						path="/dashboard"
 						element={
 							<ProtectedRoute>
-								<Dashboard />
+								<DashboardPage />
 							</ProtectedRoute>
 						}
 					/>
@@ -77,7 +77,7 @@ function AppContent() {
 						path="/profile"
 						element={
 							<ProtectedRoute>
-								<Profile />
+								<ProfilePage />
 							</ProtectedRoute>
 						}
 					/>
@@ -85,7 +85,7 @@ function AppContent() {
 						path="/settings"
 						element={
 							<ProtectedRoute>
-								<Settings />
+								<SettingsPage />
 							</ProtectedRoute>
 						}
 					/>
@@ -93,7 +93,7 @@ function AppContent() {
 						path="/statistics"
 						element={
 							<ProtectedRoute>
-								<Statistics />
+								<StatisticsPage />
 							</ProtectedRoute>
 						}
 					/>

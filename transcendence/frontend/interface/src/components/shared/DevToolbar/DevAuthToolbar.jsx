@@ -1,4 +1,4 @@
-import { useAuth } from '../../../features/auth/hooks/useAuth.js'
+import { useAuth } from '../../../features/auth/index.js'
 
 /**
  * Visible uniquement si VITE_DEV_MOCK_USER=true : permet de réinjecter l’utilisateur fictif après un logout de test.

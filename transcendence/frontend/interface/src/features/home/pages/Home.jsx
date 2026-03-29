@@ -1,14 +1,11 @@
 import '../styles/Home.css'
 import MenuHome from '../components/MenuHome'
-import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
-import { HomeAmbientBgm } from '../../../features/audio/components/HomeAudio.jsx'
-import { tryPlayHomeBgm } from '../../../features/audio/services/homeBgm.js'
-import CoalitionFire from '../../../features/theme/components/CoalitionSymbols/Coalition_Fire'
-import CoalitionEarth from '../../../features/theme/components/CoalitionSymbols/Coalition_Earth'
-import CoalitionWater from '../../../features/theme/components/CoalitionSymbols/Coalition_Water'
-import CoalitionWind from '../../../features/theme/components/CoalitionSymbols/Coalition_Wind'
+import { SiteBrandLogo } from '../../../components/common/index.js'
+import { HomeAmbientBgm } from '../../audio/index.js'
+import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
+import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
-import { useReduceMotionPref } from '../../../features/theme/hooks/useReduceMotionPref.js'
+import { useReduceMotionPref } from '../../theme/index.js'
 
 function Home() {
 	const reduceMotion = useReduceMotionPref()

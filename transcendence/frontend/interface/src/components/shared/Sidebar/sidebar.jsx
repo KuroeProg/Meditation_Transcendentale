@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../../../features/auth/hooks/useAuth.js'
+import { useAuth } from '../../../features/auth/index.js'
 import SiteBrandLogo from '../../common/Logo/SiteBrandLogo.jsx'
 
 function Sidebar() {
