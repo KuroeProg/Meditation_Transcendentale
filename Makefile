@@ -55,7 +55,7 @@ help: ## Afficher cette aide (cible par défaut)
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-16s$(C_RESET) %s\n", $$1, $$2}'
 	@printf '%b\n' ""
 
-all: certs build up-bg ## Certificats + build + démarrage en arrière-plan
+all: certs build up-bg migrations ## Certificats + build + démarrage en arrière-plan
 
 certs: ## Générer les certificats TLS nginx / elasticsearch si absents
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Certificats TLS…"
@@ -141,3 +141,9 @@ fclean: clean ## Supprimer volumes, images du projet, et dossiers certs
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) fclean terminé."
 
 re: fclean all ## fclean puis all (repartir de zéro)
+
+migrations: ## Lancer les migrations Django (makemigrations + migrate)
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Migrations Django…"
+	@$(COMPOSE) exec -T backend python manage.py makemigrations
+	@$(COMPOSE) exec -T backend python manage.py migrate
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Migrations terminées."
