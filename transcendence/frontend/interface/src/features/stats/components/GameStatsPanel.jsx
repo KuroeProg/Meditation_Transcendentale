@@ -13,6 +13,9 @@ import { FriendsView } from './FriendsView.jsx'
 import { ResultBanner } from './ResultBanner.jsx'
 import { SummaryCards } from './SummaryCards.jsx'
 import { ControlBar } from './ControlBar.jsx'
+import { DrawOfferBanners } from './DrawOfferBanners.jsx'
+import { ResignConfirmModal } from './ResignConfirmModal.jsx'
+import { DrawOfferModal } from './DrawOfferModal.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 
 const mockStats = mockPersonalStats.gamePanel
@@ -145,124 +148,30 @@ export default function GameStatsPanel({
         onReplayLast={onReplayLast}
       />
 
-      {drawOfferIncoming ? (
-        <div className="stats-result-banner">
-          <p className="stats-result-title">Proposition de nulle</p>
-          <p className="stats-result-sub">
-            Votre adversaire propose match nul.
-          </p>
-          <div className="stats-modal__actions">
-            <button
-              type="button"
-              className="stats-modal__btn stats-modal__btn--ghost"
-              onClick={() => onRespondDraw?.(false)}
-            >
-              Refuser
-            </button>
-            <button
-              type="button"
-              className="stats-modal__btn stats-modal__btn--primary"
-              onClick={() => onRespondDraw?.(true)}
-            >
-              Accepter
-            </button>
-          </div>
-        </div>
-      ) : null}
+      <DrawOfferBanners
+        drawOfferIncoming={drawOfferIncoming}
+        drawOfferOutgoing={drawOfferOutgoing}
+        onRespondDraw={onRespondDraw}
+      />
 
-      {drawOfferOutgoing ? (
-        <div className="stats-result-banner">
-          <p className="stats-result-title">Nulle proposée</p>
-          <p className="stats-result-sub">
-            En attente de réponse de l’adversaire.
-          </p>
-        </div>
-      ) : null}
+      <ResignConfirmModal
+        open={resignOpen}
+        resigningColorLabel={resigningColorLabel}
+        onCancel={() => setResignOpen(false)}
+        onConfirm={() => {
+          setResignOpen(false)
+          onResign?.()
+        }}
+      />
 
-      {resignOpen ? (
-        <div
-          className="stats-modal-backdrop"
-          role="presentation"
-          onClick={() => setResignOpen(false)}
-        >
-          <div
-            className="stats-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="stats-resign-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p id="stats-resign-title" className="stats-modal__title">
-              Abandonner la partie ?
-            </p>
-            <p className="stats-modal__text">
-              Les <strong>{resigningColorLabel}</strong> perdent immédiatement.
-              Cette action ne peut pas être annulée.
-            </p>
-            <div className="stats-modal__actions">
-              <button
-                type="button"
-                className="stats-modal__btn stats-modal__btn--ghost"
-                onClick={() => setResignOpen(false)}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                className="stats-modal__btn stats-modal__btn--danger"
-                onClick={() => {
-                  setResignOpen(false);
-                  onResign?.();
-                }}
-              >
-                Abandonner
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      {drawInfoOpen ? (
-        <div
-          className="stats-modal-backdrop"
-          role="presentation"
-          onClick={() => setDrawInfoOpen(false)}
-        >
-          <div
-            className="stats-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="stats-draw-title"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <p id="stats-draw-title" className="stats-modal__title">
-              Proposition de match nul
-            </p>
-            <p className="stats-modal__text">
-              Envoyer une proposition de nulle à votre adversaire ?
-            </p>
-            <div className="stats-modal__actions">
-              <button
-                type="button"
-                className="stats-modal__btn stats-modal__btn--ghost"
-                onClick={() => setDrawInfoOpen(false)}
-              >
-                Annuler
-              </button>
-              <button
-                type="button"
-                className="stats-modal__btn stats-modal__btn--primary"
-                onClick={() => {
-                  setDrawInfoOpen(false);
-                  onOfferDraw?.();
-                }}
-              >
-                Proposer nul
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <DrawOfferModal
+        open={drawInfoOpen}
+        onCancel={() => setDrawInfoOpen(false)}
+        onConfirm={() => {
+          setDrawInfoOpen(false)
+          onOfferDraw?.()
+        }}
+      />
     </div>
   );
 }
