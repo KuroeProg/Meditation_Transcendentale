@@ -21,10 +21,9 @@ from game.services.game_state import (
 	ensure_draw_fields,
 )
 from game.services.matchmaking import (
-	attempt_matchmaking,
-	broadcast_matchmaking_queue_size,
+	dequeue_player_from_matchmaking,
 	normalize_player_id,
-	remove_from_queue,
+	queue_player_for_matchmaking,
 )
 from game.services.player_profiles import (
 	fetch_user_coalition,
@@ -95,12 +94,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		if self.is_matchmaking_room and self.matchmaking_player_id is not None:
 			redis_client = self.get_redis()
-			await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, self.matchmaking_player_id)
-			await broadcast_matchmaking_queue_size(
+			await dequeue_player_from_matchmaking(
 				redis_client,
 				self.channel_layer,
 				f'chess_{self.MATCHMAKING_ROOM_ID}',
 				self.MATCHMAKING_QUEUE_KEY,
+				self.matchmaking_player_id,
 			)
 
 		if self.clock_task is not None:
@@ -210,19 +209,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		self.matchmaking_player_id = player_id
 		redis_client = self.get_redis()
-		await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, player_id)
-		await redis_client.rpush(self.MATCHMAKING_QUEUE_KEY, player_id)
-		await broadcast_matchmaking_queue_size(
+		await queue_player_for_matchmaking(
 			redis_client,
 			self.channel_layer,
 			f'chess_{self.MATCHMAKING_ROOM_ID}',
 			self.MATCHMAKING_QUEUE_KEY,
-		)
-		await attempt_matchmaking(
-			redis_client,
-			self.channel_layer,
-			f'chess_{self.MATCHMAKING_ROOM_ID}',
-			self.MATCHMAKING_QUEUE_KEY,
+			player_id,
 			fetch_user_coalition,
 			fetch_user_public_profile,
 		)
@@ -236,15 +228,15 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			return
 
 		redis_client = self.get_redis()
-		await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, player_id)
-		if self.matchmaking_player_id == player_id:
-			self.matchmaking_player_id = None
-		await broadcast_matchmaking_queue_size(
+		await dequeue_player_from_matchmaking(
 			redis_client,
 			self.channel_layer,
 			f'chess_{self.MATCHMAKING_ROOM_ID}',
 			self.MATCHMAKING_QUEUE_KEY,
+			player_id,
 		)
+		if self.matchmaking_player_id == player_id:
+			self.matchmaking_player_id = None
 
 	async def handle_create_game(self, data):
 		white_id = data.get('white_id', 42)

@@ -26,6 +26,49 @@ async def remove_from_queue(redis_client, queue_key, player_id):
     await redis_client.lrem(queue_key, 0, str(player_id))
 
 
+async def queue_player_for_matchmaking(
+    redis_client,
+    channel_layer,
+    room_group_name,
+    queue_key,
+    player_id,
+    fetch_user_coalition,
+    fetch_user_public_profile,
+):
+    await remove_from_queue(redis_client, queue_key, player_id)
+    await redis_client.rpush(queue_key, player_id)
+    await broadcast_matchmaking_queue_size(
+        redis_client,
+        channel_layer,
+        room_group_name,
+        queue_key,
+    )
+    await attempt_matchmaking(
+        redis_client,
+        channel_layer,
+        room_group_name,
+        queue_key,
+        fetch_user_coalition,
+        fetch_user_public_profile,
+    )
+
+
+async def dequeue_player_from_matchmaking(
+    redis_client,
+    channel_layer,
+    room_group_name,
+    queue_key,
+    player_id,
+):
+    await remove_from_queue(redis_client, queue_key, player_id)
+    await broadcast_matchmaking_queue_size(
+        redis_client,
+        channel_layer,
+        room_group_name,
+        queue_key,
+    )
+
+
 async def broadcast_matchmaking_queue_size(redis_client, channel_layer, room_group_name, queue_key):
     queue_size = await redis_client.llen(queue_key)
     await channel_layer.group_send(
