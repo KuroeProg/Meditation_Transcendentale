@@ -10,7 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+
+def _env_bool(name, default=False):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _env_list(name, default_values):
+    raw = os.environ.get(name)
+    if not raw:
+        return default_values
+    values = [item.strip() for item in raw.split(',') if item.strip()]
+    return values or default_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,18 +36,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u=m6iv)64!pt2i$(_khl29qg8797dvq-93at8z$brl4u^uv0b*'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-u=m6iv)64!pt2i$(_khl29qg8797dvq-93at8z$brl4u^uv0b*'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['backend', 'localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', ['backend', 'localhost', '127.0.0.1', '0.0.0.0'])
 
 # CSRF_TRUSTED_ORIGINS : trust domain
-CSRF_TRUSTED_ORIGINS = [
-    'https://localhost',
-    'https://127.0.0.1',
-]
+CSRF_TRUSTED_ORIGINS = _env_list('DJANGO_CSRF_TRUSTED_ORIGINS', ['https://localhost', 'https://127.0.0.1'])
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -72,10 +88,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'transcendence_backend.urls'
 
-CORS_ALLOWED_ORIGINS = [
-    "https://localhost",
-    "http://localhost:5173",
-]
+CORS_ALLOWED_ORIGINS = _env_list('DJANGO_CORS_ALLOWED_ORIGINS', ["https://localhost", "http://localhost:5173"])
 
 TEMPLATES = [
     {
@@ -98,8 +111,6 @@ ASGI_APPLICATION = 'transcendence_backend.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-import os
 
 DATABASES = {
     'default': {

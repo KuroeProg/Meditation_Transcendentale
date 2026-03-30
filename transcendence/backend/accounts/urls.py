@@ -1,32 +1,27 @@
 from django.urls import path
 
-from views import (
-    auth_login_db,
-    auth_logout,
-    auth_me,
-    auth_seed_users,
-    auth_csrf,
-    auth_user_by_id,
-    RegisterView,
-    Verify2FAView,
-    ResendVerificationCodeView,
-)
+import views
+
+
+def with_optional_trailing_slash(route, view_callable, name=None):
+    patterns = [path(route, view_callable, name=name)]
+    slash_route = route if route.endswith('/') else f'{route}/'
+    if slash_route != route:
+        patterns.append(path(slash_route, view_callable))
+    return patterns
 
 
 urlpatterns = [
     # Traditional authentication
-    path('login', auth_login_db, name='auth_login_db'),
-    path('logout', auth_logout, name='auth_logout'),
-    path('me', auth_me, name='auth_me'),
-    path('users/<int:user_id>', auth_user_by_id, name='auth_user_by_id'),
-    path('csrf', auth_csrf, name='auth_csrf'),
-    path('seed-users', auth_seed_users, name='auth_seed_users'),
-    
+    *with_optional_trailing_slash('login', views.auth_login_db, name='auth_login_db'),
+    *with_optional_trailing_slash('logout', views.auth_logout, name='auth_logout'),
+    *with_optional_trailing_slash('me', views.auth_me, name='auth_me'),
+    *with_optional_trailing_slash('users/<int:user_id>', views.auth_user_by_id, name='auth_user_by_id'),
+    *with_optional_trailing_slash('csrf', views.auth_csrf, name='auth_csrf'),
+    *with_optional_trailing_slash('seed-users', views.auth_seed_users, name='auth_seed_users'),
+
     # Two-Factor Authentication (2FA)
-    path('register', RegisterView.as_view(), name='register'),
-    path('register/', RegisterView.as_view()),
-    path('verify-2fa', Verify2FAView.as_view(), name='verify_2fa'),
-    path('verify-2fa/', Verify2FAView.as_view()),
-    path('resend-code', ResendVerificationCodeView.as_view(), name='resend_code'),
-    path('resend-code/', ResendVerificationCodeView.as_view()),
+    *with_optional_trailing_slash('register', views.RegisterView.as_view(), name='register'),
+    *with_optional_trailing_slash('verify-2fa', views.Verify2FAView.as_view(), name='verify_2fa'),
+    *with_optional_trailing_slash('resend-code', views.ResendVerificationCodeView.as_view(), name='resend_code'),
 ]
