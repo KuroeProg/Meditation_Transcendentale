@@ -3,10 +3,15 @@ import asyncio
 import contextlib
 import chess
 import time
-import secrets
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+from game.services.matchmaking import (
+	attempt_matchmaking,
+	broadcast_matchmaking_queue_size,
+	normalize_player_id,
+	remove_from_queue,
+)
 from game.services.player_profiles import (
 	fetch_user_coalition,
 	fetch_user_public_profile,
@@ -57,8 +62,14 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		)
 
 		if self.is_matchmaking_room and self.matchmaking_player_id is not None:
-			await self._remove_from_matchmaking_queue(self.matchmaking_player_id)
-			await self._broadcast_matchmaking_queue_size()
+			redis_client = self.get_redis()
+			await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, self.matchmaking_player_id)
+			await broadcast_matchmaking_queue_size(
+				redis_client,
+				self.channel_layer,
+				f'chess_{self.MATCHMAKING_ROOM_ID}',
+				self.MATCHMAKING_QUEUE_KEY,
+			)
 
 		if self.clock_task is not None:
 			self.clock_task.cancel()
@@ -247,97 +258,53 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		else:
 			await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
 
-	async def _remove_from_matchmaking_queue(self, player_id):
-		await self.get_redis().lrem(self.MATCHMAKING_QUEUE_KEY, 0, str(player_id))
-
-	async def _broadcast_matchmaking_queue_size(self):
-		queue_size = await self.get_redis().llen(self.MATCHMAKING_QUEUE_KEY)
-		await self.channel_layer.group_send(
-			f'chess_{self.MATCHMAKING_ROOM_ID}',
-			{
-				'type': 'broadcast_matchmaking_event',
-				'action': 'queue_status',
-				'queue_size': int(queue_size),
-			},
-		)
-
-	async def _attempt_matchmaking(self):
-		while await self.get_redis().llen(self.MATCHMAKING_QUEUE_KEY) >= 2:
-			first_id = await self.get_redis().lpop(self.MATCHMAKING_QUEUE_KEY)
-			second_id = await self.get_redis().lpop(self.MATCHMAKING_QUEUE_KEY)
-
-			if first_id is None or second_id is None:
-				break
-
-			first_id = self._decode_redis_player_id(first_id)
-			second_id = self._decode_redis_player_id(second_id)
-			if first_id == second_id:
-				continue
-
-			white_id, black_id = first_id, second_id
-			white_coalition = await fetch_user_coalition(white_id)
-			black_coalition = await fetch_user_coalition(black_id)
-			white_profile = await fetch_user_public_profile(white_id)
-			black_profile = await fetch_user_public_profile(black_id)
-			board = chess.Board()
-			new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
-			new_game_state = {
-				'fen': board.fen(),
-				'status': 'active',
-				'white_player_id': white_id,
-				'black_player_id': black_id,
-				'white_player_coalition': white_coalition,
-				'black_player_coalition': black_coalition,
-				'white_player_profile': white_profile,
-				'black_player_profile': black_profile,
-				'white_time_left': 600,
-				'black_time_left': 600,
-				'last_move_timestamp': time.time(),
-				'draw_offer_from_player_id': None,
-			}
-			await self.get_redis().set(new_game_id, json.dumps(new_game_state))
-
-			await self.channel_layer.group_send(
-				f'chess_{self.MATCHMAKING_ROOM_ID}',
-				{
-					'type': 'broadcast_matchmaking_event',
-					'action': 'match_found',
-					'game_id': new_game_id,
-					'white_player_id': white_id,
-					'black_player_id': black_id,
-				},
-			)
-
-			await self._broadcast_matchmaking_queue_size()
-
 	async def handle_join_queue(self, data):
 		if not self.is_matchmaking_room:
 			await self.send(text_data=json.dumps({'error': 'Matchmaking indisponible dans cette room'}))
 			return
 
-		player_id = self._normalize_player_id(data.get('player_id'))
+		player_id = normalize_player_id(data.get('player_id'))
 		if player_id is None:
 			await self.send(text_data=json.dumps({'error': 'player_id requis'}))
 			return
 
 		self.matchmaking_player_id = player_id
-		await self._remove_from_matchmaking_queue(player_id)
-		await self.get_redis().rpush(self.MATCHMAKING_QUEUE_KEY, player_id)
-		await self._broadcast_matchmaking_queue_size()
-		await self._attempt_matchmaking()
+		redis_client = self.get_redis()
+		await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, player_id)
+		await redis_client.rpush(self.MATCHMAKING_QUEUE_KEY, player_id)
+		await broadcast_matchmaking_queue_size(
+			redis_client,
+			self.channel_layer,
+			f'chess_{self.MATCHMAKING_ROOM_ID}',
+			self.MATCHMAKING_QUEUE_KEY,
+		)
+		await attempt_matchmaking(
+			redis_client,
+			self.channel_layer,
+			f'chess_{self.MATCHMAKING_ROOM_ID}',
+			self.MATCHMAKING_QUEUE_KEY,
+			fetch_user_coalition,
+			fetch_user_public_profile,
+		)
 
 	async def handle_leave_queue(self, data):
 		if not self.is_matchmaking_room:
 			return
 
-		player_id = self._normalize_player_id(data.get('player_id')) or self.matchmaking_player_id
+		player_id = normalize_player_id(data.get('player_id')) or self.matchmaking_player_id
 		if player_id is None:
 			return
 
-		await self._remove_from_matchmaking_queue(player_id)
+		redis_client = self.get_redis()
+		await remove_from_queue(redis_client, self.MATCHMAKING_QUEUE_KEY, player_id)
 		if self.matchmaking_player_id == player_id:
 			self.matchmaking_player_id = None
-		await self._broadcast_matchmaking_queue_size()
+		await broadcast_matchmaking_queue_size(
+			redis_client,
+			self.channel_layer,
+			f'chess_{self.MATCHMAKING_ROOM_ID}',
+			self.MATCHMAKING_QUEUE_KEY,
+		)
 
 	async def handle_create_game(self, data):
 		board = chess.Board()
@@ -375,19 +342,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		)
 
 	def _normalize_player_id(self, player_id):
-		if player_id is None:
-			return None
-		return str(player_id)
-
-	def _decode_redis_player_id(self, raw_value):
-		if raw_value is None:
-			return None
-		if isinstance(raw_value, bytes):
-			try:
-				return raw_value.decode('utf-8')
-			except UnicodeDecodeError:
-				return str(raw_value)
-		return str(raw_value)
+		return normalize_player_id(player_id)
 
 	def _update_game_status(self, game_state, board):
 		# Priorité explicite: checkmate > stalemate > draw > active.
