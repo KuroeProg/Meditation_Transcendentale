@@ -27,6 +27,7 @@ from game.services.payloads import (
 from game.services.state_builder import build_new_game_state, ensure_player_metadata
 from game.services.clock_tick import tick_game_clock
 from game.services.reconnect import synchronize_reconnecting_player
+from game.services.errors import json_invalid, action_unknown
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -131,10 +132,14 @@ class GameConsumer(AsyncWebsocketConsumer):
 		try:
 			data = json.loads(text_data)
 		except json.JSONDecodeError:
-			await self.send(text_data=json.dumps({'error': 'JSON invalide'}))
+			await self.send(text_data=json.dumps(json_invalid()))
 			return
 
 		action = self._normalize_action(data)
+		if action is None:
+			await self.send(text_data=json.dumps(action_unknown()))
+			return
+
 		game_state_json = await self.get_redis().get(self.game_id)
 		await self._handle_action_with_game_state(action, data, game_state_json)
 

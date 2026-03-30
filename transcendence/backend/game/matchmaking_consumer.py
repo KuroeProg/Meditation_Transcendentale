@@ -55,35 +55,38 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		try:
 			data = json.loads(text_data)
 		except json.JSONDecodeError:
-			await self.send(text_data=json.dumps({'error': 'JSON invalide'}))
+			await self.send(text_data=json.dumps(json_invalid()))
 			return
 
 		action = str(data.get('action', '')).lower()
+		if not action:
+			await self.send(text_data=json.dumps(action_unknown()))
+			return
 
 		if action == 'join_queue':
 			await self.handle_join_queue(data)
 		elif action == 'leave_queue':
 			await self.handle_leave_queue(data)
 		else:
-			await self.send(text_data=json.dumps({'error': 'Action inconnue'}))
+			await self.send(text_data=json.dumps(action_unknown()))
 
 	async def handle_join_queue(self, data):
-		player_id = normalize_player_id(data.get('player_id'))
-		if player_id is None:
-			await self.send(text_data=json.dumps({'error': 'player_id requis'}))
-			return
-
-		self.matchmaking_player_id = player_id
-		redis_client = self.get_redis()
-		await queue_player_for_matchmaking(
-			redis_client,
-			self.channel_layer,
-			self.room_group_name,
-			self.MATCHMAKING_QUEUE_KEY,
-			player_id,
-			fetch_user_coalition,
-			fetch_user_public_profile,
-		)
+		if not self.matchmaking_player_id:
+			player_id = normalize_player_id(data.get('player_id'))
+			if player_id is None:
+				await self.send(text_data=json.dumps({'error': ERROR_PLAYER_ID_REQUIRED}))
+				return
+			self.matchmaking_player_id = player_id
+			redis_client = self.get_redis()
+			await queue_player_for_matchmaking(
+				redis_client,
+				self.channel_layer,
+				self.room_group_name,
+				self.MATCHMAKING_QUEUE_KEY,
+				player_id,
+				fetch_user_coalition,
+				fetch_user_public_profile,
+			)
 
 	async def handle_leave_queue(self, data):
 		player_id = normalize_player_id(data.get('player_id')) or self.matchmaking_player_id
