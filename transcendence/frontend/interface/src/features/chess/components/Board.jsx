@@ -4,12 +4,12 @@ import {
   useEffect,
   useMemo,
   useCallback,
-  useLayoutEffect,
 } from "react";
 import { Chess } from "chess.js";
 import { useAuth } from "../../auth/index.js";
 import { coalitionToSlug } from "../../theme/services/coalitionTheme.js";
 import { getPieceThemeSlugForColor } from "../mock/mockGameOpponent.js";
+import { useMoveGhostAnimation, pieceSuppressed } from "../hooks/useMoveGhostAnimation.js";
 import { CellRenderer } from "./CellRenderer.jsx";
 import { MoveGhost } from "./MoveGhost.jsx";
 import { PromotionPicker } from "./PromotionPicker.jsx";
@@ -23,9 +23,10 @@ import {
   preloadChessImages,
 } from "../assets/chessAssetPreload.js";
 
-const MOVE_ANIM_MS = 200;
+
 
 const PROMOTION_PIECE_ORDER = ["q", "r", "b", "n"];
+const MOVE_ANIM_MS = 200;
 
 function toSquare(row, col) {
   const files = "abcdefgh";
@@ -52,10 +53,6 @@ function findKingSquare(game) {
   return null;
 }
 
-function enPassantCapturedSquare(from, to) {
-  return to[0] + from[1];
-}
-
 function buildUciMove(from, to, movingPiece, promotion) {
   if (!from || !to) return null;
   if (promotion) return `${from}${to}${promotion}`;
@@ -66,56 +63,6 @@ function buildUciMove(from, to, movingPiece, promotion) {
     movingPiece.type === "p" &&
     (destinationRank === "8" || destinationRank === "1");
   return isPromotion ? `${from}${to}q` : `${from}${to}`;
-}
-
-function normalizeFen(fen) {
-  return String(fen || "").split(" ").slice(0, 4).join(" ");
-}
-
-function findAnimatedMove(prevFen, nextFen) {
-  if (!prevFen || !nextFen) return null;
-  if (normalizeFen(prevFen) === normalizeFen(nextFen)) return null;
-
-  try {
-    const prevGame = new Chess(prevFen);
-    const targetFen = normalizeFen(nextFen);
-    const moves = prevGame.moves({ verbose: true });
-
-    for (const move of moves) {
-      const probe = new Chess(prevFen);
-      const made = probe.move({
-        from: move.from,
-        to: move.to,
-        promotion: move.promotion,
-      });
-      if (!made) continue;
-      if (normalizeFen(probe.fen()) === targetFen) {
-        return {
-          from: move.from,
-          to: move.to,
-          moving: { type: move.piece, color: move.color },
-          moveFlags: move.flags ?? "",
-          captureOnTo: !!prevGame.get(move.to),
-          enPassantSq:
-            typeof move.flags === "string" && move.flags.includes("e")
-              ? enPassantCapturedSquare(move.from, move.to)
-              : null,
-        };
-      }
-    }
-  } catch {
-    return null;
-  }
-
-  return null;
-}
-
-function pieceSuppressed(sq, anim) {
-  if (!anim || anim.phase === "done") return false;
-  if (sq === anim.from) return true;
-  if (anim.enPassantSq && sq === anim.enPassantSq) return true;
-  if (anim.captureOnTo && sq === anim.to) return true;
-  return sq === anim.to;
 }
 
 function Board({
@@ -140,15 +87,10 @@ function Board({
   const [popupOpen, setPopupOpen] = useState(false);
   const [illegalFlashSq, setIllegalFlashSq] = useState(null);
   const [promotionPick, setPromotionPick] = useState(null);
-  const [activeMoveAnim, setActiveMoveAnim] = useState(null);
 
   const winnerRef = useRef(null);
   const illegalTimerRef = useRef(null);
   const boardRootRef = useRef(null);
-  const animRef = useRef(null);
-  const animWatchdogRef = useRef(null);
-  const activeAnimRef = useRef(false);
-  const previousFenRef = useRef(game.fen());
 
   const pieceRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const tileRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
@@ -162,6 +104,16 @@ function Board({
     ? coalitionToSlug(blackCoalition)
     : getPieceThemeSlugForColor("b", user);
 
+  // Animation logic via custom hook
+  const { activeMoveAnim, activeMoveAnimRef, previousFenRef, onGhostTransitionEnd } =
+    useMoveGhostAnimation({
+      game,
+      isViewOnly,
+      whitePieceThemeSlug,
+      blackPieceThemeSlug,
+      boardRootRef,
+    });
+
   useEffect(() => {
     if (winner) setPopupOpen(true);
   }, [winner]);
@@ -169,11 +121,6 @@ function Board({
   useEffect(() => {
     winnerRef.current = winner;
   }, [winner]);
-
-  useEffect(() => {
-    activeAnimRef.current = activeMoveAnim != null;
-    animRef.current = activeMoveAnim;
-  }, [activeMoveAnim]);
 
   useEffect(() => {
     const urls = collectChessGamePreloadUrls(user, tileCoalitionSlug, tileSeed);
@@ -213,17 +160,6 @@ function Board({
     }, 480);
   }, []);
 
-  const finalizeGhostAnimation = useCallback(() => {
-    if (animWatchdogRef.current) {
-      window.clearTimeout(animWatchdogRef.current);
-      animWatchdogRef.current = null;
-    }
-    setActiveMoveAnim((prev) => (prev ? { ...prev, phase: "done" } : null));
-    queueMicrotask(() => {
-      setActiveMoveAnim(null);
-    });
-  }, []);
-
   const submitMoveRequest = useCallback(
     (from, to, movingPiece, promotion) => {
       const uciMove = buildUciMove(from, to, movingPiece, promotion);
@@ -246,7 +182,7 @@ function Board({
       if (winnerRef.current) return;
       if (isViewOnly) return;
       if (promotionPick) return;
-      if (activeAnimRef.current) return;
+      if (activeMoveAnimRef.current) return;
 
       const square = toSquare(row, col);
       setLocalFeedback(null);
@@ -375,113 +311,19 @@ function Board({
     return () => window.removeEventListener("keydown", onKey);
   }, [promotionPick]);
 
-  useEffect(() => {
-    const nextFen = game.fen();
-    const prevFen = previousFenRef.current;
-    if (!prevFen || prevFen === nextFen) {
-      previousFenRef.current = nextFen;
-      return;
-    }
-
-    const moveAnim = findAnimatedMove(prevFen, nextFen);
-    previousFenRef.current = nextFen;
-    if (!moveAnim || isViewOnly) {
-      finalizeGhostAnimation();
-      return;
-    }
-
-    const themeSlug =
-      moveAnim.moving.color === "w" ? whitePieceThemeSlug : blackPieceThemeSlug;
-
-    setActiveMoveAnim({
-      ...moveAnim,
-      key: Date.now(),
-      phase: "measure",
-      themeSlug,
-    });
-  }, [
-    game,
-    isViewOnly,
-    whitePieceThemeSlug,
-    blackPieceThemeSlug,
-    finalizeGhostAnimation,
-  ]);
-
-  useLayoutEffect(() => {
-    const a = activeMoveAnim;
-    if (!a || a.phase !== "measure") return;
-
-    const board = boardRootRef.current;
-    const elFrom = board?.querySelector(`[data-square="${a.from}"]`);
-    const elTo = board?.querySelector(`[data-square="${a.to}"]`);
-
-    if (!board || !elFrom || !elTo) {
-      finalizeGhostAnimation();
-      return;
-    }
-
-    const br = board.getBoundingClientRect();
-    const rf = elFrom.getBoundingClientRect();
-    const rt = elTo.getBoundingClientRect();
-    const x0 = rf.left + rf.width / 2 - br.left;
-    const y0 = rf.top + rf.height / 2 - br.top;
-    const x1 = rt.left + rt.width / 2 - br.left;
-    const y1 = rt.top + rt.height / 2 - br.top;
-    const dx = x1 - x0;
-    const dy = y1 - y0;
-    const size = Math.min(rf.width, rf.height) * 0.88;
-
-    setActiveMoveAnim((prev) =>
-      prev && prev.key === a.key
-        ? { ...prev, phase: "slide", x0, y0, dx, dy, size }
-        : prev,
-    );
-  }, [activeMoveAnim, finalizeGhostAnimation]);
-
-  useEffect(() => {
-    const a = activeMoveAnim;
-    if (!a || a.phase !== "slide") return;
-    let id2;
-    const id1 = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => {
-        setActiveMoveAnim((prev) =>
-          prev && prev.key === a.key ? { ...prev, phase: "sliding" } : prev,
-        );
-      });
-    });
-    return () => {
-      cancelAnimationFrame(id1);
-      if (id2) cancelAnimationFrame(id2);
-    };
-  }, [activeMoveAnim?.key, activeMoveAnim?.phase]);
-
-  useEffect(() => {
-    if (!activeMoveAnim || activeMoveAnim.phase !== "sliding") return;
-    if (animWatchdogRef.current) window.clearTimeout(animWatchdogRef.current);
-    animWatchdogRef.current = window.setTimeout(() => {
-      if (animRef.current?.phase === "sliding") {
-        finalizeGhostAnimation();
-      }
-    }, MOVE_ANIM_MS + 80);
-    return () => {
-      if (animWatchdogRef.current) {
-        window.clearTimeout(animWatchdogRef.current);
-        animWatchdogRef.current = null;
-      }
-    };
-  }, [activeMoveAnim?.key, activeMoveAnim?.phase, finalizeGhostAnimation]);
-
-  const onGhostTransitionEnd = useCallback(
-    (e) => {
-      if (e.target !== e.currentTarget) return;
-      if (e.propertyName !== "transform") return;
-      finalizeGhostAnimation();
-    },
-    [finalizeGhostAnimation],
-  );
-
   const kingSquare = game.inCheck() ? findKingSquare(game) : null;
-  const position = game.board();
+  
+  // During animation, render PRE-move board to avoid flash of piece at final position
+  let position = game.board();
+  if (previousFenRef.current && previousFenRef.current !== game.fen()) {
+    try {
+      const preGame = new Chess(previousFenRef.current);
+      position = preGame.board();
+    } catch {
+      position = game.board();
+    }
+  }
+  
   const useTiles = BOARD_TILES.active && themeHasTileAssets(tileCoalitionSlug);
   const tilePattern = useMemo(
     () => (useTiles ? buildTileUrlFlat(tileSeed, tileCoalitionSlug) : null),
@@ -524,14 +366,6 @@ function Board({
       illegalTimerRef.current = null;
     }
   }, [popupOpen]);
-
-  useEffect(() => {
-    return () => {
-      if (animWatchdogRef.current) {
-        window.clearTimeout(animWatchdogRef.current);
-      }
-    };
-  }, []);
 
   return (
     <div>
