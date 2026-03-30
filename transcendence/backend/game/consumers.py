@@ -36,6 +36,18 @@ class ChessConsumer(AsyncWebsocketConsumer):
 	_redis = None
 	MATCHMAKING_ROOM_ID = 'matchmaking'
 	MATCHMAKING_QUEUE_KEY = 'matchmaking:queue'
+	ACTION_ALIASES = {
+		'play': 'play_move',
+		'move': 'play_move',
+		'resign_game': 'resign',
+		'surrender': 'resign',
+		'draw': 'draw_offer',
+		'offer_draw': 'draw_offer',
+		'propose_draw': 'draw_offer',
+		'respond_draw': 'draw_response',
+		'accept_draw': 'draw_response',
+		'refuse_draw': 'draw_response',
+	}
 	
 	@classmethod
 	def get_redis(cls):
@@ -154,23 +166,49 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			await asyncio.sleep(1)
 			await self._tick_game_clock()
 
-	async def receive(self, text_data):
-		data = json.loads(text_data)
+	def _normalize_action(self, data):
 		raw_action = data.get('action', data.get('type'))
 		action = str(raw_action).lower() if raw_action is not None else None
-		action_aliases = {
-			'play': 'play_move',
-			'move': 'play_move',
-			'resign_game': 'resign',
-			'surrender': 'resign',
-			'draw': 'draw_offer',
-			'offer_draw': 'draw_offer',
-			'propose_draw': 'draw_offer',
-			'respond_draw': 'draw_response',
-			'accept_draw': 'draw_response',
-			'refuse_draw': 'draw_response',
-		}
-		action = action_aliases.get(action, action)
+		return self.ACTION_ALIASES.get(action, action)
+
+	async def _handle_action_with_game_state(self, action, data, game_state_json):
+		if action == 'create_game':
+			# Permet de créer une nouvelle partie ou de réinitialiser une existante
+			await self.handle_create_game(data)
+			return
+
+		if action == 'reset_game':
+			# Réinitialise la partie et la crée vierge
+			await self.get_redis().delete(self.game_id)
+			await self.handle_create_game(data)
+			return
+
+		if action == 'play_move':
+			await self.handle_play_move(game_state_json, data)
+			return
+
+		if action == 'resign':
+			await self.handle_resign(game_state_json, data)
+			return
+
+		if action == 'draw_offer':
+			await self.handle_draw_offer(game_state_json, data)
+			return
+
+		if action == 'draw_response':
+			await self.handle_draw_response(game_state_json, data)
+			return
+
+		if action == 'reconnect':
+			if game_state_json is not None:
+				await self.handle_reconnect(game_state_json)
+			return
+
+		await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
+
+	async def receive(self, text_data):
+		data = json.loads(text_data)
+		action = self._normalize_action(data)
 
 		if action == 'join_queue':
 			await self.handle_join_queue(data)
@@ -181,27 +219,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 		# On utilise le game_id de l'URL comme clé Redis
 		game_state_json = await self.get_redis().get(self.game_id)
-
-		if action == 'create_game':
-			# Permet de créer une nouvelle partie ou de réinitialiser une existante
-			await self.handle_create_game(data)
-		elif action == 'reset_game':
-			# Réinitialise la partie et la crée vierge
-			await self.get_redis().delete(self.game_id)
-			await self.handle_create_game(data)
-		elif action == 'play_move':
-			await self.handle_play_move(game_state_json, data)
-		elif action == 'resign':
-			await self.handle_resign(game_state_json, data)
-		elif action == 'draw_offer':
-			await self.handle_draw_offer(game_state_json, data)
-		elif action == 'draw_response':
-			await self.handle_draw_response(game_state_json, data)
-		elif action == 'reconnect':
-			if game_state_json is not None:
-				await self.handle_reconnect(game_state_json)
-		else:
-			await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
+		await self._handle_action_with_game_state(action, data, game_state_json)
 
 	async def handle_join_queue(self, data):
 		if not self.is_matchmaking_room:
