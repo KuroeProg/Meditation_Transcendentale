@@ -147,6 +147,12 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		action = str(raw_action).lower() if raw_action is not None else None
 		return self.ACTION_ALIASES.get(action, action)
 
+	async def _load_game_state_or_send_error(self, game_state_json):
+		if game_state_json is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+			return None
+		return json.loads(game_state_json)
+
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
 		if action == 'create_game':
 			# Permet de créer une nouvelle partie ou de réinitialiser une existante
@@ -249,11 +255,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
-		if game_state_json is None:
-			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
 			return
 
-		game_state = json.loads(game_state_json)
 		board = chess.Board(game_state['fen'])
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
@@ -283,11 +288,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_resign(self, game_state_json, data):
-		if game_state_json is None:
-			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
 			return
 
-		game_state = json.loads(game_state_json)
 		success, error = apply_resign(game_state, data.get('player_id'))
 		if not success:
 			await self.send(text_data=json.dumps({'error': error}))
@@ -297,11 +301,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_draw_offer(self, game_state_json, data):
-		if game_state_json is None:
-			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
 			return
 
-		game_state = json.loads(game_state_json)
 		success, error = apply_draw_offer(game_state, data.get('player_id'))
 		if not success:
 			await self.send(text_data=json.dumps({'error': error}))
@@ -311,11 +314,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_draw_response(self, game_state_json, data):
-		if game_state_json is None:
-			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
 			return
 
-		game_state = json.loads(game_state_json)
 		success, error = apply_draw_response(
 			game_state,
 			data.get('player_id'),
@@ -331,7 +333,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 	async def handle_reconnect(self, game_state_json):
 		# Ici, pas besoin de broadcast, seul celui qui se reconnecte a besoin de l'info
-		game_state = json.loads(game_state_json)
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
+			return
+
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
 		ensure_draw_fields(game_state)
