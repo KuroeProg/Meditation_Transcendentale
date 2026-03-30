@@ -11,6 +11,14 @@ from game.services.clock import (
 	ensure_clock_fields,
 	mark_timeout_if_needed,
 )
+from game.services.game_state import (
+	clear_draw_offer,
+	ensure_draw_fields,
+	get_other_player_id,
+	is_player_in_game,
+	normalize_game_player_ids,
+	update_game_status,
+)
 from game.services.matchmaking import (
 	attempt_matchmaking,
 	broadcast_matchmaking_queue_size,
@@ -83,8 +91,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			self.clock_task = None
 
 	def _ensure_draw_fields(self, game_state):
-		if 'draw_offer_from_player_id' not in game_state:
-			game_state['draw_offer_from_player_id'] = None
+		ensure_draw_fields(game_state)
 
 	async def _ensure_player_profiles(self, game_state):
 		changed = False
@@ -106,24 +113,16 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		return changed
 
 	def _clear_draw_offer(self, game_state):
-		game_state['draw_offer_from_player_id'] = None
+		clear_draw_offer(game_state)
 
 	def _normalize_game_player_ids(self, game_state):
-		white_id = self._normalize_player_id(game_state.get('white_player_id'))
-		black_id = self._normalize_player_id(game_state.get('black_player_id'))
-		return white_id, black_id
+		return normalize_game_player_ids(game_state)
 
 	def _is_player_in_game(self, sender_id, game_state):
-		white_id, black_id = self._normalize_game_player_ids(game_state)
-		return sender_id == white_id or sender_id == black_id
+		return is_player_in_game(sender_id, game_state)
 
 	def _get_other_player_id(self, sender_id, game_state):
-		white_id, black_id = self._normalize_game_player_ids(game_state)
-		if sender_id == white_id:
-			return black_id
-		if sender_id == black_id:
-			return white_id
-		return None
+		return get_other_player_id(sender_id, game_state)
 
 	async def _broadcast_current_game_state(self, game_state):
 		await self.channel_layer.group_send(
@@ -309,36 +308,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		return normalize_player_id(player_id)
 
 	def _update_game_status(self, game_state, board):
-		# Priorité explicite: checkmate > stalemate > draw > active.
-		if board.is_checkmate():
-			winner_id = game_state['black_player_id'] if board.turn else game_state['white_player_id']
-			game_state['status'] = 'checkmate'
-			game_state['winner_player_id'] = winner_id
-			game_state['result'] = '1-0' if winner_id == game_state['white_player_id'] else '0-1'
-			return
-
-		if board.is_stalemate():
-			game_state['status'] = 'stalemate'
-			game_state['winner_player_id'] = None
-			game_state['result'] = '1/2-1/2'
-			return
-
-		is_draw = (
-			board.is_insufficient_material()
-			or board.is_fivefold_repetition()
-			or board.is_seventyfive_moves()
-			or board.can_claim_threefold_repetition()
-			or board.can_claim_fifty_moves()
-		)
-		if is_draw:
-			game_state['status'] = 'draw'
-			game_state['winner_player_id'] = None
-			game_state['result'] = '1/2-1/2'
-			return
-
-		game_state['status'] = 'active'
-		game_state['winner_player_id'] = None
-		game_state['result'] = '*'
+		update_game_status(game_state, board)
 
 	async def handle_play_move(self, game_state_json, data):
 		if game_state_json is None:
