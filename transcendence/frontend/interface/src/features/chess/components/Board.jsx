@@ -152,6 +152,7 @@ function Board({
 
   const pieceRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const tileRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
+  const ghostPieceRotation = "rotate(0deg)";
   const tileSeed = BOARD_TILES.seed;
 
   const whitePieceThemeSlug = whiteCoalition
@@ -582,7 +583,7 @@ function Board({
         <MoveGhost
           activeMoveAnim={activeMoveAnim}
           durationMs={MOVE_ANIM_MS}
-          pieceRotation={pieceRotation}
+          pieceRotation={ghostPieceRotation}
           onTransitionEnd={onGhostTransitionEnd}
         />
 
