@@ -25,6 +25,8 @@ from game.services.payloads import (
 	build_ws_game_state_payload,
 )
 from game.services.state_builder import build_new_game_state, ensure_player_metadata
+from game.services.clock_tick import tick_game_clock
+from game.services.reconnect import synchronize_reconnecting_player
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -80,27 +82,14 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
 
 	async def _tick_game_clock(self):
-		lock_key = f'clock_lock:{self.game_id}'
-		got_lock = await self.get_redis().set(lock_key, self.channel_name, ex=2, nx=True)
-		if not got_lock:
-			return
-
-		game_state_json = await self.get_redis().get(self.game_id)
-		if game_state_json is None:
-			return
-
-		game_state = json.loads(game_state_json)
-		if game_state.get('status') != 'active':
-			return
-
-		now_ts = time.time()
-		ensure_clock_fields(game_state, now_ts)
-		board = chess.Board(game_state['fen'])
-		apply_elapsed_for_active_turn(game_state, board, now_ts)
-		mark_timeout_if_needed(game_state, board)
-
-		await self.get_redis().set(self.game_id, json.dumps(game_state))
-		await self._broadcast_current_game_state(game_state)
+		await tick_game_clock(
+			self.get_redis(),
+			self.game_id,
+			self.channel_name,
+			self.channel_layer,
+			self.room_group_name,
+			build_group_game_state_event,
+		)
 
 	async def _clock_loop(self):
 		while True:
@@ -232,29 +221,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_reconnect(self, game_state_json):
-		game_state = await self._load_game_state_or_send_error(game_state_json)
+		game_state, _ = await synchronize_reconnecting_player(self.get_redis(), self.game_id, game_state_json)
 		if game_state is None:
+			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
 			return
-
-		now_ts = time.time()
-		ensure_clock_fields(game_state, now_ts)
-		ensure_draw_fields(game_state)
-		updated = False
-		if await ensure_player_metadata(game_state):
-			updated = True
-
-		board = chess.Board(game_state['fen'])
-		before_white = float(game_state.get('white_time_left', 0))
-		before_black = float(game_state.get('black_time_left', 0))
-		apply_elapsed_for_active_turn(game_state, board, now_ts)
-		if mark_timeout_if_needed(game_state, board):
-			updated = True
-		if before_white != float(game_state.get('white_time_left', 0)):
-			updated = True
-		if before_black != float(game_state.get('black_time_left', 0)):
-			updated = True
-		if updated:
-			await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self.send(text_data=json.dumps(build_ws_game_state_payload(game_state)))
 
 	async def broadcast_game_state(self, event):
