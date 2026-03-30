@@ -152,14 +152,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		mark_timeout_if_needed(game_state, board)
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
-		await self.channel_layer.group_send(
-			self.room_group_name,
-			{
-				'type': 'broadcast_game_state',
-				'action': 'game_state',
-				'game_state': game_state,
-			},
-		)
+		await self._broadcast_current_game_state(game_state)
 
 	async def _clock_loop(self):
 		while True:
@@ -275,16 +268,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		new_game_state = await build_new_game_state(white_id, black_id)
 		
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
-		
+
 		# BROADCAST : On prévient tout le groupe qu'une partie commence
-		await self.channel_layer.group_send(
-			self.room_group_name,
-			{
-				'type': 'broadcast_game_state', # Nom de la fonction à appeler plus bas
-				'action': 'game_state',
-				'game_state': new_game_state
-			}
-		)
+		await self._broadcast_current_game_state(new_game_state)
 
 	def _normalize_player_id(self, player_id):
 		return normalize_player_id(player_id)
@@ -307,14 +293,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		apply_elapsed_for_active_turn(game_state, board, now_ts)
 		if mark_timeout_if_needed(game_state, board):
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
-			await self.channel_layer.group_send(
-				self.room_group_name,
-				{
-					'type': 'broadcast_game_state',
-					'action': 'game_state',
-					'game_state': game_state
-				}
-			)
+			await self._broadcast_current_game_state(game_state)
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			return
 
