@@ -29,6 +29,7 @@ from game.services.player_profiles import (
 	fetch_user_coalition,
 	fetch_user_public_profile,
 )
+from game.services.state_builder import build_new_game_state, ensure_player_metadata
 
 
 class ChessConsumer(AsyncWebsocketConsumer):
@@ -92,25 +93,6 @@ class ChessConsumer(AsyncWebsocketConsumer):
 
 	def _ensure_draw_fields(self, game_state):
 		ensure_draw_fields(game_state)
-
-	async def _ensure_player_profiles(self, game_state):
-		changed = False
-		white_id = game_state.get('white_player_id')
-		black_id = game_state.get('black_player_id')
-
-		if 'white_player_profile' not in game_state or not isinstance(game_state.get('white_player_profile'), dict):
-			profile = await fetch_user_public_profile(white_id)
-			if profile is not None:
-				game_state['white_player_profile'] = profile
-				changed = True
-
-		if 'black_player_profile' not in game_state or not isinstance(game_state.get('black_player_profile'), dict):
-			profile = await fetch_user_public_profile(black_id)
-			if profile is not None:
-				game_state['black_player_profile'] = profile
-				changed = True
-
-		return changed
 
 	def _clear_draw_offer(self, game_state):
 		clear_draw_offer(game_state)
@@ -270,27 +252,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		)
 
 	async def handle_create_game(self, data):
-		board = chess.Board()
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
-		white_coalition = await fetch_user_coalition(white_id)
-		black_coalition = await fetch_user_coalition(black_id)
-		white_profile = await fetch_user_public_profile(white_id)
-		black_profile = await fetch_user_public_profile(black_id)
-		new_game_state = {
-			"fen": board.fen(),
-			"status": "active",
-			"white_player_id": white_id,
-			"black_player_id": black_id,
-			"white_player_coalition": white_coalition,
-			"black_player_coalition": black_coalition,
-			"white_player_profile": white_profile,
-			"black_player_profile": black_profile,
-			"white_time_left": 600,
-			"black_time_left": 600,
-			"last_move_timestamp": time.time(),
-			"draw_offer_from_player_id": None,
-		}
+		new_game_state = await build_new_game_state(white_id, black_id)
 		
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		
@@ -320,12 +284,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
 		self._ensure_draw_fields(game_state)
-
-		if 'white_player_coalition' not in game_state:
-			game_state['white_player_coalition'] = await fetch_user_coalition(game_state.get('white_player_id'))
-		if 'black_player_coalition' not in game_state:
-			game_state['black_player_coalition'] = await fetch_user_coalition(game_state.get('black_player_id'))
-		await self._ensure_player_profiles(game_state)
+		await ensure_player_metadata(game_state)
 
 		apply_elapsed_for_active_turn(game_state, board, now_ts)
 		if mark_timeout_if_needed(game_state, board):
@@ -484,13 +443,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		ensure_clock_fields(game_state, now_ts)
 		self._ensure_draw_fields(game_state)
 		updated = False
-		if 'white_player_coalition' not in game_state:
-			game_state['white_player_coalition'] = await fetch_user_coalition(game_state.get('white_player_id'))
-			updated = True
-		if 'black_player_coalition' not in game_state:
-			game_state['black_player_coalition'] = await fetch_user_coalition(game_state.get('black_player_id'))
-			updated = True
-		if await self._ensure_player_profiles(game_state):
+		if await ensure_player_metadata(game_state):
 			updated = True
 
 		board = chess.Board(game_state['fen'])
