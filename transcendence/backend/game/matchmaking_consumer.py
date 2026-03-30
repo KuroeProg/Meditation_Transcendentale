@@ -15,6 +15,11 @@ from game.services.payloads import build_ws_matchmaking_payload
 
 
 class MatchmakingConsumer(AsyncWebsocketConsumer):
+	"""Pure matchmaking logic WebSocket consumer: pairing players from queue.
+	
+	Separated from game consumer for clean domain boundary.
+	Manages join/leave queue and broadcasts match_found events.
+	"""
 	_redis = None
 	MATCHMAKING_ROOM_ID = 'matchmaking'
 	MATCHMAKING_QUEUE_KEY = 'matchmaking:queue'

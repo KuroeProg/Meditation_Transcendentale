@@ -31,6 +31,11 @@ from game.services.errors import json_invalid, action_unknown
 
 
 class GameConsumer(AsyncWebsocketConsumer):
+	"""Pure game logic WebSocket consumer: orchestrates moves, timeouts, draw flow.
+	
+	Separated from matchmaking consumer for clean domain boundary.
+	Delegates business logic to services; owns I/O (Redis, WebSocket).
+	"""
 	_redis = None
 	ACTION_ALIASES = {
 		'play': 'play_move',
@@ -53,6 +58,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		return cls._redis
 
 	async def connect(self):
+		"""Setup: join group, accept, send prior state if reconnecting, start clock."""
 		self.game_id = self.scope['url_route']['kwargs'].get('game_id', 'default_room')
 		if self.game_id == 'matchmaking':
 			await self.close()
@@ -64,6 +70,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 		await self.accept()
 
+		# Reconnecting client: sync state immediately
 		game_state_json = await self.get_redis().get(self.game_id)
 		if game_state_json is not None:
 			await self.handle_reconnect(game_state_json)
@@ -93,6 +100,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		)
 
 	async def _clock_loop(self):
+		"""Tick clock every second: apply time decay, detect timeout, broadcast state."""
 		while True:
 			await asyncio.sleep(1)
 			await self._tick_game_clock()
@@ -109,24 +117,35 @@ class GameConsumer(AsyncWebsocketConsumer):
 		return json.loads(game_state_json)
 
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
+		# Game creation: no prior state needed
 		if action == 'create_game':
 			await self.handle_create_game(data)
-		elif action == 'reset_game':
+			return
+
+		if action == 'reset_game':
 			await self.get_redis().delete(self.game_id)
 			await self.handle_create_game(data)
-		elif action == 'play_move':
-			await self.handle_play_move(game_state_json, data)
-		elif action == 'resign':
-			await self.handle_resign(game_state_json, data)
-		elif action == 'draw_offer':
-			await self.handle_draw_offer(game_state_json, data)
-		elif action == 'draw_response':
-			await self.handle_draw_response(game_state_json, data)
-		elif action == 'reconnect':
-			if game_state_json is not None:
-				await self.handle_reconnect(game_state_json)
-		else:
+			return
+
+		# Game actions: dispatch table for clean routing
+		game_action_handlers = {
+			'play_move': self.handle_play_move,
+			'resign': self.handle_resign,
+			'draw_offer': self.handle_draw_offer,
+			'draw_response': self.handle_draw_response,
+			'reconnect': self.handle_reconnect,
+		}
+
+		handler = game_action_handlers.get(action)
+		if handler is None:
 			await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
+			return
+
+		# Reconnect only available if game exists; skip if not
+		if action == 'reconnect' and game_state_json is None:
+			return
+
+		await handler(game_state_json, data)
 
 	async def receive(self, text_data):
 		try:
