@@ -10,6 +10,9 @@ import { PieceUsageChartSection } from './charts/PieceUsageChartSection.jsx'
 import { MoveListView } from './MoveListView.jsx'
 import { HistoryView } from './HistoryView.jsx'
 import { FriendsView } from './FriendsView.jsx'
+import { ResultBanner } from './ResultBanner.jsx'
+import { SummaryCards } from './SummaryCards.jsx'
+import { ControlBar } from './ControlBar.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 
 const mockStats = mockPersonalStats.gamePanel
@@ -109,49 +112,9 @@ export default function GameStatsPanel({
         />
       )}
 
-      {gameEnded && (
-        <div className="stats-result-banner">
-          <p className="stats-result-title">{result.title}</p>
-          <p className="stats-result-sub">{result.subtitle}</p>
-          {typeof onPlayAgain === "function" && (
-            <button
-              type="button"
-              className="stats-play-again"
-              onClick={onPlayAgain}
-            >
-              Nouvelle partie
-            </button>
-          )}
-        </div>
-      )}
+      {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
 
-      {gameEnded && (
-        <div className="stats-cards">
-          <div className="stats-card">
-            <span className="stats-card__label">Games Played</span>
-            <span className="stats-card__value">
-              {mockStats.gamesPlayed.toLocaleString()}
-              <i className="ri-line-chart-line stats-card__icon" />
-            </span>
-          </div>
-          <div className="stats-card">
-            <span className="stats-card__label">Winrate</span>
-            <span className="stats-card__value">{mockStats.winrate}%</span>
-          </div>
-          <div className="stats-card">
-            <span className="stats-card__label">ELO Rating</span>
-            <span className="stats-card__value">
-              {mockStats.eloRating}
-              <span
-                className={`stats-card__change ${mockStats.eloChange < 0 ? "stats-card__change--negative" : ""}`}
-              >
-                {mockStats.eloChange > 0 ? "+" : ""}
-                {mockStats.eloChange}
-              </span>
-            </span>
-          </div>
-        </div>
-      )}
+      {gameEnded && <SummaryCards stats={mockStats} />}
 
       {activeTab === "history" && <HistoryView recentGames={mockStats.recentGames} />}
       {activeTab === "friends" && <FriendsView friends={mockStats.friends} />}
@@ -167,63 +130,20 @@ export default function GameStatsPanel({
 
       {gameEnded && <PieceUsageChartSection pieceData={pieceData} />}
 
-      <div className="stats-control-bar">
-        <button
-          type="button"
-          className={`stats-control-btn stats-control-btn--danger${resignDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={resignDisabled}
-          title="Abandonner la partie"
-          onClick={() => setResignOpen(true)}
-        >
-          <i className="ri-flag-line" aria-hidden />
-        </button>
-        <button
-          type="button"
-          className={`stats-control-btn${drawDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={drawDisabled}
-          title="Proposer un match nul à l’adversaire"
-          onClick={() => setDrawInfoOpen(true)}
-        >
-          <i className="ri-shake-hands-line" aria-hidden />
-        </button>
-        <span className="stats-control-spacer" />
-        <button
-          type="button"
-          className={`stats-control-btn${replayFirstDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={replayFirstDisabled}
-          title="Position de départ"
-          onClick={() => onReplayFirst?.()}
-        >
-          <i className="ri-skip-back-mini-fill" />
-        </button>
-        <button
-          type="button"
-          className={`stats-control-btn${replayPrevDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={replayPrevDisabled}
-          title="Coup précédent"
-          onClick={() => onReplayPrev?.()}
-        >
-          <i className="ri-arrow-left-s-line" />
-        </button>
-        <button
-          type="button"
-          className={`stats-control-btn${replayNextDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={replayNextDisabled}
-          title="Coup suivant"
-          onClick={() => onReplayNext?.()}
-        >
-          <i className="ri-arrow-right-s-line" />
-        </button>
-        <button
-          type="button"
-          className={`stats-control-btn${replayLastDisabled ? "" : " stats-control-btn--enabled"}`}
-          disabled={replayLastDisabled}
-          title="Dernier coup / partie en cours"
-          onClick={() => onReplayLast?.()}
-        >
-          <i className="ri-skip-forward-mini-fill" />
-        </button>
-      </div>
+      <ControlBar
+        resignDisabled={resignDisabled}
+        drawDisabled={drawDisabled}
+        replayFirstDisabled={replayFirstDisabled}
+        replayPrevDisabled={replayPrevDisabled}
+        replayNextDisabled={replayNextDisabled}
+        replayLastDisabled={replayLastDisabled}
+        onOpenResign={() => setResignOpen(true)}
+        onOpenDraw={() => setDrawInfoOpen(true)}
+        onReplayFirst={onReplayFirst}
+        onReplayPrev={onReplayPrev}
+        onReplayNext={onReplayNext}
+        onReplayLast={onReplayLast}
+      />
 
       {drawOfferIncoming ? (
         <div className="stats-result-banner">
