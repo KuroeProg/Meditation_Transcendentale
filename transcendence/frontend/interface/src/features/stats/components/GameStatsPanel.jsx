@@ -3,6 +3,7 @@ import {
   buildPerfChartData,
   buildMaterialChartData,
   buildMovePieceUsageData,
+  buildGamePanelState,
   getResultInfo,
 } from '../services/statsCalculator.js'
 import { PerformanceChartSection } from './charts/PerformanceChartSection.jsx'
@@ -18,9 +19,9 @@ import { ResignConfirmModal } from './ResignConfirmModal.jsx'
 import { DrawOfferModal } from './DrawOfferModal.jsx'
 import { StatsTabsNav } from './StatsTabsNav.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
+import '../styles/GameStatsPanel.css'
 
 const mockStats = mockPersonalStats.gamePanel
-import '../styles/GameStatsPanel.css'
 
 export default function GameStatsPanel({
   moveLog = [],
@@ -56,18 +57,23 @@ export default function GameStatsPanel({
     return () => window.removeEventListener("keydown", onKey);
   }, [resignOpen, drawInfoOpen]);
 
-  const gameEnded = Boolean(winner);
-  const plyCount = moveLog.length;
-  const browsingHistory = viewPlies !== null;
-  const resignDisabled = gameEnded || browsingHistory;
-  const drawDisabled =
-    gameEnded || browsingHistory || drawOfferIncoming || drawOfferOutgoing;
-  const replayFirstDisabled = plyCount === 0 || viewPlies === 0;
-  const replayPrevDisabled =
-    plyCount === 0 || (viewPlies !== null && viewPlies === 0);
-  const replayNextDisabled = plyCount === 0 || viewPlies === null;
-  const replayLastDisabled =
-    plyCount === 0 || (viewPlies !== null && viewPlies >= plyCount);
+  const {
+    gameEnded,
+    resignDisabled,
+    drawDisabled,
+    replayFirstDisabled,
+    replayPrevDisabled,
+    replayNextDisabled,
+    replayLastDisabled,
+    resigningColorLabel,
+  } = buildGamePanelState({
+    winner,
+    moveLogLength: moveLog.length,
+    viewPlies,
+    drawOfferIncoming,
+    drawOfferOutgoing,
+    playerColor,
+  });
 
   const perfData = useMemo(() => buildPerfChartData(moveLog), [moveLog]);
   const materialData = useMemo(
@@ -76,7 +82,6 @@ export default function GameStatsPanel({
   );
   const pieceData = useMemo(() => buildMovePieceUsageData(moveLog), [moveLog]);
   const result = getResultInfo(winner);
-  const resigningColorLabel = playerColor === "b" ? "noirs" : "blancs";
 
   return (
     <div className="game-stats-panel">

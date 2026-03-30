@@ -127,3 +127,30 @@ export function buildMovePieceUsageData(moveLog) {
     black: total.b ? +((counts[p].b / total.b) * 100).toFixed(1) : 0,
   }))
 }
+
+export function buildGamePanelState({
+  winner,
+  moveLogLength,
+  viewPlies,
+  drawOfferIncoming,
+  drawOfferOutgoing,
+  playerColor,
+}) {
+  const gameEnded = Boolean(winner)
+  const browsingHistory = viewPlies !== null
+
+  return {
+    gameEnded,
+    browsingHistory,
+    resignDisabled: gameEnded || browsingHistory,
+    drawDisabled:
+      gameEnded || browsingHistory || drawOfferIncoming || drawOfferOutgoing,
+    replayFirstDisabled: moveLogLength === 0 || viewPlies === 0,
+    replayPrevDisabled:
+      moveLogLength === 0 || (viewPlies !== null && viewPlies === 0),
+    replayNextDisabled: moveLogLength === 0 || viewPlies === null,
+    replayLastDisabled:
+      moveLogLength === 0 || (viewPlies !== null && viewPlies >= moveLogLength),
+    resigningColorLabel: playerColor === 'b' ? 'noirs' : 'blancs',
+  }
+}
