@@ -6,18 +6,19 @@ import time
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+from game.services.actions import (
+	apply_draw_offer,
+	apply_draw_response,
+	apply_play_move,
+	apply_resign,
+)
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
 	mark_timeout_if_needed,
 )
 from game.services.game_state import (
-	clear_draw_offer,
 	ensure_draw_fields,
-	get_other_player_id,
-	is_player_in_game,
-	normalize_game_player_ids,
-	update_game_status,
 )
 from game.services.matchmaking import (
 	attempt_matchmaking,
@@ -102,21 +103,6 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			with contextlib.suppress(asyncio.CancelledError):
 				await self.clock_task
 			self.clock_task = None
-
-	def _ensure_draw_fields(self, game_state):
-		ensure_draw_fields(game_state)
-
-	def _clear_draw_offer(self, game_state):
-		clear_draw_offer(game_state)
-
-	def _normalize_game_player_ids(self, game_state):
-		return normalize_game_player_ids(game_state)
-
-	def _is_player_in_game(self, sender_id, game_state):
-		return is_player_in_game(sender_id, game_state)
-
-	def _get_other_player_id(self, sender_id, game_state):
-		return get_other_player_id(sender_id, game_state)
 
 	async def _broadcast_current_game_state(self, game_state):
 		await self.channel_layer.group_send(
@@ -272,12 +258,6 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		# BROADCAST : On prévient tout le groupe qu'une partie commence
 		await self._broadcast_current_game_state(new_game_state)
 
-	def _normalize_player_id(self, player_id):
-		return normalize_player_id(player_id)
-
-	def _update_game_status(self, game_state, board):
-		update_game_status(game_state, board)
-
 	async def handle_play_move(self, game_state_json, data):
 		if game_state_json is None:
 			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
@@ -287,7 +267,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		board = chess.Board(game_state['fen'])
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
-		self._ensure_draw_fields(game_state)
+		ensure_draw_fields(game_state)
 		await ensure_player_metadata(game_state)
 
 		apply_elapsed_for_active_turn(game_state, board, now_ts)
@@ -301,41 +281,16 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
 			return
 
-		current_turn_player_id = game_state['white_player_id'] if board.turn else game_state['black_player_id']
-		sender_id = self._normalize_player_id(data.get('player_id'))
-		current_turn_player_id = self._normalize_player_id(current_turn_player_id)
-
-		if sender_id != current_turn_player_id:
-			await self.send(text_data=json.dumps({'error': "Ce n'est pas votre tour !"}))
-			return
-		
-		attempted_move = data.get('move')
-		if not isinstance(attempted_move, str):
-			await self.send(text_data=json.dumps({'error': 'Le coup doit être au format UCI'}))
+		success, error = apply_play_move(game_state, data.get('player_id'), data.get('move'))
+		if not success:
+			await self.send(text_data=json.dumps({'error': error}))
 			return
 
-		attempted_move = attempted_move.strip().lower()
-		try:
-			move = chess.Move.from_uci(attempted_move)
-			if move in board.legal_moves:
-				board.push(move)
-				
-				# Mise à jour de l'état
-				game_state['fen'] = board.fen()
-				game_state['last_move_uci'] = attempted_move
-				game_state['last_move_timestamp'] = time.time()
-				self._clear_draw_offer(game_state)
-				self._update_game_status(game_state, board)
-				
-				# Sauvegarde Redis
-				await self.get_redis().set(self.game_id, json.dumps(game_state))
-				
-				# BROADCAST : On envoie le nouveau coup aux DEUX joueurs
-				await self._broadcast_current_game_state(game_state)
-			else:
-				await self.send(text_data=json.dumps({'error': 'Coup illégal'}))
-		except ValueError:
-			await self.send(text_data=json.dumps({'error': 'Format de coup invalide'}))
+		# Sauvegarde Redis
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+
+		# BROADCAST : On envoie le nouveau coup aux DEUX joueurs
+		await self._broadcast_current_game_state(game_state)
 
 	async def handle_resign(self, game_state_json, data):
 		if game_state_json is None:
@@ -343,26 +298,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			return
 
 		game_state = json.loads(game_state_json)
-		self._ensure_draw_fields(game_state)
-
-		if game_state.get('status') != 'active':
-			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+		success, error = apply_resign(game_state, data.get('player_id'))
+		if not success:
+			await self.send(text_data=json.dumps({'error': error}))
 			return
-
-		sender_id = self._normalize_player_id(data.get('player_id'))
-		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
-			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
-			return
-
-		winner_id = self._get_other_player_id(sender_id, game_state)
-		if winner_id is None:
-			await self.send(text_data=json.dumps({'error': 'Impossible de determiner le vainqueur'}))
-			return
-
-		game_state['status'] = 'resigned'
-		game_state['winner_player_id'] = winner_id
-		game_state['result'] = '1-0' if winner_id == self._normalize_player_id(game_state.get('white_player_id')) else '0-1'
-		self._clear_draw_offer(game_state)
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
@@ -373,22 +312,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			return
 
 		game_state = json.loads(game_state_json)
-		self._ensure_draw_fields(game_state)
-
-		if game_state.get('status') != 'active':
-			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+		success, error = apply_draw_offer(game_state, data.get('player_id'))
+		if not success:
+			await self.send(text_data=json.dumps({'error': error}))
 			return
 
-		sender_id = self._normalize_player_id(data.get('player_id'))
-		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
-			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
-			return
-
-		if game_state.get('draw_offer_from_player_id') is not None:
-			await self.send(text_data=json.dumps({'error': 'Une proposition de nulle est deja en cours'}))
-			return
-
-		game_state['draw_offer_from_player_id'] = sender_id
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 
@@ -398,38 +326,16 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			return
 
 		game_state = json.loads(game_state_json)
-		self._ensure_draw_fields(game_state)
-
-		if game_state.get('status') != 'active':
-			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
+		success, error = apply_draw_response(
+			game_state,
+			data.get('player_id'),
+			data.get('accept'),
+			data.get('response'),
+		)
+		if not success:
+			await self.send(text_data=json.dumps({'error': error}))
 			return
 
-		offer_from = self._normalize_player_id(game_state.get('draw_offer_from_player_id'))
-		if offer_from is None:
-			await self.send(text_data=json.dumps({'error': 'Aucune proposition de nulle en cours'}))
-			return
-
-		sender_id = self._normalize_player_id(data.get('player_id'))
-		if sender_id is None or not self._is_player_in_game(sender_id, game_state):
-			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
-			return
-
-		if sender_id == offer_from:
-			await self.send(text_data=json.dumps({'error': 'Vous ne pouvez pas repondre a votre propre proposition'}))
-			return
-
-		accept_raw = data.get('accept')
-		if isinstance(accept_raw, bool):
-			accept = accept_raw
-		else:
-			accept = str(data.get('response', '')).lower() in ('accept', 'accepted', 'yes', 'true', '1')
-
-		if accept:
-			game_state['status'] = 'draw'
-			game_state['winner_player_id'] = None
-			game_state['result'] = '1/2-1/2'
-
-		self._clear_draw_offer(game_state)
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 
@@ -438,7 +344,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		game_state = json.loads(game_state_json)
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
-		self._ensure_draw_fields(game_state)
+		ensure_draw_fields(game_state)
 		updated = False
 		if await ensure_player_metadata(game_state):
 			updated = True
