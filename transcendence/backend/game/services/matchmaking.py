@@ -1,3 +1,4 @@
+"""Player matchmaking: queue management, pairing, match announcements."""
 import json
 import secrets
 import time
@@ -6,13 +7,15 @@ import chess
 
 
 def normalize_player_id(player_id):
-    if player_id is None:
+	"""Convert player ID to string or None."""
+	if player_id is None:
         return None
     return str(player_id)
 
 
 def decode_redis_player_id(raw_value):
-    if raw_value is None:
+	"""Decode player ID from Redis bytes or string format."""
+	if raw_value is None:
         return None
     if isinstance(raw_value, bytes):
         try:
@@ -23,7 +26,8 @@ def decode_redis_player_id(raw_value):
 
 
 async def remove_from_queue(redis_client, queue_key, player_id):
-    await redis_client.lrem(queue_key, 0, str(player_id))
+	"""Remove player from matchmaking queue."""
+	await redis_client.lrem(queue_key, 0, str(player_id))
 
 
 async def queue_player_for_matchmaking(
@@ -35,6 +39,7 @@ async def queue_player_for_matchmaking(
     fetch_user_coalition,
     fetch_user_public_profile,
 ):
+	"""Add player to queue, attempt pairing, and broadcast queue status."""
     await remove_from_queue(redis_client, queue_key, player_id)
     await redis_client.rpush(queue_key, player_id)
     await broadcast_matchmaking_queue_size(
@@ -60,6 +65,7 @@ async def dequeue_player_from_matchmaking(
     queue_key,
     player_id,
 ):
+	"""Remove player from queue and broadcast updated queue status."""
     await remove_from_queue(redis_client, queue_key, player_id)
     await broadcast_matchmaking_queue_size(
         redis_client,
@@ -70,6 +76,7 @@ async def dequeue_player_from_matchmaking(
 
 
 async def broadcast_matchmaking_queue_size(redis_client, channel_layer, room_group_name, queue_key):
+	"""Broadcast current queue size to all clients in matchmaking room."""
     queue_size = await redis_client.llen(queue_key)
     await channel_layer.group_send(
         room_group_name,
@@ -89,6 +96,7 @@ async def attempt_matchmaking(
     fetch_user_coalition,
     fetch_user_public_profile,
 ):
+	"""Pair players from queue when at least 2 available."""
     while await redis_client.llen(queue_key) >= 2:
         first_id = await redis_client.lpop(queue_key)
         second_id = await redis_client.lpop(queue_key)

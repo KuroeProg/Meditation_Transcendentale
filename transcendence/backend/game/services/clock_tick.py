@@ -1,3 +1,4 @@
+"""Game clock tick orchestrator: encapsulates per-second time decay and timeout checks."""
 import json
 import time
 import chess

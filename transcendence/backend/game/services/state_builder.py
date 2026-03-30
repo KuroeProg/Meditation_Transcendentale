@@ -1,3 +1,4 @@
+"""Game state builders: initial game creation and metadata enrichment."""
 import chess
 import time
 
@@ -8,7 +9,8 @@ from game.services.player_profiles import (
 
 
 async def build_new_game_state(white_id, black_id):
-    board = chess.Board()
+	"""Create fresh game state with player profiles, coalitions, and default clock."""
+	board = chess.Board()
     white_coalition = await fetch_user_coalition(white_id)
     black_coalition = await fetch_user_coalition(black_id)
     white_profile = await fetch_user_public_profile(white_id)
@@ -30,7 +32,8 @@ async def build_new_game_state(white_id, black_id):
 
 
 async def ensure_player_metadata(game_state):
-    changed = False
+	"""Fill missing player profile and coalition data; returns True if modified."""
+	changed = False
     white_id = game_state.get('white_player_id')
     black_id = game_state.get('black_player_id')
 

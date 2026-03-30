@@ -1,5 +1,9 @@
+"""Chess clock management: time tracking, elapsed time application, timeout detection."""
+
+
 def ensure_clock_fields(game_state, now_ts):
-    if 'white_time_left' not in game_state:
+	"""Ensure clock fields (time_left, last_move_timestamp) exist with defaults."""
+	if 'white_time_left' not in game_state:
         game_state['white_time_left'] = 600
     if 'black_time_left' not in game_state:
         game_state['black_time_left'] = 600
@@ -8,7 +12,8 @@ def ensure_clock_fields(game_state, now_ts):
 
 
 def apply_elapsed_for_active_turn(game_state, board, now_ts):
-    if game_state.get('status') != 'active':
+	"""Deduct elapsed time from active player's clock."""
+	if game_state.get('status') != 'active':
         return
 
     last_ts = float(game_state.get('last_move_timestamp', now_ts))
@@ -27,7 +32,8 @@ def apply_elapsed_for_active_turn(game_state, board, now_ts):
 
 
 def mark_timeout_if_needed(game_state, board):
-    if game_state.get('status') != 'active':
+	"""Check if active player's time expired and mark game as timeout."""
+	if game_state.get('status') != 'active':
         return False
 
     turn_key = 'white_time_left' if board.turn else 'black_time_left'

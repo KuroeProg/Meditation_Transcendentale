@@ -1,7 +1,16 @@
+"""Matchmaking WebSocket consumer: player queue and match pairing.
+
+Handles queue join/leave and broadcasts match_found events.
+Delegates queue management to services.
+"""
 import json
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+from game.services.errors import (
+	json_invalid,
+	action_unknown,
+)
 from game.services.matchmaking import (
 	dequeue_player_from_matchmaking,
 	normalize_player_id,
@@ -12,6 +21,9 @@ from game.services.player_profiles import (
 	fetch_user_public_profile,
 )
 from game.services.payloads import build_ws_matchmaking_payload
+
+
+ERROR_PLAYER_ID_REQUIRED = {'error': 'Player ID required'}
 
 
 class MatchmakingConsumer(AsyncWebsocketConsumer):
@@ -26,12 +38,14 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 
 	@classmethod
 	def get_redis(cls):
+		"""Get or initialize Redis async client."""
 		if cls._redis is None:
 			url = settings.CACHES['default']['LOCATION']
 			cls._redis = redis.from_url(url)
 		return cls._redis
 
 	async def connect(self):
+		"""Setup: join group, accept connection, initialize player tracking."""
 		self.game_id = self.scope['url_route']['kwargs'].get('game_id', 'default_room')
 		if self.game_id != self.MATCHMAKING_ROOM_ID:
 			await self.close()
@@ -44,6 +58,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		await self.accept()
 
 	async def disconnect(self, close_code):
+		"""Cleanup: remove from group and dequeue player if in queue."""
 		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
 		if self.matchmaking_player_id is not None:
@@ -57,6 +72,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			)
 
 	async def receive(self, text_data):
+		"""Parse action and route to handler (join_queue or leave_queue)."""
 		try:
 			data = json.loads(text_data)
 		except json.JSONDecodeError:
@@ -76,10 +92,11 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps(action_unknown()))
 
 	async def handle_join_queue(self, data):
+		"""Add player to matchmaking queue if not already queued."""
 		if not self.matchmaking_player_id:
 			player_id = normalize_player_id(data.get('player_id'))
 			if player_id is None:
-				await self.send(text_data=json.dumps({'error': ERROR_PLAYER_ID_REQUIRED}))
+				await self.send(text_data=json.dumps(ERROR_PLAYER_ID_REQUIRED))
 				return
 			self.matchmaking_player_id = player_id
 			redis_client = self.get_redis()
@@ -94,6 +111,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			)
 
 	async def handle_leave_queue(self, data):
+		"""Remove player from matchmaking queue."""
 		player_id = normalize_player_id(data.get('player_id')) or self.matchmaking_player_id
 		if player_id is None:
 			return
@@ -110,4 +128,5 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			self.matchmaking_player_id = None
 
 	async def broadcast_matchmaking_event(self, event):
+		"""Send matchmaking event to this WebSocket client (called by group_send)."""
 		await self.send(text_data=json.dumps(build_ws_matchmaking_payload(event)))

@@ -1,3 +1,4 @@
+"""Reconnect synchronization orchestrator: updates clocks and metadata for returning players."""
 import time
 import json
 import chess

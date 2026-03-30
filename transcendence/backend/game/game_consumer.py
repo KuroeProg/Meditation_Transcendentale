@@ -1,3 +1,8 @@
+"""Game WebSocket consumer: pure chess game logic and real-time synchronization.
+
+Handles moves, timeouts, resignations, draw flow, and reconnection.
+Delegates game rules to services; owns I/O (Redis, WebSocket).
+"""
 import json
 import asyncio
 import contextlib
@@ -52,6 +57,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	@classmethod
 	def get_redis(cls):
+		"""Get or initialize Redis async client."""
 		if cls._redis is None:
 			url = settings.CACHES['default']['LOCATION']
 			cls._redis = redis.from_url(url)
@@ -87,9 +93,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 			self.clock_task = None
 
 	async def _broadcast_current_game_state(self, game_state):
+		"""Broadcast game state to all connected clients in the game group."""
 		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
 
 	async def _tick_game_clock(self):
+		"""Apply one second of time decay and detect timeouts."""
 		await tick_game_clock(
 			self.get_redis(),
 			self.game_id,
@@ -106,17 +114,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self._tick_game_clock()
 
 	def _normalize_action(self, data):
+		"""Map raw action name to canonical handler name using aliases."""
 		raw_action = data.get('action', data.get('type'))
 		action = str(raw_action).lower() if raw_action is not None else None
 		return self.ACTION_ALIASES.get(action, action)
 
 	async def _load_game_state_or_send_error(self, game_state_json):
+		"""Parse game state JSON or send error if not found."""
 		if game_state_json is None:
 			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
 			return None
 		return json.loads(game_state_json)
 
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
+		"""Route action to appropriate handler based on action type."""
 		# Game creation: no prior state needed
 		if action == 'create_game':
 			await self.handle_create_game(data)
@@ -163,6 +174,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._handle_action_with_game_state(action, data, game_state_json)
 
 	async def handle_create_game(self, data):
+		"""Create a new chess game with given white and black player IDs."""
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
 		new_game_state = await build_new_game_state(white_id, black_id)
@@ -171,6 +183,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
+		"""Process a chess move: validate, apply, check timeout, broadcast."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -201,6 +214,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_resign(self, game_state_json, data):
+		"""Process player resignation and end game."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -214,6 +228,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_draw_offer(self, game_state_json, data):
+		"""Process draw offer from a player."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -227,6 +242,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_draw_response(self, game_state_json, data):
+		"""Process accept/reject of draw offer."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -245,6 +261,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 	async def handle_reconnect(self, game_state_json):
+		"""Re-sync reconnecting player with current game state."""
 		game_state, _ = await synchronize_reconnecting_player(self.get_redis(), self.game_id, game_state_json)
 		if game_state is None:
 			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
@@ -252,4 +269,5 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self.send(text_data=json.dumps(build_ws_game_state_payload(game_state)))
 
 	async def broadcast_game_state(self, event):
+		"""Send game state to this WebSocket client (called by group_send)."""
 		await self.send(text_data=json.dumps(build_ws_game_state_payload(event['game_state'], event['action'])))

@@ -1,3 +1,4 @@
+"""Game action mutations: move, resign, draw offer/response with validation."""
 import time
 
 import chess
@@ -13,6 +14,10 @@ from game.services.game_state import (
 
 
 def apply_play_move(game_state, sender_id, attempted_move):
+	"""Apply a move to game state, validating legality and turn.
+	
+	Returns (success, error_message).
+	"""
 	if game_state.get('status') != 'active':
 		return False, 'Partie terminee'
 
@@ -45,6 +50,10 @@ def apply_play_move(game_state, sender_id, attempted_move):
 
 
 def apply_resign(game_state, sender_id):
+	"""Record player resignation and set winner.
+	
+	Returns (success, error_message).
+	"""
 	ensure_draw_fields(game_state)
 	if game_state.get('status') != 'active':
 		return False, 'Partie terminee'
@@ -66,6 +75,10 @@ def apply_resign(game_state, sender_id):
 
 
 def apply_draw_offer(game_state, sender_id):
+	"""Register a draw offer from sender.
+	
+	Returns (success, error_message).
+	"""
 	ensure_draw_fields(game_state)
 	if game_state.get('status') != 'active':
 		return False, 'Partie terminee'
@@ -82,6 +95,10 @@ def apply_draw_offer(game_state, sender_id):
 
 
 def apply_draw_response(game_state, sender_id, accept_raw, response_raw):
+	"""Respond to pending draw offer with acceptance or rejection.
+	
+	Returns (success, error_message).
+	"""
 	ensure_draw_fields(game_state)
 	if game_state.get('status') != 'active':
 		return False, 'Partie terminee'
