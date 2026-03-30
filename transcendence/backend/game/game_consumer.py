@@ -156,6 +156,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if action == 'reconnect' and game_state_json is None:
 			return
 
+		if action == 'reconnect':
+			await handler(game_state_json)
+			return
+
 		await handler(game_state_json, data)
 
 	async def receive(self, text_data):

@@ -46,22 +46,28 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 
 	async def connect(self):
 		"""Setup: join group, accept connection, initialize player tracking."""
-		self.game_id = self.scope['url_route']['kwargs'].get('game_id', 'default_room')
-		if self.game_id != self.MATCHMAKING_ROOM_ID:
+		# Always initialize attributes first because disconnect may be called
+		# even when connect exits early.
+		self.room_group_name = f'chess_{self.MATCHMAKING_ROOM_ID}'
+		self.matchmaking_player_id = None
+		self._joined_group = False
+
+		route_game_id = self.scope['url_route']['kwargs'].get('game_id')
+		self.game_id = route_game_id or self.MATCHMAKING_ROOM_ID
+		if route_game_id is not None and route_game_id != self.MATCHMAKING_ROOM_ID:
 			await self.close()
 			return
 
-		self.room_group_name = f'chess_{self.MATCHMAKING_ROOM_ID}'
-		self.matchmaking_player_id = None
-
 		await self.channel_layer.group_add(self.room_group_name, self.channel_name)
+		self._joined_group = True
 		await self.accept()
 
 	async def disconnect(self, close_code):
 		"""Cleanup: remove from group and dequeue player if in queue."""
-		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+		if getattr(self, '_joined_group', False):
+			await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-		if self.matchmaking_player_id is not None:
+		if getattr(self, 'matchmaking_player_id', None) is not None:
 			redis_client = self.get_redis()
 			await dequeue_player_from_matchmaking(
 				redis_client,
