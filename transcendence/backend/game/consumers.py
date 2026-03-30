@@ -6,35 +6,12 @@ import time
 import secrets
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
-from channels.db import database_sync_to_async
 from django.conf import settings
-from accounts.models import LocalUser
+from game.services.player_profiles import (
+	fetch_user_coalition,
+	fetch_user_public_profile,
+)
 
-
-@database_sync_to_async
-def _fetch_user_coalition(player_id):
-	if player_id is None:
-		return 'feu'
-	try:
-		user = LocalUser.objects.filter(id=player_id).only('coalition').first()
-		if user and user.coalition:
-			return str(user.coalition)
-	except Exception:
-		pass
-	return 'feu'
-
-
-@database_sync_to_async
-def _fetch_user_public_profile(player_id):
-	if player_id is None:
-		return None
-	try:
-		user = LocalUser.objects.filter(id=player_id).first()
-		if user is not None:
-			return user.to_public_dict()
-	except Exception:
-		pass
-	return None
 
 class ChessConsumer(AsyncWebsocketConsumer):
 	_redis = None
@@ -107,13 +84,13 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		black_id = game_state.get('black_player_id')
 
 		if 'white_player_profile' not in game_state or not isinstance(game_state.get('white_player_profile'), dict):
-			profile = await _fetch_user_public_profile(white_id)
+			profile = await fetch_user_public_profile(white_id)
 			if profile is not None:
 				game_state['white_player_profile'] = profile
 				changed = True
 
 		if 'black_player_profile' not in game_state or not isinstance(game_state.get('black_player_profile'), dict):
-			profile = await _fetch_user_public_profile(black_id)
+			profile = await fetch_user_public_profile(black_id)
 			if profile is not None:
 				game_state['black_player_profile'] = profile
 				changed = True
@@ -298,10 +275,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 				continue
 
 			white_id, black_id = first_id, second_id
-			white_coalition = await _fetch_user_coalition(white_id)
-			black_coalition = await _fetch_user_coalition(black_id)
-			white_profile = await _fetch_user_public_profile(white_id)
-			black_profile = await _fetch_user_public_profile(black_id)
+			white_coalition = await fetch_user_coalition(white_id)
+			black_coalition = await fetch_user_coalition(black_id)
+			white_profile = await fetch_user_public_profile(white_id)
+			black_profile = await fetch_user_public_profile(black_id)
 			board = chess.Board()
 			new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
 			new_game_state = {
@@ -366,10 +343,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		board = chess.Board()
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
-		white_coalition = await _fetch_user_coalition(white_id)
-		black_coalition = await _fetch_user_coalition(black_id)
-		white_profile = await _fetch_user_public_profile(white_id)
-		black_profile = await _fetch_user_public_profile(black_id)
+		white_coalition = await fetch_user_coalition(white_id)
+		black_coalition = await fetch_user_coalition(black_id)
+		white_profile = await fetch_user_public_profile(white_id)
+		black_profile = await fetch_user_public_profile(black_id)
 		new_game_state = {
 			"fen": board.fen(),
 			"status": "active",
@@ -455,9 +432,9 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		self._ensure_draw_fields(game_state)
 
 		if 'white_player_coalition' not in game_state:
-			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
+			game_state['white_player_coalition'] = await fetch_user_coalition(game_state.get('white_player_id'))
 		if 'black_player_coalition' not in game_state:
-			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+			game_state['black_player_coalition'] = await fetch_user_coalition(game_state.get('black_player_id'))
 		await self._ensure_player_profiles(game_state)
 
 		now_ts = time.time()
@@ -618,10 +595,10 @@ class ChessConsumer(AsyncWebsocketConsumer):
 		self._ensure_draw_fields(game_state)
 		updated = False
 		if 'white_player_coalition' not in game_state:
-			game_state['white_player_coalition'] = await _fetch_user_coalition(game_state.get('white_player_id'))
+			game_state['white_player_coalition'] = await fetch_user_coalition(game_state.get('white_player_id'))
 			updated = True
 		if 'black_player_coalition' not in game_state:
-			game_state['black_player_coalition'] = await _fetch_user_coalition(game_state.get('black_player_id'))
+			game_state['black_player_coalition'] = await fetch_user_coalition(game_state.get('black_player_id'))
 			updated = True
 		if await self._ensure_player_profiles(game_state):
 			updated = True
