@@ -4,7 +4,7 @@ import { BrowserRouter } from 'react-router-dom'
 import 'remixicon/fonts/remixicon.css'
 import './index.css'
 import App from './App.jsx'
-import { AuthProvider } from './features/auth/index.js'
+import { AuthProvider } from './store/context/AuthContext.jsx'
 
 createRoot(document.getElementById('root')).render(
 	<StrictMode>
