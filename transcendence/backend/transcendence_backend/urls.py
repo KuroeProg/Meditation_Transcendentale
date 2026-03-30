@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import include, path
 
-import views
+from accounts import views
 
 
 def with_optional_trailing_slash(route, view_callable, name=None):

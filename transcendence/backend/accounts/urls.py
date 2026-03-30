@@ -1,6 +1,6 @@
 from django.urls import path
 
-import views
+from . import views
 
 
 def with_optional_trailing_slash(route, view_callable, name=None):
