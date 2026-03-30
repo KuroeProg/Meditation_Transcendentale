@@ -30,6 +30,11 @@ from game.services.player_profiles import (
 	fetch_user_coalition,
 	fetch_user_public_profile,
 )
+from game.services.payloads import (
+	build_group_game_state_event,
+	build_ws_game_state_payload,
+	build_ws_matchmaking_payload,
+)
 from game.services.state_builder import build_new_game_state, ensure_player_metadata
 
 
@@ -105,14 +110,7 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			self.clock_task = None
 
 	async def _broadcast_current_game_state(self, game_state):
-		await self.channel_layer.group_send(
-			self.room_group_name,
-			{
-				'type': 'broadcast_game_state',
-				'action': 'game_state',
-				'game_state': game_state,
-			},
-		)
+		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
 
 	async def _tick_game_clock(self):
 		if self.is_matchmaking_room:
@@ -361,26 +359,11 @@ class ChessConsumer(AsyncWebsocketConsumer):
 			updated = True
 		if updated:
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
-		await self.send(text_data=json.dumps({
-			'action': 'game_state',
-			'game_state': game_state
-		}))
+		await self.send(text_data=json.dumps(build_ws_game_state_payload(game_state)))
 
 	# CETTE MÉTHODE RÉCUPÈRE LES MESSAGES DU GROUPE REDIS ET LES ENVOIE AU NAVIGATEUR
 	async def broadcast_game_state(self, event):
-		await self.send(text_data=json.dumps({
-			'action': event['action'],
-			'game_state': event['game_state']
-		}))
+		await self.send(text_data=json.dumps(build_ws_game_state_payload(event['game_state'], event['action'])))
 
 	async def broadcast_matchmaking_event(self, event):
-		payload = {'action': event['action']}
-		if 'queue_size' in event:
-			payload['queue_size'] = event['queue_size']
-		if 'game_id' in event:
-			payload['game_id'] = event['game_id']
-		if 'white_player_id' in event:
-			payload['white_player_id'] = event['white_player_id']
-		if 'black_player_id' in event:
-			payload['black_player_id'] = event['black_player_id']
-		await self.send(text_data=json.dumps(payload))
+		await self.send(text_data=json.dumps(build_ws_matchmaking_payload(event)))
