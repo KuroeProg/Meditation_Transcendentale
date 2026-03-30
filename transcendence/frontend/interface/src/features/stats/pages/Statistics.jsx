@@ -15,7 +15,7 @@ import {
 	ResponsiveContainer,
 } from 'recharts'
 import { useAuth } from '../../auth/index.js'
-import { useReduceMotionPref } from '../../../config/useReduceMotionPref.js'
+import { useReduceMotionPref } from '../../theme/hooks/useReduceMotionPref.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { getPstatsTheme } from '../services/coalitionPstatsTheme.js'
 import { buildPieceUsageRows, buildStatsPageStyle } from '../services/statsCalculator.js'
