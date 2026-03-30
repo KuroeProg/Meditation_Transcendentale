@@ -1,176 +1,19 @@
-import { useState, useMemo, useRef, useLayoutEffect, useEffect } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   buildPerfChartData,
   buildMaterialChartData,
   buildMovePieceUsageData,
   getResultInfo,
-  resultShortNotation,
 } from '../services/statsCalculator.js'
 import { PerformanceChartSection } from './charts/PerformanceChartSection.jsx'
 import { PieceUsageChartSection } from './charts/PieceUsageChartSection.jsx'
+import { MoveListView } from './MoveListView.jsx'
+import { HistoryView } from './HistoryView.jsx'
+import { FriendsView } from './FriendsView.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 
 const mockStats = mockPersonalStats.gamePanel
 import '../styles/GameStatsPanel.css'
-
-function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
-  const listEndRef = useRef(null);
-  const selectedHalfIdx =
-    viewPlies === null
-      ? moveLog.length > 0
-        ? moveLog.length - 1
-        : -1
-      : viewPlies === 0
-        ? -1
-        : viewPlies - 1;
-
-  useLayoutEffect(() => {
-    if (viewPlies !== null) return;
-    listEndRef.current?.scrollIntoView({
-      block: "nearest",
-      behavior: "smooth",
-    });
-  }, [moveLog.length, viewPlies]);
-
-  const rows = [];
-  for (let i = 0; i < moveLog.length; i += 2) {
-    rows.push({
-      num: Math.floor(i / 2) + 1,
-      white: moveLog[i],
-      black: moveLog[i + 1],
-      wIdx: i,
-      bIdx: i + 1,
-    });
-  }
-  const lastTurnNum = rows.length ? rows[rows.length - 1].num : 0;
-  const resultStr = resultShortNotation(winner);
-
-  if (!moveLog.length) {
-    return (
-      <div className="stats-moves-block stats-moves-block--pgn">
-        <div className="stats-moves-pgn__tabbar">
-          <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">
-            Coups
-          </span>
-        </div>
-        <p className="stats-empty-moves">Aucun coup pour l’instant.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className="stats-moves-block stats-moves-block--pgn">
-      <div className="stats-moves-pgn__tabbar">
-        <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">
-          Coups
-        </span>
-        {viewPlies != null ? (
-          <button
-            type="button"
-            className="stats-moves-pgn__live"
-            onClick={() => onViewPlies(null)}
-          >
-            Partie en cours
-          </button>
-        ) : null}
-      </div>
-      <div className="stats-move-list stats-move-list--pgn" role="list">
-        {rows.map(({ num, white, black, wIdx, bIdx }) => (
-          <div
-            key={num}
-            ref={
-              num === lastTurnNum && viewPlies === null ? listEndRef : undefined
-            }
-            role="listitem"
-            className={`stats-pgn-row stats-pgn-row--${num % 2 === 1 ? "odd" : "even"}`}
-          >
-            <span className="stats-pgn-row__num">{num}.</span>
-            <div className="stats-pgn-row__moves">
-              <button
-                type="button"
-                className={`stats-pgn-san-btn stats-pgn-san-btn--w${
-                  selectedHalfIdx === wIdx ? " stats-pgn-san-btn--selected" : ""
-                }`}
-                aria-pressed={selectedHalfIdx === wIdx}
-                aria-label={`Blancs ${white.san}, ${(white.timeSpentMs / 1000).toFixed(1)} secondes — afficher la position`}
-                onClick={() => onViewPlies(wIdx + 1)}
-              >
-                {white.san}
-              </button>
-              {black ? (
-                <button
-                  type="button"
-                  className={`stats-pgn-san-btn stats-pgn-san-btn--b${
-                    selectedHalfIdx === bIdx
-                      ? " stats-pgn-san-btn--selected"
-                      : ""
-                  }`}
-                  aria-pressed={selectedHalfIdx === bIdx}
-                  aria-label={`Noirs ${black.san}, ${(black.timeSpentMs / 1000).toFixed(1)} secondes — afficher la position`}
-                  onClick={() => onViewPlies(bIdx + 1)}
-                >
-                  {black.san}
-                </button>
-              ) : (
-                <span
-                  className="stats-pgn-san-btn stats-pgn-san-btn--b stats-pgn-san-btn--empty"
-                  aria-hidden
-                />
-              )}
-            </div>
-            <div className="stats-pgn-row__times">
-              <span className="stats-pgn-row__time">
-                {(white.timeSpentMs / 1000).toFixed(1)}s
-              </span>
-              {black ? (
-                <span className="stats-pgn-row__time">
-                  {(black.timeSpentMs / 1000).toFixed(1)}s
-                </span>
-              ) : (
-                <span className="stats-pgn-row__time stats-pgn-row__time--placeholder" />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-      {resultStr ? <div className="stats-pgn-result">{resultStr}</div> : null}
-    </div>
-  );
-}
-
-function HistoryView() {
-  return (
-    <div>
-      {mockStats.recentGames.map((g) => (
-        <div key={g.id} className="stats-list-item">
-          <span
-            className={`stats-history-result stats-history-result--${g.result}`}
-          >
-            {g.result}
-          </span>
-          <span style={{ flex: 1 }}>{g.opponent}</span>
-          <span style={{ opacity: 0.4, fontSize: "0.7rem" }}>{g.date}</span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function FriendsView() {
-  return (
-    <div>
-      {mockStats.friends.map((f) => (
-        <div key={f.id} className="stats-list-item">
-          <span
-            className={`stats-online-dot ${f.online ? "" : "stats-online-dot--offline"}`}
-          />
-          <span style={{ flex: 1 }}>{f.name}</span>
-          <span style={{ opacity: 0.4, fontSize: "0.7rem" }}>{f.elo} ELO</span>
-        </div>
-      ))}
-    </div>
-  );
-}
 
 export default function GameStatsPanel({
   moveLog = [],
@@ -310,8 +153,8 @@ export default function GameStatsPanel({
         </div>
       )}
 
-      {activeTab === "history" && <HistoryView />}
-      {activeTab === "friends" && <FriendsView />}
+      {activeTab === "history" && <HistoryView recentGames={mockStats.recentGames} />}
+      {activeTab === "friends" && <FriendsView friends={mockStats.friends} />}
 
       {gameEnded && (
         <PerformanceChartSection
