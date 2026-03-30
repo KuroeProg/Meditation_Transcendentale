@@ -16,6 +16,7 @@ import { ControlBar } from './ControlBar.jsx'
 import { DrawOfferBanners } from './DrawOfferBanners.jsx'
 import { ResignConfirmModal } from './ResignConfirmModal.jsx'
 import { DrawOfferModal } from './DrawOfferModal.jsx'
+import { StatsTabsNav } from './StatsTabsNav.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 
 const mockStats = mockPersonalStats.gamePanel
@@ -77,34 +78,13 @@ export default function GameStatsPanel({
   const result = getResultInfo(winner);
   const resigningColorLabel = playerColor === "b" ? "noirs" : "blancs";
 
-  const tabs = [
-    { id: "moves", icon: "ri-play-fill", label: "Jouer" },
-    { id: "newgame", icon: "ri-restart-line", label: "Nouvelle partie" },
-    { id: "history", icon: "ri-history-line", label: "Parties" },
-    { id: "friends", icon: "ri-group-line", label: "Amis" },
-  ];
-
   return (
     <div className="game-stats-panel">
-      <div className="stats-nav">
-        {tabs.map((t) => (
-          <button
-            key={t.id}
-            type="button"
-            className={`stats-nav-btn ${activeTab === t.id ? "stats-nav-btn--active" : ""}`}
-            onClick={() => {
-              if (t.id === "newgame" && typeof onPlayAgain === "function") {
-                onPlayAgain();
-                return;
-              }
-              setActiveTab(t.id);
-            }}
-          >
-            <i className={t.icon} />
-            {t.label}
-          </button>
-        ))}
-      </div>
+      <StatsTabsNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onPlayAgain={onPlayAgain}
+      />
 
       {activeTab === "moves" && (
         <MoveListView
