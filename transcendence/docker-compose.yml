@@ -30,7 +30,7 @@ services:
     container_name: vault_server
     restart: always
     ports:
-      - "8202:8202"
+      - "127.0.0.1:8202:8202"
     environment:
       - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
       - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8202
@@ -76,9 +76,11 @@ services:
       - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
-    ports:
+    # ports:
     # A voir avec Cloe
-      - "8000:8000"
+      # - "8000:8000"
+    expose:
+      - "8000"
     depends_on:
       - db
       - redis
@@ -92,7 +94,7 @@ services:
     image: mailhog/mailhog:v1.0.1
     container_name: transcendence_mailhog
     ports:
-      - "8025:8025"
+      - "127.0.0.1:8025:8025"
     networks:
       - backend_net
     restart: always
@@ -125,9 +127,11 @@ services:
       - VITE_PORT=5173
       # HMR via https://localhost (nginx) — sans ça, le hot-reload vise :5173 depuis le navigateur
       - VITE_HMR_NGINX=1
-    ports:
+    # ports:
       # Test direct sans nginx : http://localhost:5173 (si 502 sur :443, vérifie ici d’abord)
-      - "5173:5173"
+      # - "5173:5173"
+    expose:
+      - "5173"
     healthcheck:
       test:
         [
