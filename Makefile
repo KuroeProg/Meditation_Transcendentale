@@ -144,6 +144,16 @@ re: fclean all ## fclean puis all (repartir de zéro)
 
 migrations: ## Lancer les migrations Django (makemigrations + migrate)
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Migrations Django…"
+	@printf '%b\n' "$(C_DIM)  Attente PostgreSQL (prêt à accepter les connexions)…$(C_RESET)"
+	@i=0; \
+	until $(COMPOSE) exec -T db sh -c 'pg_isready -U "$$POSTGRES_USER" -d "$$POSTGRES_DB"' 2>/dev/null; do \
+		i=$$((i+1)); \
+		if [ $$i -gt 120 ]; then \
+			printf '%b\n' "$(C_RED)✗$(C_RESET) Timeout : la base ne répond pas. Vérifie $(C_DIM)docker compose ps$(C_RESET) et $(C_DIM)docker compose logs db$(C_RESET)."; \
+			exit 1; \
+		fi; \
+		sleep 1; \
+	done
 	@$(COMPOSE) exec -T backend python manage.py makemigrations
 	@$(COMPOSE) exec -T backend python manage.py migrate
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Migrations terminées."
