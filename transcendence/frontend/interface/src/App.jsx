@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { ProtectedRoute, Sidebar, DevAuthToolbar } from './components/shared/index.js'
+import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
+import { useBreakpoint } from './hooks/useBreakpoint.js'
 import {
 	HomePage,
 	GamePage,
@@ -18,6 +19,7 @@ const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
 function AppContent() {
 	const { isAuthenticated } = useAuth()
+	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const activeGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY)
 	const isOnGameRoute = location.pathname.startsWith('/game/')
@@ -37,7 +39,7 @@ function AppContent() {
 			<DevAuthToolbar />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
-			{!isAuthRoute && <Sidebar />}
+			{!isAuthRoute && (isMobile ? <BottomNav /> : <Sidebar />)}
 			<div className={`main-content ${isAuthRoute ? 'full-width' : ''}`}>
 				<Routes>
 					<Route path="/auth" element={<AuthPage />} />
