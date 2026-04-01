@@ -23,3 +23,6 @@ dist/
 
 # Cursor : règles personnelles locales (non partagées). Les commandes projet sont dans .cursor/commands/
 .cursor/rules/
+
+
+/transcendence/env/profiles/*.env
