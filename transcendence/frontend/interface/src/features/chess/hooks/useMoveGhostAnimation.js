@@ -66,7 +66,9 @@ export function useMoveGhostAnimation({
 }) {
   const [activeMoveAnim, setActiveMoveAnim] = useState(null);
   
+  const committedFenRef = useRef(game.fen());
   const previousFenRef = useRef(game.fen());
+  const pendingFenRef = useRef(null);
   const animRef = useRef(null);
   const animWatchdogRef = useRef(null);
   const activeAnimRef = useRef(false);
@@ -76,6 +78,8 @@ export function useMoveGhostAnimation({
       window.clearTimeout(animWatchdogRef.current);
       animWatchdogRef.current = null;
     }
+    previousFenRef.current = pendingFenRef.current ?? committedFenRef.current;
+    pendingFenRef.current = null;
     setActiveMoveAnim((prev) => (prev ? { ...prev, phase: "done" } : null));
     queueMicrotask(() => {
       setActiveMoveAnim(null);
@@ -91,18 +95,26 @@ export function useMoveGhostAnimation({
   // Detect FEN change and initiate animation
   useEffect(() => {
     const nextFen = game.fen();
-    const prevFen = previousFenRef.current;
+    const prevFen = committedFenRef.current;
     if (!prevFen || prevFen === nextFen) {
       previousFenRef.current = nextFen;
+      committedFenRef.current = nextFen;
+      pendingFenRef.current = null;
       return;
     }
 
     const moveAnim = findAnimatedMove(prevFen, nextFen);
-    previousFenRef.current = nextFen;
+    committedFenRef.current = nextFen;
     if (!moveAnim || isViewOnly) {
+      previousFenRef.current = nextFen;
+      pendingFenRef.current = null;
       finalizeGhostAnimation();
       return;
     }
+
+    // Keep the board rendered on pre-move state until ghost transition ends.
+    previousFenRef.current = prevFen;
+    pendingFenRef.current = nextFen;
 
     const themeSlug =
       moveAnim.moving.color === "w" ? whitePieceThemeSlug : blackPieceThemeSlug;
