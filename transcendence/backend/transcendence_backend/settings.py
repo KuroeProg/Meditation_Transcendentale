@@ -10,7 +10,23 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+
+
+def _env_bool(name, default=False):
+    raw = os.environ.get(name)
+    if raw is None:
+        return default
+    return str(raw).strip().lower() in ('1', 'true', 'yes', 'on')
+
+
+def _env_list(name, default_values):
+    raw = os.environ.get(name)
+    if not raw:
+        return default_values
+    values = [item.strip() for item in raw.split(',') if item.strip()]
+    return values or default_values
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -20,18 +36,18 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-u=m6iv)64!pt2i$(_khl29qg8797dvq-93at8z$brl4u^uv0b*'
+SECRET_KEY = os.environ.get(
+    'DJANGO_SECRET_KEY',
+    'django-insecure-u=m6iv)64!pt2i$(_khl29qg8797dvq-93at8z$brl4u^uv0b*'
+)
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = _env_bool('DJANGO_DEBUG', True)
 
-ALLOWED_HOSTS = ['backend', 'localhost', '127.0.0.1', '0.0.0.0']
+ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', ['backend', 'localhost', '127.0.0.1', '0.0.0.0'])
 
 # CSRF_TRUSTED_ORIGINS : trust domain
-CSRF_TRUSTED_ORIGINS = [
-    'https://localhost',
-    'https://127.0.0.1',
-]
+CSRF_TRUSTED_ORIGINS = _env_list('DJANGO_CSRF_TRUSTED_ORIGINS', ['https://localhost', 'https://127.0.0.1'])
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -39,6 +55,7 @@ SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
 INSTALLED_APPS = [
     'corsheaders',
+    'accounts',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -47,6 +64,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django_prometheus',
 ]
+
+# Petit hack car daphne ne s'import pas a tous les coups. @TODO Trouver une solution plus propre.
+try:
+    import daphne  # noqa: F401
+except ImportError:
+    daphne = None
+else:
+    INSTALLED_APPS.insert(0, 'daphne')
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',
@@ -63,10 +88,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'transcendence_backend.urls'
 
-CORS_ALLOWED_ORIGINS = [
-    "https://localhost",
-    "http://localhost:5173",
-]
+CORS_ALLOWED_ORIGINS = _env_list('DJANGO_CORS_ALLOWED_ORIGINS', ["https://localhost", "http://localhost:5173"])
 
 TEMPLATES = [
     {
@@ -85,12 +107,10 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'transcendence_backend.wsgi.application'
-
+ASGI_APPLICATION = 'transcendence_backend.asgi.application'
 
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
-
-import os
 
 DATABASES = {
     'default': {
@@ -136,6 +156,38 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
+
+REDIS_PASSWORD = os.environ.get('REDIS_PASSWORD', '')
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [
+                f"redis://:{REDIS_PASSWORD}@redis:6379/0"
+            ],
+        },
+    },
+}
+
+
+# Email Configuration
+# https://docs.djangoproject.com/en/5.0/topics/email/
+
+# For development: output emails to console
+EMAIL_BACKEND = os.environ.get(
+    'EMAIL_BACKEND',
+    'django.core.mail.backends.console.EmailBackend'
+) if DEBUG else 'django.core.mail.backends.smtp.EmailBackend'
+
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'noreply@transcendence.local')
+
+# SMTP configuration (for production)
+EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
 
 # Internationalization

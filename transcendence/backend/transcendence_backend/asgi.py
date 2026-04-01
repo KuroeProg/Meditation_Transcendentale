@@ -1,16 +1,22 @@
-"""
-ASGI config for transcendence_backend project.
-
-It exposes the ASGI callable as a module-level variable named ``application``.
-
-For more information on this file, see
-https://docs.djangoproject.com/en/5.0/howto/deployment/asgi/
-"""
-
 import os
-
 from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
 
+# On définit les settings avant d'importer les routings
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendence_backend.settings')
 
-application = get_asgi_application()
+# Initialise l'application Django ASGI pour le HTTP
+django_asgi_app = get_asgi_application()
+
+import game.routing
+
+application = ProtocolTypeRouter({
+    "http": django_asgi_app,
+    # Gère les WebSockets
+    "websocket": AuthMiddlewareStack(
+        URLRouter(
+            game.routing.websocket_urlpatterns
+        )
+    ),
+})
