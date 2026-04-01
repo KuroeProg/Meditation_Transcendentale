@@ -22,6 +22,7 @@ import {
   collectChessGamePreloadUrls,
   preloadChessImages,
 } from "../assets/chessAssetPreload.js";
+import { playUiErrorDeny, unlockGameAudio } from "../../audio/services/gameSfx.js";
 
 
 
@@ -73,6 +74,7 @@ function Board({
   whiteCoalition,
   blackCoalition,
   moveFeedback,
+  tilePatternSeed,
   isViewOnly = false,
 }) {
   const { user } = useAuth();
@@ -95,7 +97,7 @@ function Board({
   const pieceRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const tileRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const ghostPieceRotation = "rotate(0deg)";
-  const tileSeed = BOARD_TILES.seed;
+  const tileSeed = tilePatternSeed ?? BOARD_TILES.seed;
 
   const whitePieceThemeSlug = whiteCoalition
     ? coalitionToSlug(whiteCoalition)
@@ -231,6 +233,8 @@ function Board({
       }
 
       if (!possibleMoves.includes(square)) {
+        unlockGameAudio();
+        playUiErrorDeny();
         flashIllegalSquare(square);
         setSelected(null);
         setPossibleMoves([]);
@@ -330,29 +334,6 @@ function Board({
     [useTiles, tileSeed, tileCoalitionSlug],
   );
 
-  function getPopupContent(currentWinner) {
-    if (currentWinner === "Nulle") {
-      return {
-        title: "Draw !",
-        subtitle: "Equal position",
-      };
-    }
-    if (
-      currentWinner === "White-Timeout" ||
-      currentWinner === "Black-Timeout"
-    ) {
-      const color = currentWinner === "White-Timeout" ? "White" : "Black";
-      return {
-        title: "Time is up !",
-        subtitle: `${color} wins on time`,
-      };
-    }
-    return {
-      title: "Checkmate !",
-      subtitle: `${currentWinner} wins`,
-    };
-  }
-
   useEffect(() => {
     if (!popupOpen) return;
 
@@ -371,18 +352,6 @@ function Board({
     <div>
       {(localFeedback || moveFeedback) && (
         <p className="popup-winner">{localFeedback || moveFeedback}</p>
-      )}
-
-      {popupOpen && (
-        <div className="popup-overlay">
-          <div className="popup-checkmate">
-            <button className="popup-close" onClick={() => setPopupOpen(false)}>
-              x
-            </button>
-            <p className="popup-title">{getPopupContent(winner).title}</p>
-            <p className="popup-winner">{getPopupContent(winner).subtitle}</p>
-          </div>
-        </div>
       )}
 
       <div className="board-root" ref={boardRootRef}>

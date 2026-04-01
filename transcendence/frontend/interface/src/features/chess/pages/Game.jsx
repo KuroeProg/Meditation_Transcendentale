@@ -66,6 +66,7 @@ function App() {
     gameState,
     winner,
     moveFeedback,
+    tilePatternSeed,
     moveLog,
     viewPlies,
   } = state;
@@ -243,6 +244,7 @@ function App() {
               whiteCoalition={gameState?.white_player_coalition}
               blackCoalition={gameState?.black_player_coalition}
               moveFeedback={moveFeedback}
+              tilePatternSeed={tilePatternSeed}
               isViewOnly={viewPlies !== null}
             />
           </div>
