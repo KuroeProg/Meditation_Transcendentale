@@ -43,7 +43,7 @@ ENV_PROFILES_DIR := $(COMPOSE_DIR)/env/profiles
 ENV_TARGET := $(COMPOSE_DIR)/.env
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE).env
 
-.PHONY: help all certs build build-nc up up-attach up-bg down stop restart logs logs-all ps ps-a clean fclean re env-list env-use
+.PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -120,7 +120,22 @@ down: ## Arrêter les conteneurs (docker compose down)
 
 stop: down
 
-restart: down up-bg ## down puis up en arrière-plan
+restart: ## Redémarrer tout, ou un service : make restart SERVICE=nginx  |  make restart-nginx
+	@if [ -n "$(SERVICE)" ]; then \
+		printf '%b\n' "$(C_CYAN)▶$(C_RESET) Redémarrage du service « $(SERVICE) »…"; \
+		$(COMPOSE) restart $(SERVICE); \
+	else \
+		printf '%b\n' "$(C_CYAN)▶$(C_RESET) Redémarrage de tous les services…"; \
+		$(COMPOSE) restart; \
+	fi
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) OK."
+
+restart-%: ## Redémarrer un seul service (ex: make restart-nginx, make restart-db)
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Redémarrage du service « $(subst restart-,,$@) »…"
+	@$(COMPOSE) restart $(subst restart-,,$@)
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) OK."
+
+reup: down up-bg ## down puis up en arrière-plan (recrée le réseau ; ancien comportement de « restart »)
 
 logs: ## Suivre les logs « app » (frontend, backend, nginx, db, redis, worker)
 	@$(COMPOSE) logs -f --tail=100 $(LOGS_CORE)

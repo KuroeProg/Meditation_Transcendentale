@@ -1,8 +1,11 @@
 .home {
 	overflow-y: scroll;
+	overflow-x: hidden;
 	scroll-snap-type: y proximity;
 	position: relative;
 	height: 100vh;
+	max-width: 100%;
+	box-sizing: border-box;
 	scroll-behavior: smooth;
 }
 
@@ -70,7 +73,7 @@ text-align: center;
 ); */
 
 
-/* Second Section */
+/* Second Section — pas de margin-left ici : .main-content compense déjà la sidebar */
 .second-section {
 	min-height: 100vh;
 	background: rgba(0, 0, 0, 0.10);
@@ -79,20 +82,24 @@ text-align: center;
 	align-items: center;
 	justify-content: center;
 	scroll-snap-align: start;
-	margin-left: 75px;
-	width: calc(100vw - 75px);
+	margin-left: 0;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 	height: 100vh;
+	scroll-margin-top: 60px;
 }
 
 .second-left {
 	flex: 1;
+	min-width: 0;
 	display: flex;
 	flex-direction: column;
 	justify-content: center;
-	padding: 4rem 5rem;
+	padding: clamp(1rem, 3vw, 4rem) clamp(1rem, 4vw, 5rem);
 	gap: 1.5rem;
 	align-items: center;
-	/* border-right: 1px solid rgba(255, 255, 255, 0.08); */
+	box-sizing: border-box;
 }
 
 .second-left h2 {
@@ -150,17 +157,19 @@ text-align: center;
 
 .second-right {
 	flex: 1;
+	min-width: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	padding: 1rem;
-	width: calc((100vw - 75px) / 2);
-
+	width: 50%;
+	max-width: 50%;
+	box-sizing: border-box;
 }
 
 .second-right .home-second-logo {
 	width: 100%;
-	max-width: min(480px, 42vw);
+	max-width: min(480px, min(42vw, 100%));
 	max-height: 70vh;
 	object-fit: contain;
 	border-radius: 16px;
@@ -175,4 +184,53 @@ text-align: center;
 	align-items: center;
 	justify-content: center;
 	scroll-snap-align: start;
+}
+
+@media (max-width: 768px) {
+	.home {
+		height: auto;
+		min-height: 100vh;
+	}
+
+	.front-page {
+		height: auto;
+		min-height: min(100vh, 100dvh);
+		padding: 4.5rem 1rem 2rem;
+		box-sizing: border-box;
+	}
+
+	.second-section {
+		flex-direction: column;
+		height: auto;
+		min-height: auto;
+		margin-left: 0;
+		width: 100%;
+		max-width: 100%;
+		padding-top: 0.5rem;
+	}
+
+	.second-right {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.second-right .home-second-logo {
+		max-width: min(320px, 80vw);
+	}
+
+	.coalition-icons {
+		gap: 1.5rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	.coalition-icon {
+		width: 44px;
+		height: 44px;
+	}
+
+	.third-section {
+		flex-direction: column;
+		padding: 2rem 1rem;
+	}
 }

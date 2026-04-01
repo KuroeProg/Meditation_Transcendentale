@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import {
   buildPerfChartData,
   buildMaterialChartData,
@@ -44,6 +44,7 @@ export default function GameStatsPanel({
   const [perfFilter, setPerfFilter] = useState("time");
   const [resignOpen, setResignOpen] = useState(false);
   const [drawInfoOpen, setDrawInfoOpen] = useState(false);
+  const prevGameEndedRef = useRef(false);
 
   useEffect(() => {
     if (!resignOpen && !drawInfoOpen) return;
@@ -75,6 +76,13 @@ export default function GameStatsPanel({
     playerColor,
   });
 
+  useEffect(() => {
+    if (gameEnded && !prevGameEndedRef.current) {
+      setActiveTab("moves");
+    }
+    prevGameEndedRef.current = gameEnded;
+  }, [gameEnded]);
+
   const perfData = useMemo(() => buildPerfChartData(moveLog), [moveLog]);
   const materialData = useMemo(
     () => buildMaterialChartData(moveLog),
@@ -89,55 +97,63 @@ export default function GameStatsPanel({
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         onPlayAgain={onPlayAgain}
+        gameEnded={gameEnded}
       />
 
       {activeTab === "moves" && (
-        <MoveListView
-          moveLog={moveLog}
-          viewPlies={viewPlies}
-          onViewPlies={onViewPlies ?? (() => {})}
-          winner={winner}
-        />
+        <>
+          <DrawOfferBanners
+            drawOfferIncoming={drawOfferIncoming}
+            drawOfferOutgoing={drawOfferOutgoing}
+            onRespondDraw={onRespondDraw}
+          />
+
+          <MoveListView
+            moveLog={moveLog}
+            viewPlies={viewPlies}
+            onViewPlies={onViewPlies ?? (() => {})}
+            winner={winner}
+          />
+
+          {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
+
+          {gameEnded && <SummaryCards stats={mockStats} />}
+
+          {gameEnded && (
+            <PerformanceChartSection
+              perfFilter={perfFilter}
+              setPerfFilter={setPerfFilter}
+              perfData={perfData}
+              materialData={materialData}
+            />
+          )}
+
+          {gameEnded && <PieceUsageChartSection pieceData={pieceData} />}
+
+          <ControlBar
+            resignDisabled={resignDisabled}
+            drawDisabled={drawDisabled}
+            replayFirstDisabled={replayFirstDisabled}
+            replayPrevDisabled={replayPrevDisabled}
+            replayNextDisabled={replayNextDisabled}
+            replayLastDisabled={replayLastDisabled}
+            onOpenResign={() => setResignOpen(true)}
+            onOpenDraw={() => setDrawInfoOpen(true)}
+            onReplayFirst={onReplayFirst}
+            onReplayPrev={onReplayPrev}
+            onReplayNext={onReplayNext}
+            onReplayLast={onReplayLast}
+          />
+        </>
       )}
 
-      {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
-
-      {gameEnded && <SummaryCards stats={mockStats} />}
-
-      {activeTab === "history" && <HistoryView recentGames={mockStats.recentGames} />}
-      {activeTab === "friends" && <FriendsView friends={mockStats.friends} />}
-
-      {gameEnded && (
-        <PerformanceChartSection
-          perfFilter={perfFilter}
-          setPerfFilter={setPerfFilter}
-          perfData={perfData}
-          materialData={materialData}
-        />
+      {activeTab === "history" && (
+        <HistoryView recentGames={mockStats.recentGames} />
       )}
 
-      {gameEnded && <PieceUsageChartSection pieceData={pieceData} />}
-
-      <ControlBar
-        resignDisabled={resignDisabled}
-        drawDisabled={drawDisabled}
-        replayFirstDisabled={replayFirstDisabled}
-        replayPrevDisabled={replayPrevDisabled}
-        replayNextDisabled={replayNextDisabled}
-        replayLastDisabled={replayLastDisabled}
-        onOpenResign={() => setResignOpen(true)}
-        onOpenDraw={() => setDrawInfoOpen(true)}
-        onReplayFirst={onReplayFirst}
-        onReplayPrev={onReplayPrev}
-        onReplayNext={onReplayNext}
-        onReplayLast={onReplayLast}
-      />
-
-      <DrawOfferBanners
-        drawOfferIncoming={drawOfferIncoming}
-        drawOfferOutgoing={drawOfferOutgoing}
-        onRespondDraw={onRespondDraw}
-      />
+      {activeTab === "friends" && (
+        <FriendsView friends={mockStats.friends} />
+      )}
 
       <ResignConfirmModal
         open={resignOpen}

@@ -1,30 +1,35 @@
-const TABS = [
-  { id: 'moves', icon: 'ri-play-fill', label: 'Jouer' },
-  { id: 'newgame', icon: 'ri-restart-line', label: 'Nouvelle partie' },
-  { id: 'history', icon: 'ri-history-line', label: 'Parties' },
-  { id: 'friends', icon: 'ri-group-line', label: 'Amis' },
+const VIEW_TABS = [
+	{ id: 'moves', icon: 'ri-file-list-3-line', label: 'Coups' },
+	{ id: 'history', icon: 'ri-history-line', label: 'Parties' },
+	{ id: 'friends', icon: 'ri-group-line', label: 'Amis' },
 ]
 
-export function StatsTabsNav({ activeTab, setActiveTab, onPlayAgain }) {
-  return (
-    <div className="stats-nav">
-      {TABS.map((tab) => (
-        <button
-          key={tab.id}
-          type="button"
-          className={`stats-nav-btn ${activeTab === tab.id ? 'stats-nav-btn--active' : ''}`}
-          onClick={() => {
-            if (tab.id === 'newgame' && typeof onPlayAgain === 'function') {
-              onPlayAgain()
-              return
-            }
-            setActiveTab(tab.id)
-          }}
-        >
-          <i className={tab.icon} />
-          {tab.label}
-        </button>
-      ))}
-    </div>
-  )
+export function StatsTabsNav({ activeTab, setActiveTab, onPlayAgain, gameEnded }) {
+	const showNewGame = !gameEnded && typeof onPlayAgain === 'function'
+
+	return (
+		<div className="stats-nav-shell">
+			<div className="stats-nav" role="tablist" aria-label="Sections du panneau">
+				{VIEW_TABS.map((tab) => (
+					<button
+						key={tab.id}
+						type="button"
+						role="tab"
+						aria-selected={activeTab === tab.id}
+						className={`stats-nav-btn ${activeTab === tab.id ? 'stats-nav-btn--active' : ''}`}
+						onClick={() => setActiveTab(tab.id)}
+					>
+						<i className={tab.icon} aria-hidden />
+						<span>{tab.label}</span>
+					</button>
+				))}
+			</div>
+			{showNewGame ? (
+				<button type="button" className="stats-new-game-btn" onClick={onPlayAgain}>
+					<i className="ri-restart-line" aria-hidden />
+					<span>Nouvelle partie</span>
+				</button>
+			) : null}
+		</div>
+	)
 }

@@ -154,6 +154,7 @@ function App() {
   return (
     <div>
       <div
+        className="game-debug-hud"
         style={{
           position: "fixed",
           bottom: 10,

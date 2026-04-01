@@ -138,8 +138,13 @@ html, body, #root {
 	margin: 0;
 	padding: 0;
 	height: 100%;
-	/* overflow-x: hidden; */
-	overflow: hidden;
+	overflow-x: hidden;
+}
+
+@media (min-width: 769px) {
+	html, body, #root {
+		overflow: hidden;
+	}
 }
 
 .header {
@@ -415,17 +420,31 @@ html[data-reduce-motion='true'] .board-move-ghost {
 /* Board.jsx */
 
 :root {
+  /* Breakpoints (convention — @media ne supporte pas var(), copier les valeurs) :
+     sm 480px | md 768px | lg 1024px | xl 1280px | 2xl 1920px */
   --sidebar-width: 75px;
+  --bottom-nav-height: 0px;
+  --content-padding: clamp(0.75rem, 2vw, 2rem);
   --player-bar-height: 80px;
   --board-size: min(
     calc(100vh - (var(--player-bar-height) * 2)),
     calc(100vw - var(--sidebar-width) - 8rem)
   );
   --cell: calc(var(--board-size) / 8);
-  /* Contour pièces : 2 drop-shadow au lieu de 8 (beaucoup moins cher au paint) */
   --chess-piece-shadow-tight: 0.75px;
   --chess-piece-shadow-soft: 1.25px;
   --board-tile-overlay-alpha: 0.12;
+}
+
+@media (max-width: 768px) {
+  :root {
+    --sidebar-width: 0px;
+    --bottom-nav-height: 60px;
+    --board-size: min(
+      calc(100vh - 200px),
+      100vw
+    );
+  }
 }
 
 
@@ -945,13 +964,16 @@ animation-duration: 10s;
 .main-content {
 	flex: 1;
 	min-width: 0;
-	margin-left: 75px;
+	margin-left: var(--sidebar-width, 75px);
 	min-height: 100vh;
-	padding: 1.5rem 2rem 3rem;
-	/* max-width: 960px; */
+	padding: 1.5rem var(--content-padding, 2rem) 3rem;
 	position: relative;
 	z-index: 1;
 	isolation: isolate;
+}
+
+.main-content.full-width {
+	margin-left: 0;
 }
 
 /* Page jeu : pleine largeur restante (échiquier + panneau stats sans coupure) */
@@ -966,6 +988,13 @@ animation-duration: 10s;
 	max-width: none;
 	width: 100%;
 	padding: 1rem 1.25rem 2rem;
+	box-sizing: border-box;
+}
+
+/* Home : évite le scroll horizontal (second-section ne doit pas cumuler avec la marge sidebar) */
+.main-content:has(.home) {
+	overflow-x: hidden;
+	max-width: 100%;
 	box-sizing: border-box;
 }
 
@@ -1421,4 +1450,285 @@ html[data-reduce-motion='true'] .btn {
 	border-left: 3px solid rgba(20, 184, 166, 0.45);
 	padding-left: 0.75rem;
 	margin-bottom: 1rem;
+}
+
+/* =====================================================================
+   BOTTOM NAVIGATION — mobile only (<=768px)
+   ===================================================================== */
+.bottom-nav {
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.sidebar {
+		display: none;
+	}
+
+	.bottom-nav {
+		display: flex;
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		height: var(--bottom-nav-height, 60px);
+		background: #2f2b2b;
+		z-index: 50;
+		align-items: center;
+		justify-content: space-around;
+		box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.4);
+		padding: 0 0.25rem;
+	}
+
+	.bottom-nav__item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		gap: 2px;
+		flex: 1;
+		min-width: 44px;
+		min-height: 44px;
+		color: #aaa;
+		text-decoration: none;
+		font-size: 10px;
+		font-weight: 500;
+		background: none;
+		border: none;
+		cursor: pointer;
+		font-family: inherit;
+		padding: 4px 0;
+		-webkit-tap-highlight-color: transparent;
+	}
+
+	.bottom-nav__item i {
+		font-size: 18px;
+	}
+
+	.bottom-nav__item--active,
+	.bottom-nav__item--active i {
+		color: #fff;
+	}
+
+	.bottom-nav__logout {
+		color: #e57373;
+	}
+
+	/* Shell layout mobile */
+	.main-content {
+		margin-left: 0 !important;
+		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.5rem);
+	}
+}
+
+/* =====================================================================
+   RESPONSIVE — tablette (769px — 1024px)
+   ===================================================================== */
+@media (min-width: 769px) and (max-width: 1024px) {
+	.sidebar {
+		width: 60px;
+	}
+
+	.sidebar:hover {
+		width: 60px;
+	}
+
+	.sidebar ul li a .icon,
+	.sidebar ul li .sidebar-btn .icon {
+		min-width: 60px;
+		height: 50px;
+		font-size: 20px;
+	}
+
+	.sidebar ul li a .text,
+	.sidebar ul li .sidebar-btn .text {
+		display: none;
+	}
+
+	.main-content {
+		margin-left: 60px;
+	}
+}
+
+/* =====================================================================
+   RESPONSIVE — Profile / Settings (mobile <=768px)
+   ===================================================================== */
+@media (max-width: 768px) {
+	.page-shell {
+		padding: 0 0.25rem;
+	}
+
+	.profile-avatar-lg {
+		width: 80px;
+		height: 80px;
+		max-width: 30vw;
+	}
+
+	.profile-name {
+		font-size: 1.2rem;
+	}
+
+	.info-dl {
+		grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+		gap: 0.75rem 1rem;
+	}
+
+	.info-dl--compact {
+		grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	}
+
+	.surface-card {
+		padding: 0.75rem;
+	}
+}
+
+/* =====================================================================
+   RESPONSIVE — Game / Chess : panneau stats sous le plateau (tablette & mobile)
+   ===================================================================== */
+@media (max-width: 1024px) {
+	.main-content:has(.game-container) {
+		padding: 0.35rem 0.35rem 0.5rem;
+		box-sizing: border-box;
+	}
+
+	.game-container {
+		flex-direction: column;
+		align-items: stretch;
+		justify-content: flex-start;
+		min-height: auto;
+		max-height: none;
+		gap: 0.65rem;
+		overflow-x: hidden;
+		overflow-y: visible;
+		width: 100%;
+	}
+
+	.game-board-col {
+		align-items: center;
+		align-self: center;
+		width: 100%;
+		max-width: 100%;
+		flex-shrink: 0;
+	}
+
+	/* Était flex: 1 1 0 + align-items:center sur le parent → hauteur effondrée, invisible */
+	.game-stats-panel-wrap {
+		flex: 0 1 auto;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		min-height: min(42vh, 420px);
+		max-height: min(58vh, 640px);
+		overflow-x: hidden;
+		overflow-y: auto;
+		order: 2;
+		align-self: stretch;
+		display: flex;
+		flex-direction: column;
+	}
+
+	/* Musique : hors du plateau (fixed) pour ne plus masquer les pièces */
+	.game-music-panel-wrap {
+		position: fixed;
+		top: auto;
+		left: auto;
+		right: max(12px, env(safe-area-inset-right, 0px));
+		bottom: max(12px, env(safe-area-inset-bottom, 0px));
+		z-index: 45;
+	}
+
+	.game-music-popover {
+		left: auto;
+		right: 0;
+		bottom: calc(100% + 8px);
+		top: auto;
+	}
+}
+
+@media (max-width: 768px) {
+	.main-content:has(.game-container) {
+		padding: 0.25rem;
+		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.35rem);
+	}
+
+	.game-music-panel-wrap {
+		bottom: calc(var(--bottom-nav-height, 60px) + 10px + env(safe-area-inset-bottom, 0px));
+		right: max(10px, env(safe-area-inset-right, 0px));
+	}
+
+	.player-bar {
+		width: 100%;
+		height: 44px;
+	}
+
+	.player-nameB,
+	.player-nameW {
+		font-size: clamp(0.7rem, 3vw, 1rem);
+		padding-bottom: 8px;
+	}
+
+	.player-timerB,
+	.player-timerW {
+		font-size: clamp(0.85rem, 3.5vw, 1.3rem);
+		padding: 8px 0.5rem;
+	}
+
+	.player-avatar {
+		width: 32px;
+		height: 32px;
+	}
+
+	.game-stats-panel-wrap {
+		min-height: 280px;
+		max-height: min(50vh, 520px);
+	}
+
+	.game-music-fab {
+		width: 40px;
+		height: 40px;
+		font-size: 1.05rem;
+	}
+
+	.game-debug-hud {
+		display: none !important;
+	}
+
+	.board-promotion-btn {
+		width: clamp(3.25rem, 20vw, 4.25rem);
+		min-height: 44px;
+	}
+
+	.popup-checkmate {
+		max-width: min(90vw, 24rem);
+		padding: 1.5rem 1.25rem;
+	}
+
+	.popup-overlay {
+		padding: 1rem;
+	}
+}
+
+/* =====================================================================
+   RESPONSIVE — grands écrans (>=1920px)
+   ===================================================================== */
+@media (min-width: 1920px) {
+	.main-content {
+		max-width: 1800px;
+		margin-left: 75px;
+		margin-right: auto;
+	}
+
+	.game-container {
+		max-width: 1600px;
+		margin: 0 auto;
+	}
+
+	.page-shell {
+		max-width: 1200px;
+		margin: 0 auto;
+	}
+
+	.dashboard-simple {
+		max-width: 1200px;
+		margin: 0 auto;
+	}
 }
