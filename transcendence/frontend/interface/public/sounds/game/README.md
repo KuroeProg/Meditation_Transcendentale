@@ -4,7 +4,11 @@
 
 | Fichier | Rôle |
 |---------|------|
-| `Midnight_Basin.mp3` | Thème principal **in-game** uniquement (page `/game`), boucle, volume par défaut très bas (`gameAudioPrefs.js`). |
+| `Theme_of_game.wav` | Thème **in-game** (page `/game`), boucle ; la lecture démarre au premier coup, avec le chrono (`GameAudio.jsx` / `useChessAudio.js`). |
+
+## Musique d’accueil (hors partie)
+
+Fichier : `../home/Beth's Story.m4a` — jouée sur toutes les routes sauf `/game/*` (`HomeAudio.jsx`).
 
 Réglages : **Paramètres** → Audio, ou bouton volume en haut à droite pendant la partie.
 

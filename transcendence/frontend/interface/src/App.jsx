@@ -12,6 +12,7 @@ import {
 	ThemeSync,
 	CoalitionHtmlSync,
 	CoalitionAmbient,
+	HomeAmbientBgm,
 	useAuth,
 } from './features/index.js'
 
@@ -37,6 +38,7 @@ function AppContent() {
 			<ThemeSync />
 			<CoalitionHtmlSync />
 			<DevAuthToolbar />
+			<HomeAmbientBgm />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
 			{!isAuthRoute && (isMobile ? <BottomNav /> : <Sidebar />)}

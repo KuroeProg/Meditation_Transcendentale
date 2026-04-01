@@ -10,6 +10,19 @@ Les environnements Python locaux pour outils graphiques (ex. **`.venv-sprites`**
 
 ---
 
+## Audio (BGM)
+
+Fichiers sous **`public/sounds/`** (non bundlés par Vite ; servis tels quels) :
+
+| Zone | Fichier | Comportement |
+| ---- | ------- | ------------ |
+| App hors partie | `home/Beth's Story.m4a` | Boucle ; pause automatique sur les routes `/game/*`. |
+| Partie | `game/Theme_of_game.wav` | Boucle ; lecture déclenchée au premier coup (chronomètre). |
+
+Préférences volume/coupe : `src/config/gameAudioPrefs.js` ; détails SFX : `public/sounds/game/README.md`.
+
+---
+
 ## Template Vite (référence)
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.

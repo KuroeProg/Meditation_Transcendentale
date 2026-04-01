@@ -85,7 +85,11 @@ function App() {
   }, [startNewMatch]);
 
   // Sync timers from server state
-  const onlineTimers = useSynchronizedChessTimers(gameState, game.turn());
+  const onlineTimers = useSynchronizedChessTimers(
+    gameState,
+    game.turn(),
+    moveLog.length,
+  );
   const syncedTimers =
     mode === "training"
       ? {

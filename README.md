@@ -108,7 +108,8 @@ Typical entry points (exact URLs depend on your Nginx routing and `.env`):
 
 What is **implemented or demonstrable** evolves with each sprint. As of the latest iteration:
 
-- **Chess UI**: Board, move rules via `chess.js`, timers, end-of-game panel, coalition-themed pieces and board tiles, audio (BGM/SFX) with shared preferences.
+- **Chess UI**: Board, move rules via `chess.js`, timers (white clock does not tick until the first move is played; UI sync), end-of-game panel, coalition-themed pieces and board tiles.
+- **Audio**: Shared volume/mute in **Settings** (`gameAudioPrefs`). **Home** BGM (`public/sounds/home/Beth's Story.m4a`) plays across the app **except** on `/game/*`. **In-game** BGM (`public/sounds/game/Theme_of_game.wav`) loops and starts **with the clock** (after the first move). SFX remain procedural or file-based per `public/sounds/game/README.md`.
 - **Auth**: OAuth 42 integration path; **development mock user** optional via env for UI work without a live backend.
 - **Profile & settings**: Profile view, settings for audio and **reduced motion** (accessibility); coalition-themed ambient background and particles respect this preference where applicable.
 - **Statistics**: Personal statistics page with charts (**Recharts**), coalition theming; data may be **mock JSON** until the backend exposes real game history.

@@ -20,8 +20,8 @@ export function GameAudioPrefsForm({ variant = 'settings' }) {
 	return (
 		<div className={wrapClass}>
 			<p className="muted small card-hint">
-				La piste <strong>Midnight Basin</strong> ne joue que sur l’écran de partie ; niveau très bas par défaut pour ne pas
-				gêner la concentration.
+				Le thème de partie (<strong>Theme_of_game.wav</strong>) ne démarre qu’avec le chronomètre (après le premier coup) et
+				n’est audible que sur l’écran de partie ; niveau par défaut modéré.
 			</p>
 			<label className="game-music-slider-label">
 				<span>Volume musique d’ambiance</span>

@@ -57,6 +57,7 @@ export function useChessAudio({
   const prevMoveCountRef = useRef(0);
   const prevWinnerRef = useRef(null);
   const prevFeedbackRef = useRef(null);
+  const gameBgmStartedRef = useRef(false);
 
   useEffect(() => {
     if (!enabled) {
@@ -66,6 +67,10 @@ export function useChessAudio({
 
     const prevCount = prevMoveCountRef.current;
     const nextCount = moveLog.length;
+
+    if (nextCount === 0) {
+      gameBgmStartedRef.current = false;
+    }
 
     if (nextCount <= prevCount) {
       prevMoveCountRef.current = nextCount;
@@ -79,7 +84,11 @@ export function useChessAudio({
     }
 
     unlockGameAudio();
-    void tryPlayGameBgm();
+    // BGM partie : uniquement une fois la partie « lancée » (≥1 coup), comme le chrono côté blancs.
+    if (!gameBgmStartedRef.current && nextCount >= 1) {
+      gameBgmStartedRef.current = true;
+      void tryPlayGameBgm();
+    }
 
     const flags = resolveLastMoveFlags(moveLog);
     playPieceMoveFromFlags(flags);
@@ -102,7 +111,6 @@ export function useChessAudio({
     if (!winner) return;
 
     unlockGameAudio();
-    void tryPlayGameBgm();
 
     if (winner === "White" || winner === "Black") {
       playGameWin();

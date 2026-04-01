@@ -1,7 +1,6 @@
 import '../styles/Home.css'
 import MenuHome from '../components/MenuHome'
 import { SiteBrandLogo } from '../../../components/common/index.js'
-import { HomeAmbientBgm } from '../../audio/index.js'
 import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
@@ -17,7 +16,6 @@ function Home() {
 				void tryPlayHomeBgm()
 			}}
 		>
-			<HomeAmbientBgm />
 			<div className="HomeMenu">
 				<MenuHome />
 			</div>
