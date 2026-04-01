@@ -73,21 +73,22 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 
 *Remplir la colonne « Statut » avec la réalité du repo. Les points ne sont comptés **que** si le module est **entièrement** démontrable. Ajouter le suffixe `, bonus` au statut pour tout ce qui est **bleu** sur les slides (marge au-delà des 14 pts visés, max +5).*
 
-*Sections PDF **non retenues** et retirées de ce fichier : **IV.4** (IA), **IV.9** (blockchain), **IV.10** (module sur mesure).*
+*Sections PDF **non suivies** dans ce fichier : **IV.9** (blockchain) uniquement. **IV.4** (IA) et **IV.10** (module sur mesure / Surprise) : suivies ci-dessous.*
 
 ### IV.1 Web
 
 
-| Module (PDF)                                                                         | Type  | Pts | Statut         | Owner            | Notes / preuve démo                                                                                 |
-| ------------------------------------------------------------------------------------ | ----- | --- | -------------- | ---------------- | --------------------------------------------------------------------------------------------------- |
-| Framework **frontend + backend** (un Major couvrant les deux)                        | Major | 2   | Quasi          | Vyke, Fey + Even | React + Django — **confirmer** avec évaluateur vs 2× Minor séparés                                  |
-| **WebSockets** (temps réel, déconnexions, diffusion efficace)                        | Major | 2   | En cours       | Even + Vyke, Fey | Serveur : Even ; client : Vyke, Fey                                                                 |
-| **Interaction utilisateurs** (chat minimal, profil visible, amis add/remove + liste) | Major | 2   | À faire, bonus | Vyke, Fey + Even | UI : Vyke, Fey ; API : Even                                                                         |
-| ORM                                                                                  | Minor | 1   | Quasi          | Even             | Django ORM                                                                                          |
-| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | Panneau fin de partie, page stats, audio préfs, logo marque — **à cadrer / documenter** dans README |
+| Module (PDF)                                                                         | Type  | Pts | Statut         | Owner            | Notes / preuve démo                                                                                                                                                                                           |
+| ------------------------------------------------------------------------------------ | ----- | --- | -------------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Framework **frontend + backend** (un Major couvrant les deux)                        | Major | 2   | Quasi          | Vyke, Fey + Even | React + Django — **confirmer** avec évaluateur vs 2× Minor séparés                                                                                                                                            |
+| **WebSockets** (temps réel, déconnexions, diffusion efficace)                        | Major | 2   | En cours       | Even + Vyke, Fey | Serveur : Even ; client : Vyke, Fey                                                                                                                                                                           |
+| **Interaction utilisateurs** (chat minimal, profil visible, amis add/remove + liste) | Major | 2   | À faire, bonus | Vyke, Fey + Even | UI : Vyke, Fey ; API : Even — le **chat avancé** (PDF : blocage, invite partie, notifs, profil depuis chat, persistance, frappe/lu…) est un **Minor** à part, **après** le chat minimal (encadré bleu sujet). |
+| ORM                                                                                  | Minor | 1   | Quasi          | Even             | Django ORM                                                                                                                                                                                                    |
+| **Design system** (≥10 composants réutilisables, palette, typo, icônes)              | Minor | 1   | En cours       | Vyke, Fey        | Panneau fin de partie, page stats, préfs UI, logo marque — **à cadrer / documenter** dans README                                                                                                              |
+| **PWA** — *Progressive Web App* (hors ligne, installabilité)                         | Minor | 1   | À faire        | Vyke, Fey + Even | *Offline support and installability* — service worker, manifest, stratégie cache.                                                                                                                             |
 
 
-**Sous-total Web (périmètre retenu)** : Majors FE+BE, WebSockets, interaction users + ORM + design system (selon démo).
+**Sous-total Web (périmètre retenu)** : Majors FE+BE, WebSockets, interaction users + ORM + design system + PWA (selon démo).
 
 ---
 
@@ -116,6 +117,18 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 
 ---
 
+### IV.4 Intelligence artificielle (Artificial Intelligence)
+
+
+| Module (PDF)                                                                                            | Type  | Pts | Statut  | Owner            | Notes / exigences                                                                                                                                                                                                                                                                                                                                                        |
+| ------------------------------------------------------------------------------------------------------- | ----- | --- | ------- | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Major : adversaire IA pour les parties** — introduire une IA qui joue contre l’utilisateur            | Major | 2   | À faire | Even + Vyke, Fey | L’IA doit être **exigeante** et **pouvoir gagner de temps en temps**. Comportement **proche d’un humain** (pas du jeu parfait type moteur optimal pur). Si le projet inclut des **options de customisation** du jeu, l’IA doit **pouvoir les utiliser**. **Soutenance** : pouvoir **expliquer l’implémentation** de l’IA (choix d’algo, profondeur, heuristiques, etc.). |
+|                                                                                                         |       |     |         |                  |                                                                                                                                                                                                                                                                                                                                                                          |
+| **Minor : modération de contenu par IA** — auto-modération, suppression auto, avertissements auto, etc. | Minor | 1   | À faire | Even + Vyke, Fey | *Content moderation AI* — à cadrer (chat, tournois, profils…) selon périmètre réel.                                                                                                                                                                                                                                                                                      |
+
+
+---
+
 ### IV.5 Cybersécurité
 
 
@@ -129,13 +142,14 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.6 Gaming & expérience
 
 
-| Module (PDF)                                                                      | Type  | Pts | Statut          | Owner              | Notes                                                                                                                                                                                               |
-| --------------------------------------------------------------------------------- | ----- | --- | --------------- | ------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Jeu web complet** (règles, conditions victoire, parties live)                   | Major | 2   | Quasi           | Vyke, Fey + Even   | UI : Vyke, Fey ; sync : Even                                                                                                                                                                        |
-| **Remote players** (2 machines, latence, déco, **reconnexion**)                   | Major | 2   | En cours        | Even + Vyke, Fey   | **Cœur du gap** vs hot-seat / mock                                                                                                                                                                  |
-| **Multijoueur 3+** (Major PDF : jeu **>2 joueurs**, synchro tous clients, équité) | Major | 2   | À faire, bonus  | Even + Vyke, Fey   | EN : *Multiplayer game (more than two players). Support for three or more players simultaneously. Fair gameplay mechanics for all participants. Proper synchronization across all clients.* — bonus |
-| **Customisation** jeu (thèmes, options…)                                          | Minor | 1   | Quasi           | Vyke, Fey (+ Even) | Tuiles / coalitions ; **promotion** pion au choix (Dame/Tour/Fou/Cavalier) ; BGM/SFX ; logo site + favicon                                                                                          |
-| **Mode spectateur**                                                               | Minor | 1   | En cours, bonus | Even + Vyke, Fey   |                                                                                                                                                                                                     |
+| Module (PDF)                                                                              | Type  | Pts | Statut          | Owner              | Notes                                                                                                                                                                |
+| ----------------------------------------------------------------------------------------- | ----- | --- | --------------- | ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Jeu web complet** (règles, conditions victoire, parties live)                           | Major | 2   | Quasi           | Vyke, Fey + Even   | UI : Vyke, Fey ; sync : Even                                                                                                                                         |
+| **Remote players** (2 machines, latence, déco, **reconnexion**)                           | Major | 2   | En cours        | Even + Vyke, Fey   | **Cœur du gap** vs hot-seat / mock                                                                                                                                   |
+| **Customisation** jeu (thèmes, options, cartes / thèmes visuels, réglages par défaut)     | Minor | 1   | Quasi           | Vyke, Fey (+ Even) | Tuiles / coalitions ; **promotion** pion au choix ; logo site + favicon ; réglages accessibles avec **options par défaut** (PDF).                                    |
+| **Système de tournois** (tableaux, appariements, inscription & gestion, matchmaking)      | Minor | 1   | À faire, bonus  | Even + Vyke, Fey   | **Bonus** — prérequis : **jeu implémenté** (*Gaming*). *You cannot have tournaments without a game to play.*                                                         |
+| **Mode jeu optionnel : power-ups / attaques / capacités spéciales** (+ options / presets) | Minor | 1   | À faire, bonus  | Vyke, Fey + Even   | **Bonus** — prévu **plus tard** : mode distinct avec options configurables ; justification README (Minor « surprise », même esprit que Major mais périmètre réduit). |
+| **Mode spectateur**                                                                       | Minor | 1   | En cours, bonus | Even + Vyke, Fey   |                                                                                                                                                                      |
 
 
 ---
@@ -161,6 +175,18 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | Dashboard analytique avancé (charts, temps réel, export, filtres)          | Major | 2   | En cours | Mileum (Théo), Even + Vyke, Fey | **Front** : écran stats perso avec graphiques (complémentaire au dashboard global IV.8) |
 | Export / import données (formats, validation, bulk)                        | Minor | 1   | À faire  | Mileum (Théo), Even             |                                                                                         |
 | **RGPD** (accès données, suppression, export lisible, emails confirmation) | Minor | 1   | À faire  | Mileum (Théo), Even + Vyke, Fey | Écrans : Vyke, Fey                                                                      |
+
+
+---
+
+### IV.10 Module sur mesure (*Surprise* — bonus)
+
+*PDF : module libre (périmètre réduit vs un Major), valeur ajoutée + justification dans le README — compte **souvent** comme **Minor** dans le plafond bonus (+5 pts, ch. VII).*
+
+
+| Module (choix équipe)                                                                                           | Type  | Pts | Statut          | Owner     | Notes / preuve                                                                               |
+| --------------------------------------------------------------------------------------------------------------- | ----- | --- | --------------- | --------- | -------------------------------------------------------------------------------------------- |
+| **Audio** — expérience sonore globale (BGM, SFX, préférences partagées jeu + home, polish fin de partie / menu) | Minor | 1   | En cours, bonus | Vyke, Fey | Point **bonus** : regroupe le travail son déjà en place ; poursuite finitions / docs README. |
 
 
 ---
@@ -204,10 +230,10 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 | 27/03/2026 | Sections 100 % hors périmètre retirées ; bonus intégré au statut (suffixe `, bonus`)                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | 27/03/2026 | Nettoyage lignes vides / troncatures ; bonus : analytics users (IV.3), multijoueur 3+ (IV.6), health/PRA (IV.7)                                                                                                                                                                                                                                                                                                                                                                                        |
 | 28/03/2026 | **Front** : page **Statistiques** perso (`/statistics`, sidebar), winrates donuts, perf time/advantage, usage pièces %/raw, tableau métriques, thème **coalition** ; fin de partie **GameStatsPanel** ; **audio** BGM (jeu + home, prefs partagées) ; **logo** marque + favicon ; **promotion** au choix avec skins coalition                                                                                                                                                                          |
-| 28/03/2026 | **README racine (EN)** : sections usage, architecture, limitations honnêtes, équipe, licence/credits, grading ; `**.gitignore`** : `.cursor/` (règles Cursor locales non partagées). **Paramètres** : retrait **2FA** / **notifications** (non fonctionnels) ; **« Réduire les animations »** branché (hook + Home, Recharts stats, CSS, CoalitionAmbient sans rAF si actif). Renommage `**Coalition_Earth`** (typo Colation). `**interface/README.md**` : rôle des `scripts/` npm vs `.venv-sprites`. |
-| 28/03/2026 | **Scripts front** optionnels retirés volontairement (`generate-coalition-svgs`, `measure-board-terre`, asset source) ; `**package.json`** et READMEs alignés — reste `**generate-board-tiles-manifest**` (build). **Règle Cursor locale** : mise à jour `**Todo.md`** + **README** (racine EN + interface) quand utile.                                                                                                                                                                                |
-| 28/03/2026 | **Stats** : `profileSummary` dans `**mockPersonalStats.json`** ; `**resolveProfileGameStats**` + composant `**GameStatsSummarySection**` (Profil + Paramètres) alignés sur le même mock que la page Statistiques. **Statistics** : espacement vertical colonne graphes (`padding` / `gap`) pour mieux s’aligner avec le panneau métriques.                                                                                                                                                             |
-| 28/03/2026 | **Mocks** : fusion `**mockPlayerStats.json`** → clé `**gamePanel**` dans `**mockPersonalStats.json**` (une seule source) ; chiffres panneau fin de partie alignés sur winrate global / parties totales / ELO courbe ; `**GameStatsPanel**` importe ce fichier.                                                                                                                                                                                                                                         |
+| 28/03/2026 | **README racine (EN)** : sections usage, architecture, limitations honnêtes, équipe, licence/credits, grading ; `**.gitignore`** : `.cursor/` (règles Cursor locales non partagées). **Paramètres** : retrait **2FA** / **notifications** (non fonctionnels) ; **« Réduire les animations »** branché (hook + Home, Recharts stats, CSS, CoalitionAmbient sans rAF si actif). Renommage `**Coalition_Earth`** (typo Colation). `**interface/README.md`** : rôle des `scripts/` npm vs `.venv-sprites`. |
+| 28/03/2026 | **Scripts front** optionnels retirés volontairement (`generate-coalition-svgs`, `measure-board-terre`, asset source) ; `**package.json`** et READMEs alignés — reste `**generate-board-tiles-manifest`** (build). **Règle Cursor locale** : mise à jour `**Todo.md`** + **README** (racine EN + interface) quand utile.                                                                                                                                                                                |
+| 28/03/2026 | **Stats** : `profileSummary` dans `**mockPersonalStats.json`** ; `**resolveProfileGameStats`** + composant `**GameStatsSummarySection`** (Profil + Paramètres) alignés sur le même mock que la page Statistiques. **Statistics** : espacement vertical colonne graphes (`padding` / `gap`) pour mieux s’aligner avec le panneau métriques.                                                                                                                                                             |
+| 28/03/2026 | **Mocks** : fusion `**mockPlayerStats.json`** → clé `**gamePanel`** dans `**mockPersonalStats.json`** (une seule source) ; chiffres panneau fin de partie alignés sur winrate global / parties totales / ELO courbe ; `**GameStatsPanel`** importe ce fichier.                                                                                                                                                                                                                                         |
 |            |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
 

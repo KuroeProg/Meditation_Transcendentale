@@ -9,8 +9,8 @@ export function getMockGameOpponent() {
 	return {
 		displayName: 'Joueur 2 (dev)',
 		avatarSrc: '/imgs/PawnLogoB.jpeg',
-		coalition: 'eau',
-		coalition_name: 'eau',
+		coalition: 'feu',
+		coalition_name: 'feu',
 	}
 }
 
