@@ -21,6 +21,8 @@ Fichiers sous **`public/sounds/`** (non bundlés par Vite ; servis tels quels) :
 
 Préférences volume/coupe : `src/config/gameAudioPrefs.js` ; détails SFX : `public/sounds/game/README.md`.
 
+Le BGM **partie** utilise des **fondus** (`audioFade.js`) à la sortie de partie et au premier coup. Le BGM **menu / hors partie** est en lecture simple (pause sur `/game/*`, pas de fondu).
+
 ---
 
 ## Template Vite (référence)

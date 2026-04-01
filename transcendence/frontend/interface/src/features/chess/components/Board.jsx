@@ -28,6 +28,8 @@ import { playUiErrorDeny, unlockGameAudio } from "../../audio/services/gameSfx.j
 
 const PROMOTION_PIECE_ORDER = ["q", "r", "b", "n"];
 const MOVE_ANIM_MS = 200;
+const FILE_LABELS = ["a", "b", "c", "d", "e", "f", "g", "h"];
+const RANK_LABELS = [8, 7, 6, 5, 4, 3, 2, 1];
 
 function toSquare(row, col) {
   const files = "abcdefgh";
@@ -85,7 +87,6 @@ function Board({
   const [selected, setSelected] = useState(null);
   const [possibleMoves, setPossibleMoves] = useState([]);
   const [kingFlash, setKingFlash] = useState(false);
-  const [localFeedback, setLocalFeedback] = useState(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [illegalFlashSq, setIllegalFlashSq] = useState(null);
   const [promotionPick, setPromotionPick] = useState(null);
@@ -187,12 +188,12 @@ function Board({
       if (activeMoveAnimRef.current) return;
 
       const square = toSquare(row, col);
-      setLocalFeedback(null);
-
       if (selected === null) {
         const clickedPiece = game.get(square);
         if (clickedPiece && playerColor && clickedPiece.color !== playerColor) {
-          setLocalFeedback("Cette pièce ne vous appartient pas.");
+          unlockGameAudio();
+          playUiErrorDeny();
+          flashIllegalSquare(square);
           return;
         }
 
@@ -215,7 +216,9 @@ function Board({
       const clickedPiece = game.get(square);
       if (clickedPiece && clickedPiece.color === game.turn()) {
         if (playerColor && clickedPiece.color !== playerColor) {
-          setLocalFeedback("Ce n'est pas votre couleur.");
+          unlockGameAudio();
+          playUiErrorDeny();
+          flashIllegalSquare(square);
           setSelected(null);
           setPossibleMoves([]);
           return;
@@ -242,7 +245,9 @@ function Board({
       }
 
       if (playerColor && game.turn() !== playerColor) {
-        setLocalFeedback("Ce n'est pas votre tour.");
+        unlockGameAudio();
+        playUiErrorDeny();
+        flashIllegalSquare(square);
         setSelected(null);
         setPossibleMoves([]);
         return;
@@ -350,60 +355,110 @@ function Board({
 
   return (
     <div>
-      {(localFeedback || moveFeedback) && (
-        <p className="popup-winner">{localFeedback || moveFeedback}</p>
-      )}
+      {moveFeedback ? (
+        <p className="popup-winner" role="status">
+          {moveFeedback}
+        </p>
+      ) : null}
 
-      <div className="board-root" ref={boardRootRef}>
+      <div className="board-root">
         <div
-          id="board"
-          role="presentation"
-          onClick={handleBoardClick}
+          className="board-with-coordinates"
           style={{
-            transform: playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)",
+            transform: playerColor === "b" ? "rotate(180deg)" : undefined,
           }}
         >
-          <CellRenderer
-            position={position}
-            toSquare={toSquare}
-            selected={selected}
-            possibleMoves={possibleMoves}
-            kingSquare={kingSquare}
-            kingFlash={kingFlash}
-            illegalFlashSq={illegalFlashSq}
-            tilePattern={tilePattern}
-            useTiles={useTiles}
-            tileCoalitionSlug={tileCoalitionSlug}
-            tileRotation={tileRotation}
-            whitePieceThemeSlug={whitePieceThemeSlug}
-            blackPieceThemeSlug={blackPieceThemeSlug}
-            activeMoveAnim={activeMoveAnim}
-            pieceRotation={pieceRotation}
-            pieceSuppressed={pieceSuppressed}
-          />
+          <div
+            className="board-coords board-coords--files board-coords--edge-top"
+            aria-hidden="true"
+          >
+            {FILE_LABELS.map((ch) => (
+              <span key={`cf-t-${ch}`} className="board-coords__label">
+                {ch}
+              </span>
+            ))}
+          </div>
+          <div
+            className="board-coords board-coords--ranks board-coords--edge-left"
+            aria-hidden="true"
+          >
+            {RANK_LABELS.map((n) => (
+              <span key={`rk-l-${n}`} className="board-coords__label">
+                {n}
+              </span>
+            ))}
+          </div>
+
+          <div className="board-play-area" ref={boardRootRef}>
+            <div
+              id="board"
+              role="presentation"
+              onClick={handleBoardClick}
+            >
+              <CellRenderer
+                position={position}
+                toSquare={toSquare}
+                selected={selected}
+                possibleMoves={possibleMoves}
+                kingSquare={kingSquare}
+                kingFlash={kingFlash}
+                illegalFlashSq={illegalFlashSq}
+                tilePattern={tilePattern}
+                useTiles={useTiles}
+                tileCoalitionSlug={tileCoalitionSlug}
+                tileRotation={tileRotation}
+                whitePieceThemeSlug={whitePieceThemeSlug}
+                blackPieceThemeSlug={blackPieceThemeSlug}
+                activeMoveAnim={activeMoveAnim}
+                pieceRotation={pieceRotation}
+                pieceSuppressed={pieceSuppressed}
+              />
+            </div>
+
+            <MoveGhost
+              activeMoveAnim={activeMoveAnim}
+              durationMs={MOVE_ANIM_MS}
+              pieceRotation={ghostPieceRotation}
+              onTransitionEnd={onGhostTransitionEnd}
+            />
+
+            <PromotionPicker
+              promotionPick={promotionPick}
+              isViewOnly={isViewOnly}
+              onCancel={() => setPromotionPick(null)}
+              onChoose={(code) => {
+                submitMoveRequest(
+                  promotionPick.from,
+                  promotionPick.to,
+                  game.get(promotionPick.from),
+                  code,
+                );
+                setPromotionPick(null);
+              }}
+            />
+          </div>
+
+          <div
+            className="board-coords board-coords--ranks board-coords--edge-right"
+            aria-hidden="true"
+          >
+            {RANK_LABELS.map((n) => (
+              <span key={`rk-r-${n}`} className="board-coords__label">
+                {n}
+              </span>
+            ))}
+          </div>
+          <div
+            className="board-coords board-coords--files board-coords--edge-bottom"
+            aria-hidden="true"
+          >
+            {FILE_LABELS.map((ch) => (
+              <span key={`cf-b-${ch}`} className="board-coords__label">
+                {ch}
+              </span>
+            ))}
+          </div>
         </div>
-
-        <MoveGhost
-          activeMoveAnim={activeMoveAnim}
-          durationMs={MOVE_ANIM_MS}
-          pieceRotation={ghostPieceRotation}
-          onTransitionEnd={onGhostTransitionEnd}
-        />
-
-        <PromotionPicker
-          promotionPick={promotionPick}
-          isViewOnly={isViewOnly}
-          onCancel={() => setPromotionPick(null)}
-          onChoose={(code) => {
-            submitMoveRequest(
-              promotionPick.from,
-              promotionPick.to,
-              game.get(promotionPick.from),
-              code,
-            );
-            setPromotionPick(null);
-          }}
-        />
       </div>
     </div>
   );

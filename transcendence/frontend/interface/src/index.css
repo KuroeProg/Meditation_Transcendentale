@@ -356,7 +356,7 @@ html[data-reduce-motion='true'] .board-move-ghost {
 
 
 .player-bar {
-	width: var(--board-size);
+	width: var(--board-outer-width, var(--board-size));
 	/* height: calc(var(--cell) * 0.7); */
 	height: 60px;
 	/* background: linear-gradient(145deg, #165da8, #263b50); */
@@ -366,11 +366,17 @@ html[data-reduce-motion='true'] .board-move-ghost {
 }
 
 .player-avatar {
-	display: flex;
-	align-items: center;
+	display: block;
 	width: calc(var(--cell) * 0.55);
 	height: calc(var(--cell) * 0.55);
 	margin: auto 6px;
+	object-fit: cover;
+	object-position: center;
+	border-radius: 50%;
+	flex-shrink: 0;
+	box-sizing: border-box;
+	border: 2px solid rgba(255, 255, 255, 0.12);
+	background: rgba(0, 0, 0, 0.25);
 }
 
 .player-nameB {
@@ -431,6 +437,9 @@ html[data-reduce-motion='true'] .board-move-ghost {
     calc(100vw - var(--sidebar-width) - 8rem)
   );
   --cell: calc(var(--board-size) / 8);
+  /* Colonnes / rangées (a–h, 1–8) autour du plateau */
+  --board-coord-gutter: max(0.65rem, calc(var(--cell) * 0.3));
+  --board-outer-width: calc(var(--board-size) + 2 * var(--board-coord-gutter));
   --chess-piece-shadow-tight: 0.75px;
   --chess-piece-shadow-soft: 1.25px;
   --board-tile-overlay-alpha: 0.12;
@@ -440,10 +449,14 @@ html[data-reduce-motion='true'] .board-move-ghost {
   :root {
     --sidebar-width: 0px;
     --bottom-nav-height: 60px;
+    /* Gouttière fixe (évite la boucle board-size → cell → gutter) pour que plateau + lettres tiennent en largeur */
+    --board-coord-gutter: 0.4rem;
     --board-size: min(
       calc(100vh - 200px),
-      100vw
+      calc(100vw - 0.85rem - 2 * var(--board-coord-gutter))
     );
+    --cell: calc(var(--board-size) / 8);
+    --board-outer-width: calc(var(--board-size) + 2 * var(--board-coord-gutter));
   }
 }
 
@@ -487,6 +500,76 @@ html[data-reduce-motion='true'] .board-move-ghost {
 	position: relative;
 	display: inline-block;
 	vertical-align: top;
+	max-width: min(100%, 100vw - 0.35rem);
+	box-sizing: border-box;
+}
+
+.board-with-coordinates {
+	display: grid;
+	grid-template-columns: var(--board-coord-gutter) var(--board-size) var(--board-coord-gutter);
+	grid-template-rows: var(--board-coord-gutter) var(--board-size) var(--board-coord-gutter);
+	align-items: center;
+	justify-items: center;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.board-coords--edge-top {
+	grid-column: 2;
+	grid-row: 1;
+}
+
+.board-coords--edge-left {
+	grid-column: 1;
+	grid-row: 2;
+}
+
+.board-play-area {
+	grid-column: 2;
+	grid-row: 2;
+	position: relative;
+	width: var(--board-size);
+	height: var(--board-size);
+}
+
+.board-coords--edge-right {
+	grid-column: 3;
+	grid-row: 2;
+}
+
+.board-coords--edge-bottom {
+	grid-column: 2;
+	grid-row: 3;
+}
+
+.board-coords--files {
+	display: grid;
+	grid-template-columns: repeat(8, var(--cell));
+	width: var(--board-size);
+	min-height: var(--board-coord-gutter);
+	box-sizing: border-box;
+}
+
+.board-coords--ranks {
+	display: grid;
+	grid-template-rows: repeat(8, var(--cell));
+	height: var(--board-size);
+	width: var(--board-coord-gutter);
+	box-sizing: border-box;
+}
+
+.board-coords__label {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: clamp(0.58rem, calc(var(--cell) * 0.22), 0.78rem);
+	font-weight: 600;
+	font-family: system-ui, -apple-system, sans-serif;
+	color: rgba(232, 234, 239, 0.42);
+	text-transform: none;
+	user-select: none;
+	pointer-events: none;
+	line-height: 1;
 }
 
 #board {
@@ -1249,13 +1332,19 @@ animation-duration: 10s;
 
 .profile-avatar-wrap {
 	flex-shrink: 0;
+	overflow: hidden;
+	border-radius: 22px;
 }
 
 .profile-avatar-lg {
+	display: block;
 	width: 112px;
 	height: 112px;
+	max-width: min(112px, 100%);
+	aspect-ratio: 1;
 	border-radius: 20px;
 	object-fit: cover;
+	object-position: center;
 	border: 3px solid rgba(99, 102, 241, 0.45);
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
 	background: rgba(0, 0, 0, 0.3);
@@ -1558,9 +1647,10 @@ html[data-reduce-motion='true'] .btn {
 	}
 
 	.profile-avatar-lg {
-		width: 80px;
-		height: 80px;
-		max-width: 30vw;
+		width: min(80px, 30vw);
+		height: min(80px, 30vw);
+		max-width: min(112px, 30vw);
+		aspect-ratio: 1;
 	}
 
 	.profile-name {

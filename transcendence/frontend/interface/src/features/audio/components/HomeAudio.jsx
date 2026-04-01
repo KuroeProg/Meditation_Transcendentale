@@ -9,9 +9,7 @@ const HOME_BGM_SRC = `${import.meta.env.BASE_URL}sounds/home/${encodeURIComponen
 	'$1',
 )
 
-/**
- * Piste home souvent mixée plus bas que le BGM jeu : léger gain (plafonné à 1) sans toucher au curseur global.
- */
+/** Même courbe que l’historique du projet : léger boost sans toucher au curseur global. */
 const HOME_BGM_EXTRA_GAIN = 1.65
 
 const TOUCH_OPTS = { passive: true, capture: true }
@@ -27,7 +25,7 @@ function applyHomeBgmVolume(audio) {
 	}
 }
 
-/** Musique d’ambiance : jouée sur toutes les routes sauf `/game/*` (pause). */
+/** Musique d’ambiance : toutes les routes sauf `/game/*` (pause simple, pas de fondu). */
 export function HomeAmbientBgm() {
 	const audioRef = useRef(null)
 	const location = useLocation()
@@ -63,13 +61,10 @@ export function HomeAmbientBgm() {
 
 		const tryPlay = () => {
 			if (isGameRouteRef.current) return
+			applyHomeBgmVolume(audio)
 			const playPromise = audio.play()
 			if (playPromise !== undefined) {
-				playPromise.catch((err) => {
-					if (import.meta.env.DEV) {
-						console.warn('[home-bgm] play()', err?.message ?? err)
-					}
-				})
+				playPromise.catch(() => {})
 			}
 		}
 

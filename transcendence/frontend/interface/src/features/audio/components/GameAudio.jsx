@@ -7,6 +7,7 @@ import {
 	unregisterGameBgmElement,
 	tryPlayGameBgm,
 } from '../services/gameBgm.js'
+import { FADE_OUT_MS, cancelGameBgmFade, fadeGameBgmTo, resetGameBgmFadeController } from '../services/audioFade.js'
 
 const GAME_BGM_FILE = 'Theme_of_game.wav'
 const BGM_SRC = `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(GAME_BGM_FILE)}`.replace(
@@ -41,11 +42,16 @@ export function GameAmbientBgm() {
 
 		return () => {
 			window.removeEventListener('transcendence-game-audio-changed', onPrefs)
-			unregisterGameBgmElement(audio)
-			audio.pause()
-			audio.removeAttribute('src')
-			audio.load()
-			audioRef.current = null
+			cancelGameBgmFade()
+			const v = audio.volume
+			void fadeGameBgmTo(audio, 0, FADE_OUT_MS, v).finally(() => {
+				unregisterGameBgmElement(audio)
+				audio.pause()
+				audio.removeAttribute('src')
+				audio.load()
+				audioRef.current = null
+				resetGameBgmFadeController()
+			})
 		}
 	}, [])
 
