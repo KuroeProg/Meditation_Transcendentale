@@ -10,7 +10,9 @@ export function unlockGameAudio() {
 		const AC = window.AudioContext || window.webkitAudioContext
 		if (!AC) return
 		if (!audioCtx) audioCtx = new AC()
-		if (audioCtx.state === 'suspended') void audioCtx.resume()
+		if (audioCtx.state === 'suspended') {
+			void audioCtx.resume().catch(() => {})
+		}
 	} catch {
 		/* ignore */
 	}

@@ -431,9 +431,20 @@ html[data-reduce-motion='true'] .board-move-ghost {
   --sidebar-width: 75px;
   --bottom-nav-height: 0px;
   --content-padding: clamp(0.75rem, 2vw, 2rem);
-  --player-bar-height: 80px;
+  /* Aligné sur .player-bar { height: 60px } */
+  --player-bar-height: 60px;
+  --board-frame-pad-y: 8px;
+  /* .game-board-col : 2 × gap entre barre / cadre / barre */
+  --game-board-col-gap-total: 0.8rem;
+  /*
+    Colonnes coords (haut+bas) ≈ 2 × max(0.65rem, cell×0.3) ≤ ~0.075×board-size.
+    (100vh − chrome − cadre) / 1.082 garantit barres + plateau + lettres dans la hauteur utile.
+  */
   --board-size: min(
-    calc(100vh - (var(--player-bar-height) * 2)),
+    calc(
+      (100vh - (var(--player-bar-height) * 2) - var(--board-frame-pad-y) - var(--game-board-col-gap-total)) /
+        1.082
+    ),
     calc(100vw - var(--sidebar-width) - 8rem)
   );
   --cell: calc(var(--board-size) / 8);
@@ -449,10 +460,20 @@ html[data-reduce-motion='true'] .board-move-ghost {
   :root {
     --sidebar-width: 0px;
     --bottom-nav-height: 60px;
+    /* .player-bar mobile : 44px — aligné avec la réserve verticale */
+    --player-bar-height: 44px;
     /* Gouttière fixe (évite la boucle board-size → cell → gutter) pour que plateau + lettres tiennent en largeur */
     --board-coord-gutter: 0.4rem;
+    /*
+      Chrome vertical page jeu : padding main-content (bas = nav) + barres + gaps flex + cadre.
+      Les bandes coords sont absorbées par le facteur 1.082 (comme en desktop).
+    */
+    --game-mobile-chrome-y: calc(
+      0.25rem + var(--bottom-nav-height) + 0.35rem + var(--game-board-col-gap-total) +
+        (var(--player-bar-height) * 2) + var(--board-frame-pad-y)
+    );
     --board-size: min(
-      calc(100vh - 200px),
+      calc((100vh - var(--game-mobile-chrome-y)) / 1.082),
       calc(100vw - 0.85rem - 2 * var(--board-coord-gutter))
     );
     --cell: calc(var(--board-size) / 8);

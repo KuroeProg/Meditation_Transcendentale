@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { loadGameAudioPrefs, effectiveBgmVolume } from '../../../config/gameAudioPrefs.js'
 import { registerHomeBgmElement, unregisterHomeBgmElement } from '../services/homeBgm.js'
@@ -29,10 +29,12 @@ function applyHomeBgmVolume(audio) {
 export function HomeAmbientBgm() {
 	const audioRef = useRef(null)
 	const location = useLocation()
-	const isGameRouteRef = useRef(false)
-	isGameRouteRef.current = location.pathname.startsWith('/game/')
+	/** Mis à jour à chaque rendu + effet route — utilisé par tryPlay (ref, pas closure figée). */
+	const mayPlayHomeRef = useRef(true)
+	mayPlayHomeRef.current = !location.pathname.startsWith('/game/')
 
-	useLayoutEffect(() => {
+	/* Un seul effet : évite double teardown (Strict Mode) qui retirait `src` deux fois et cassait la lecture. */
+	useEffect(() => {
 		const audio = new Audio()
 		audio.src = HOME_BGM_SRC
 		audio.preload = 'auto'
@@ -40,33 +42,29 @@ export function HomeAmbientBgm() {
 		audio.setAttribute('playsInline', 'true')
 		audioRef.current = audio
 		registerHomeBgmElement(audio)
-		return () => {
-			unregisterHomeBgmElement(audio)
-			audio.pause()
-			audio.removeAttribute('src')
-			audio.load()
-			audioRef.current = null
-		}
-	}, [])
-
-	useEffect(() => {
-		const audio = audioRef.current
-		if (!audio) return undefined
-
-		const applyPrefs = () => applyHomeBgmVolume(audio)
-		applyPrefs()
-
-		const onPrefs = () => applyPrefs()
-		window.addEventListener('transcendence-game-audio-changed', onPrefs)
+		applyHomeBgmVolume(audio)
 
 		const tryPlay = () => {
-			if (isGameRouteRef.current) return
+			if (!mayPlayHomeRef.current) return
 			applyHomeBgmVolume(audio)
-			const playPromise = audio.play()
-			if (playPromise !== undefined) {
-				playPromise.catch(() => {})
+			const p = audio.play()
+			if (p !== undefined) {
+				p.catch((err) => {
+					if (import.meta.env.DEV) {
+						console.warn('[HomeAmbientBgm] play()', err)
+					}
+				})
 			}
 		}
+
+		const onPrefs = () => {
+			applyHomeBgmVolume(audio)
+			if (!mayPlayHomeRef.current) return
+			if (!loadGameAudioPrefs().bgmMuted) {
+				void tryPlay()
+			}
+		}
+		window.addEventListener('transcendence-game-audio-changed', onPrefs)
 
 		const onCanPlay = () => tryPlay()
 		audio.addEventListener('canplay', onCanPlay)
@@ -90,9 +88,11 @@ export function HomeAmbientBgm() {
 			document.removeEventListener('touchstart', unlock, TOUCH_OPTS)
 			document.removeEventListener('visibilitychange', onVis)
 			audio.removeEventListener('canplay', onCanPlay)
+			unregisterHomeBgmElement(audio)
 			audio.pause()
 			audio.removeAttribute('src')
 			audio.load()
+			audioRef.current = null
 		}
 	}, [])
 
@@ -100,7 +100,7 @@ export function HomeAmbientBgm() {
 		const audio = audioRef.current
 		if (!audio) return undefined
 		const onGame = location.pathname.startsWith('/game/')
-		isGameRouteRef.current = onGame
+		mayPlayHomeRef.current = !onGame
 		if (onGame) {
 			audio.pause()
 			return undefined
@@ -108,7 +108,11 @@ export function HomeAmbientBgm() {
 		applyHomeBgmVolume(audio)
 		const p = loadGameAudioPrefs()
 		if (!p.bgmMuted) {
-			void audio.play().catch(() => {})
+			void audio.play().catch((err) => {
+				if (import.meta.env.DEV) {
+					console.warn('[HomeAmbientBgm] play() après navigation', err)
+				}
+			})
 		}
 		return undefined
 	}, [location.pathname])

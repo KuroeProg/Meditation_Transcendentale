@@ -9,9 +9,9 @@ const VOL_AT_MID = 0.01
 /** >1 : après 50 % le volume monte plus lentement qu’en linéaire (puis s’accélère vers 100 %). */
 const UPPER_HALF_CURVE = 2.35
 
-/** Curseur par défaut (~11 % de volume effectif avec la courbe ci-dessous). */
+/** Curseur par défaut : avec la courbe ci-dessous, ~0,78 reste clairement audible (0,55 donnait ~1–2 % effectif). */
 const defaultGameAudioPrefs = {
-	bgmVolume: 0.55,
+	bgmVolume: 0.78,
 	bgmMuted: false,
 }
 
@@ -43,6 +43,10 @@ export function effectiveBgmVolume(prefs) {
 	} else {
 		const u = (raw - SLIDER_MID) / (1 - SLIDER_MID)
 		v = VOL_AT_MID + (1 - VOL_AT_MID) * Math.pow(Math.min(1, Math.max(0, u)), UPPER_HALF_CURVE)
+		/* Juste au-dessus du milieu, la courbe peut tomber à ~1 % HTML5 : inaudible sur beaucoup de configs. */
+		if (v > 0 && v < 0.07) {
+			v = 0.07
+		}
 	}
 	return Math.min(1, Math.max(0, v))
 }
