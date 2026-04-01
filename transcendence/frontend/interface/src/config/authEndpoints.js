@@ -15,6 +15,8 @@
 
 /** Origine pour les redirections OAuth (doit être celle qui sert Django / les cookies). */
 export function getOAuthOrigin() {
+	const appOrigin = import.meta.env.VITE_APP_ORIGIN
+	if (appOrigin) return String(appOrigin).replace(/\/$/, '')
 	const explicit = import.meta.env.VITE_API_ORIGIN
 	if (explicit) return String(explicit).replace(/\/$/, '')
 	// En dev Vite (:5173), les cookies de session sont sur l’origine HTTPS du proxy (souvent https://localhost)

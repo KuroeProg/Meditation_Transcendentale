@@ -116,11 +116,20 @@ def _oauth_redirect_uri(request):
     env_uri = os.environ.get('FORTYTWO_REDIRECT_URI')
     if env_uri:
         return env_uri
+    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    if app_origin:
+        return f'{app_origin}/api/auth/42/callback/'
     return request.build_absolute_uri('/api/auth/42/callback/')
 
 
 def _frontend_dashboard_url():
-    return os.environ.get('FRONTEND_DASHBOARD_URL', 'https://localhost/dashboard')
+    explicit = os.environ.get('FRONTEND_DASHBOARD_URL')
+    if explicit:
+        return explicit
+    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    if app_origin:
+        return f'{app_origin}/dashboard'
+    return 'https://localhost/dashboard'
 
 
 class Auth42View(View):

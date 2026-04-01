@@ -36,6 +36,8 @@ function publicStaticCacheHeaders() {
 }
 
 const hmrViaNginx = process.env.VITE_HMR_NGINX === '1'
+const hmrHost = process.env.VITE_HMR_HOST || 'localhost'
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'https://127.0.0.1:443'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -49,7 +51,7 @@ export default defineConfig({
       ? {
           hmr: {
             protocol: 'wss',
-            host: 'localhost',
+            host: hmrHost,
             clientPort: 443,
           },
         }
@@ -60,7 +62,7 @@ export default defineConfig({
     proxy: {
       // En `npm run dev`, forward les appels API vers nginx (HTTPS) sur la machine hôte
       '/api': {
-        target: 'https://127.0.0.1:443',
+        target: proxyTarget,
         changeOrigin: true,
         secure: false,
       },

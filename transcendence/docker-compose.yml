@@ -76,6 +76,10 @@ services:
       - FORTYTWO_CLIENT_SECRET=${FORTYTWO_CLIENT_SECRET}
       - FORTYTWO_REDIRECT_URI=${FORTYTWO_REDIRECT_URI}
       - FRONTEND_DASHBOARD_URL=${FRONTEND_DASHBOARD_URL}
+      - APP_ORIGIN=${APP_ORIGIN}
+      - DJANGO_ALLOWED_HOSTS=${DJANGO_ALLOWED_HOSTS}
+      - DJANGO_CSRF_TRUSTED_ORIGINS=${DJANGO_CSRF_TRUSTED_ORIGINS}
+      - DJANGO_CORS_ALLOWED_ORIGINS=${DJANGO_CORS_ALLOWED_ORIGINS}
       - EMAIL_BACKEND=${EMAIL_BACKEND:-django.core.mail.backends.smtp.EmailBackend}
       - DEFAULT_FROM_EMAIL=${DEFAULT_FROM_EMAIL:-noreply@transcendence.local}
       - EMAIL_HOST=${EMAIL_HOST:-mailhog}
@@ -137,8 +141,13 @@ services:
       - /app/interface/node_modules
     environment:
       - VITE_PORT=5173
+      - VITE_APP_ORIGIN=${APP_ORIGIN}
+      - VITE_API_ORIGIN=${VITE_API_ORIGIN}
+      - VITE_WS_ORIGIN=${VITE_WS_ORIGIN}
       # HMR via https://localhost (nginx) — sans ça, le hot-reload vise :5173 depuis le navigateur
       - VITE_HMR_NGINX=1
+      - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
+      - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://127.0.0.1:443}
     # ports:
       # Test direct sans nginx : http://localhost:5173 (si 502 sur :443, vérifie ici d’abord)
       # - "5173:5173"
@@ -168,6 +177,7 @@ services:
     environment:
       - SEC_RULE_ENGINE=On
       - SEC_PRINTERRORLOGS=On
+      - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-localhost}
     healthcheck:
       test: ["CMD", "curl", "-k", "https://localhost:443/"]
       interval: 10s

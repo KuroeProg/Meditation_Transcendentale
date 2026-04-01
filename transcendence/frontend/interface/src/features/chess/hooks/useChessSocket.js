@@ -2,9 +2,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 
 function getWebSocketOrigin() {
+	const appOrigin = import.meta.env.VITE_APP_ORIGIN;
 	const explicitWsOrigin = import.meta.env.VITE_WS_ORIGIN;
 	const explicitApiOrigin = import.meta.env.VITE_API_ORIGIN;
-	const baseOrigin = explicitWsOrigin || explicitApiOrigin || window.location.origin;
+	const baseOrigin = explicitWsOrigin || explicitApiOrigin || appOrigin || window.location.origin;
 
 	if (baseOrigin.startsWith('https://')) {
 		return baseOrigin.replace('https://', 'wss://').replace(/\/$/, '');

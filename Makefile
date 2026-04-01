@@ -38,7 +38,12 @@ endif
 
 .DEFAULT_GOAL := help
 
-.PHONY: help all certs build build-nc up up-attach up-bg down stop restart logs logs-all ps ps-a clean fclean re
+PROFILE ?= localhost
+ENV_PROFILES_DIR := $(COMPOSE_DIR)/env/profiles
+ENV_TARGET := $(COMPOSE_DIR)/.env
+ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE).env
+
+.PHONY: help all certs build build-nc up up-attach up-bg down stop restart logs logs-all ps ps-a clean fclean re env-list env-use
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -157,3 +162,16 @@ migrations: ## Lancer les migrations Django (makemigrations + migrate)
 	@$(COMPOSE) exec -T backend python manage.py makemigrations
 	@$(COMPOSE) exec -T backend python manage.py migrate
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Migrations terminées."
+
+env-list: ## Lister les profils d'environnement disponibles
+	@printf '%b\n' "$(C_BOLD)Profils .env disponibles :$(C_RESET)"
+	@ls -1 $(ENV_PROFILES_DIR)/*.env 2>/dev/null | sed 's#^.*/##; s#\.env$$##' | sed 's/^/  - /'
+
+env-use: ## Appliquer un profil .env (ex: make env-use PROFILE=lan)
+	@if [ ! -f "$(ENV_SOURCE)" ]; then \
+		printf '%b\n' "$(C_RED)✗$(C_RESET) Profil introuvable: $(ENV_SOURCE)"; \
+		exit 1; \
+	fi
+	@cp "$(ENV_SOURCE)" "$(ENV_TARGET)"
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) -> $(ENV_TARGET)"
+	@printf '%b\n' "$(C_DIM)Relancer la stack: make restart$(C_RESET)"
