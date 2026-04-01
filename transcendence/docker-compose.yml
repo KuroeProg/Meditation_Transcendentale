@@ -24,6 +24,13 @@ services:
     logging: *default-logging
     networks:
       - backend_net
+    healthcheck:
+      # Vérifie que le serveur accepte les connexions TCP (sans dépendre du shell / des $$ compose)
+      test: ["CMD-SHELL", "pg_isready -h localhost -p 5432"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+      start_period: 45s
 
   vault:
     image: hashicorp/vault:latest
@@ -82,9 +89,12 @@ services:
     expose:
       - "8000"
     depends_on:
-      - db
-      - redis
-      - mailhog
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+      mailhog:
+        condition: service_started
     networks:
       - backend_net
     restart: always
@@ -104,8 +114,10 @@ services:
     build: ./data_script
     command: celery -A tasks_config worker --loglevel=info
     depends_on:
-      - db
-      - redis
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
     environment:
       - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
