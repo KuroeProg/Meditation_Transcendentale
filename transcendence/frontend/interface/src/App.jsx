@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
@@ -17,6 +17,7 @@ import {
 	ChatDrawer,
 	useAuth,
 } from './features/index.js'
+import { presencePing } from './features/chat/services/chatApi.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -41,6 +42,20 @@ function AppContent() {
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
 	const isAuthRoute = location.pathname === '/auth'
+
+	useEffect(() => {
+		if (!isAuthenticated) return
+		presencePing().catch(() => {})
+		const interval = setInterval(() => presencePing().catch(() => {}), 45000)
+		const onVis = () => {
+			if (document.visibilityState === 'visible') presencePing().catch(() => {})
+		}
+		document.addEventListener('visibilitychange', onVis)
+		return () => {
+			clearInterval(interval)
+			document.removeEventListener('visibilitychange', onVis)
+		}
+	}, [isAuthenticated])
 
 	if (mustRedirectToActiveGame) {
 		return <Navigate to={`/game/${activeGameId}`} replace />

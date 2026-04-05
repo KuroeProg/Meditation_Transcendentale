@@ -1,8 +1,9 @@
 import json
 
 from django.http import JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_GET, require_POST
+from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
 
@@ -154,3 +155,17 @@ def search_users(request):
             for u in users
         ]
     })
+
+
+@csrf_exempt
+def presence_ping(request):
+    """Marque l'utilisateur connecté comme en ligne (heartbeat app, toutes les ~45s)."""
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    LocalUser.objects.filter(id=user.id).update(is_online=True, last_seen=timezone.now())
+    return JsonResponse({'ok': True})

@@ -10,7 +10,7 @@ from .auth import (
     auth_user_by_id,
 )
 from .oauth import Auth42View, Callback42View
-from .profile import leaderboard, search_users, update_profile, upload_avatar
+from .profile import leaderboard, presence_ping, search_users, update_profile, upload_avatar
 from .friends import friend_action, friend_request, friends_list
 
 __all__ = [
@@ -28,6 +28,7 @@ __all__ = [
     'update_profile',
     'upload_avatar',
     'leaderboard',
+    'presence_ping',
     'search_users',
     'friend_action',
     'friend_request',

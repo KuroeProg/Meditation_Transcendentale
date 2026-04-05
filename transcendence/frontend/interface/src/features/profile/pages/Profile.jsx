@@ -4,7 +4,7 @@ import Logo42 from '../../../components/common/Logo/Logo42.jsx'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'
 import { deriveCoalitionPresentation, deriveCursusLevel } from '../services/profileService.js'
-import { get42AvatarUrl, getDisplayTitle } from '../../../utils/sessionUser.js'
+import { get42AvatarUrl } from '../../../utils/sessionUser.js'
 import GameStatsSummarySection from '../../stats/components/GameStatsSummarySection.jsx'
 
 function EditableField({ value, onSave, label, placeholder, multiline = false }) {
@@ -82,25 +82,10 @@ function FriendItem({ friend, onChallenge }) {
 	)
 }
 
-function LeaderboardRow({ entry, isCurrentUser }) {
-	return (
-		<tr className={isCurrentUser ? 'leaderboard-current' : ''}>
-			<td className="leaderboard-rank">#{entry.rank}</td>
-			<td className="leaderboard-user">
-				<img className="leaderboard-avatar" src={entry.avatar} alt="" />
-				<span>{entry.username}</span>
-			</td>
-			<td className="leaderboard-elo">{entry.elo_rapid}</td>
-			<td className="leaderboard-games">{entry.games_played}</td>
-		</tr>
-	)
-}
-
 function Profile() {
 	const { user, loading, error, refetch, isDevMockAuth } = useAuth()
 	const [friends, setFriends] = useState([])
-	const [leaderboard, setLeaderboard] = useState([])
-	const [currentRank, setCurrentRank] = useState(null)
+	const [profileSaveError, setProfileSaveError] = useState(null)
 	const [uploading, setUploading] = useState(false)
 	const fileInputRef = useRef(null)
 
@@ -114,34 +99,30 @@ function Profile() {
 		} catch {}
 	}, [])
 
-	const fetchLeaderboard = useCallback(async () => {
-		try {
-			const res = await fetch('/api/auth/leaderboard', { credentials: 'include' })
-			if (res.ok) {
-				const data = await res.json()
-				setLeaderboard(data.leaderboard || [])
-				setCurrentRank(data.current_user_rank)
-			}
-		} catch {}
-	}, [])
-
 	useEffect(() => {
-		if (user) {
-			fetchFriends()
-			fetchLeaderboard()
-		}
-	}, [user, fetchFriends, fetchLeaderboard])
+		if (user) fetchFriends()
+	}, [user, fetchFriends])
 
 	const updateField = async (field, value) => {
+		setProfileSaveError(null)
 		try {
-			await fetch('/api/auth/me/update', {
+			const res = await fetch('/api/auth/me/update', {
 				method: 'PUT',
 				credentials: 'include',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify({ [field]: value }),
 			})
+			const data = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				setProfileSaveError(data.error || 'Impossible d\'enregistrer.')
+				return false
+			}
 			refetch()
-		} catch {}
+			return true
+		} catch {
+			setProfileSaveError('Erreur réseau.')
+			return false
+		}
 	}
 
 	const handleAvatarUpload = async (e) => {
@@ -174,7 +155,6 @@ function Profile() {
 	}
 
 	const email = user?.email ?? null
-	const { primary: titlePrimary, secondary: titleSecondary } = getDisplayTitle(user)
 	const {
 		coalition, hasCoalition, coalitionSlug, coalitionLabel, showCoalitionRaw,
 	} = deriveCoalitionPresentation(user, coalitionToSlug, coalitionSlugToLabel)
@@ -189,6 +169,9 @@ function Profile() {
 
 			{error && !isDevMockAuth && (
 				<p className="error-banner" role="alert">{error}</p>
+			)}
+			{profileSaveError && (
+				<p className="error-banner" role="alert">{profileSaveError}</p>
 			)}
 
 			<div className="profile-layout">
@@ -209,14 +192,30 @@ function Profile() {
 						{uploading && <div className="profile-avatar-uploading"><div className="spinner" /></div>}
 					</div>
 					<div className="profile-hero-text">
-						<h2 className="profile-name">
-							<EditableField value={titlePrimary} onSave={(v) => updateField('first_name', v)} label="nom" placeholder="Ajouter un nom" />
+						<h2 className="profile-name profile-name-split">
+							<EditableField
+								value={user?.first_name ?? ''}
+								onSave={(v) => updateField('first_name', v)}
+								label="prénom"
+								placeholder="Prénom"
+							/>
+							<span className="profile-name-gap" aria-hidden> </span>
+							<EditableField
+								value={user?.last_name ?? ''}
+								onSave={(v) => updateField('last_name', v)}
+								label="nom"
+								placeholder="Nom"
+							/>
 						</h2>
-						{titleSecondary && (
-							<p className="profile-login42 muted">
-								Nom d'utilisateur : <strong>{titleSecondary}</strong>
-							</p>
-						)}
+						<p className="profile-username-row muted small">
+							<span className="profile-username-label">Nom d&apos;utilisateur :</span>{' '}
+							<EditableField
+								value={user?.username ?? ''}
+								onSave={(v) => updateField('username', v)}
+								label="pseudo"
+								placeholder="Pseudo"
+							/>
+						</p>
 						{email && <p className="muted small profile-email"><strong>Email :</strong> {email}</p>}
 						<p className="profile-bio">
 							<EditableField
@@ -255,7 +254,7 @@ function Profile() {
 						</div>
 						<div>
 							<dt>Niveau</dt>
-							<dd>{levelCursus != null ? levelCursus : '—'}</dd>
+							<dd className="profile-cursus-level">{levelCursus != null ? String(levelCursus) : '—'}</dd>
 						</div>
 					</dl>
 				</section>
@@ -277,36 +276,6 @@ function Profile() {
 						</ul>
 					) : (
 						<p className="muted small">Aucun ami pour le moment. Recherche des joueurs depuis le chat !</p>
-					)}
-				</section>
-
-				{/* Leaderboard */}
-				<section className="surface-card">
-					<h2 className="card-title">
-						<i className="ri-trophy-line" style={{ marginRight: '0.5rem' }} />
-						Classement
-						{currentRank && <span className="profile-rank-badge">#{currentRank}</span>}
-					</h2>
-					{leaderboard.length > 0 ? (
-						<div className="profile-leaderboard-wrap">
-							<table className="profile-leaderboard">
-								<thead>
-									<tr>
-										<th>#</th>
-										<th>Joueur</th>
-										<th>ELO</th>
-										<th>Parties</th>
-									</tr>
-								</thead>
-								<tbody>
-									{leaderboard.map((entry) => (
-										<LeaderboardRow key={entry.id} entry={entry} isCurrentUser={entry.id === user?.id} />
-									))}
-								</tbody>
-							</table>
-						</div>
-					) : (
-						<p className="muted small">Aucune donnee de classement.</p>
 					)}
 				</section>
 			</div>

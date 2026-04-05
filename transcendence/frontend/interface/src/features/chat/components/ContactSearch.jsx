@@ -22,10 +22,10 @@ function ContactItem({ contact, onAction, onStartChat }) {
 			<div className="chat-contact-actions">
 				{contact.status === 'pending' && !contact.is_sender && (
 					<>
-						<button className="chat-ca-btn chat-ca-accept" onClick={() => onAction(contact.friendship_id, 'accept')} title="Accepter">
+						<button type="button" className="chat-ca-btn chat-ca-accept" onClick={() => onAction(contact.friendship_id, 'accept')} title="Accepter">
 							<i className="ri-check-line" />
 						</button>
-						<button className="chat-ca-btn chat-ca-reject" onClick={() => onAction(contact.friendship_id, 'delete')} title="Refuser">
+						<button type="button" className="chat-ca-btn chat-ca-reject" onClick={() => onAction(contact.friendship_id, 'delete')} title="Refuser">
 							<i className="ri-close-line" />
 						</button>
 					</>
@@ -35,16 +35,16 @@ function ContactItem({ contact, onAction, onStartChat }) {
 				)}
 				{contact.status === 'accepted' && (
 					<>
-						<button className="chat-ca-btn chat-ca-chat" onClick={() => onStartChat(u.id)} title="Envoyer un message">
+						<button type="button" className="chat-ca-btn chat-ca-chat" onClick={() => onStartChat(u.id)} title="Envoyer un message">
 							<i className="ri-chat-1-line" />
 						</button>
-						<button className="chat-ca-btn chat-ca-block" onClick={() => onAction(contact.friendship_id, 'block')} title="Bloquer">
+						<button type="button" className="chat-ca-btn chat-ca-block" onClick={() => onAction(contact.friendship_id, 'block')} title="Bloquer">
 							<i className="ri-forbid-line" />
 						</button>
 					</>
 				)}
 				{contact.status === 'blocked' && contact.is_sender && (
-					<button className="chat-ca-btn" onClick={() => onAction(contact.friendship_id, 'unblock')} title="Debloquer">
+					<button type="button" className="chat-ca-btn" onClick={() => onAction(contact.friendship_id, 'unblock')} title="Debloquer">
 						<i className="ri-lock-unlock-line" />
 					</button>
 				)}
@@ -63,7 +63,7 @@ function SearchResultItem({ user, onAdd }) {
 					{user.is_online ? 'En ligne' : 'Hors ligne'}
 				</span>
 			</div>
-			<button className="chat-ca-btn chat-ca-add" onClick={() => onAdd(user.id)} title="Ajouter en ami">
+			<button type="button" className="chat-ca-btn chat-ca-add" onClick={() => onAdd(user.id)} title="Ajouter en ami">
 				<i className="ri-user-add-line" />
 			</button>
 		</li>
@@ -133,16 +133,16 @@ export default function ContactSearch({ onOpenConversation }) {
 	return (
 		<div className="chat-contacts">
 			<div className="chat-contacts-tabs">
-				<button className={`chat-tab ${tab === 'friends' ? 'active' : ''}`} onClick={() => setTab('friends')}>
+				<button type="button" className={`chat-tab ${tab === 'friends' ? 'active' : ''}`} onClick={() => setTab('friends')}>
 					Amis ({accepted.length})
 				</button>
-				<button className={`chat-tab ${tab === 'pending' ? 'active' : ''}`} onClick={() => setTab('pending')}>
+				<button type="button" className={`chat-tab ${tab === 'pending' ? 'active' : ''}`} onClick={() => setTab('pending')}>
 					En attente ({pending.length})
 				</button>
-				<button className={`chat-tab ${tab === 'blocked' ? 'active' : ''}`} onClick={() => setTab('blocked')}>
+				<button type="button" className={`chat-tab ${tab === 'blocked' ? 'active' : ''}`} onClick={() => setTab('blocked')}>
 					Bloques ({blocked.length})
 				</button>
-				<button className={`chat-tab ${tab === 'search' ? 'active' : ''}`} onClick={() => setTab('search')}>
+				<button type="button" className={`chat-tab ${tab === 'search' ? 'active' : ''}`} onClick={() => setTab('search')}>
 					<i className="ri-search-line" />
 				</button>
 			</div>

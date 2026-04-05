@@ -1,7 +1,37 @@
 const BASE = '/api/chat'
 
+function readCookie(name) {
+	const match = document.cookie.match(
+		new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`),
+	)
+	return match ? decodeURIComponent(match[1]) : null
+}
+
+async function ensureCsrfCookie() {
+	await fetch('/api/auth/csrf', {
+		method: 'GET',
+		credentials: 'include',
+		headers: { Accept: 'application/json' },
+	})
+}
+
+function csrfHeaders(extra = {}) {
+	const csrf = readCookie('csrftoken')
+	const h = { ...extra }
+	if (csrf) h['X-CSRFToken'] = csrf
+	return h
+}
+
 async function jsonFetch(url, opts = {}) {
-	const res = await fetch(url, { credentials: 'include', ...opts })
+	const method = (opts.method || 'GET').toUpperCase()
+	if (method !== 'GET' && method !== 'HEAD') {
+		await ensureCsrfCookie()
+	}
+	const headers = {
+		...csrfHeaders({ 'Content-Type': 'application/json' }),
+		...opts.headers,
+	}
+	const res = await fetch(url, { credentials: 'include', ...opts, headers })
 	if (!res.ok) {
 		const data = await res.json().catch(() => ({}))
 		throw new Error(data.error || `HTTP ${res.status}`)
@@ -16,7 +46,6 @@ export function fetchConversations() {
 export function createConversation(participantId, type = 'private', gameId = null) {
 	return jsonFetch(`${BASE}/conversations/create`, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ participant_id: participantId, type, game_id: gameId }),
 	})
 }
@@ -28,7 +57,6 @@ export function fetchMessages(conversationId, offset = 0, limit = 50) {
 export function sendMessageHttp(conversationId, content, messageType = 'text') {
 	return jsonFetch(`${BASE}/conversations/${conversationId}/send`, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ content, message_type: messageType }),
 	})
 }
@@ -36,7 +64,6 @@ export function sendMessageHttp(conversationId, content, messageType = 'text') {
 export function sendGameInviteHttp(conversationId, timeControl, competitive = false) {
 	return jsonFetch(`${BASE}/conversations/${conversationId}/invite`, {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ time_control: timeControl, competitive }),
 	})
 }
@@ -53,7 +80,6 @@ export function fetchFriends(status = '') {
 export function sendFriendRequest(userId) {
 	return jsonFetch('/api/auth/friends/request', {
 		method: 'POST',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ user_id: userId }),
 	})
 }
@@ -61,11 +87,18 @@ export function sendFriendRequest(userId) {
 export function friendAction(friendshipId, action) {
 	return jsonFetch(`/api/auth/friends/${friendshipId}`, {
 		method: 'PUT',
-		headers: { 'Content-Type': 'application/json' },
 		body: JSON.stringify({ action }),
 	})
 }
 
 export function removeFriend(friendshipId) {
 	return jsonFetch(`/api/auth/friends/${friendshipId}`, { method: 'DELETE' })
+}
+
+/** Heartbeat présence (session) — appeler au montage et ~45s tant que l’utilisateur est connecté. */
+export function presencePing() {
+	return jsonFetch('/api/auth/me/presence', {
+		method: 'POST',
+		body: '{}',
+	})
 }

@@ -93,13 +93,44 @@
 	display: grid;
 	grid-template-columns: 1fr 320px;
 	gap: 1.2rem;
-	align-items: start;
+	align-items: stretch;
 }
 
 .dash-side-col {
 	display: flex;
 	flex-direction: column;
 	gap: 1rem;
+	min-width: 0;
+	min-height: 0;
+}
+
+/* Classement dans la colonne droite : zone scroll pour voir les 20 joueurs sans couper la page */
+.dash-panel-leaderboard {
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	flex: 1 1 auto;
+}
+
+.dash-panel-leaderboard h2 {
+	flex-shrink: 0;
+}
+
+.dash-leaderboard-scroll {
+	max-height: min(42vh, 400px);
+	overflow-y: auto;
+	overflow-x: hidden;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	border-radius: 10px;
+}
+
+.dash-panel-leaderboard .profile-leaderboard thead th {
+	position: sticky;
+	top: 0;
+	z-index: 2;
+	background: linear-gradient(180deg, rgba(8, 10, 16, 0.98) 0%, rgba(8, 10, 16, 0.9) 100%);
+	box-shadow: 0 1px 0 rgba(255, 255, 255, 0.07);
 }
 
 /* --- Panels (bordure / fond coalition : coalition-ui.css) --- */

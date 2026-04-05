@@ -88,6 +88,20 @@ function FriendChip({ friend, onChallenge }) {
 	)
 }
 
+function LeaderboardRow({ entry, isCurrentUser }) {
+	return (
+		<tr className={isCurrentUser ? 'leaderboard-current' : ''}>
+			<td className="leaderboard-rank">#{entry.rank}</td>
+			<td className="leaderboard-user">
+				<img className="leaderboard-avatar" src={entry.avatar} alt="" />
+				<span>{entry.username}</span>
+			</td>
+			<td className="leaderboard-elo">{entry.elo_rapid}</td>
+			<td className="leaderboard-games">{entry.games_played}</td>
+		</tr>
+	)
+}
+
 export default function Dashboard() {
 	const navigate = useNavigate()
 	const { user, isAuthenticated } = useAuth()
@@ -101,6 +115,8 @@ export default function Dashboard() {
 	const [isCompetitive, setIsCompetitive] = useState(false)
 	const [showMoreTC, setShowMoreTC] = useState(false)
 	const [friends, setFriends] = useState([])
+	const [leaderboard, setLeaderboard] = useState([])
+	const [currentRank, setCurrentRank] = useState(null)
 
 	const userId = useMemo(() => {
 		if (!user) return null
@@ -122,9 +138,23 @@ export default function Dashboard() {
 		} catch {}
 	}, [])
 
+	const fetchLeaderboard = useCallback(async () => {
+		try {
+			const res = await fetch('/api/auth/leaderboard', { credentials: 'include' })
+			if (res.ok) {
+				const data = await res.json()
+				setLeaderboard(data.leaderboard || [])
+				setCurrentRank(data.current_user_rank ?? null)
+			}
+		} catch {}
+	}, [])
+
 	useEffect(() => {
-		if (user) fetchFriends()
-	}, [user, fetchFriends])
+		if (user) {
+			fetchFriends()
+			fetchLeaderboard()
+		}
+	}, [user, fetchFriends, fetchLeaderboard])
 
 	useEffect(() => {
 		if (!searching || !isConnected || !userId || hasJoinedQueueRef.current) return
@@ -291,6 +321,38 @@ export default function Dashboard() {
 							</div>
 						) : (
 							<p className="dash-empty-msg">Aucun ami en ligne</p>
+						)}
+					</section>
+
+					<section className="dash-panel dash-panel-leaderboard">
+						<h2>
+							<i className="ri-trophy-line" /> Classement
+							{currentRank != null && <span className="profile-rank-badge">#{currentRank}</span>}
+						</h2>
+						{leaderboard.length > 0 ? (
+							<div className="profile-leaderboard-wrap dash-leaderboard-scroll">
+								<table className="profile-leaderboard">
+									<thead>
+										<tr>
+											<th>#</th>
+											<th>Joueur</th>
+											<th>ELO</th>
+											<th>Parties</th>
+										</tr>
+									</thead>
+									<tbody>
+										{leaderboard.map((entry) => (
+											<LeaderboardRow
+												key={entry.id}
+												entry={entry}
+												isCurrentUser={entry.id === user?.id}
+											/>
+										))}
+									</tbody>
+								</table>
+							</div>
+						) : (
+							<p className="dash-empty-msg">Aucune donnee de classement.</p>
 						)}
 					</section>
 				</div>

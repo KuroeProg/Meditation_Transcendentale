@@ -323,6 +323,7 @@ html[data-reduce-motion='true'] .board-move-ghost {
 }
 
 #board {
+	position: relative;
 	display: grid;
 	grid-template-columns: repeat(8, var(--cell));
 	grid-template-rows: repeat(8, var(--cell));
