@@ -1,0 +1,234 @@
+/* Layout global : shell app, zones de contenu, boutons génériques, erreurs, dev toolbar */
+
+.app-layout {
+	min-height: 100vh;
+	position: relative;
+	display: flex;
+	align-items: stretch;
+}
+
+.main-content {
+	flex: 1;
+	min-width: 0;
+	margin-left: var(--sidebar-width, 75px);
+	min-height: 100vh;
+	padding: 1.5rem var(--content-padding, 2rem) 3rem;
+	position: relative;
+	z-index: 1;
+	isolation: isolate;
+}
+
+.main-content.full-width {
+	margin-left: 0;
+	padding: 0;
+	min-height: 100dvh;
+	min-height: 100vh;
+	overflow: auto;
+}
+
+/* Page jeu : pleine largeur restante (échiquier + panneau stats sans coupure) */
+.main-content:has(.game-container) {
+	max-width: none;
+	width: auto;
+	padding: 0.75rem 1rem 1rem 1.5rem;
+}
+
+/* Statistiques perso */
+.main-content:has(.pstats-page) {
+	max-width: none;
+	width: 100%;
+	padding: 1rem 1.25rem 2rem;
+	box-sizing: border-box;
+}
+
+/* Home : pleine largeur utile (pas de bande grise latérale) */
+.main-content:has(.home) {
+	overflow-x: hidden;
+	max-width: 100%;
+	box-sizing: border-box;
+	padding-left: 0;
+	padding-right: 0;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+
+.error-banner {
+	background: rgba(220, 38, 38, 0.2);
+	border: 1px solid rgba(248, 113, 113, 0.45);
+	color: #fecaca;
+	padding: 0.65rem 1rem;
+	border-radius: 10px;
+	margin-bottom: 1rem;
+	font-family: system-ui, sans-serif;
+	font-size: 0.88rem;
+}
+
+.error-banner code {
+	font-size: 0.82em;
+	background: rgba(0, 0, 0, 0.25);
+	padding: 0.1rem 0.35rem;
+	border-radius: 4px;
+}
+
+/* Barre dev : session fictive (VITE_DEV_MOCK_USER) */
+.dev-auth-toolbar {
+	position: fixed;
+	bottom: 0;
+	left: 75px;
+	right: 0;
+	z-index: 50;
+	isolation: isolate;
+	transform: translateZ(0);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	flex-wrap: wrap;
+	padding: 0.5rem 1rem;
+	background: linear-gradient(90deg, rgba(234, 179, 8, 0.95), rgba(245, 158, 11, 0.92));
+	color: #1c1917;
+	font-family: system-ui, sans-serif;
+	font-size: 0.8rem;
+	font-weight: 600;
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
+}
+
+.dev-auth-toolbar__btn {
+	font: inherit;
+	font-size: 0.78rem;
+	padding: 0.35rem 0.75rem;
+	border-radius: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background: #fff;
+	cursor: pointer;
+	font-weight: 700;
+}
+
+.dev-auth-toolbar__btn:hover {
+	background: #fef3c7;
+}
+
+.page-header {
+	margin-bottom: 1.75rem;
+}
+
+.page-title {
+	text-align: left;
+	margin: 0 0 0.35rem;
+	font-size: 1.85rem;
+	font-weight: 600;
+	color: #f4f6fb;
+}
+
+.page-subtitle {
+	margin: 0;
+	color: rgba(232, 234, 239, 0.72);
+	font-size: 1rem;
+}
+
+.muted {
+	color: rgba(232, 234, 239, 0.6);
+}
+
+.muted.small,
+.small {
+	font-size: 0.88rem;
+}
+
+.accent {
+	color: #7dd3fc;
+}
+
+.btn {
+	font-family: system-ui, -apple-system, sans-serif;
+	font-size: 0.9rem;
+	font-weight: 600;
+	padding: 0.55rem 1.15rem;
+	border-radius: 10px;
+	border: none;
+	cursor: pointer;
+	transition: background 0.2s, transform 0.15s;
+}
+
+.btn:active {
+	transform: scale(0.98);
+}
+
+.btn-primary {
+	background: linear-gradient(135deg, #6366f1, #4f46e5);
+	color: #fff;
+	box-shadow: 0 4px 14px rgba(99, 102, 241, 0.35);
+}
+
+.btn-primary:hover {
+	background: linear-gradient(135deg, #818cf8, #6366f1);
+}
+
+.btn-secondary {
+	background: rgba(255, 255, 255, 0.08);
+	color: #e8eaef;
+	border: 1px solid rgba(255, 255, 255, 0.18);
+}
+
+.btn-secondary:hover {
+	background: rgba(255, 255, 255, 0.12);
+}
+
+.btn-ghost {
+	background: transparent;
+	color: rgba(232, 234, 239, 0.85);
+	border: 1px solid transparent;
+	text-decoration: underline;
+	text-underline-offset: 3px;
+}
+
+.visually-hidden {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	padding: 0;
+	margin: -1px;
+	overflow: hidden;
+	clip: rect(0, 0, 0, 0);
+	white-space: nowrap;
+	border: 0;
+}
+
+.sidebar-btn {
+	position: relative;
+	display: flex;
+	white-space: nowrap;
+	color: #fff;
+	text-decoration: none;
+	background: none;
+	border: none;
+	padding: 0;
+	width: 100%;
+	cursor: pointer;
+	font: inherit;
+	text-align: left;
+}
+
+.sidebar-btn:hover {
+	background-color: transparent;
+}
+
+.sidebar ul li .sidebar-btn .icon {
+	position: relative;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-width: 75px;
+	height: 60px;
+	font-size: 22px;
+}
+
+.sidebar ul li .sidebar-btn .text {
+	position: relative;
+	display: flex;
+	align-items: center;
+	height: 60px;
+	font-size: 16px;
+	letter-spacing: 0.6px;
+	font-weight: 500;
+}

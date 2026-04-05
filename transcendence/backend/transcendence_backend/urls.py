@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 
@@ -16,5 +18,9 @@ urlpatterns = [
     *with_optional_trailing_slash('api/auth/42/login', views.Auth42View.as_view(), name='login_42'),
     *with_optional_trailing_slash('api/auth/42/callback', views.Callback42View.as_view(), name='callback_42'),
     path('api/auth/', include('accounts.urls')),
+    path('api/chat/', include('chat.urls')),
     path('', include('django_prometheus.urls')),
 ]
+
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

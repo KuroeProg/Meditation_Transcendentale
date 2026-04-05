@@ -1,0 +1,138 @@
+/* Musique d’ambiance — contrôle en partie (extrait de index.css) */
+
+.game-music-panel-wrap {
+	position: absolute;
+	top: 0.35rem;
+	right: 0.35rem;
+	z-index: 30;
+}
+
+.game-music-fab {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0;
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(26, 35, 50, 0.92);
+	color: rgba(255, 255, 255, 0.75);
+	font-size: 1.15rem;
+	cursor: pointer;
+	transition:
+		background 0.15s ease,
+		color 0.15s ease,
+		border-color 0.15s ease;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+.game-music-fab:hover {
+	background: rgba(40, 52, 72, 0.95);
+	color: #fff;
+	border-color: rgba(125, 211, 252, 0.35);
+}
+
+.game-music-fab--muted {
+	color: rgba(255, 255, 255, 0.45);
+}
+
+.game-music-popover {
+	position: absolute;
+	top: calc(100% + 6px);
+	right: 0;
+	width: min(240px, calc(100vw - 2rem));
+	padding: 0.75rem 0.85rem;
+	background: #1a2332;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 10px;
+	box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.game-music-popover__title {
+	margin: 0 0 0.25rem;
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #fff;
+}
+
+.game-music-popover__hint {
+	margin: 0 0 0.65rem;
+	font-size: 0.68rem;
+	line-height: 1.35;
+	color: rgba(255, 255, 255, 0.45);
+}
+
+.game-music-slider-label {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.72rem;
+	color: rgba(255, 255, 255, 0.55);
+	margin-bottom: 0.25rem;
+}
+
+.game-music-slider-value {
+	font-variant-numeric: tabular-nums;
+	color: rgba(125, 211, 252, 0.9);
+}
+
+.game-music-slider {
+	width: 100%;
+	height: 6px;
+	margin: 0 0 0.65rem;
+	accent-color: rgba(125, 211, 252, 0.85);
+	cursor: pointer;
+}
+
+.game-music-mute-row {
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	font-size: 0.75rem;
+	color: rgba(255, 255, 255, 0.7);
+	cursor: pointer;
+	margin: 0;
+}
+
+.game-music-mute-row input {
+	accent-color: rgba(125, 211, 252, 0.85);
+}
+
+.game-music-popover__settings-link {
+	display: inline-block;
+	margin-top: 0.65rem;
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: rgba(125, 211, 252, 0.85);
+	text-decoration: none;
+}
+
+.game-music-popover__settings-link:hover {
+	text-decoration: underline;
+	color: #7dd3fc;
+}
+
+.game-audio-prefs-form--settings {
+	margin-top: 0.35rem;
+}
+
+.settings-audio-card {
+	margin-bottom: 1rem;
+}
+
+.game-board-col {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	flex-shrink: 0;
+	gap: 0.4rem;
+}
+
+.game-stats-panel-wrap {
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	align-items: stretch;
+	align-self: stretch;
+}

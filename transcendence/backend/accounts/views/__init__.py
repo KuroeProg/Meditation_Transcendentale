@@ -10,6 +10,8 @@ from .auth import (
     auth_user_by_id,
 )
 from .oauth import Auth42View, Callback42View
+from .profile import leaderboard, search_users, update_profile, upload_avatar
+from .friends import friend_action, friend_request, friends_list
 
 __all__ = [
     'Auth42View',
@@ -23,4 +25,11 @@ __all__ = [
     'auth_me',
     'auth_seed_users',
     'auth_user_by_id',
+    'update_profile',
+    'upload_avatar',
+    'leaderboard',
+    'search_users',
+    'friend_action',
+    'friend_request',
+    'friends_list',
 ]

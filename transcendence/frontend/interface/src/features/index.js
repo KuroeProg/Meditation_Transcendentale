@@ -1,4 +1,5 @@
 export * from './auth/index.js'
+export * from './chat/index.js'
 export * from './chess/index.js'
 export * from './home/index.js'
 export * from './profile/index.js'
