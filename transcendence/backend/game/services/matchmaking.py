@@ -4,7 +4,7 @@ import secrets
 import time
 
 import chess
-
+from game.services.state_builder import build_new_game_state
 
 def normalize_player_id(player_id):
 	"""Convert player ID to string or None."""
@@ -110,26 +110,11 @@ async def attempt_matchmaking(
 			continue
 
 		white_id, black_id = first_id, second_id
-		white_coalition = await fetch_user_coalition(white_id)
-		black_coalition = await fetch_user_coalition(black_id)
-		white_profile = await fetch_user_public_profile(white_id)
-		black_profile = await fetch_user_public_profile(black_id)
-		board = chess.Board()
+		
+		# Build pristine state using the dedicated builder
+		new_game_state = await build_new_game_state(white_id, black_id)
 		new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
-		new_game_state = {
-			'fen': board.fen(),
-			'status': 'active',
-			'white_player_id': white_id,
-			'black_player_id': black_id,
-			'white_player_coalition': white_coalition,
-			'black_player_coalition': black_coalition,
-			'white_player_profile': white_profile,
-			'black_player_profile': black_profile,
-			'white_time_left': 600,
-			'black_time_left': 600,
-			'last_move_timestamp': time.time(),
-			'draw_offer_from_player_id': None,
-		}
+		
 		await redis_client.set(new_game_id, json.dumps(new_game_state))
 
 		await channel_layer.group_send(
