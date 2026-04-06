@@ -11,6 +11,7 @@ import time
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
+from accounts.models import LocalUser
 from game.services.actions import (
 	apply_draw_offer,
 	apply_draw_response,
@@ -181,8 +182,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_create_game(self, data):
 		"""Create a new chess game with given white and black player IDs."""
+
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
+
 		new_game_state = await build_new_game_state(white_id, black_id)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		await self._broadcast_current_game_state(new_game_state)
@@ -233,21 +236,24 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': error}))
 			return
 
+		# On traque le mouvement AVANT de sauvegarder dans Redis !
+		move = chess.Move.from_uci(data.get('move'))
+		piece = board.piece_at(move.from_square)
+		piece_symbol = piece.symbol().lower() if piece else "unknown"
+		move_obj = {
+			'player_id': data.get('player_id'),
+			'move_number': move_number,
+			'san_notation': data.get('move'),
+			'piece_played': piece_symbol,
+			'time_taken_ms': int((time.time() - move_start_time) * 1000),
+			'material_advantage': 0
+		}
+		game_state.setdefault('moves', []).append(move_obj)
+
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		
-		move = chess.Move.from_uci(data.get('move'))
-		piece = board.piece_at(move.from_square).symbol().lower()
-		move_obj = {
-        	'player_id': data.get('player_id'),
-        	'move_number': move_number,
-        	'san_notation': data.get('move'),
-        	'piece_played': piece,
-        	'time_taken_ms': int((time.time() - move_start_time) * 1000),
-        	'material_advantage': 0
-		}
-		game_state.setdefault('moves', []).append(move_obj)
 		if board.is_game_over():
 			result = board.result()
 			if result.winner == chess.WHITE:

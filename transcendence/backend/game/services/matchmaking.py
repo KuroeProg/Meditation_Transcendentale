@@ -108,7 +108,7 @@ async def attempt_matchmaking(
 		second_id = decode_redis_player_id(second_id)
 		if first_id == second_id:
 			continue
-
+		
 		white_id, black_id = first_id, second_id
 		
 		# Build pristine state using the dedicated builder
