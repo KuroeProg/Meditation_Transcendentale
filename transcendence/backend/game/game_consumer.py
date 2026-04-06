@@ -34,6 +34,8 @@ from game.services.clock_tick import tick_game_clock
 from game.services.reconnect import synchronize_reconnecting_player
 from game.services.errors import json_invalid, action_unknown
 
+from game.services.save_game import async_save_full_game
+
 
 class GameConsumer(AsyncWebsocketConsumer):
 	"""Pure game logic WebSocket consumer: orchestrates moves, timeouts, draw flow.
@@ -182,7 +184,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
 		new_game_state = await build_new_game_state(white_id, black_id)
-
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		await self._broadcast_current_game_state(new_game_state)
 
@@ -191,8 +192,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
-
+ 
 		board = chess.Board(game_state['fen'])
+		move_number = len(game_state.get('moves', [])) + 1
+		move_start_time = game_state['last_move_timestamp']	
+		pieces = {"p": "pawn", "n": "knight", "b": "bishop", "r": "rook", "q": "queen", "k": "king"}
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
 		ensure_draw_fields(game_state)
@@ -203,6 +207,21 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
 			await self._broadcast_current_game_state(game_state)
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
+			winner_id = game_state.get('winner_player_id')
+			final_game_data = {
+				'player_white_id': game_state['white_player_id'],
+				'player_black_id': game_state['black_player_id'],
+				'winner_id': winner_id,
+				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'moves': game_state.get('moves', [])
+			}
+	
+			success = await async_save_full_game(final_game_data)
+			if success:
+				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
+			else:
+				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+			#end game
 			return
 
 		if game_state.get('status') != 'active':
@@ -216,7 +235,44 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
+##########################
+		
+		move = chess.Move.from_uci(data.get('move'))
+		piece = board.piece_at(move.from_square).symbol().lower()
+		move_obj = {
+        	'player_id': data.get('player_id'),
+        	'move_number': move_number,
+        	'san_notation': data.get('move'),
+        	'piece_played': piece,
+        	'time_taken_ms': int((time.time() - move_start_time) * 1000),
+        	'material_advantage': 0
+		}
+		game_state.setdefault('moves', []).append(move_obj)
+		if board.is_game_over():
+			result = board.result()
+			if result.winner == chess.WHITE:
+				winner_id = game_state['white_player_id']
+			elif result.winner == chess.BLACK:
+				winner_id = game_state['black_player_id']
+			else:
+				winner_id = None
 
+			final_game_data = {
+				'player_white_id': game_state['white_player_id'],
+				'player_black_id': game_state['black_player_id'],
+				'winner_id': winner_id,
+				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'moves': game_state.get('moves', [])
+			}
+	
+			success = await async_save_full_game(final_game_data)
+			if success:
+				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
+			else:
+				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+			#end game
+			return
+##########################
 	async def handle_resign(self, game_state_json, data):
 		"""Process player resignation and end game."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
@@ -230,7 +286,24 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
+##########################
+		winner_id = game_state.get('winner_player_id')
 
+		final_game_data = {
+			'player_white_id': game_state['white_player_id'],
+			'player_black_id': game_state['black_player_id'],
+			'winner_id': winner_id,
+			'duration_seconds': int(time.time() - game_state['start_timestamp']),
+			'moves': game_state.get('moves', [])
+   		}
+
+		success = await async_save_full_game(final_game_data)
+		if success:
+			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
+		else:
+			print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+		#end game
+##########################
 	async def handle_draw_offer(self, game_state_json, data):
 		"""Process draw offer from a player."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
@@ -263,7 +336,22 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
-
+##########################
+		if game_state.get('status') == 'draw':
+			final_game_data = {
+				'player_white_id': game_state['white_player_id'],
+				'player_black_id': game_state['black_player_id'],
+				'winner_id': None,
+				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'moves': game_state.get('moves', [])
+			}
+			success = await async_save_full_game(final_game_data)
+			if success:
+				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
+			else:
+				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+			#end game
+##########################
 	async def handle_reconnect(self, game_state_json):
 		"""Re-sync reconnecting player with current game state."""
 		game_state, _ = await synchronize_reconnecting_player(self.get_redis(), self.game_id, game_state_json)

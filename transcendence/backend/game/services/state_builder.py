@@ -27,7 +27,9 @@ async def build_new_game_state(white_id, black_id):
 		'white_time_left': 600,
 		'black_time_left': 600,
 		'last_move_timestamp': time.time(),
+		'start_timestamp': time.time(),
 		'draw_offer_from_player_id': None,
+		'moves': [],
 	}
 
 

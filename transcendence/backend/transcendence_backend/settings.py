@@ -69,6 +69,7 @@ SESSION_COOKIE_SAMESITE = 'Lax'
 INSTALLED_APPS = [
     'corsheaders',
     'accounts',
+    'game',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
