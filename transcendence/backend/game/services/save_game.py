@@ -40,17 +40,17 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 # On associe le joueur (blanc ou noir) selon l'ID
                 move_player = white_user if move['player_id'] == white_user.id else black_user
                 
-            #     # Nous instancions l'objet localement sans toucher à la database à chaque boucle
-            move_obj = Move(
-                game=game,
-                player=move_player,
-                move_number=move['move_number'],
-                san_notation=move['san_notation'],
-                piece_played=move['piece_played'],
-                time_taken_ms=move['time_taken_ms'],
-                material_advantage=move['material_advantage']
-            )
-            moves_to_create.append(move_obj)
+                # Nous instancions l'objet localement sans toucher à la database à chaque boucle
+                move_obj = Move(
+                    game=game,
+                    player=move_player,
+                    move_number=move['move_number'],
+                    san_notation=move['san_notation'],
+                    piece_played=move['piece_played'],
+                    time_taken_ms=move['time_taken_ms'],
+                    material_advantage=move['material_advantage']
+                )
+                moves_to_create.append(move_obj)
             
             # Utilisation magique de bulk_create !
             # Cela exécute UNE SEULE requête d'insertion SQL pour l'entièreté des coups.
