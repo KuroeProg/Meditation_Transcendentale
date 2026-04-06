@@ -11,8 +11,7 @@ class Game(models.Model):
     
     winner = models.ForeignKey(LocalUser, related_name='chess_games_won', on_delete=models.SET_NULL, null=True, blank=True)
     
-    started_at = models.DateTimeField(auto_now_add=True)
-    ended_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField()
     duration_seconds = models.PositiveIntegerField(null=True, blank=True, help_text="Total duration of the game in seconds")
     
     class Meta:

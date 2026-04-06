@@ -2,6 +2,8 @@ from django.db import transaction
 from accounts.models import LocalUser
 from game.models import Game, Move
 from asgiref.sync import sync_to_async
+import datetime
+from django.utils import timezone
 
 # =====================================================================
 # Fonction Synchrone et Atomique (à utiliser depuis des Vues ou Consumers)
@@ -24,12 +26,20 @@ def save_game_data_atomically(game_data: dict) -> bool:
             if game_data.get('winner_id'):
                 winner_user = LocalUser.objects.get(id=game_data['winner_id'])
             
+            # 1.5 Calcul de la date de debut
+            start_ts = game_data.get('start_timestamp')
+            if start_ts:
+                start_dt = datetime.datetime.fromtimestamp(start_ts, tz=timezone.utc)
+            else:
+                start_dt = timezone.now()
+
             # 2. Création de l'Entité de la Partie (Game)
             game = Game.objects.create(
                 player_white=white_user,
                 player_black=black_user,
                 winner=winner_user,
                 duration_seconds=game_data.get('duration_seconds', 0),
+                started_at=start_dt,
             )
             
             # Si nécessaire vous pourriez aussi overwrite started_at via game_data['started_at'] ici
