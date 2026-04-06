@@ -11,7 +11,6 @@ import time
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
-from accounts.models import LocalUser
 from game.services.actions import (
 	apply_draw_offer,
 	apply_draw_response,
@@ -215,6 +214,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 				'player_white_id': game_state['white_player_id'],
 				'player_black_id': game_state['black_player_id'],
 				'winner_id': winner_id,
+				'start_timestamp': game_state['start_timestamp'],
 				'duration_seconds': int(time.time() - game_state['start_timestamp']),
 				'moves': game_state.get('moves', [])
 			}
@@ -239,12 +239,12 @@ class GameConsumer(AsyncWebsocketConsumer):
 		# On traque le mouvement AVANT de sauvegarder dans Redis !
 		move = chess.Move.from_uci(data.get('move'))
 		piece = board.piece_at(move.from_square)
-		piece_symbol = piece.symbol().lower() if piece else "unknown"
+		piece_symbol = piece.symbol().lower()
 		move_obj = {
 			'player_id': data.get('player_id'),
 			'move_number': move_number,
 			'san_notation': data.get('move'),
-			'piece_played': piece_symbol,
+			'piece_played': pieces.get(piece_symbol, "unknown"),
 			'time_taken_ms': int((time.time() - move_start_time) * 1000),
 			'material_advantage': 0
 		}
@@ -267,6 +267,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 				'player_white_id': game_state['white_player_id'],
 				'player_black_id': game_state['black_player_id'],
 				'winner_id': winner_id,
+				'start_timestamp': game_state['start_timestamp'],
 				'duration_seconds': int(time.time() - game_state['start_timestamp']),
 				'moves': game_state.get('moves', [])
 			}
@@ -348,6 +349,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 				'player_white_id': game_state['white_player_id'],
 				'player_black_id': game_state['black_player_id'],
 				'winner_id': None,
+				'start_timestamp': game_state['start_timestamp'],
 				'duration_seconds': int(time.time() - game_state['start_timestamp']),
 				'moves': game_state.get('moves', [])
 			}

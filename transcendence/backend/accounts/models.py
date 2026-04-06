@@ -27,6 +27,9 @@ class LocalUser(models.Model):
     class Meta:
         db_table = 'local_users'
 
+    def __str__(self):
+        return self.username
+
     def set_password(self, raw_password):
         self.password_hash = make_password(raw_password)
 
