@@ -14,6 +14,8 @@ from game.services.errors import (
 from game.services.matchmaking import (
 	dequeue_player_from_matchmaking,
 	normalize_player_id,
+	normalize_time_control,
+	normalize_increment,
 	queue_player_for_matchmaking,
 )
 from game.services.player_profiles import (
@@ -50,6 +52,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		# even when connect exits early.
 		self.room_group_name = f'chess_{self.MATCHMAKING_ROOM_ID}'
 		self.matchmaking_player_id = None
+		self.queue_key = None 
 		self._joined_group = False
 
 		route_game_id = self.scope['url_route']['kwargs'].get('game_id')
@@ -67,14 +70,16 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		if getattr(self, '_joined_group', False):
 			await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
-		if getattr(self, 'matchmaking_player_id', None) is not None:
+		if getattr(self, 'matchmaking_player_id', None) is not None and self.queue_key:
 			redis_client = self.get_redis()
 			await dequeue_player_from_matchmaking(
 				redis_client,
 				self.channel_layer,
 				self.room_group_name,
-				self.MATCHMAKING_QUEUE_KEY,
+				self.queue_key,
 				self.matchmaking_player_id,
+				self.time_control,
+				self.increment,
 			)
 
 	async def receive(self, text_data):
@@ -101,17 +106,24 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		"""Add player to matchmaking queue if not already queued."""
 		if not self.matchmaking_player_id:
 			player_id = normalize_player_id(data.get('player_id'))
+			self.time_control = normalize_time_control(data.get('time_control'))
+			self.increment = normalize_increment(data.get('increment'))
+			self.queue_key = f"{self.MATCHMAKING_QUEUE_KEY}:{self.time_control}:{self.increment}"
 			if player_id is None:
 				await self.send(text_data=json.dumps(ERROR_PLAYER_ID_REQUIRED))
 				return
+	
 			self.matchmaking_player_id = player_id
 			redis_client = self.get_redis()
+
 			await queue_player_for_matchmaking(
 				redis_client,
 				self.channel_layer,
 				self.room_group_name,
-				self.MATCHMAKING_QUEUE_KEY,
+				self.queue_key,
 				player_id,
+				self.time_control,
+				self.increment,
 				fetch_user_coalition,
 				fetch_user_public_profile,
 			)
@@ -122,14 +134,17 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		if player_id is None:
 			return
 
-		redis_client = self.get_redis()
-		await dequeue_player_from_matchmaking(
-			redis_client,
-			self.channel_layer,
-			self.room_group_name,
-			self.MATCHMAKING_QUEUE_KEY,
-			player_id,
-		)
+		if self.queue_key:
+			redis_client = self.get_redis()
+			await dequeue_player_from_matchmaking(
+				redis_client,
+				self.channel_layer,
+				self.room_group_name,
+				self.queue_key,
+				player_id,
+				self.time_control,
+				self.increment,
+			)
 		if self.matchmaking_player_id == player_id:
 			self.matchmaking_player_id = None
 
