@@ -1,24 +1,40 @@
-import { useEffect, useLayoutEffect, useRef } from 'react'
+import { useEffect, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { loadGameAudioPrefs, effectiveBgmVolume } from '../../../config/gameAudioPrefs.js'
 import { registerHomeBgmElement, unregisterHomeBgmElement } from '../services/homeBgm.js'
 
-const HOME_BGM_SRC = `${import.meta.env.BASE_URL}sounds/home/Under_the_Glass_Canopy.mp3`.replace(
+const HOME_BGM_FILE = "Beth's Story.m4a"
+const HOME_BGM_SRC = `${import.meta.env.BASE_URL}sounds/home/${encodeURIComponent(HOME_BGM_FILE)}`.replace(
 	/([^:]\/)\/+/g,
 	'$1',
 )
 
-/**
- * Piste home souvent mixée plus bas que le BGM jeu : léger gain (plafonné à 1) sans toucher au curseur global.
- */
+/** Même courbe que l’historique du projet : léger boost sans toucher au curseur global. */
 const HOME_BGM_EXTRA_GAIN = 1.65
 
 const TOUCH_OPTS = { passive: true, capture: true }
 
-/** Musique d’accueil : boucle, prefs partagées + gain home, lecture déclenchée sur le même nœud Audio que le geste. */
+function applyHomeBgmVolume(audio) {
+	const p = loadGameAudioPrefs()
+	audio.muted = p.bgmMuted
+	if (p.bgmMuted) {
+		audio.volume = 0
+	} else {
+		const base = effectiveBgmVolume(p)
+		audio.volume = Math.min(1, base * HOME_BGM_EXTRA_GAIN)
+	}
+}
+
+/** Musique d’ambiance : toutes les routes sauf `/game/*` (pause simple, pas de fondu). */
 export function HomeAmbientBgm() {
 	const audioRef = useRef(null)
+	const location = useLocation()
+	/** Mis à jour à chaque rendu + effet route — utilisé par tryPlay (ref, pas closure figée). */
+	const mayPlayHomeRef = useRef(true)
+	mayPlayHomeRef.current = !location.pathname.startsWith('/game/')
 
-	useLayoutEffect(() => {
+	/* Un seul effet : évite double teardown (Strict Mode) qui retirait `src` deux fois et cassait la lecture. */
+	useEffect(() => {
 		const audio = new Audio()
 		audio.src = HOME_BGM_SRC
 		audio.preload = 'auto'
@@ -26,45 +42,29 @@ export function HomeAmbientBgm() {
 		audio.setAttribute('playsInline', 'true')
 		audioRef.current = audio
 		registerHomeBgmElement(audio)
-		return () => {
-			unregisterHomeBgmElement(audio)
-			audio.pause()
-			audio.removeAttribute('src')
-			audio.load()
-			audioRef.current = null
-		}
-	}, [])
+		applyHomeBgmVolume(audio)
 
-	useEffect(() => {
-		const audio = audioRef.current
-		if (!audio) return undefined
-
-		const applyPrefs = () => {
-			const p = loadGameAudioPrefs()
-			audio.muted = p.bgmMuted
-			if (p.bgmMuted) {
-				audio.volume = 0
-			} else {
-				const base = effectiveBgmVolume(p)
-				audio.volume = Math.min(1, base * HOME_BGM_EXTRA_GAIN)
-			}
-		}
-		applyPrefs()
-
-		const onPrefs = () => applyPrefs()
-		window.addEventListener('transcendence-game-audio-changed', onPrefs)
-
-		/** Même instance que dans l’effet : évite tout décalage avec `registerHomeBgm` / StrictMode. */
 		const tryPlay = () => {
-			const playPromise = audio.play()
-			if (playPromise !== undefined) {
-				playPromise.catch((err) => {
+			if (!mayPlayHomeRef.current) return
+			applyHomeBgmVolume(audio)
+			const p = audio.play()
+			if (p !== undefined) {
+				p.catch((err) => {
 					if (import.meta.env.DEV) {
-						console.warn('[home-bgm] play()', err?.message ?? err)
+						console.warn('[HomeAmbientBgm] play()', err)
 					}
 				})
 			}
 		}
+
+		const onPrefs = () => {
+			applyHomeBgmVolume(audio)
+			if (!mayPlayHomeRef.current) return
+			if (!loadGameAudioPrefs().bgmMuted) {
+				void tryPlay()
+			}
+		}
+		window.addEventListener('transcendence-game-audio-changed', onPrefs)
 
 		const onCanPlay = () => tryPlay()
 		audio.addEventListener('canplay', onCanPlay)
@@ -88,11 +88,34 @@ export function HomeAmbientBgm() {
 			document.removeEventListener('touchstart', unlock, TOUCH_OPTS)
 			document.removeEventListener('visibilitychange', onVis)
 			audio.removeEventListener('canplay', onCanPlay)
+			unregisterHomeBgmElement(audio)
 			audio.pause()
 			audio.removeAttribute('src')
 			audio.load()
+			audioRef.current = null
 		}
 	}, [])
+
+	useEffect(() => {
+		const audio = audioRef.current
+		if (!audio) return undefined
+		const onGame = location.pathname.startsWith('/game/')
+		mayPlayHomeRef.current = !onGame
+		if (onGame) {
+			audio.pause()
+			return undefined
+		}
+		applyHomeBgmVolume(audio)
+		const p = loadGameAudioPrefs()
+		if (!p.bgmMuted) {
+			void audio.play().catch((err) => {
+				if (import.meta.env.DEV) {
+					console.warn('[HomeAmbientBgm] play() après navigation', err)
+				}
+			})
+		}
+		return undefined
+	}, [location.pathname])
 
 	return null
 }

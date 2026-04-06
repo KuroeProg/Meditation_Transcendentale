@@ -57,7 +57,11 @@ function toNumber(value, fallback = 0) {
 	return Number.isFinite(n) ? n : fallback
 }
 
-export function useSynchronizedChessTimers(gameState, currentTurn) {
+/**
+ * @param {number} movesPlayed — nombre de demi-coups joués dans la partie (ex. moveLog.length).
+ *   Tant qu’il est 0 et que c’est aux blancs, le chrono blanc ne décompte pas (avant le 1er coup).
+ */
+export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed = 0) {
 	const [nowMs, setNowMs] = useState(() => Date.now())
 
 	useEffect(() => {
@@ -73,7 +77,11 @@ export function useSynchronizedChessTimers(gameState, currentTurn) {
 	const whiteBase = toNumber(gameState?.white_time_left, 600)
 	const blackBase = toNumber(gameState?.black_time_left, 600)
 	const lastMoveTs = toNumber(gameState?.last_move_timestamp, nowMs / 1000)
-	const elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
+	let elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
+	// Avant le premier coup des blancs, pas de décompte du temps blanc (le chrono « démarre » au 1er coup).
+	if (movesPlayed === 0 && currentTurn === 'w') {
+		elapsed = 0
+	}
 
 	let whiteSeconds = whiteBase
 	let blackSeconds = blackBase

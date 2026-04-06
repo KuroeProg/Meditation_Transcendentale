@@ -7,13 +7,15 @@ import {
 	unregisterGameBgmElement,
 	tryPlayGameBgm,
 } from '../services/gameBgm.js'
+import { FADE_OUT_MS, cancelGameBgmFade, fadeGameBgmTo, resetGameBgmFadeController } from '../services/audioFade.js'
 
-const BGM_SRC = `${import.meta.env.BASE_URL}sounds/game/Midnight_Basin.mp3`.replace(/([^:]\/)\/+/g, '$1')
+const GAME_BGM_FILE = 'Theme_of_game.wav'
+const BGM_SRC = `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(GAME_BGM_FILE)}`.replace(
+	/([^:]\/)\/+/g,
+	'$1',
+)
 
-/** Durée de la boucle (secondes) — seules les 29 premières secondes sont rejouées. */
-export const BGM_LOOP_DURATION_SEC = 29
-
-/** Musique d’ambiance : page partie uniquement, boucle 0–29 s. */
+/** Musique de partie : route jeu uniquement ; la lecture démarre au premier coup (voir useChessAudio). */
 export function GameAmbientBgm() {
 	const audioRef = useRef(null)
 
@@ -21,16 +23,10 @@ export function GameAmbientBgm() {
 		const audio = new Audio()
 		audio.src = BGM_SRC
 		audio.preload = 'auto'
-		audio.loop = false
+		audio.loop = true
 		audio.setAttribute('playsInline', 'true')
 		audioRef.current = audio
 		registerGameBgmElement(audio)
-
-		const loopSegment = () => {
-			if (audio.currentTime >= BGM_LOOP_DURATION_SEC) {
-				audio.currentTime = 0
-			}
-		}
 
 		const applyPrefs = () => {
 			const p = loadGameAudioPrefs()
@@ -41,34 +37,21 @@ export function GameAmbientBgm() {
 
 		const onPrefs = () => applyPrefs()
 		window.addEventListener('transcendence-game-audio-changed', onPrefs)
-		audio.addEventListener('timeupdate', loopSegment)
-
-		const tryPlay = () => {
-			void tryPlayGameBgm()
-		}
-
-		const onCanPlay = () => {
-			tryPlay()
-		}
-		audio.addEventListener('canplay', onCanPlay)
-
-		const unlock = () => {
-			tryPlay()
-		}
-		window.addEventListener('pointerdown', unlock, true)
 
 		audio.load()
 
 		return () => {
 			window.removeEventListener('transcendence-game-audio-changed', onPrefs)
-			window.removeEventListener('pointerdown', unlock, true)
-			audio.removeEventListener('timeupdate', loopSegment)
-			audio.removeEventListener('canplay', onCanPlay)
-			unregisterGameBgmElement(audio)
-			audio.pause()
-			audio.removeAttribute('src')
-			audio.load()
-			audioRef.current = null
+			cancelGameBgmFade()
+			const v = audio.volume
+			void fadeGameBgmTo(audio, 0, FADE_OUT_MS, v).finally(() => {
+				unregisterGameBgmElement(audio)
+				audio.pause()
+				audio.removeAttribute('src')
+				audio.load()
+				audioRef.current = null
+				resetGameBgmFadeController()
+			})
 		}
 	}, [])
 
@@ -118,8 +101,7 @@ export function GameMusicPanel() {
 				<div className="game-music-popover" role="dialog" aria-label="Musique du jeu">
 					<p className="game-music-popover__title">Musique d’ambiance</p>
 					<p className="game-music-popover__hint">
-						Boucle sur les {BGM_LOOP_DURATION_SEC} premières secondes. Très discret par défaut — monte le volume si
-						besoin.
+						Le thème se lance avec le chronomètre (après le premier coup des blancs). Ajustez le volume si besoin.
 					</p>
 					<label className="game-music-slider-label">
 						<span>Volume</span>

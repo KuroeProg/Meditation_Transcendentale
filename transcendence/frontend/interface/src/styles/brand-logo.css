@@ -1,0 +1,25 @@
+/* Logo PNG : coins noirs du fichier → fond assorti + blend pour fondre sur l’UI sombre */
+
+.site-brand-logo-wrap {
+	display: inline-block;
+	line-height: 0;
+	border-radius: clamp(14px, 3vw, 22px);
+	overflow: hidden;
+	background: radial-gradient(ellipse 120% 100% at 40% 20%, #1e1e2e 0%, #12121c 45%, #0a0a12 100%);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+	isolation: isolate;
+}
+
+.site-brand-logo-wrap img {
+	display: block;
+	width: 100%;
+	height: auto;
+	object-fit: contain;
+	/* Fond noir / coins carrés du PNG → fusion avec le fond du wrapper */
+	mix-blend-mode: lighten;
+	filter: saturate(1.05) contrast(1.02);
+}
+
+html[data-reduce-motion='true'] .site-brand-logo-wrap img {
+	filter: saturate(1) contrast(1);
+}

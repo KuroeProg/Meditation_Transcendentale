@@ -36,7 +36,7 @@ else
   C_MAGENTA :=
 endif
 
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL := all
 
 PROFILE ?= localhost
 ENV_PROFILES_DIR := $(COMPOSE_DIR)/env/profiles

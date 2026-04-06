@@ -1,0 +1,210 @@
+/**
+ * Variables d’accent coalition (comme Statistics / --pstats-*).
+ * CoalitionHtmlSync pose data-coalition sur <html>.
+ */
+
+:root {
+	--coalition-accent: #7dd3fc;
+	--coalition-accent-soft: rgba(125, 211, 252, 0.14);
+	--coalition-accent-border: rgba(125, 211, 252, 0.38);
+	--coalition-accent-glow: rgba(125, 211, 252, 0.28);
+	--coalition-accent-muted: rgba(125, 211, 252, 0.55);
+}
+
+html[data-coalition='feu'] {
+	--coalition-accent: #ff6b4a;
+	--coalition-accent-soft: rgba(255, 90, 60, 0.16);
+	--coalition-accent-border: rgba(255, 100, 70, 0.42);
+	--coalition-accent-glow: rgba(255, 80, 50, 0.3);
+	--coalition-accent-muted: rgba(255, 160, 130, 0.65);
+}
+
+html[data-coalition='eau'] {
+	--coalition-accent: #5ecfff;
+	--coalition-accent-soft: rgba(80, 200, 255, 0.14);
+	--coalition-accent-border: rgba(100, 200, 255, 0.4);
+	--coalition-accent-glow: rgba(56, 189, 248, 0.28);
+	--coalition-accent-muted: rgba(150, 220, 255, 0.65);
+}
+
+html[data-coalition='terre'] {
+	--coalition-accent: #a3d636;
+	--coalition-accent-soft: rgba(163, 214, 54, 0.16);
+	--coalition-accent-border: rgba(160, 200, 80, 0.4);
+	--coalition-accent-glow: rgba(152, 171, 27, 0.28);
+	--coalition-accent-muted: rgba(200, 230, 140, 0.65);
+}
+
+html[data-coalition='air'] {
+	--coalition-accent: #d8b4fe;
+	--coalition-accent-soft: rgba(200, 170, 255, 0.14);
+	--coalition-accent-border: rgba(192, 132, 252, 0.4);
+	--coalition-accent-glow: rgba(192, 132, 252, 0.28);
+	--coalition-accent-muted: rgba(220, 200, 255, 0.65);
+}
+
+/* —— Profil & Paramètres : cartes et titres —— */
+.page-shell .surface-card {
+	border-color: var(--coalition-accent-border);
+	box-shadow:
+		0 8px 32px rgba(0, 0, 0, 0.25),
+		0 0 0 1px var(--coalition-accent-soft);
+	transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.page-shell .surface-card--42 {
+	border-color: color-mix(in srgb, var(--coalition-accent) 45%, transparent);
+	background: linear-gradient(
+		135deg,
+		rgba(20, 28, 42, 0.92),
+		color-mix(in srgb, var(--coalition-accent-soft) 40%, rgba(15, 40, 50, 0.75))
+	);
+}
+
+.page-shell .page-title {
+	color: #f4f6fb;
+	text-shadow: 0 0 28px var(--coalition-accent-soft);
+}
+
+.page-shell .accent {
+	color: var(--coalition-accent);
+}
+
+.page-shell .card-title {
+	color: #f0f4ff;
+}
+
+.page-shell .profile-editable:hover,
+.page-shell .profile-editable:hover .profile-edit-icon {
+	color: var(--coalition-accent);
+}
+
+.page-shell .profile-edit-input:focus {
+	border-color: var(--coalition-accent-border);
+	box-shadow: 0 0 0 2px var(--coalition-accent-soft);
+}
+
+.page-shell .profile-friend-challenge {
+	border-color: var(--coalition-accent-border);
+	background: var(--coalition-accent-soft);
+	color: var(--coalition-accent);
+}
+
+.page-shell .leaderboard-current td {
+	background: var(--coalition-accent-soft);
+	color: var(--coalition-accent);
+}
+
+.settings-audio-card.surface-card {
+	border-color: var(--coalition-accent-border);
+}
+
+/* —— Dashboard : fond page transparent, blocs bordés comme profil —— */
+.dashboard-v2 {
+	background: transparent;
+}
+
+.dashboard-v2 .dash-hero {
+	border: 1px solid var(--coalition-accent-border);
+	box-shadow:
+		0 8px 32px rgba(0, 0, 0, 0.22),
+		0 0 0 1px var(--coalition-accent-soft);
+	background: rgba(6, 8, 14, 0.25);
+}
+
+.dashboard-v2 .dash-hero-bg {
+	opacity: 0.5;
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--coalition-accent) 32%, #090b10),
+		color-mix(in srgb, var(--coalition-accent) 12%, #070910) 50%,
+		rgba(5, 7, 12, 0.2)
+	) !important;
+}
+
+.dashboard-v2 .dash-panel {
+	border: 1px solid var(--coalition-accent-border);
+	background: linear-gradient(
+		165deg,
+		color-mix(in srgb, var(--coalition-accent-soft) 50%, rgba(12, 14, 22, 0.93)),
+		rgba(7, 9, 15, 0.9)
+	);
+	box-shadow:
+		0 8px 28px rgba(0, 0, 0, 0.28),
+		0 0 0 1px var(--coalition-accent-soft);
+}
+
+.dashboard-v2 .dash-start-btn {
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--coalition-accent) 70%, #11141a),
+		color-mix(in srgb, var(--coalition-accent) 38%, #0a0c12)
+	);
+	box-shadow: 0 4px 24px var(--coalition-accent-glow);
+}
+
+.dashboard-v2 .dash-start-btn:hover {
+	box-shadow: 0 10px 40px var(--coalition-accent-glow);
+	filter: brightness(1.08) saturate(1.06);
+	transform: translateY(-1px);
+}
+
+.dashboard-v2 .dash-tc-btn--selected {
+	border-color: var(--coalition-accent-border);
+	background: var(--coalition-accent-soft);
+	color: var(--coalition-accent);
+	box-shadow: 0 0 0 1px var(--coalition-accent-soft);
+}
+
+.dashboard-v2 .dash-toggle--on {
+	background: color-mix(in srgb, var(--coalition-accent) 35%, rgba(255, 255, 255, 0.08));
+}
+
+.dashboard-v2 .dash-toggle--on .dash-toggle-thumb {
+	background: var(--coalition-accent);
+}
+
+.dashboard-v2 .dash-competitive-toggle .active {
+	color: var(--coalition-accent);
+}
+
+.dashboard-v2 .dash-hero-stat-val {
+	color: var(--coalition-accent);
+	text-shadow: 0 0 20px var(--coalition-accent-soft);
+}
+
+.dashboard-v2 .dash-mm-spinner {
+	border-top-color: var(--coalition-accent);
+}
+
+.dashboard-v2 .dash-mm-card {
+	border-color: var(--coalition-accent-border);
+	background: linear-gradient(
+		165deg,
+		rgba(10, 12, 20, 0.97),
+		color-mix(in srgb, var(--coalition-accent-soft) 45%, rgba(8, 10, 18, 0.96))
+	);
+	box-shadow: 0 0 0 1px var(--coalition-accent-soft);
+}
+
+.dashboard-v2 .dash-mm-preset {
+	color: var(--coalition-accent) !important;
+}
+
+/* —— Chat drawer accents —— */
+.chat-drawer-action-btn:hover,
+.chat-tab.active {
+	color: var(--coalition-accent);
+}
+
+.chat-send-btn {
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--coalition-accent) 75%, #6366f1),
+		var(--coalition-accent)
+	);
+}
+
+html[data-reduce-motion='true'] .page-shell .surface-card {
+	transition: none;
+}

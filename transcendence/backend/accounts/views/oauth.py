@@ -88,6 +88,17 @@ def _fetch_user_coalition_from_42(access_token, user_data):
     return None
 
 
+def _extract_cursus_level(user_data):
+    cursus_users = user_data.get('cursus_users', [])
+    for cu in cursus_users:
+        cursus = cu.get('cursus', {})
+        if cursus.get('slug') == '42cursus' or cursus.get('id') == 21:
+            return cu.get('level')
+    if cursus_users:
+        return cursus_users[-1].get('level')
+    return None
+
+
 def _extract_42_avatar_url(user_data):
     image_data = user_data.get('image')
     if isinstance(image_data, dict):
@@ -214,6 +225,7 @@ class Callback42View(View):
         last_name = user_data.get('last_name') or ''
         image_url = _extract_42_avatar_url(user_data)
         coalition = _fetch_user_coalition_from_42(access_token, user_data) or 'feu'
+        level = _extract_cursus_level(user_data)
 
         user, _created = LocalUser.objects.get_or_create(
             username=login_42,
@@ -223,28 +235,39 @@ class Callback42View(View):
                 'last_name': last_name,
                 'image_url': image_url,
                 'coalition': coalition,
+                'level': level,
                 'password_hash': '',
             },
         )
 
         changed = False
+        update_fields = []
         if email and user.email != email:
             user.email = email
             changed = True
+            update_fields.append('email')
         if first_name and user.first_name != first_name:
             user.first_name = first_name
             changed = True
+            update_fields.append('first_name')
         if last_name and user.last_name != last_name:
             user.last_name = last_name
             changed = True
+            update_fields.append('last_name')
         if image_url and user.image_url != image_url:
             user.image_url = image_url
             changed = True
+            update_fields.append('image_url')
         if coalition and user.coalition != coalition:
             user.coalition = coalition
             changed = True
+            update_fields.append('coalition')
+        if level is not None and user.level != level:
+            user.level = level
+            changed = True
+            update_fields.append('level')
         if changed:
-            user.save(update_fields=['email', 'first_name', 'last_name', 'image_url', 'coalition'])
+            user.save(update_fields=update_fields)
 
         request.session['local_user_id'] = user.id
         request.session.pop('oauth_state', None)

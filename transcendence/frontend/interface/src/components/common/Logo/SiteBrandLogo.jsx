@@ -12,12 +12,14 @@ export default function SiteBrandLogo({
 	draggable = false,
 }) {
 	return (
-		<img
-			src={SITE_LOGO_URL}
-			className={className}
-			alt={alt}
-			decoding={decoding}
-			draggable={draggable}
-		/>
+		<span className={`site-brand-logo-wrap ${className ?? ''}`.trim()}>
+			<img
+				src={SITE_LOGO_URL}
+				className="site-brand-logo-img"
+				alt={alt}
+				decoding={decoding}
+				draggable={draggable}
+			/>
+		</span>
 	)
 }

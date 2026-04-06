@@ -25,17 +25,19 @@ Web application for an online chess experience with coalitions, OAuth, real-time
 ## Overview
 
 - **Goal**: Deliver a playable chess experience in the browser with user accounts, coalition-themed UI, statistics, and operational tooling (logging, metrics).
-- **Constraints**: Subject **Part III** must be satisfied (HTTPS, DB, Git, Docker one-command startup, README in English, Privacy/Terms, form validation, etc.). Module points are tracked in **`Todo.md`** (French, internal).
+- **Constraints**: Subject **Part III** must be satisfied (HTTPS, DB, Git, Docker one-command startup, README in English, Privacy/Terms, form validation, etc.). Module points are tracked in `**Todo.md`** (French, internal).
 
 ---
 
 ## Team & responsibilities
 
-| Member   | Focus |
-| -------- | ----- |
-| **Cloe** | Project management, cybersecurity (WAF/ModSecurity, Vault), Nginx HTTPS, monitoring (Prometheus/Grafana), Scrum |
-| **Theo** | Tech lead, backend core API, database, ELK logging |
-| **Alexis** | Product owner, UI/UX, chess game logic (frontend) |
+
+| Member     | Focus                                                                                                           |
+| ---------- | --------------------------------------------------------------------------------------------------------------- |
+| **Cloe**   | Project management, cybersecurity (WAF/ModSecurity, Vault), Nginx HTTPS, monitoring (Prometheus/Grafana), Scrum |
+| **Theo**   | Tech lead, backend core API, database, ELK logging                                                              |
+| **Alexis** | Product owner, UI/UX, chess game logic (frontend)                                                               |
+
 
 *Adjust names/logins in commits and evaluation materials to match your official group roster.*
 
@@ -60,22 +62,20 @@ Web application for an online chess experience with coalitions, OAuth, real-time
 
 ## Installation & deployment
 
-1. Copy and configure environment variables from the project’s **`.env.example`** (or team template) to **`.env`** at the paths documented for this repo.
+1. Copy and configure environment variables from the project’s `**.env.example`** (or team template) to `**.env**` at the paths documented for this repo.
 2. From the repository root, build and start the stack:
-
-   ```bash
+  ```bash
    make up
-   ```
+  ```
+3. Consult `**make help**` for logs, teardown, and other targets.
 
-3. Consult **`make help`** for logs, teardown, and other targets.
-
-Database volumes and runtime logs paths are listed in **`.gitignore`** to avoid committing local data.
+Database volumes and runtime logs paths are listed in `**.gitignore**` to avoid committing local data.
 
 ---
 
 ## Frontend (local development)
 
-The SPA lives under **`transcendence/frontend/interface/`**.
+The SPA lives under `**transcendence/frontend/interface/**`.
 
 ```bash
 cd transcendence/frontend/interface
@@ -83,11 +83,11 @@ npm ci
 npm run dev
 ```
 
-- **`npm run build`** — production bundle (runs tile manifest generation via `prebuild`).
-- **`npm run lint`** — ESLint.
-- **`scripts/generate-board-tiles-manifest.mjs`** — regenerates chess tile manifests from `public/` assets (invoked automatically before dev/build).
+- `**npm run build**` — production bundle (runs tile manifest generation via `prebuild`).
+- `**npm run lint**` — ESLint.
+- `**scripts/generate-board-tiles-manifest.mjs**` — regenerates chess tile manifests from `public/` assets (invoked automatically before dev/build).
 
-See **`transcendence/frontend/interface/README.md`** for npm script details (tile manifest generation, etc.).
+See `**transcendence/frontend/interface/README.md**` for npm script details (tile manifest generation, etc.).
 
 ---
 
@@ -95,12 +95,14 @@ See **`transcendence/frontend/interface/README.md`** for npm script details (til
 
 Typical entry points (exact URLs depend on your Nginx routing and `.env`):
 
-| Service        | Example URL (see your deployment) |
-| -------------- | --------------------------------- |
-| Application    | `https://localhost/`            |
-| Grafana        | `https://localhost/grafana/`    |
-| Kibana         | `https://localhost/kibana/`     |
-| Prometheus     | `https://localhost/prometheus/` (may require auth via Nginx) |
+
+| Service     | Example URL (see your deployment)                            |
+| ----------- | ------------------------------------------------------------ |
+| Application | `https://localhost/`                                         |
+| Grafana     | `https://localhost/grafana/`                                 |
+| Kibana      | `https://localhost/kibana/`                                  |
+| Prometheus  | `https://localhost/prometheus/` (may require auth via Nginx) |
+
 
 ---
 
@@ -108,13 +110,14 @@ Typical entry points (exact URLs depend on your Nginx routing and `.env`):
 
 What is **implemented or demonstrable** evolves with each sprint. As of the latest iteration:
 
-- **Chess UI**: Board, move rules via `chess.js`, timers, end-of-game panel, coalition-themed pieces and board tiles, audio (BGM/SFX) with shared preferences.
+- **Chess UI**: Board, move rules via `chess.js`, timers (white clock does not tick until the first move is played; UI sync), end-of-game panel, coalition-themed pieces and board tiles.
+- **Audio**: Shared volume/mute in **Settings** (`gameAudioPrefs`). **Home** BGM (`public/sounds/home/Beth's Story.m4a`) plays across the app **except** on `/game/*`. **In-game** BGM (`public/sounds/game/Theme_of_game.wav`) loops and starts **with the clock** (after the first move). SFX remain procedural or file-based per `public/sounds/game/README.md`.
 - **Auth**: OAuth 42 integration path; **development mock user** optional via env for UI work without a live backend.
 - **Profile & settings**: Profile view, settings for audio and **reduced motion** (accessibility); coalition-themed ambient background and particles respect this preference where applicable.
 - **Statistics**: Personal statistics page with charts (**Recharts**), coalition theming; data may be **mock JSON** until the backend exposes real game history.
 - **Infrastructure**: Monitoring and logging stacks as defined in compose files (finalize dashboards and alerting per subject).
 
-Treat **`Todo.md`** as the source of truth for **which modules** you claim at evaluation.
+Treat `**Todo.md`** as the source of truth for **which modules** you claim at evaluation.
 
 ---
 
@@ -131,14 +134,14 @@ Treat **`Todo.md`** as the source of truth for **which modules** you claim at ev
 ## Grading & modules
 
 - Official rules: **ft_transcendence** PDF (modules in chapter IV, bonuses in chapter VII).
-- Internal tracking: **`Todo.md`** — module list, owners, status (**Fait** / **Quasi** / **En cours** / **À faire**), and bonus suffix **`, bonus`** for modules beyond the 14-point core.
+- Internal tracking: `**Todo.md`** — module list, owners, status (**Fait** / **Quasi** / **En cours** / **À faire**), and bonus suffix `**, bonus`** for modules beyond the 14-point core.
 
 ---
 
 ## Contributions & workflow
 
 - Use **clear commit messages** and **shared branches** as required by the subject.
-- Prefer small, reviewable changes; document notable decisions in **`Todo.md`** history and this README when behavior or deployment changes.
+- Prefer small, reviewable changes; document notable decisions in `**Todo.md`** history and this README when behavior or deployment changes.
 
 ---
 
@@ -146,7 +149,7 @@ Treat **`Todo.md`** as the source of truth for **which modules** you claim at ev
 
 - Aligning **frontend mock flows** with **backend APIs** and WebSocket semantics for remote games.
 - Meeting **Part III** bar (HTTPS, DB schema documentation, email/password auth alongside OAuth, etc.) while iterating on gameplay and DevOps.
-- Keeping the **README** and **`Todo.md`** honest so evaluators see what is demo-ready versus planned.
+- Keeping the **README** and `**Todo.md`** honest so evaluators see what is demo-ready versus planned.
 
 ---
 
@@ -158,4 +161,4 @@ Treat **`Todo.md`** as the source of truth for **which modules** you claim at ev
 
 ---
 
-*For French-language sprint tracking and module point math, see **`Todo.md`**. For interface-only npm details, see **`transcendence/frontend/interface/README.md`**.*
+*For French-language sprint tracking and module point math, see `**Todo.md`**. For interface-only npm details, see `**transcendence/frontend/interface/README.md**`.*

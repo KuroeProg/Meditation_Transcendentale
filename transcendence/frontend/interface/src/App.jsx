@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
@@ -12,21 +13,49 @@ import {
 	ThemeSync,
 	CoalitionHtmlSync,
 	CoalitionAmbient,
+	HomeAmbientBgm,
+	ChatDrawer,
 	useAuth,
 } from './features/index.js'
+import { presencePing } from './features/chat/services/chatApi.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
+
+function ChatFab({ onClick, unreadCount }) {
+	return (
+		<button className="chat-fab" type="button" onClick={onClick} aria-label="Ouvrir le chat">
+			<i className="ri-chat-3-line" />
+			{unreadCount > 0 && <span className="chat-fab-badge">{unreadCount}</span>}
+		</button>
+	)
+}
 
 function AppContent() {
 	const { isAuthenticated } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
+	const [chatOpen, setChatOpen] = useState(false)
+
 	const activeGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY)
 	const isOnGameRoute = location.pathname.startsWith('/game/')
 	const currentGameId = isOnGameRoute ? location.pathname.replace('/game/', '') : null
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
 	const isAuthRoute = location.pathname === '/auth'
+
+	useEffect(() => {
+		if (!isAuthenticated) return
+		presencePing().catch(() => {})
+		const interval = setInterval(() => presencePing().catch(() => {}), 45000)
+		const onVis = () => {
+			if (document.visibilityState === 'visible') presencePing().catch(() => {})
+		}
+		document.addEventListener('visibilitychange', onVis)
+		return () => {
+			clearInterval(interval)
+			document.removeEventListener('visibilitychange', onVis)
+		}
+	}, [isAuthenticated])
 
 	if (mustRedirectToActiveGame) {
 		return <Navigate to={`/game/${activeGameId}`} replace />
@@ -37,6 +66,7 @@ function AppContent() {
 			<ThemeSync />
 			<CoalitionHtmlSync />
 			<DevAuthToolbar />
+			<HomeAmbientBgm />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
 			{!isAuthRoute && (isMobile ? <BottomNav /> : <Sidebar />)}
@@ -99,10 +129,16 @@ function AppContent() {
 							</ProtectedRoute>
 						}
 					/>
-					{/* Catch-all redirect to home */}
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</div>
+
+			{isAuthenticated && !isAuthRoute && (
+				<>
+					<ChatFab onClick={() => setChatOpen(true)} unreadCount={0} />
+					<ChatDrawer isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+				</>
+			)}
 		</div>
 	)
 }

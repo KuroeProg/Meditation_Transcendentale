@@ -147,16 +147,15 @@ export function useMoveGhostAnimation({
       return;
     }
 
-    const br = board.getBoundingClientRect();
-    const rf = elFrom.getBoundingClientRect();
-    const rt = elTo.getBoundingClientRect();
-    const x0 = rf.left + rf.width / 2 - br.left;
-    const y0 = rf.top + rf.height / 2 - br.top;
-    const x1 = rt.left + rt.width / 2 - br.left;
-    const y1 = rt.top + rt.height / 2 - br.top;
+    /* Coordonnées dans l’espace local du plateau (#board) : getBoundingClientRect()
+     * est faux quand un ancêtre a une rotation CSS (AABB), d’où l’animation « à l’envers » pour les noirs. */
+    const x0 = elFrom.offsetLeft + elFrom.offsetWidth / 2;
+    const y0 = elFrom.offsetTop + elFrom.offsetHeight / 2;
+    const x1 = elTo.offsetLeft + elTo.offsetWidth / 2;
+    const y1 = elTo.offsetTop + elTo.offsetHeight / 2;
     const dx = x1 - x0;
     const dy = y1 - y0;
-    const size = Math.min(rf.width, rf.height) * 0.88;
+    const size = Math.min(elFrom.offsetWidth, elFrom.offsetHeight) * 0.88;
 
     setActiveMoveAnim((prev) =>
       prev && prev.key === a.key

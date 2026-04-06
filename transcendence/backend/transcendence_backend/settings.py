@@ -49,13 +49,28 @@ ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', ['backend', 'localhost', '127.
 # CSRF_TRUSTED_ORIGINS : trust domain
 CSRF_TRUSTED_ORIGINS = _env_list('DJANGO_CSRF_TRUSTED_ORIGINS', ['https://localhost', 'https://127.0.0.1'])
 
+# SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+SESSION_COOKIE_SECURE = True
+CSRF_COOKIE_SECURE = True
+SESSION_COOKIE_HTTPONLY = True
+
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend']
+CSRF_TRUSTED_ORIGINS = ['https://localhost']
+
+# 4. SameSite : 'Lax' est généralement le plus compatible pour OAuth
+SESSION_COOKIE_SAMESITE = 'Lax'
 
 # Application definition
 
 INSTALLED_APPS = [
     'corsheaders',
     'accounts',
+    'game',
+    'chat',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -206,6 +221,9 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.0/howto/static-files/
 
 STATIC_URL = 'static/'
+
+MEDIA_URL = '/media/'
+MEDIA_ROOT = BASE_DIR / 'media'
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
