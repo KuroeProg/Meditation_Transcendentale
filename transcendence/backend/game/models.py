@@ -9,7 +9,7 @@ class Game(models.Model):
     player_white = models.ForeignKey(LocalUser, related_name='games_as_white', on_delete=models.SET_NULL, null=True)
     player_black = models.ForeignKey(LocalUser, related_name='games_as_black', on_delete=models.SET_NULL, null=True)
     
-    winner = models.ForeignKey(LocalUser, related_name='games_won', on_delete=models.SET_NULL, null=True, blank=True)
+    winner = models.ForeignKey(LocalUser, related_name='chess_games_won', on_delete=models.SET_NULL, null=True, blank=True)
     
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
