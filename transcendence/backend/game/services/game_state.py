@@ -18,13 +18,11 @@ def normalize_player_id(player_id):
 		return None
 	return str(player_id)
 
-
 def normalize_game_player_ids(game_state):
 	"""Extract and normalize white and black player IDs from game state."""
 	white_id = normalize_player_id(game_state.get('white_player_id'))
 	black_id = normalize_player_id(game_state.get('black_player_id'))
 	return white_id, black_id
-
 
 def is_player_in_game(sender_id, game_state):
 	"""Check if a player is participating in this game."""
