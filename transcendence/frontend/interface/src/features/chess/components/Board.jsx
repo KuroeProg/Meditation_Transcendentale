@@ -97,7 +97,7 @@ function Board({
 
   const pieceRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const tileRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
-  const ghostPieceRotation = "rotate(0deg)";
+  const ghostPieceRotation = pieceRotation;
   const tileSeed = tilePatternSeed ?? BOARD_TILES.seed;
 
   const whitePieceThemeSlug = whiteCoalition
@@ -389,9 +389,10 @@ function Board({
             ))}
           </div>
 
-          <div className="board-play-area" ref={boardRootRef}>
+          <div className="board-play-area">
             <div
               id="board"
+              ref={boardRootRef}
               role="presentation"
               onClick={handleBoardClick}
             >
@@ -413,14 +414,14 @@ function Board({
                 pieceRotation={pieceRotation}
                 pieceSuppressed={pieceSuppressed}
               />
-            </div>
 
-            <MoveGhost
-              activeMoveAnim={activeMoveAnim}
-              durationMs={MOVE_ANIM_MS}
-              pieceRotation={ghostPieceRotation}
-              onTransitionEnd={onGhostTransitionEnd}
-            />
+              <MoveGhost
+                activeMoveAnim={activeMoveAnim}
+                durationMs={MOVE_ANIM_MS}
+                pieceRotation={ghostPieceRotation}
+                onTransitionEnd={onGhostTransitionEnd}
+              />
+            </div>
 
             <PromotionPicker
               promotionPick={promotionPick}

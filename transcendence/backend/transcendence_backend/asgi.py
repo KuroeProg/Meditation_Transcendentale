@@ -10,13 +10,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'transcendence_backend.settings'
 django_asgi_app = get_asgi_application()
 
 import game.routing
+import chat.routing
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    # Gère les WebSockets
     "websocket": AuthMiddlewareStack(
         URLRouter(
-            game.routing.websocket_urlpatterns
+            game.routing.websocket_urlpatterns + chat.routing.websocket_urlpatterns
         )
     ),
 })

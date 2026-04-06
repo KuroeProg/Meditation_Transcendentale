@@ -44,7 +44,27 @@ export default function GameStatsPanel({
   const [perfFilter, setPerfFilter] = useState("time");
   const [resignOpen, setResignOpen] = useState(false);
   const [drawInfoOpen, setDrawInfoOpen] = useState(false);
+  const [friendsList, setFriendsList] = useState([]);
   const prevGameEndedRef = useRef(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/auth/friends?status=accepted", {
+          credentials: "include",
+        });
+        if (!res.ok) return;
+        const data = await res.json();
+        if (!cancelled) setFriendsList(data.friends || []);
+      } catch {
+        /* ignore */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   useEffect(() => {
     if (!resignOpen && !drawInfoOpen) return;
@@ -152,7 +172,7 @@ export default function GameStatsPanel({
       )}
 
       {activeTab === "friends" && (
-        <FriendsView friends={mockStats.friends} />
+        <FriendsView friends={friendsList} />
       )}
 
       <ResignConfirmModal

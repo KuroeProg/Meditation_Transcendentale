@@ -80,7 +80,8 @@ text-align: center;
 	display: flex;
 	flex-direction: row;
 	align-items: center;
-	justify-content: center;
+	justify-content: space-between;
+	gap: clamp(0.5rem, 2vw, 2rem);
 	scroll-snap-align: start;
 	margin-left: 0;
 	width: 100%;
@@ -88,6 +89,7 @@ text-align: center;
 	box-sizing: border-box;
 	height: 100vh;
 	scroll-margin-top: 60px;
+	padding-right: 0;
 }
 
 .second-left {
@@ -156,14 +158,12 @@ text-align: center;
 }
 
 .second-right {
-	flex: 1;
+	flex: 1 1 48%;
 	min-width: 0;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	padding: 1rem;
-	width: 50%;
-	max-width: 50%;
+	padding: 1rem 0.5rem 1rem 0.75rem;
 	box-sizing: border-box;
 }
 
@@ -171,9 +171,12 @@ text-align: center;
 	width: 100%;
 	max-width: min(480px, min(42vw, 100%));
 	max-height: 70vh;
-	object-fit: contain;
-	border-radius: 16px;
 	box-shadow: 0 12px 48px rgba(0, 0, 0, 0.4);
+}
+
+.second-right .home-second-logo.site-brand-logo-wrap img {
+	max-height: 70vh;
+	object-fit: contain;
 }
 
 .third-section {

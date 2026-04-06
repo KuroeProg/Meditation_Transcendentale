@@ -36,7 +36,7 @@ else
   C_MAGENTA :=
 endif
 
-.DEFAULT_GOAL := help
+.DEFAULT_GOAL := all
 
 .PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re
 

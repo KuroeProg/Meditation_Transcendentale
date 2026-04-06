@@ -1,160 +1,284 @@
-import { useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'
 import { deriveCoalitionPresentation, deriveCursusLevel } from '../services/profileService.js'
-import { get42AvatarUrl, getDisplayTitle } from '../../../utils/sessionUser.js'
+import { get42AvatarUrl } from '../../../utils/sessionUser.js'
 import GameStatsSummarySection from '../../stats/components/GameStatsSummarySection.jsx'
 
-function Profile() {
-	const { user, loading, error, loginWith42, loginWithDb, isDevMockAuth } = useAuth()
-	const [emailInput, setEmailInput] = useState('')
-	const [password, setPassword] = useState('')
-	const [loginError, setLoginError] = useState(null)
-	const [submitting, setSubmitting] = useState(false)
+function EditableField({ value, onSave, label, placeholder, multiline = false }) {
+	const [editing, setEditing] = useState(false)
+	const [draft, setDraft] = useState(value || '')
+	const inputRef = useRef(null)
 
-	const handleDbLogin = async (event) => {
-		event.preventDefault()
-		setLoginError(null)
-		setSubmitting(true)
+	useEffect(() => {
+		if (editing && inputRef.current) inputRef.current.focus()
+	}, [editing])
+
+	const commit = () => {
+		setEditing(false)
+		if (draft.trim() !== (value || '').trim()) onSave(draft.trim())
+	}
+
+	if (!editing) {
+		return (
+			<span
+				className="profile-editable"
+				onClick={() => { setDraft(value || ''); setEditing(true) }}
+				title={`Cliquer pour modifier ${label}`}
+			>
+				{value || <span className="muted">{placeholder}</span>}
+				<i className="ri-pencil-line profile-edit-icon" />
+			</span>
+		)
+	}
+
+	if (multiline) {
+		return (
+			<textarea
+				ref={inputRef}
+				className="profile-edit-input profile-edit-textarea"
+				value={draft}
+				onChange={(e) => setDraft(e.target.value)}
+				onBlur={commit}
+				onKeyDown={(e) => { if (e.key === 'Escape') setEditing(false) }}
+				maxLength={500}
+				rows={3}
+			/>
+		)
+	}
+
+	return (
+		<input
+			ref={inputRef}
+			className="profile-edit-input"
+			value={draft}
+			onChange={(e) => setDraft(e.target.value)}
+			onBlur={commit}
+			onKeyDown={(e) => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') setEditing(false) }}
+			maxLength={150}
+		/>
+	)
+}
+
+function FriendItem({ friend, onChallenge }) {
+	const u = friend.user
+	return (
+		<li className="profile-friend-item">
+			<img className="profile-friend-avatar" src={u.avatar} alt="" />
+			<div className="profile-friend-info">
+				<span className="profile-friend-name">{u.username}</span>
+				<span className={`profile-friend-status ${u.is_online ? 'is-online' : ''}`}>
+					{u.is_online ? 'En ligne' : 'Hors ligne'}
+				</span>
+			</div>
+			{u.is_online && friend.status === 'accepted' && (
+				<button className="profile-friend-challenge" onClick={() => onChallenge(u.id)} type="button">
+					Defier
+				</button>
+			)}
+		</li>
+	)
+}
+
+function Profile() {
+	const { user, loading, error, refetch, isDevMockAuth } = useAuth()
+	const [friends, setFriends] = useState([])
+	const [profileSaveError, setProfileSaveError] = useState(null)
+	const [uploading, setUploading] = useState(false)
+	const fileInputRef = useRef(null)
+
+	const fetchFriends = useCallback(async () => {
 		try {
-			await loginWithDb({ email: emailInput, password })
-			setPassword('')
-		} catch (e) {
-			setLoginError(e?.message || 'Echec de connexion')
-		} finally {
-			setSubmitting(false)
+			const res = await fetch('/api/auth/friends?status=accepted', { credentials: 'include' })
+			if (res.ok) {
+				const data = await res.json()
+				setFriends(data.friends || [])
+			}
+		} catch {}
+	}, [])
+
+	useEffect(() => {
+		if (user) fetchFriends()
+	}, [user, fetchFriends])
+
+	const updateField = async (field, value) => {
+		setProfileSaveError(null)
+		try {
+			const res = await fetch('/api/auth/me/update', {
+				method: 'PUT',
+				credentials: 'include',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ [field]: value }),
+			})
+			const data = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				setProfileSaveError(data.error || 'Impossible d\'enregistrer.')
+				return false
+			}
+			refetch()
+			return true
+		} catch {
+			setProfileSaveError('Erreur réseau.')
+			return false
 		}
 	}
 
-	const email = user?.email ?? null
-	const { primary: titlePrimary, secondary: titleSecondary } = user
-		? getDisplayTitle(user)
-		: { primary: null, secondary: null }
+	const handleAvatarUpload = async (e) => {
+		const file = e.target.files?.[0]
+		if (!file) return
+		setUploading(true)
+		try {
+			const formData = new FormData()
+			formData.append('avatar', file)
+			await fetch('/api/auth/me/avatar', {
+				method: 'POST',
+				credentials: 'include',
+				body: formData,
+			})
+			refetch()
+		} catch {} finally {
+			setUploading(false)
+		}
+	}
 
+	if (!user) {
+		return (
+			<div className="page-shell">
+				<div className="page-header">
+					<h1 className="page-title">Profil</h1>
+				</div>
+				{loading && <p className="muted">Chargement du profil...</p>}
+			</div>
+		)
+	}
+
+	const email = user?.email ?? null
 	const {
-		coalition,
-		hasCoalition,
-		coalitionSlug,
-		coalitionLabel,
-		showCoalitionRaw,
+		coalition, hasCoalition, coalitionSlug, coalitionLabel, showCoalitionRaw,
 	} = deriveCoalitionPresentation(user, coalitionToSlug, coalitionSlugToLabel)
 	const levelCursus = deriveCursusLevel(user)
-
 	const avatarSrc = get42AvatarUrl(user)
 
 	return (
 		<div className="page-shell">
 			<div className="page-header">
 				<h1 className="page-title">Profil</h1>
-				<p className="page-subtitle">
-					Données issues de ton compte 42 après connexion — photo de profil Intra (non modifiable
-					pour l’instant).
-				</p>
 			</div>
 
 			{error && !isDevMockAuth && (
-				<p className="error-banner" role="alert">
-					{error} — le backend doit exposer <code>/api/auth/me</code> avec les champs Intra (voir{' '}
-					<code>src/utils/sessionUser.js</code>).
-				</p>
+				<p className="error-banner" role="alert">{error}</p>
+			)}
+			{profileSaveError && (
+				<p className="error-banner" role="alert">{profileSaveError}</p>
 			)}
 
-			{loading ? (
-				<p className="muted">Chargement du profil…</p>
-			) : !user ? (
-				<section className="surface-card surface-card--cta">
-					<p>Connecte-toi avec la base de donnees pour afficher ton profil.</p>
-					<form onSubmit={handleDbLogin} autoComplete="on" data-lpignore="true" style={{ display: 'grid', gap: '0.6rem', maxWidth: '360px' }}>
-						<input
-							type="email"
-							name="email"
-							autoComplete="email"
-							placeholder="email"
-							value={emailInput}
-							onChange={(e) => setEmailInput(e.target.value)}
-							required
-						/>
-						<input
-							type="password"
-							name="password"
-							autoComplete="current-password"
-							placeholder="password"
-							value={password}
-							onChange={(e) => setPassword(e.target.value)}
-							required
-						/>
-						<button type="submit" className="btn btn-primary" disabled={submitting}>
-							{submitting ? 'Connexion...' : 'Se connecter (DB)'}
-						</button>
-					</form>
-					<p className="muted small">Comptes de test: white@transcendence.local / white1234 et black@transcendence.local / black1234</p>
-					{loginError && <p className="error-banner" role="alert">{loginError}</p>}
-					<p className="muted small">Ou via OAuth 42 si besoin:</p>
-					<button type="button" className="btn btn-primary" onClick={loginWith42}>
-						Se connecter avec 42
-					</button>
-				</section>
-			) : (
-				<div className="profile-layout">
-					<section className="surface-card profile-hero">
-						<div className="profile-avatar-wrap">
-							<img className="profile-avatar-lg" src={avatarSrc} alt="" />
+			<div className="profile-layout">
+				{/* Hero Card */}
+				<section className="surface-card profile-hero">
+					<div className="profile-avatar-wrap" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+						<img className="profile-avatar-lg" src={avatarSrc} alt="" />
+						<div className="profile-avatar-overlay">
+							<i className="ri-camera-line" />
 						</div>
-						<div className="profile-hero-text">
-							<h2 className="profile-name">{titlePrimary}</h2>
-							{titleSecondary && (
-								<p className="profile-login42 muted">
-									Nom d'utilisateur : <strong>{titleSecondary}</strong>
-								</p>
-							)}
-							{email && (
-								<p className="muted small profile-email">
-									<strong>Email :</strong> {email}
-								</p>
-							)}
-						</div>
-					</section>
-
-					<section className="surface-card surface-card--42">
-						<h2 className="card-title card-title--with-logo42">
-							<Logo42 className="logo-42-title" title="42" />
-							<span>Coalition &amp; niveau</span>
+						<input
+							ref={fileInputRef}
+							type="file"
+							accept="image/jpeg,image/png,image/gif,image/webp"
+							onChange={handleAvatarUpload}
+							style={{ display: 'none' }}
+						/>
+						{uploading && <div className="profile-avatar-uploading"><div className="spinner" /></div>}
+					</div>
+					<div className="profile-hero-text">
+						<h2 className="profile-name profile-name-split">
+							<EditableField
+								value={user?.first_name ?? ''}
+								onSave={(v) => updateField('first_name', v)}
+								label="prénom"
+								placeholder="Prénom"
+							/>
+							<span className="profile-name-gap" aria-hidden> </span>
+							<EditableField
+								value={user?.last_name ?? ''}
+								onSave={(v) => updateField('last_name', v)}
+								label="nom"
+								placeholder="Nom"
+							/>
 						</h2>
-						<dl className="info-dl info-dl--compact">
-							<div className="profile-coalition-field">
-								<dt>Coalition</dt>
-								<dd
-									className={hasCoalition ? 'profile-coalition-value' : undefined}
-								>
-									{hasCoalition ? (
-										<>
-											<span className="profile-coalition-icon-wrap" aria-hidden>
-												<ProfileCoalitionIcon slug={coalitionSlug} />
-											</span>
-											<span className="profile-coalition-text">
-												<span className="profile-coalition-label">{coalitionLabel}</span>
-												{showCoalitionRaw && (
-													<span className="muted small profile-coalition-raw">{coalition}</span>
-												)}
-											</span>
-										</>
-									) : (
-										'—'
-									)}
-								</dd>
-							</div>
-							<div>
-								<dt>Niveau</dt>
-								<dd>{levelCursus ?? '—'}</dd>
-							</div>
-						</dl>
-					</section>
+						<p className="profile-username-row muted small">
+							<span className="profile-username-label">Nom d&apos;utilisateur :</span>{' '}
+							<EditableField
+								value={user?.username ?? ''}
+								onSave={(v) => updateField('username', v)}
+								label="pseudo"
+								placeholder="Pseudo"
+							/>
+						</p>
+						{email && <p className="muted small profile-email"><strong>Email :</strong> {email}</p>}
+						<p className="profile-bio">
+							<EditableField
+								value={user?.bio}
+								onSave={(v) => updateField('bio', v)}
+								label="bio"
+								placeholder="Ajouter une bio..."
+								multiline
+							/>
+						</p>
+					</div>
+				</section>
 
-					<GameStatsSummarySection user={user} />
-				</div>
-			)}
+				{/* Coalition & Level */}
+				<section className="surface-card surface-card--42">
+					<h2 className="card-title card-title--with-logo42">
+						<Logo42 className="logo-42-title" title="42" />
+						<span>Coalition &amp; niveau</span>
+					</h2>
+					<dl className="info-dl info-dl--compact">
+						<div className="profile-coalition-field">
+							<dt>Coalition</dt>
+							<dd className={hasCoalition ? 'profile-coalition-value' : undefined}>
+								{hasCoalition ? (
+									<>
+										<span className="profile-coalition-icon-wrap" aria-hidden>
+											<ProfileCoalitionIcon slug={coalitionSlug} />
+										</span>
+										<span className="profile-coalition-text">
+											<span className="profile-coalition-label">{coalitionLabel}</span>
+											{showCoalitionRaw && <span className="muted small profile-coalition-raw">{coalition}</span>}
+										</span>
+									</>
+								) : '—'}
+							</dd>
+						</div>
+						<div>
+							<dt>Niveau</dt>
+							<dd className="profile-cursus-level">{levelCursus != null ? String(levelCursus) : '—'}</dd>
+						</div>
+					</dl>
+				</section>
+
+				{/* Stats */}
+				<GameStatsSummarySection user={user} />
+
+				{/* Friends */}
+				<section className="surface-card">
+					<h2 className="card-title">
+						<i className="ri-group-line" style={{ marginRight: '0.5rem' }} />
+						Amis ({friends.length})
+					</h2>
+					{friends.length > 0 ? (
+						<ul className="profile-friends-list">
+							{friends.map((f) => (
+								<FriendItem key={f.friendship_id} friend={f} onChallenge={() => {}} />
+							))}
+						</ul>
+					) : (
+						<p className="muted small">Aucun ami pour le moment. Recherche des joueurs depuis le chat !</p>
+					)}
+				</section>
+			</div>
 		</div>
 	)
 }

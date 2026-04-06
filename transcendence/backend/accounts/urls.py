@@ -24,4 +24,16 @@ urlpatterns = [
     *with_optional_trailing_slash('register', views.RegisterView.as_view(), name='register'),
     *with_optional_trailing_slash('verify-2fa', views.Verify2FAView.as_view(), name='verify_2fa'),
     *with_optional_trailing_slash('resend-code', views.ResendVerificationCodeView.as_view(), name='resend_code'),
+
+    # Profile
+    *with_optional_trailing_slash('me/update', views.update_profile, name='update_profile'),
+    *with_optional_trailing_slash('me/presence', views.presence_ping, name='presence_ping'),
+    *with_optional_trailing_slash('me/avatar', views.upload_avatar, name='upload_avatar'),
+    *with_optional_trailing_slash('leaderboard', views.leaderboard, name='leaderboard'),
+    *with_optional_trailing_slash('search', views.search_users, name='search_users'),
+
+    # Friends
+    *with_optional_trailing_slash('friends', views.friends_list, name='friends_list'),
+    *with_optional_trailing_slash('friends/request', views.friend_request, name='friend_request'),
+    *with_optional_trailing_slash('friends/<int:friendship_id>', views.friend_action, name='friend_action'),
 ]
