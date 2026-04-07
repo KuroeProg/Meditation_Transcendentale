@@ -14,6 +14,7 @@ from game.services.errors import (
 from game.services.matchmaking import (
 	dequeue_player_from_matchmaking,
 	normalize_player_id,
+	normalize_competitive,
 	normalize_time_control,
 	normalize_increment,
 	queue_player_for_matchmaking,
@@ -52,7 +53,10 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		# even when connect exits early.
 		self.room_group_name = f'chess_{self.MATCHMAKING_ROOM_ID}'
 		self.matchmaking_player_id = None
-		self.queue_key = None 
+		self.queue_key = None
+		self.time_control = 600
+		self.increment = 0
+		self.competitive = False
 		self._joined_group = False
 
 		route_game_id = self.scope['url_route']['kwargs'].get('game_id')
@@ -80,6 +84,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 				self.matchmaking_player_id,
 				self.time_control,
 				self.increment,
+				self.competitive,
 			)
 
 	async def receive(self, text_data):
@@ -108,7 +113,8 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			player_id = normalize_player_id(data.get('player_id'))
 			self.time_control = normalize_time_control(data.get('time_control'))
 			self.increment = normalize_increment(data.get('increment'))
-			self.queue_key = f"{self.MATCHMAKING_QUEUE_KEY}:{self.time_control}:{self.increment}"
+			self.competitive = normalize_competitive(data.get('competitive'))
+			self.queue_key = f"{self.MATCHMAKING_QUEUE_KEY}:{self.time_control}:{self.increment}:{int(self.competitive)}"
 			if player_id is None:
 				await self.send(text_data=json.dumps(ERROR_PLAYER_ID_REQUIRED))
 				return
@@ -124,6 +130,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 				player_id,
 				self.time_control,
 				self.increment,
+				self.competitive,
 				fetch_user_coalition,
 				fetch_user_public_profile,
 			)
@@ -144,6 +151,7 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 				player_id,
 				self.time_control,
 				self.increment,
+				self.competitive,
 			)
 		if self.matchmaking_player_id == player_id:
 			self.matchmaking_player_id = None

@@ -21,7 +21,7 @@ def build_ws_game_state_payload(game_state, action='game_state'):
 def build_ws_matchmaking_payload(event):
 	"""Build WebSocket JSON payload for matchmaking events (queue_status, match_found)."""
 	payload = {'action': event['action']}
-	for key in ('queue_size', 'game_id', 'white_player_id', 'black_player_id'):
+	for key in ('queue_size', 'game_id', 'white_player_id', 'black_player_id', 'time_control', 'increment', 'competitive'):
 		if key in event:
 			payload[key] = event[key]
 	return payload
