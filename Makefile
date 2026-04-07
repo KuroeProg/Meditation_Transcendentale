@@ -38,10 +38,16 @@ endif
 
 .DEFAULT_GOAL := all
 
-PROFILE ?= localhost
+# Profil = nom du fichier dans env/profiles/<profil>.env (ex: local, lan).
+# « localhost » est un alias de « local » pour compatibilité.
+PROFILE ?= local
 ENV_PROFILES_DIR := $(COMPOSE_DIR)/env/profiles
 ENV_TARGET := $(COMPOSE_DIR)/.env
-ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE).env
+PROFILE_FILE := $(PROFILE)
+ifeq ($(strip $(PROFILE)),localhost)
+  PROFILE_FILE := local
+endif
+ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
 .PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use
 
@@ -185,8 +191,10 @@ env-list: ## Lister les profils d'environnement disponibles
 env-use: ## Appliquer un profil .env (ex: make env-use PROFILE=lan)
 	@if [ ! -f "$(ENV_SOURCE)" ]; then \
 		printf '%b\n' "$(C_RED)✗$(C_RESET) Profil introuvable: $(ENV_SOURCE)"; \
+		printf '%b\n' "$(C_DIM)Profils disponibles: make env-list$(C_RESET)"; \
 		exit 1; \
 	fi
 	@cp "$(ENV_SOURCE)" "$(ENV_TARGET)"
-	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) -> $(ENV_TARGET)"
-	@printf '%b\n' "$(C_DIM)Relancer la stack: make restart$(C_RESET)"
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) ($(PROFILE_FILE).env) -> $(ENV_TARGET)"
+	@printf '%b\n' "$(C_DIM)Puis: make up-bg   ou   make restart$(C_RESET)"
+	@printf '%b\n' "$(C_DIM)(les conteneurs lisent $(ENV_TARGET) au démarrage)$(C_RESET)"

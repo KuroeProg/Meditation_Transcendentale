@@ -140,7 +140,7 @@ def _frontend_dashboard_url():
     app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
     if app_origin:
         return f'{app_origin}/dashboard'
-    return 'https://localhost/dashboard'
+    return '/dashboard'
 
 
 class Auth42View(View):
