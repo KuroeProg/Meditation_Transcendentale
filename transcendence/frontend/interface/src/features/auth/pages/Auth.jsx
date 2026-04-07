@@ -9,6 +9,7 @@ import CoalitionWater from '../../theme/components/CoalitionSymbols/Coalition_Wa
 import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Wind.jsx'
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
 import '../styles/Auth.css'
+import AuthChessFloat from '../components/AuthChessFloat.jsx'
 
 function LoginForm({ on2FARequired, onSwitchToRegister }) {
   const { loginLocal, error, setError } = useAuth()
@@ -48,7 +49,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Identifiant 42 (Login)"
+            placeholder="Adresse email"
             required
             disabled={loading}
           />
@@ -96,10 +97,12 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
         {loading ? 'Connexion...' : 'Se Connecter'}
       </button>
 
-      <button type="button" className="auth-btn auth-btn-42" onClick={() => (window.location.href = '/api/auth/42/login/')}>
-        <span>Se connecter via</span>
-        <Logo42 className="auth-42-logo" />
-      </button>
+      <div className="auth-btn-42-wrap">
+        <button type="button" className="auth-btn auth-btn-42" onClick={() => (window.location.href = '/api/auth/42/login/')}>
+          <span>Se connecter via</span>
+          <Logo42 className="auth-42-logo" />
+        </button>
+      </div>
 
       <p className="auth-switch-text">
         Pas encore de compte ?{' '}
@@ -241,6 +244,7 @@ export default function AuthPage() {
       </div>
 
       <div className="auth-form-side">
+        <AuthChessFloat />
         <div className="auth-form-container">
           <div className="auth-form-header">
             <Logo42 className="auth-header-42-logo" />

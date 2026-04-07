@@ -95,12 +95,84 @@
 	font-size: 0.88rem;
 }
 
-/* --- FAB Button --- */
-.chat-fab {
+/* --- FAB + toast défis --- */
+.chat-fab-cluster {
 	position: fixed;
 	bottom: 1.5rem;
 	right: 1.5rem;
 	z-index: 800;
+	display: flex;
+	flex-direction: row;
+	align-items: stretch;
+	justify-content: flex-end;
+	gap: 0;
+	max-width: min(100vw - 2rem, 380px);
+	pointer-events: none;
+}
+
+.chat-fab-cluster > * {
+	pointer-events: auto;
+}
+
+.chat-fab-toast {
+	max-width: 0;
+	opacity: 0;
+	overflow: hidden;
+	margin: 0;
+	padding: 0;
+	border: none;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: center;
+	gap: 0.15rem;
+	text-align: left;
+	border-radius: 12px 0 0 12px;
+	background: linear-gradient(135deg, rgba(30, 15, 40, 0.96), rgba(45, 25, 70, 0.94));
+	border: 1px solid rgba(255, 107, 74, 0.35);
+	border-right: none;
+	box-shadow:
+		-6px 0 24px rgba(0, 0, 0, 0.35),
+		inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+	transition:
+		max-width 0.5s cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 0.4s ease,
+		padding 0.45s ease;
+}
+
+.chat-fab-cluster--toast .chat-fab-toast {
+	max-width: min(260px, 72vw);
+	opacity: 1;
+	padding: 0.55rem 0.65rem 0.55rem 0.85rem;
+}
+
+.chat-fab-toast-title {
+	font-size: 0.82rem;
+	font-weight: 700;
+	color: #fecaca;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 100%;
+}
+
+.chat-fab-toast-sub {
+	font-size: 0.72rem;
+	color: rgba(226, 232, 255, 0.72);
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+}
+
+.chat-fab-toast:hover {
+	filter: brightness(1.08);
+}
+
+.chat-fab {
+	flex-shrink: 0;
 	width: 56px;
 	height: 56px;
 	border-radius: 50%;
@@ -116,8 +188,14 @@
 	display: flex;
 	align-items: center;
 	justify-content: center;
+	position: relative;
 	box-shadow: 0 4px 22px var(--coalition-accent-glow, rgba(125, 211, 252, 0.28));
-	transition: transform 0.25s, box-shadow 0.25s;
+	transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+}
+
+.chat-fab-cluster--toast .chat-fab {
+	border-radius: 0 50% 50% 0;
+	width: 56px;
 }
 
 .chat-fab:hover {
@@ -127,19 +205,41 @@
 
 .chat-fab-badge {
 	position: absolute;
-	top: -2px;
-	right: -2px;
 	min-width: 20px;
 	height: 20px;
 	border-radius: 999px;
-	background: #ff4757;
 	color: #fff;
-	font-size: 0.7rem;
-	font-weight: 700;
+	font-size: 0.68rem;
+	font-weight: 800;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	padding: 0 5px;
+	border: 2px solid rgba(15, 20, 35, 0.95);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Défis — accent feu */
+.chat-fab-badge--invite {
+	top: -4px;
+	right: -4px;
+	background: linear-gradient(145deg, #ff6b4a, #ea580c);
+}
+
+/* Messages — accent eau */
+.chat-fab-badge--msg {
+	top: -4px;
+	right: -4px;
+	background: linear-gradient(145deg, #38bdf8, #0284c7);
+}
+
+.chat-fab-badge--msg.chat-fab-badge--pair {
+	right: auto;
+	left: -4px;
+}
+
+html[data-reduce-motion='true'] .chat-fab-toast {
+	transition: opacity 0.25s ease;
 }
 
 /* --- Conversation List --- */
@@ -687,11 +787,23 @@
 		width: 100vw;
 	}
 
-	.chat-fab {
+	.chat-fab-cluster {
 		bottom: calc(var(--bottom-nav-height, 60px) + 0.8rem);
 		right: 1rem;
+		max-width: min(100vw - 1.5rem, 360px);
+	}
+
+	.chat-fab {
 		width: 50px;
 		height: 50px;
 		font-size: 1.2rem;
+	}
+
+	.chat-fab-cluster--toast .chat-fab {
+		width: 50px;
+	}
+
+	.chat-fab-cluster--toast .chat-fab-toast {
+		max-width: min(220px, 58vw);
 	}
 }
