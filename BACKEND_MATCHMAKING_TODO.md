@@ -30,7 +30,7 @@ Commit propose:
 
 ## Etape 3 - Horloge et longes cadences
 
-Statut: a faire
+Statut: fait
 
 Travail:
 - Verifier que la logique de clock supporte les parties longues sans boucle couteuse inutile.

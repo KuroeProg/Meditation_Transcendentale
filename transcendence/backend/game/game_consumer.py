@@ -20,6 +20,7 @@ from game.services.actions import (
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_realtime_clock_enabled,
 	mark_timeout_if_needed,
 )
 from game.services.game_state import (
@@ -80,19 +81,32 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		# Reconnecting client: sync state immediately
 		game_state_json = await self.get_redis().get(self.game_id)
+		game_state = None
 		if game_state_json is not None:
+			game_state = json.loads(game_state_json)
 			await self.handle_reconnect(game_state_json)
 
-		self.clock_task = asyncio.create_task(self._clock_loop())
+		await self._sync_clock_task(game_state)
 
 	async def disconnect(self, close_code):
 		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+		await self._stop_clock_task()
 
+	async def _stop_clock_task(self):
+		"""Stop background clock task if it is currently running."""
 		if self.clock_task is not None:
 			self.clock_task.cancel()
 			with contextlib.suppress(asyncio.CancelledError):
 				await self.clock_task
 			self.clock_task = None
+
+	async def _sync_clock_task(self, game_state):
+		"""Start or stop per-second ticking depending on cadence metadata."""
+		should_run = game_state is None or is_realtime_clock_enabled(game_state)
+		if should_run and self.clock_task is None:
+			self.clock_task = asyncio.create_task(self._clock_loop())
+		elif not should_run:
+			await self._stop_clock_task()
 
 	async def _broadcast_current_game_state(self, game_state):
 		"""Broadcast game state to all connected clients in the game group."""
@@ -209,6 +223,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
+		await self._sync_clock_task(new_game_state)
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
