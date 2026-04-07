@@ -40,6 +40,13 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 player_black=black_user,
                 winner=winner_user,
                 duration_seconds=game_data.get('duration_seconds', 0),
+                time_control_seconds=game_data.get('time_control_seconds'),
+                increment_seconds=game_data.get('increment_seconds', 0),
+                time_category=game_data.get('time_category', 'rapid'),
+                is_competitive=bool(game_data.get('is_competitive', False)),
+                is_rated=bool(game_data.get('is_rated', False)),
+                game_mode=game_data.get('game_mode', 'standard'),
+                termination_reason=game_data.get('termination_reason', ''),
                 started_at=start_dt,
             )
             

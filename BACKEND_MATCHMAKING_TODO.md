@@ -17,7 +17,7 @@ Commit propose:
 
 ## Etape 2 - Etat de partie et persistence
 
-Statut: a faire
+Statut: fait
 
 Travail:
 - Enrichir l'etat Redis initial avec les metadonnees de partie (categorie, increment, mode, rated ou non).

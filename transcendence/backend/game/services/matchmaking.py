@@ -168,7 +168,13 @@ async def attempt_matchmaking(
 		
 		# Build pristine state using the dedicated builder
 		new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
-		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)		
+		new_game_state = await build_new_game_state(
+			white_id,
+			black_id,
+			time_control,
+			increment,
+			competitive,
+		)
 		await redis_client.set(new_game_id, json.dumps(new_game_state))
 
 		await channel_layer.group_send(

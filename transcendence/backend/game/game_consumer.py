@@ -128,6 +128,25 @@ class GameConsumer(AsyncWebsocketConsumer):
 			return None
 		return json.loads(game_state_json)
 
+	def _build_final_game_data(self, game_state, winner_id, termination_reason):
+		"""Build normalized payload for final game persistence."""
+		start_timestamp = game_state.get('start_timestamp', time.time())
+		return {
+			'player_white_id': game_state['white_player_id'],
+			'player_black_id': game_state['black_player_id'],
+			'winner_id': winner_id,
+			'start_timestamp': start_timestamp,
+			'duration_seconds': int(time.time() - start_timestamp),
+			'time_control_seconds': int(game_state.get('time_control_seconds', 600)),
+			'increment_seconds': int(game_state.get('increment_seconds', game_state.get('increment', 0))),
+			'time_category': game_state.get('time_category', 'rapid'),
+			'is_competitive': bool(game_state.get('is_competitive', False)),
+			'is_rated': bool(game_state.get('is_rated', game_state.get('is_competitive', False))),
+			'game_mode': game_state.get('game_mode', 'standard'),
+			'termination_reason': termination_reason,
+			'moves': game_state.get('moves', []),
+		}
+
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
 		"""Route action to appropriate handler based on action type."""
 		# Game creation: no prior state needed
@@ -184,8 +203,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
+		time_control = data.get('time_control', 600)
+		increment = data.get('increment', 0)
+		competitive = bool(data.get('competitive', False))
 
-		new_game_state = await build_new_game_state(white_id, black_id)
+		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		await self._broadcast_current_game_state(new_game_state)
 
@@ -210,14 +232,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self._broadcast_current_game_state(game_state)
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': winner_id,
-				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
-				'moves': game_state.get('moves', [])
-			}
+			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
 	
 			success = await async_save_full_game(final_game_data)
 			if success:
@@ -263,14 +278,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 			else:
 				winner_id = None
 
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': winner_id,
-				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
-				'moves': game_state.get('moves', [])
-			}
+			final_game_data = self._build_final_game_data(game_state, winner_id, 'checkmate_or_draw')
 	
 			success = await async_save_full_game(final_game_data)
 			if success:
@@ -296,13 +304,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 ##########################
 		winner_id = game_state.get('winner_player_id')
 
-		final_game_data = {
-			'player_white_id': game_state['white_player_id'],
-			'player_black_id': game_state['black_player_id'],
-			'winner_id': winner_id,
-			'duration_seconds': int(time.time() - game_state['start_timestamp']),
-			'moves': game_state.get('moves', [])
-   		}
+		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
 
 		success = await async_save_full_game(final_game_data)
 		if success:
@@ -345,14 +347,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		if game_state.get('status') == 'draw':
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': None,
-				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
-				'moves': game_state.get('moves', [])
-			}
+			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
 			success = await async_save_full_game(final_game_data)
 			if success:
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
