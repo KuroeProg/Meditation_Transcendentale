@@ -4,6 +4,7 @@ from game.models import Game, Move
 from asgiref.sync import sync_to_async
 import datetime
 from django.utils import timezone
+from game.services.elasticsearch_service import index_game_result
 
 # =====================================================================
 # Fonction Synchrone et Atomique (à utiliser depuis des Vues ou Consumers)
@@ -66,6 +67,9 @@ def save_game_data_atomically(game_data: dict) -> bool:
             # Cela exécute UNE SEULE requête d'insertion SQL pour l'entièreté des coups.
             Move.objects.bulk_create(moves_to_create)
             
+            # 4. Appel au service externe pour l'indexation
+            index_game_result(game_data)
+            
         return True # Succès de la transaction !
 
     except Exception as e:
@@ -80,32 +84,4 @@ def save_game_data_atomically(game_data: dict) -> bool:
 @sync_to_async
 def async_save_full_game(game_data: dict):
     return save_game_data_atomically(game_data)
-
-"""
-================ Exemple d'utilisation dans game_consumer.py ================
-
-async def finalize_match(self, winner_uid, match_duration):
-    # Vous rassemblez toutes vos variables gardées en mémoire / state manager :
-    final_game_data = {
-        'player_white_id': 1,
-        'player_black_id': 2,
-        'winner_id': winner_uid,
-        'duration_seconds': match_duration,
-        
-        # Le tableau des coups de la partie depuis la RAM ou le cache
-        'moves': [
-            {'move_number': 1, 'player_id': 1, 'san': 'e4', 'piece': 'pawn', 'time_taken': 1500, 'advantage': 0},
-            {'move_number': 2, 'player_id': 2, 'san': 'e5', 'piece': 'pawn', 'time_taken': 1200, 'advantage': 0},
-            # ... (suite des tous les autres coups)
-        ]
-    }
-    
-    # Appel asynchrone final pour sauvegarder sans aucun risque (Atomique + Bulk)
-    success = await async_save_full_game(final_game_data)
-    
-    if success:
-        print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-    else:
-        print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-"""
 

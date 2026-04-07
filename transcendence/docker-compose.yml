@@ -263,6 +263,8 @@ services:
       - discovery.type=single-node
       - xpack.security.enabled=true
       - xpack.security.http.ssl.enabled=true
+      - ES_JAVA_OPTS=-Xms384m -Xmx384m
+      - xpack.ml.enabled=false # Désactive le Machine Learning (très lourd !!)
       - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
     volumes:
@@ -284,6 +286,7 @@ services:
       - ELASTICSEARCH_SSL_VERIFICATIONMODE=none # Since you use self-signed certs
       - SERVER_BASEPATH="/kibana"
       - SERVER_REWRITEBASEPATH="true"
+      - NODE_OPTIONS="--max-old-space-size=256" # Limite stricte pour l'interface web Kibana
     depends_on:
       - elasticsearch
     restart: always
@@ -302,7 +305,9 @@ services:
     environment:
       - MONITORING_ENABLED=false
       - XPACK_MONITORING_ENABLED=false
-      - "LS_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "LS_JAVA_OPTS=-Xms256m -Xmx256m" # Logstash n'a pas besoin de plus pour de petits projets
+      - PIPELINE_WORKERS=1 # Force Logstash à ne pas utiliser plusieurs cœurs CPU
+      - PIPELINE_BATCH_SIZE=50
     depends_on:
       - elasticsearch
     logging: *default-logging
