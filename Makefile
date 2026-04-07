@@ -162,7 +162,7 @@ fclean: clean ## Supprimer volumes, images du projet, et dossiers certs
 
 re: fclean all ## fclean puis all (repartir de zéro)
 
-migrations: ## Lancer les migrations Django (makemigrations + migrate)
+migrations: ## Migrations Django (toutes les apps par défaut, ou APP=<nom>)
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Migrations Django…"
 	@printf '%b\n' "$(C_DIM)  Attente PostgreSQL (prêt à accepter les connexions)…$(C_RESET)"
 	@i=0; \
@@ -174,8 +174,15 @@ migrations: ## Lancer les migrations Django (makemigrations + migrate)
 		fi; \
 		sleep 1; \
 	done
-	@$(COMPOSE) exec -T backend python manage.py makemigrations
-	@$(COMPOSE) exec -T backend python manage.py migrate
+	@if [ -n "$(APP)" ]; then \
+		printf '%b\n' "$(C_DIM)  App ciblée : $(APP)$(C_RESET)"; \
+		$(COMPOSE) exec -T backend python manage.py makemigrations "$(APP)"; \
+		$(COMPOSE) exec -T backend python manage.py migrate "$(APP)"; \
+	else \
+		printf '%b\n' "$(C_DIM)  Toutes les apps installées$(C_RESET)"; \
+		$(COMPOSE) exec -T backend python manage.py makemigrations; \
+		$(COMPOSE) exec -T backend python manage.py migrate; \
+	fi
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Migrations terminées."
 
 env-list: ## Lister les profils d'environnement disponibles

@@ -58,9 +58,6 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', 'backend']
-CSRF_TRUSTED_ORIGINS = ['https://localhost']
-
 # 4. SameSite : 'Lax' est généralement le plus compatible pour OAuth
 SESSION_COOKIE_SAMESITE = 'Lax'
 
