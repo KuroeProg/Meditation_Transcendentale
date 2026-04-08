@@ -3,6 +3,24 @@ import { fetchConversations } from '../services/chatApi.js'
 
 const TOAST_MS = 7200
 
+function formatGameInviteSubtitle(raw) {
+	if (raw == null || raw === '') return 'Invitation de partie'
+	const s = String(raw).trim()
+	try {
+		const o = JSON.parse(s)
+		if (o && typeof o === 'object') {
+			const parts = []
+			if (o.time_control != null && o.time_control !== '') parts.push(String(o.time_control))
+			if (typeof o.competitive === 'boolean')
+				parts.push(o.competitive ? 'Classée' : 'Amicale')
+			if (parts.length) return parts.join(' · ')
+		}
+	} catch {
+		/* pas du JSON */
+	}
+	return s.length > 72 ? `${s.slice(0, 69)}…` : s
+}
+
 /**
  * Compteurs non lus (texte vs invitations de partie) + toast quand une nouvelle invite arrive.
  */
@@ -62,7 +80,7 @@ export function useChatInbox(enabled) {
 					conversation: c,
 					messageId: lm.id,
 					title: `${from} te défie`,
-					subtitle: (lm.content && String(lm.content).slice(0, 72)) || 'Invitation de partie',
+					subtitle: formatGameInviteSubtitle(lm.content),
 				})
 				break
 			}

@@ -86,6 +86,7 @@ function Profile() {
 	const { user, loading, error, refetch, isDevMockAuth } = useAuth()
 	const [friends, setFriends] = useState([])
 	const [profileSaveError, setProfileSaveError] = useState(null)
+	const [avatarUploadError, setAvatarUploadError] = useState(null)
 	const [uploading, setUploading] = useState(false)
 	const fileInputRef = useRef(null)
 
@@ -126,20 +127,38 @@ function Profile() {
 	}
 
 	const handleAvatarUpload = async (e) => {
-		const file = e.target.files?.[0]
+		const input = e.target
+		const file = input.files?.[0]
 		if (!file) return
+		setAvatarUploadError(null)
 		setUploading(true)
 		try {
 			const formData = new FormData()
 			formData.append('avatar', file)
-			await fetch('/api/auth/me/avatar', {
+			const res = await fetch('/api/auth/me/avatar', {
 				method: 'POST',
 				credentials: 'include',
 				body: formData,
 			})
+			if (res.status === 413) {
+				setAvatarUploadError(
+					'Image trop volumineuse : choisis un fichier plus léger (la taille maximale autorisée est dépassée).',
+				)
+				return
+			}
+			const data = await res.json().catch(() => ({}))
+			if (!res.ok) {
+				setAvatarUploadError(
+					data.error || 'Impossible d’enregistrer cette image. Réessaie avec un autre fichier.',
+				)
+				return
+			}
 			refetch()
-		} catch {} finally {
+		} catch {
+			setAvatarUploadError('Erreur réseau lors de l’envoi de l’image.')
+		} finally {
 			setUploading(false)
+			input.value = ''
 		}
 	}
 
@@ -172,6 +191,9 @@ function Profile() {
 			)}
 			{profileSaveError && (
 				<p className="error-banner" role="alert">{profileSaveError}</p>
+			)}
+			{avatarUploadError && (
+				<p className="error-banner" role="alert">{avatarUploadError}</p>
 			)}
 
 			<div className="profile-layout">

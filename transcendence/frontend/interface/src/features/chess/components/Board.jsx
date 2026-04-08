@@ -423,20 +423,30 @@ function Board({
               />
             </div>
 
-            <PromotionPicker
-              promotionPick={promotionPick}
-              isViewOnly={isViewOnly}
-              onCancel={() => setPromotionPick(null)}
-              onChoose={(code) => {
-                submitMoveRequest(
-                  promotionPick.from,
-                  promotionPick.to,
-                  game.get(promotionPick.from),
-                  code,
-                );
-                setPromotionPick(null);
-              }}
-            />
+            {/* Contre-rotation : le plateau entier est retourné pour les noirs, pas l’UI de promotion. */}
+            <div
+              className="board-promotion-unflip"
+              style={
+                playerColor === "b"
+                  ? { transform: "rotate(180deg)" }
+                  : undefined
+              }
+            >
+              <PromotionPicker
+                promotionPick={promotionPick}
+                isViewOnly={isViewOnly}
+                onCancel={() => setPromotionPick(null)}
+                onChoose={(code) => {
+                  submitMoveRequest(
+                    promotionPick.from,
+                    promotionPick.to,
+                    game.get(promotionPick.from),
+                    code,
+                  );
+                  setPromotionPick(null);
+                }}
+              />
+            </div>
           </div>
 
           <div

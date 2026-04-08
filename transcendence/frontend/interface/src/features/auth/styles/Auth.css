@@ -303,6 +303,7 @@ html[data-reduce-motion='true'] .auth-chess-float-piece {
   position: relative;
   z-index: 2;
   padding: clamp(1.25rem, 3vw, 1.85rem);
+  overflow-x: hidden;
   border-radius: 20px;
   background: linear-gradient(155deg, rgba(22, 22, 38, 0.75) 0%, rgba(12, 12, 24, 0.88) 100%);
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -370,12 +371,18 @@ html[data-reduce-motion='true'] .auth-form-container {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 0.8rem;
+  min-width: 0;
+}
+
+.auth-form-row > .auth-form-group {
+  min-width: 0;
 }
 
 .auth-form-group {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
+  min-width: 0;
 }
 
 .auth-input-wrapper {
@@ -511,67 +518,38 @@ html[data-reduce-motion='true'] .auth-form-container {
   cursor: not-allowed;
 }
 
-/* Bordure gradient 4 coalitions + hover */
+/* Bouton 42 : damier — bordure blanche type champs, fond panneau, texte/logo noirs */
 .auth-btn-42-wrap {
   width: 100%;
   border-radius: 12px;
   padding: 2px;
-  background: linear-gradient(
-    120deg,
-    #ff6b4a 0%,
-    #5ecfff 25%,
-    #a3d636 50%,
-    #d8b4fe 75%,
-    #ff6b4a 100%
-  );
-  background-size: 320% 320%;
-  animation: auth-coalition-border-flow 4.5s ease infinite;
-  box-shadow: 0 4px 24px rgba(124, 58, 237, 0.22);
-  transition: filter 0.35s ease, box-shadow 0.35s ease;
-}
-
-@keyframes auth-coalition-border-flow {
-  0% {
-    background-position: 0% 50%;
-  }
-  50% {
-    background-position: 100% 50%;
-  }
-  100% {
-    background-position: 0% 50%;
-  }
-}
-
-html[data-reduce-motion='true'] .auth-btn-42-wrap {
-  animation: none;
-  background: linear-gradient(120deg, #ff6b4a, #5ecfff, #a3d636, #d8b4fe);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.35), 0 4px 18px rgba(0, 0, 0, 0.25);
+  transition: box-shadow 0.25s ease, filter 0.25s ease;
 }
 
 .auth-btn-42-wrap:hover {
-  filter: brightness(1.12) saturate(1.08);
-  box-shadow:
-    0 8px 36px rgba(94, 207, 255, 0.25),
-    0 4px 28px rgba(255, 107, 74, 0.2),
-    0 0 0 1px rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.55), 0 6px 22px rgba(0, 0, 0, 0.3);
+  filter: brightness(1.03);
 }
 
 .auth-btn-42-wrap:hover .auth-btn-42 {
-  transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transform: translateY(-1px);
 }
 
 .auth-btn-42 {
   width: 100%;
   margin: 0;
-  background: linear-gradient(145deg, #1e0f3a 0%, #4c1d95 48%, #6d28d9 100%);
-  color: #fff;
   border: none !important;
   border-radius: 10px;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.3s ease;
+  transition: transform 0.25s cubic-bezier(0.22, 1, 0.36, 1), background 0.2s ease;
+  /* Case « claire » du damier : texte noir lisible, bordure blanche sur le wrap */
+  background: #e6e6ec;
+  color: #0a0a12;
 }
 
 .auth-btn-42:hover {
-  background: linear-gradient(145deg, #2d1560 0%, #5b21b6 50%, #7c3aed 100%);
+  background: #f0f0f6;
   box-shadow: none;
   transform: translateY(-1px);
 }
@@ -579,7 +557,7 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
 .auth-42-logo {
   width: 24px;
   height: auto;
-  color: #fff;
+  color: currentColor;
 }
 
 /* --- MISC --- */

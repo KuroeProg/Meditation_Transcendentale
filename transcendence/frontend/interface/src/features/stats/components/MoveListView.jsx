@@ -2,7 +2,7 @@ import { useRef, useLayoutEffect } from 'react'
 import { resultShortNotation } from '../services/statsCalculator.js'
 
 export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
-  const listEndRef = useRef(null)
+  const listScrollRef = useRef(null)
   const selectedHalfIdx =
     viewPlies === null
       ? moveLog.length > 0
@@ -14,10 +14,10 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
 
   useLayoutEffect(() => {
     if (viewPlies !== null) return
-    listEndRef.current?.scrollIntoView({
-      block: 'nearest',
-      behavior: 'smooth',
-    })
+    const el = listScrollRef.current
+    if (!el) return
+    /* Ne pas utiliser scrollIntoView : sur mobile il remonte toute la page quand le panneau est sous l’échiquier. */
+    el.scrollTop = el.scrollHeight
   }, [moveLog.length, viewPlies])
 
   const rows = []
@@ -30,7 +30,6 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
       bIdx: i + 1,
     })
   }
-  const lastTurnNum = rows.length ? rows[rows.length - 1].num : 0
   const resultStr = resultShortNotation(winner)
 
   if (!moveLog.length) {
@@ -54,11 +53,14 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
           </button>
         ) : null}
       </div>
-      <div className="stats-move-list stats-move-list--pgn" role="list">
+      <div
+        ref={listScrollRef}
+        className="stats-move-list stats-move-list--pgn"
+        role="list"
+      >
         {rows.map(({ num, white, black, wIdx, bIdx }) => (
           <div
             key={num}
-            ref={num === lastTurnNum && viewPlies === null ? listEndRef : undefined}
             role="listitem"
             className={`stats-pgn-row stats-pgn-row--${num % 2 === 1 ? 'odd' : 'even'}`}
           >
