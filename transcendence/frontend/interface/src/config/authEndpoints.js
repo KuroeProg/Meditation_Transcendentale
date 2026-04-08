@@ -19,8 +19,13 @@ export function getOAuthOrigin() {
 	if (appOrigin) return String(appOrigin).replace(/\/$/, '')
 	const explicit = import.meta.env.VITE_API_ORIGIN
 	if (explicit) return String(explicit).replace(/\/$/, '')
-	// En dev Vite (:5173), les cookies de session sont sur l’origine HTTPS du proxy (souvent https://localhost)
-	if (import.meta.env.DEV) return 'https://localhost'
+	// Dev : préférer l’origine HTTPS réelle (LAN, localhost derrière nginx) ; sinon fallback machine locale
+	if (import.meta.env.DEV) {
+		if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
+			return window.location.origin
+		}
+		return 'https://localhost'
+	}
 	if (typeof window !== 'undefined') return window.location.origin
 	return ''
 }

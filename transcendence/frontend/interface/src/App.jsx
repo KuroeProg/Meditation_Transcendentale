@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
 import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
@@ -17,31 +17,28 @@ import {
 	ChatDrawer,
 	useAuth,
 } from './features/index.js'
+import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
+import { useChatInbox } from './features/chat/hooks/useChatInbox.js'
 import { presencePing } from './features/chat/services/chatApi.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
-
-function ChatFab({ onClick, unreadCount }) {
-	return (
-		<button className="chat-fab" type="button" onClick={onClick} aria-label="Ouvrir le chat">
-			<i className="ri-chat-3-line" />
-			{unreadCount > 0 && <span className="chat-fab-badge">{unreadCount}</span>}
-		</button>
-	)
-}
 
 function AppContent() {
 	const { isAuthenticated } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
+	const isAuthRoute = location.pathname === '/auth'
 	const [chatOpen, setChatOpen] = useState(false)
+	const [chatInitialConversation, setChatInitialConversation] = useState(null)
+	const inboxEnabled = isAuthenticated && !isAuthRoute
+	const { textUnread, inviteUnread, toast, clearToast, refresh: refreshInbox } = useChatInbox(inboxEnabled)
+	const clearChatInitial = useCallback(() => setChatInitialConversation(null), [])
 
 	const activeGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY)
 	const isOnGameRoute = location.pathname.startsWith('/game/')
 	const currentGameId = isOnGameRoute ? location.pathname.replace('/game/', '') : null
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
-	const isAuthRoute = location.pathname === '/auth'
 
 	useEffect(() => {
 		if (!isAuthenticated) return
@@ -135,8 +132,28 @@ function AppContent() {
 
 			{isAuthenticated && !isAuthRoute && (
 				<>
-					<ChatFab onClick={() => setChatOpen(true)} unreadCount={0} />
-					<ChatDrawer isOpen={chatOpen} onClose={() => setChatOpen(false)} />
+					<ChatFabCluster
+						textUnread={textUnread}
+						inviteUnread={inviteUnread}
+						toast={toast}
+						onToastClick={(t) => {
+							setChatInitialConversation(t.conversation)
+							setChatOpen(true)
+							clearToast()
+						}}
+						onToastDismiss={clearToast}
+						onOpenChat={() => setChatOpen(true)}
+					/>
+					<ChatDrawer
+						isOpen={chatOpen}
+						onClose={() => {
+							setChatOpen(false)
+							setChatInitialConversation(null)
+							void refreshInbox()
+						}}
+						initialConversation={chatInitialConversation}
+						onConsumedInitial={clearChatInitial}
+					/>
 				</>
 			)}
 		</div>

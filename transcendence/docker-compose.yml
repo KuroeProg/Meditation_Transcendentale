@@ -147,7 +147,8 @@ services:
       # HMR via https://localhost (nginx) — sans ça, le hot-reload vise :5173 depuis le navigateur
       - VITE_HMR_NGINX=1
       - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
-      - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://127.0.0.1:443}
+      # Dans Docker, le proxy /api du dev server doit viser nginx (pas 127.0.0.1 du conteneur)
+      - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://nginx:443}
     # ports:
       # Test direct sans nginx : http://localhost:5173 (si 502 sur :443, vérifie ici d’abord)
       # - "5173:5173"

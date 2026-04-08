@@ -9,6 +9,7 @@ import CoalitionWater from '../../theme/components/CoalitionSymbols/Coalition_Wa
 import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Wind.jsx'
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
 import '../styles/Auth.css'
+import AuthChessFloat from '../components/AuthChessFloat.jsx'
 
 function LoginForm({ on2FARequired, onSwitchToRegister }) {
   const { loginLocal, error, setError } = useAuth()
@@ -37,9 +38,9 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
+    <form className="auth-form auth-form--login" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
           <i className="ri-user-line auth-input-icon" />
           <input
             id="login-email"
@@ -48,7 +49,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
             autoComplete="email"
             value={formData.email}
             onChange={handleChange}
-            placeholder="Identifiant 42 (Login)"
+            placeholder="Adresse email"
             required
             disabled={loading}
           />
@@ -56,7 +57,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
       </div>
 
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
           <i className="ri-lock-line auth-input-icon" />
           <input
             id="login-password"
@@ -96,10 +97,12 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
         {loading ? 'Connexion...' : 'Se Connecter'}
       </button>
 
-      <button type="button" className="auth-btn auth-btn-42" onClick={() => (window.location.href = '/api/auth/42/login/')}>
-        <span>Se connecter via</span>
-        <Logo42 className="auth-42-logo" />
-      </button>
+      <div className="auth-btn-42-wrap">
+        <button type="button" className="auth-btn auth-btn-42" onClick={() => (window.location.href = '/api/auth/42/login/')}>
+          <span>Se connecter via</span>
+          <Logo42 className="auth-42-logo" />
+        </button>
+      </div>
 
       <p className="auth-switch-text">
         Pas encore de compte ?{' '}
@@ -141,19 +144,19 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
+    <form className="auth-form auth-form--register" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
       <h2 className="auth-form-title">Creer un compte</h2>
 
       <div className="auth-form-row">
         <div className="auth-form-group">
-          <div className="auth-input-wrapper">
+          <div className="auth-input-wrapper auth-input-wrapper--mono">
             <i className="ri-user-smile-line auth-input-icon" />
             <input id="firstName" type="text" name="firstName" autoComplete="given-name"
               value={formData.firstName} onChange={handleChange} placeholder="Prenom" disabled={loading} />
           </div>
         </div>
         <div className="auth-form-group">
-          <div className="auth-input-wrapper">
+          <div className="auth-input-wrapper auth-input-wrapper--mono">
             <i className="ri-user-smile-line auth-input-icon" />
             <input id="lastName" type="text" name="lastName" autoComplete="family-name"
               value={formData.lastName} onChange={handleChange} placeholder="Nom" disabled={loading} />
@@ -162,7 +165,7 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
       </div>
 
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
           <i className="ri-at-line auth-input-icon" />
           <input id="reg-username" type="text" name="username" autoComplete="username"
             value={formData.username} onChange={handleChange} placeholder="Nom d'utilisateur" required disabled={loading} />
@@ -170,7 +173,7 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
       </div>
 
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
           <i className="ri-mail-line auth-input-icon" />
           <input id="reg-email" type="email" name="email" autoComplete="email"
             value={formData.email} onChange={handleChange} placeholder="Adresse email" required disabled={loading} />
@@ -178,7 +181,7 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
       </div>
 
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
           <i className="ri-lock-line auth-input-icon" />
           <input id="reg-password" type="password" name="password" autoComplete="new-password"
             value={formData.password} onChange={handleChange} placeholder="Mot de passe" required disabled={loading} />
@@ -241,6 +244,7 @@ export default function AuthPage() {
       </div>
 
       <div className="auth-form-side">
+        <AuthChessFloat />
         <div className="auth-form-container">
           <div className="auth-form-header">
             <Logo42 className="auth-header-42-logo" />

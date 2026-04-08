@@ -9,11 +9,22 @@ import {
 } from '../services/gameBgm.js'
 import { FADE_OUT_MS, cancelGameBgmFade, fadeGameBgmTo, resetGameBgmFadeController } from '../services/audioFade.js'
 
-const GAME_BGM_FILE = 'Theme_of_game.wav'
-const BGM_SRC = `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(GAME_BGM_FILE)}`.replace(
-	/([^:]\/)\/+/g,
-	'$1',
-)
+/** Musiques d’ambiance en partie : rotation à chaque montage du composant (session). */
+const GAME_BGM_FILES = [
+	'Theme_of_game.wav',
+	'Playing Beltik.m4a',
+	'Playing Girev I.m4a',
+	'Main Title.m4a',
+]
+
+const BGM_ROT_KEY = 'transcendence-game-bgm-rot'
+
+function nextGameBgmSrc() {
+	const i = Number(sessionStorage.getItem(BGM_ROT_KEY)) || 0
+	const file = GAME_BGM_FILES[i % GAME_BGM_FILES.length]
+	sessionStorage.setItem(BGM_ROT_KEY, String(i + 1))
+	return `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(file)}`.replace(/([^:]\/)\/+/g, '$1')
+}
 
 /** Musique de partie : route jeu uniquement ; la lecture démarre au premier coup (voir useChessAudio). */
 export function GameAmbientBgm() {
@@ -21,7 +32,7 @@ export function GameAmbientBgm() {
 
 	useEffect(() => {
 		const audio = new Audio()
-		audio.src = BGM_SRC
+		audio.src = nextGameBgmSrc()
 		audio.preload = 'auto'
 		audio.loop = true
 		audio.setAttribute('playsInline', 'true')

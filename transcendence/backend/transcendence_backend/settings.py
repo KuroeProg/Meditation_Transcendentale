@@ -58,6 +58,9 @@ SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
 SESSION_COOKIE_HTTPONLY = True
 
+# Ne pas réécraser ALLOWED_HOSTS / CSRF_TRUSTED_ORIGINS : ils viennent des lignes ci-dessus
+# (variables d’environnement DJANGO_*), nécessaires pour LAN / domaine de prod.
+
 # 4. SameSite : 'Lax' est généralement le plus compatible pour OAuth
 SESSION_COOKIE_SAMESITE = 'Lax'
 

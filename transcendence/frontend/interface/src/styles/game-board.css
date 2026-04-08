@@ -197,8 +197,9 @@ html[data-reduce-motion='true'] .board-move-ghost {
       Chrome vertical page jeu : padding main-content (bas = nav) + barres + gaps flex + cadre.
       Les bandes coords sont absorbées par le facteur 1.082 (comme en desktop).
     */
+    /* Marge un peu plus haute pour ne pas « écraser » le bord supérieur du plateau. */
     --game-mobile-chrome-y: calc(
-      0.25rem + var(--bottom-nav-height) + 0.35rem + var(--game-board-col-gap-total) +
+      0.55rem + var(--bottom-nav-height) + 0.35rem + var(--game-board-col-gap-total) +
         (var(--player-bar-height) * 2) + var(--board-frame-pad-y)
     );
     --board-size: min(
@@ -280,6 +281,15 @@ html[data-reduce-motion='true'] .board-move-ghost {
 	position: relative;
 	width: var(--board-size);
 	height: var(--board-size);
+}
+
+/* UI promotion : annule la rotation du plateau côté noirs (voir Board.jsx). */
+.board-promotion-unflip {
+	position: absolute;
+	inset: 0;
+	z-index: 19;
+	pointer-events: none;
+	transform-origin: 50% 50%;
 }
 
 .board-coords--edge-right {

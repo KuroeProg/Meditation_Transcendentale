@@ -24,12 +24,13 @@ class Conversation(models.Model):
         other = [p for p in participants if current_user is None or p.id != current_user.id]
         last_msg = self.messages.order_by('-created_at').first()
         unread = 0
+        unread_text = 0
+        unread_invite = 0
         if current_user:
-            unread = self.messages.exclude(
-                sender=current_user
-            ).exclude(
-                read_by=current_user
-            ).count()
+            base_unread = self.messages.exclude(sender=current_user).exclude(read_by=current_user)
+            unread = base_unread.count()
+            unread_invite = base_unread.filter(message_type='game_invite').count()
+            unread_text = base_unread.exclude(message_type='game_invite').count()
 
         return {
             'id': self.id,
@@ -47,6 +48,8 @@ class Conversation(models.Model):
             ],
             'last_message': last_msg.to_dict() if last_msg else None,
             'unread_count': unread,
+            'unread_text_count': unread_text,
+            'unread_invite_count': unread_invite,
             'updated_at': self.updated_at.isoformat(),
         }
 

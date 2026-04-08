@@ -38,14 +38,14 @@ function Sidebar() {
 						<span className="text">Profile</span>
 					</Link>
 				</li>
-				<li>
+				{/* <li>
 					<Link to="/">
 						<span className="icon">
 							<i className="fa-solid fa-bell" />
 						</span>
 						<span className="text">Friends</span>
 					</Link>
-				</li>
+				</li> */}
 				<li>
 					<Link to="/settings">
 						<span className="icon">

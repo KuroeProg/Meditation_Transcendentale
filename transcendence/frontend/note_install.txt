@@ -26,6 +26,14 @@ Install made for chess.js librairy to work with react
 npm install chess.js
 
 
+--- Accès téléphone / réseau local (LAN) ---
+À la racine du dépôt :
+  make env-use PROFILE=lan
+  Éditer transcendence/.env : remplacer 192.168.1.26 par l’IP de ta machine (même valeur partout : APP_ORIGIN, DJANGO_*, OAuth, VITE_HMR_HOST, NGINX_SERVER_NAME).
+  make up-bg
+Sur le téléphone : https://<IP>  (certificat auto-signé → avertissement à accepter)
+Enregistrer la même URL de callback dans l’app OAuth 42 (redirect URI).
+
 --- Front : routes & auth (vbonnard) ---
 Depuis transcendence/frontend/interface :
   npm install

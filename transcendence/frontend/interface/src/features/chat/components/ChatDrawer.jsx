@@ -1,11 +1,11 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { useAuth } from '../../auth/index.js'
 import ConversationList from './ConversationList.jsx'
 import MessageThread from './MessageThread.jsx'
 import ContactSearch from './ContactSearch.jsx'
 import '../styles/Chat.css'
 
-export default function ChatDrawer({ isOpen, onClose }) {
+export default function ChatDrawer({ isOpen, onClose, initialConversation = null, onConsumedInitial }) {
 	const { user } = useAuth()
 	const [view, setView] = useState('conversations')
 	const [activeConversation, setActiveConversation] = useState(null)
@@ -31,6 +31,13 @@ export default function ChatDrawer({ isOpen, onClose }) {
 		setActiveConversation(conv)
 		setView('thread')
 	}, [])
+
+	useEffect(() => {
+		if (!isOpen || !initialConversation) return
+		setActiveConversation(initialConversation)
+		setView('thread')
+		onConsumedInitial?.()
+	}, [isOpen, initialConversation, onConsumedInitial])
 
 	if (!isOpen) return null
 
