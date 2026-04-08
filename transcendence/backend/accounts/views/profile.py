@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
+from game.services.rating import get_rating_field, normalize_time_category
 
 
 def _get_authenticated_user(request):
@@ -93,7 +94,9 @@ def leaderboard(request):
     if err:
         return err
 
-    top_players = LocalUser.objects.order_by('-elo_rapid')[:20]
+    category = normalize_time_category(request.GET.get('category') or request.GET.get('time_category'))
+    rating_field = get_rating_field(category)
+    top_players = LocalUser.objects.order_by(f'-{rating_field}')[:20]
     result = []
     for i, player in enumerate(top_players, 1):
         result.append({
@@ -108,6 +111,8 @@ def leaderboard(request):
             'games_played': player.games_played,
             'games_won': player.games_won,
             'is_online': player.is_online,
+            'rating_field': rating_field,
+            'selected_rating': getattr(player, rating_field),
         })
 
     current_rank = None
@@ -117,13 +122,15 @@ def leaderboard(request):
             break
 
     if current_rank is None:
-        all_ids = list(LocalUser.objects.order_by('-elo_rapid').values_list('id', flat=True))
+        all_ids = list(LocalUser.objects.order_by(f'-{rating_field}').values_list('id', flat=True))
         try:
             current_rank = all_ids.index(user.id) + 1
         except ValueError:
             current_rank = len(all_ids) + 1
 
     return JsonResponse({
+        'category': category,
+        'rating_field': rating_field,
         'leaderboard': result,
         'current_user_rank': current_rank,
     })

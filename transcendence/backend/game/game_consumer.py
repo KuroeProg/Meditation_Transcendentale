@@ -145,10 +145,17 @@ class GameConsumer(AsyncWebsocketConsumer):
 	def _build_final_game_data(self, game_state, winner_id, termination_reason):
 		"""Build normalized payload for final game persistence."""
 		start_timestamp = game_state.get('start_timestamp', time.time())
+		if winner_id == game_state.get('white_player_id'):
+			game_result = 'white'
+		elif winner_id == game_state.get('black_player_id'):
+			game_result = 'black'
+		else:
+			game_result = 'draw'
 		return {
 			'player_white_id': game_state['white_player_id'],
 			'player_black_id': game_state['black_player_id'],
 			'winner_id': winner_id,
+			'game_result': game_result,
 			'start_timestamp': start_timestamp,
 			'duration_seconds': int(time.time() - start_timestamp),
 			'time_control_seconds': int(game_state.get('time_control_seconds', 600)),
@@ -284,11 +291,12 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		
-		if board.is_game_over():
-			result = board.result()
-			if result.winner == chess.WHITE:
+			updated_board = chess.Board(game_state['fen'])
+		if updated_board.is_game_over():
+			outcome = updated_board.outcome()
+			if outcome and outcome.winner == chess.WHITE:
 				winner_id = game_state['white_player_id']
-			elif result.winner == chess.BLACK:
+			elif outcome and outcome.winner == chess.BLACK:
 				winner_id = game_state['black_player_id']
 			else:
 				winner_id = None

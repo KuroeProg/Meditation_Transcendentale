@@ -42,7 +42,7 @@ Commit propose:
 
 ## Etape 4 - Classement et rating
 
-Statut: a faire
+Statut: fait
 
 Travail:
 - Definir la logique de rating pour les parties competitives.

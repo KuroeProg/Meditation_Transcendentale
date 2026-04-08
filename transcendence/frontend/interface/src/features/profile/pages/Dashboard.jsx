@@ -34,8 +34,15 @@ const TIME_CONTROLS = {
 const CATEGORY_META = {
 	bullet: { icon: 'ri-speed-up-line', label: 'Bullet', color: '#ff6b6b' },
 	blitz: { icon: 'ri-flashlight-line', label: 'Blitz', color: '#ffd93d' },
-	rapid: { icon: 'ri-timer-line', label: 'Mode Rapide', color: '#6bcb77' },
-	correspondence: { icon: 'ri-sun-line', label: 'En Differe', color: '#4d96ff' },
+	rapid: { icon: 'ri-timer-line', label: 'Rapide', color: '#6bcb77' },
+	correspondence: { icon: 'ri-sun-line', label: 'Correspondance', color: '#4d96ff' },
+}
+
+const CATEGORY_RATING_FIELD = {
+	bullet: 'elo_bullet',
+	blitz: 'elo_blitz',
+	rapid: 'elo_rapid',
+	correspondence: 'elo_rapid',
 }
 
 function normalizeWirePlayerId(value) {
@@ -89,6 +96,7 @@ function FriendChip({ friend, onChallenge }) {
 }
 
 function LeaderboardRow({ entry, isCurrentUser }) {
+	const eloValue = entry.selected_rating ?? entry[entry.rating_field] ?? entry.elo_rapid
 	return (
 		<tr className={isCurrentUser ? 'leaderboard-current' : ''}>
 			<td className="leaderboard-rank">#{entry.rank}</td>
@@ -96,7 +104,7 @@ function LeaderboardRow({ entry, isCurrentUser }) {
 				<img className="leaderboard-avatar" src={entry.avatar} alt="" />
 				<span>{entry.username}</span>
 			</td>
-			<td className="leaderboard-elo">{entry.elo_rapid}</td>
+			<td className="leaderboard-elo">{eloValue}</td>
 			<td className="leaderboard-games">{entry.games_played}</td>
 		</tr>
 	)
@@ -128,6 +136,16 @@ export default function Dashboard() {
 		return coalitionToSlug(user.coalition)
 	}, [user])
 
+	const selectedCategory = useMemo(() => {
+		return Object.entries(TIME_CONTROLS).find(([, ctrls]) =>
+			ctrls.some((c) => c.label === selectedTC.label)
+		)?.[0] || 'rapid'
+	}, [selectedTC])
+
+	const selectedRatingField = CATEGORY_RATING_FIELD[selectedCategory] || 'elo_rapid'
+	const selectedRatingLabel = CATEGORY_META[selectedCategory]?.label || 'Rapide'
+	const selectedElo = user?.[selectedRatingField] ?? user?.elo_rapid ?? 1200
+
 	const fetchFriends = useCallback(async () => {
 		try {
 			const res = await fetch('/api/auth/friends?status=accepted', { credentials: 'include' })
@@ -138,9 +156,10 @@ export default function Dashboard() {
 		} catch {}
 	}, [])
 
-	const fetchLeaderboard = useCallback(async () => {
+	const fetchLeaderboard = useCallback(async (category) => {
 		try {
-			const res = await fetch('/api/auth/leaderboard', { credentials: 'include' })
+			const url = category ? `/api/auth/leaderboard?category=${encodeURIComponent(category)}` : '/api/auth/leaderboard'
+			const res = await fetch(url, { credentials: 'include' })
 			if (res.ok) {
 				const data = await res.json()
 				setLeaderboard(data.leaderboard || [])
@@ -152,9 +171,9 @@ export default function Dashboard() {
 	useEffect(() => {
 		if (user) {
 			fetchFriends()
-			fetchLeaderboard()
+			fetchLeaderboard(selectedCategory)
 		}
-	}, [user, fetchFriends, fetchLeaderboard])
+	}, [user, fetchFriends, fetchLeaderboard, selectedCategory])
 
 	useEffect(() => {
 		if (!searching || !isConnected || !userId || hasJoinedQueueRef.current) return
@@ -211,9 +230,6 @@ export default function Dashboard() {
 		setStatusMessage('')
 	}
 
-	const selectedCategory = Object.entries(TIME_CONTROLS).find(([, ctrls]) =>
-		ctrls.some((c) => c.label === selectedTC.label)
-	)?.[0] || 'rapid'
 	const catMeta = CATEGORY_META[selectedCategory]
 
 	return (
@@ -234,8 +250,8 @@ export default function Dashboard() {
 				</div>
 				<div className="dash-hero-stats">
 					<div className="dash-hero-stat">
-						<span className="dash-hero-stat-val">{user?.elo_rapid ?? 1200}</span>
-						<span className="dash-hero-stat-label">ELO Rapide</span>
+						<span className="dash-hero-stat-val">{selectedElo}</span>
+						<span className="dash-hero-stat-label">ELO {selectedRatingLabel}</span>
 					</div>
 					<div className="dash-hero-stat">
 						<span className="dash-hero-stat-val">{user?.elo_blitz ?? 1200}</span>
@@ -326,7 +342,7 @@ export default function Dashboard() {
 
 					<section className="dash-panel dash-panel-leaderboard">
 						<h2>
-							<i className="ri-trophy-line" /> Classement
+							<i className="ri-trophy-line" /> Classement {selectedRatingLabel}
 							{currentRank != null && <span className="profile-rank-badge">#{currentRank}</span>}
 						</h2>
 						{leaderboard.length > 0 ? (
