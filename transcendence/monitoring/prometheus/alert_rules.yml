@@ -1,0 +1,12 @@
+groups:
+  - name: security_alerts
+    rules:
+      - alert: HighBlockRate
+      # si trop de tentatives de connexion en 403 forbidden en 1 minute -> alerte de sécurité
+        expr: rate(nginx_http_requests_total{status="403"}[1m]) > 10
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Attaque potentielle détectée sur Nginx"
+          description: "Le WAF a bloqué plus de 10 requêtes en 1 minute. Vérifiez les logs ModSecurity."

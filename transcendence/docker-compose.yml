@@ -218,7 +218,18 @@ services:
     networks:
       - monitor_net
       - backend_net
-  
+
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:latest
+    container_name: transcendence_nginx_exporter
+    command: 
+      - "--nginx.scrape-uri=http://nginx:80/statut" # On passe par le port 80 (Interne)
+    restart: always
+    logging: *default-logging
+    networks:
+      - monitor_net
+      - frontend_net
+    
   node_exporter:
     image: prom/node-exporter:latest
     container_name: transcendence_node_exporter
