@@ -142,18 +142,26 @@
 		padding 0.35s ease;
 }
 
-/* 1) Le FAB glisse à gauche ; 2) le panneau s’étend à droite du FAB (vers le bord de l’écran) */
+/*
+ * Pas de translateX sur le FAB : il décale seulement le rendu, pas la boîte flex,
+ * ce qui laissait un vide entre le bouton et le toast.
+ * Le toast s’ouvre après un court délai ; léger chevauchement pour boucher l’anti-alias.
+ */
 .chat-fab-cluster--toast .chat-fab {
 	width: 56px;
 	border-radius: 28px 0 0 28px;
-	transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
-	transform: translateX(-12px);
+	border-right: none;
+	margin-right: -1px;
+	z-index: 1;
 }
 
 .chat-fab-cluster--toast .chat-fab-toast {
 	max-width: min(268px, 70vw);
 	opacity: 1;
 	padding: 0.55rem 0.85rem 0.55rem 0.65rem;
+	margin-left: -1px;
+	position: relative;
+	z-index: 0;
 	transition:
 		max-width 0.42s 0.28s cubic-bezier(0.22, 1, 0.36, 1),
 		opacity 0.3s 0.3s ease,
@@ -214,7 +222,7 @@
 }
 
 .chat-fab-cluster--toast .chat-fab:hover {
-	transform: translateX(-12px) scale(1.05);
+	transform: scale(1.05);
 }
 
 .chat-fab-badge {
@@ -264,7 +272,7 @@
 	top: 16px;
 }
 
-html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab {
+html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab:hover {
 	transform: none;
 }
 
