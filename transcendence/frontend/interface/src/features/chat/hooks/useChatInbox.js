@@ -30,6 +30,8 @@ export function useChatInbox(enabled) {
 	const [toast, setToast] = useState(null)
 	const inboxInit = useRef(false)
 	const prevLastMsg = useRef(new Map())
+	/** Détecte une nouvelle invitation même si le dernier message du fil est déjà un message texte. */
+	const prevInviteUnreadByConv = useRef(new Map())
 	const toastTimer = useRef(null)
 
 	const clearToast = useCallback(() => {
@@ -61,6 +63,7 @@ export function useChatInbox(enabled) {
 		if (!inboxInit.current) {
 			for (const c of convs) {
 				prevLastMsg.current.set(c.id, c.last_message?.id ?? null)
+				prevInviteUnreadByConv.current.set(c.id, Number(c.unread_invite_count ?? 0))
 			}
 			inboxInit.current = true
 			return
@@ -70,24 +73,35 @@ export function useChatInbox(enabled) {
 			const lm = c.last_message
 			const prevId = prevLastMsg.current.get(c.id)
 			const unreadInv = Number(c.unread_invite_count ?? 0)
-			if (
-				lm?.message_type === 'game_invite'
-				&& lm.id !== prevId
-				&& unreadInv > 0
-			) {
+			const prevInv = prevInviteUnreadByConv.current.get(c.id) ?? 0
+			const inviteCountWentUp = unreadInv > prevInv && unreadInv > 0
+			const newInviteAsLastMessage =
+				lm?.message_type === 'game_invite' && lm.id !== prevId && unreadInv > 0
+
+			if (newInviteAsLastMessage || inviteCountWentUp) {
 				const from = c.participants?.[0]?.username || 'Joueur'
-				setToast({
-					conversation: c,
-					messageId: lm.id,
-					title: `${from} te défie`,
-					subtitle: formatGameInviteSubtitle(lm.content),
-				})
+				if (lm?.message_type === 'game_invite' && lm.id !== prevId) {
+					setToast({
+						conversation: c,
+						messageId: lm.id,
+						title: `${from} te défie`,
+						subtitle: formatGameInviteSubtitle(lm.content),
+					})
+				} else {
+					setToast({
+						conversation: c,
+						messageId: lm?.id ?? null,
+						title: `${from} t’a invité`,
+						subtitle: 'Invitation en attente — ouvre le chat pour accepter ou refuser.',
+					})
+				}
 				break
 			}
 		}
 
 		for (const c of convs) {
 			prevLastMsg.current.set(c.id, c.last_message?.id ?? null)
+			prevInviteUnreadByConv.current.set(c.id, Number(c.unread_invite_count ?? 0))
 		}
 	}, [enabled])
 
@@ -95,6 +109,7 @@ export function useChatInbox(enabled) {
 		if (!enabled) {
 			inboxInit.current = false
 			prevLastMsg.current.clear()
+			prevInviteUnreadByConv.current.clear()
 			setTextUnread(0)
 			setInviteUnread(0)
 			clearToast()

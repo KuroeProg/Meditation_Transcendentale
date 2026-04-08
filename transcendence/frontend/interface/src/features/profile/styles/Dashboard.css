@@ -6,7 +6,9 @@
 	flex-direction: column;
 	gap: 1.2rem;
 	background: transparent;
-	min-height: 100vh;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
 }
 
 /* --- Hero Banner --- */
@@ -94,6 +96,17 @@
 	grid-template-columns: 1fr 320px;
 	gap: 1.2rem;
 	align-items: stretch;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.dash-grid > .dash-panel-presets {
+	min-height: 0;
+	overflow-y: auto;
+	overflow-x: hidden;
+	overscroll-behavior: contain;
+	-webkit-overflow-scrolling: touch;
 }
 
 .dash-side-col {
@@ -102,14 +115,21 @@
 	gap: 1rem;
 	min-width: 0;
 	min-height: 0;
+	overflow: hidden;
 }
 
-/* Classement dans la colonne droite : zone scroll pour voir les 20 joueurs sans couper la page */
+.dash-side-col .dash-panel-actions,
+.dash-side-col .dash-panel-friends {
+	flex-shrink: 0;
+}
+
+/* Classement : occupe le reste de la colonne droite, scroll interne */
 .dash-panel-leaderboard {
 	display: flex;
 	flex-direction: column;
 	min-height: 0;
-	flex: 1 1 auto;
+	flex: 1 1 0;
+	overflow: hidden;
 }
 
 .dash-panel-leaderboard h2 {
@@ -117,7 +137,9 @@
 }
 
 .dash-leaderboard-scroll {
-	max-height: min(42vh, 400px);
+	flex: 1;
+	min-height: 8rem;
+	max-height: none;
 	overflow-y: auto;
 	overflow-x: hidden;
 	-webkit-overflow-scrolling: touch;

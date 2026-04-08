@@ -738,8 +738,8 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	background: rgba(125, 211, 252, 0.26);
 }
 
-/* Tablette & mobile : panneau sous le plateau */
-@media (max-width: 1024px) {
+/* Tablette & étroit : panneau sous le plateau */
+@media (max-width: 1175px) {
 	.game-stats-panel {
 		flex: 1 1 auto;
 		min-height: 0;

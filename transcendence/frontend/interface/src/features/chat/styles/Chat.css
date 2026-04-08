@@ -95,7 +95,7 @@
 	font-size: 0.88rem;
 }
 
-/* --- FAB + toast défis --- */
+/* --- FAB + toast défis : [FAB à gauche du bloc][message à droite], collés au bord droit de l’écran --- */
 .chat-fab-cluster {
 	position: fixed;
 	bottom: 1.5rem;
@@ -103,12 +103,6 @@
 	z-index: 800;
 	max-width: min(100vw - 2rem, 400px);
 	pointer-events: none;
-	transition: transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-/* Tout le bloc glisse vers la gauche quand le toast est visible (le FAB bouge avec). */
-.chat-fab-cluster--toast {
-	transform: translateX(calc(-1 * min(220px, calc(65vw - 4rem))));
 }
 
 .chat-fab-cluster__rail {
@@ -137,21 +131,33 @@
 	justify-content: center;
 	gap: 0.15rem;
 	text-align: left;
-	border-radius: 14px 0 0 14px;
+	border-radius: 0 14px 14px 0;
 	background: linear-gradient(135deg, rgba(30, 15, 40, 0.96), rgba(45, 25, 70, 0.94));
 	border: 1px solid rgba(255, 107, 74, 0.35);
-	border-right: none;
+	border-left: none;
 	box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 	transition:
-		max-width 0.45s cubic-bezier(0.22, 1, 0.36, 1),
-		opacity 0.35s ease,
-		padding 0.4s ease;
+		max-width 0.42s cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 0.28s ease,
+		padding 0.35s ease;
+}
+
+/* 1) Le FAB glisse à gauche ; 2) le panneau s’étend à droite du FAB (vers le bord de l’écran) */
+.chat-fab-cluster--toast .chat-fab {
+	width: 56px;
+	border-radius: 28px 0 0 28px;
+	transition: transform 0.32s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
+	transform: translateX(-12px);
 }
 
 .chat-fab-cluster--toast .chat-fab-toast {
-	max-width: min(268px, 72vw);
+	max-width: min(268px, 70vw);
 	opacity: 1;
-	padding: 0.55rem 0.65rem 0.55rem 0.85rem;
+	padding: 0.55rem 0.85rem 0.55rem 0.65rem;
+	transition:
+		max-width 0.42s 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+		opacity 0.3s 0.3s ease,
+		padding 0.38s 0.26s ease;
 }
 
 .chat-fab-toast-title {
@@ -202,14 +208,13 @@
 	transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.28s ease;
 }
 
-.chat-fab-cluster--toast .chat-fab {
-	border-radius: 0 50% 50% 0;
-	width: 56px;
-}
-
 .chat-fab:hover {
 	transform: scale(1.06);
 	box-shadow: 0 8px 32px var(--coalition-accent-glow, rgba(125, 211, 252, 0.35));
+}
+
+.chat-fab-cluster--toast .chat-fab:hover {
+	transform: translateX(-12px) scale(1.05);
 }
 
 .chat-fab-badge {
@@ -259,12 +264,13 @@
 	top: 16px;
 }
 
-html[data-reduce-motion='true'] .chat-fab-cluster--toast {
+html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab {
 	transform: none;
 }
 
-html[data-reduce-motion='true'] .chat-fab-toast {
-	transition: opacity 0.25s ease;
+html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
+	transition: opacity 0.25s ease, max-width 0.25s ease, padding 0.25s ease;
+	transition-delay: 0s;
 }
 
 /* --- Conversation List --- */

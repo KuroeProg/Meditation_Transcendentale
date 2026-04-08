@@ -14,6 +14,18 @@ html, body, #root {
 	}
 }
 
+/* Jeu en colonne (≤1175px) : le contenu dépasse souvent la hauteur — autoriser le défilement */
+@media (min-width: 769px) and (max-width: 1175px) {
+	html:has(.game-container),
+	body:has(.game-container),
+	#root:has(.game-container) {
+		overflow-x: hidden;
+		overflow-y: auto;
+		height: auto;
+		min-height: 100%;
+	}
+}
+
 .header {
 	/* margin: 1.5rem 0;
 	padding: 0 2rem; */
