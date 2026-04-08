@@ -290,8 +290,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 ##########################
-		
-			updated_board = chess.Board(game_state['fen'])
+
+		updated_board = chess.Board(game_state['fen'])
 		if updated_board.is_game_over():
 			outcome = updated_board.outcome()
 			if outcome and outcome.winner == chess.WHITE:

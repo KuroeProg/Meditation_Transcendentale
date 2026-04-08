@@ -43,7 +43,7 @@ ENV_PROFILES_DIR := $(COMPOSE_DIR)/env/profiles
 ENV_TARGET := $(COMPOSE_DIR)/.env
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE).env
 
-.PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use
+.PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -196,4 +196,9 @@ env-use: ## Appliquer un profil .env (ex: make env-use PROFILE=lan)
 	fi
 	@cp "$(ENV_SOURCE)" "$(ENV_TARGET)"
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) -> $(ENV_TARGET)"
-	@printf '%b\n' "$(C_DIM)Relancer la stack: make restart$(C_RESET)"
+	@printf '%b\n' "$(C_DIM)Appliquer les nouvelles variables: make env-reload$(C_RESET)"
+
+env-reload: ## Recréer la stack pour recharger toutes les variables d'environnement
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Recréation des services (reload des variables d'environnement)…"
+	@$(COMPOSE) up -d --force-recreate
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Variables d'environnement rechargées sur la stack."
