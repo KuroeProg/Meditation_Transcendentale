@@ -38,9 +38,9 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
   }
 
   return (
-    <form className="auth-form" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
+    <form className="auth-form auth-form--login" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--login-outline">
           <i className="ri-user-line auth-input-icon" />
           <input
             id="login-email"
@@ -57,7 +57,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
       </div>
 
       <div className="auth-form-group">
-        <div className="auth-input-wrapper">
+        <div className="auth-input-wrapper auth-input-wrapper--login-outline">
           <i className="ri-lock-line auth-input-icon" />
           <input
             id="login-password"
