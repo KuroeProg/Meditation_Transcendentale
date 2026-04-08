@@ -147,9 +147,9 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   RESPONSIVE — Game / Chess : panneau stats sous le plateau (tablette & mobile)
+   RESPONSIVE — Game / Chess : panneau stats sous le plateau (jusqu’à ~1175px)
    ===================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1175px) {
 	.main-content:has(.game-container) {
 		padding: 0.35rem 0.35rem 0.5rem;
 		box-sizing: border-box;

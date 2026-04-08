@@ -14,16 +14,6 @@ export default function ChatFabCluster({
 	return (
 		<div className={`chat-fab-cluster${toast ? ' chat-fab-cluster--toast' : ''}`}>
 			<div className="chat-fab-cluster__rail">
-				{toast && (
-					<button
-						type="button"
-						className="chat-fab-toast"
-						onClick={() => onToastClick?.(toast)}
-					>
-						<span className="chat-fab-toast-title">{toast.title}</span>
-						<span className="chat-fab-toast-sub">{toast.subtitle}</span>
-					</button>
-				)}
 				<button
 					className="chat-fab"
 					type="button"
@@ -48,6 +38,16 @@ export default function ChatFabCluster({
 						</span>
 					)}
 				</button>
+				{toast && (
+					<button
+						type="button"
+						className="chat-fab-toast"
+						onClick={() => onToastClick?.(toast)}
+					>
+						<span className="chat-fab-toast-title">{toast.title}</span>
+						<span className="chat-fab-toast-sub">{toast.subtitle}</span>
+					</button>
+				)}
 			</div>
 		</div>
 	)

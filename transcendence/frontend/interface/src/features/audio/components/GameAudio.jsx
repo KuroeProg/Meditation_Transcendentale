@@ -7,7 +7,7 @@ import {
 	unregisterGameBgmElement,
 	tryPlayGameBgm,
 } from '../services/gameBgm.js'
-import { FADE_OUT_MS, cancelGameBgmFade, fadeGameBgmTo, resetGameBgmFadeController } from '../services/audioFade.js'
+import { cancelGameBgmFade, resetGameBgmFadeController } from '../services/audioFade.js'
 
 /** Musiques d’ambiance en partie : rotation à chaque montage du composant (session). */
 const GAME_BGM_FILES = [
@@ -54,15 +54,14 @@ export function GameAmbientBgm() {
 		return () => {
 			window.removeEventListener('transcendence-game-audio-changed', onPrefs)
 			cancelGameBgmFade()
-			const v = audio.volume
-			void fadeGameBgmTo(audio, 0, FADE_OUT_MS, v).finally(() => {
-				unregisterGameBgmElement(audio)
-				audio.pause()
-				audio.removeAttribute('src')
-				audio.load()
-				audioRef.current = null
-				resetGameBgmFadeController()
-			})
+			/* Pause immédiate : sinon le fondu chevauche la reprise du BGM accueil à la sortie de /game */
+			audio.pause()
+			audio.volume = 0
+			unregisterGameBgmElement(audio)
+			audio.removeAttribute('src')
+			audio.load()
+			audioRef.current = null
+			resetGameBgmFadeController()
 		}
 	}, [])
 

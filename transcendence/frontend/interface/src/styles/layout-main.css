@@ -52,6 +52,17 @@
 	padding-bottom: 0;
 }
 
+/* Dashboard : hauteur viewport, scroll interne aux panneaux (pas de contenu coupé en bas) */
+.main-content:has(.dashboard-v2) {
+	overflow: hidden;
+	max-height: 100vh;
+	max-height: 100dvh;
+	min-height: 0;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
 .error-banner {
 	background: rgba(220, 38, 38, 0.2);
 	border: 1px solid rgba(248, 113, 113, 0.45);
