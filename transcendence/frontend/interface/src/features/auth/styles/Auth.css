@@ -401,15 +401,30 @@ html[data-reduce-motion='true'] .auth-form-container {
   box-shadow: 0 0 0 3px rgba(100, 160, 255, 0.08);
 }
 
-/* Connexion : email + mot de passe — bordure blanche comme demandé */
-.auth-form--login .auth-input-wrapper--login-outline {
+/* Champs « mono » (connexion + inscription) : bordure blanche + icônes blanches */
+.auth-form--login .auth-input-wrapper--mono,
+.auth-form--register .auth-input-wrapper--mono {
   border: 1px solid rgba(255, 255, 255, 0.88);
   box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
-.auth-form--login .auth-input-wrapper--login-outline:focus-within {
+.auth-form--login .auth-input-wrapper--mono:focus-within,
+.auth-form--register .auth-input-wrapper--mono:focus-within {
   border-color: #fff;
   box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+}
+
+.auth-form--login .auth-input-wrapper--mono .auth-input-icon,
+.auth-form--register .auth-input-wrapper--mono .auth-input-icon {
+  color: rgba(255, 255, 255, 0.92);
+}
+
+.auth-form--login .auth-input-wrapper--mono .auth-password-toggle {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.auth-form--login .auth-input-wrapper--mono .auth-password-toggle:hover {
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .auth-input-icon {
@@ -496,6 +511,21 @@ html[data-reduce-motion='true'] .auth-form-container {
   color: #a0d0ff;
 }
 
+/* Liens S'inscrire / Se connecter : ton page, pas le bleu lien par défaut */
+.auth-switch-text .auth-link-btn.auth-link-underline {
+  text-decoration: none;
+  color: rgba(255, 255, 255, 0.9);
+  font-weight: 600;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.38);
+  padding-bottom: 2px;
+  transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.auth-switch-text .auth-link-btn.auth-link-underline:hover {
+  color: #fff;
+  border-bottom-color: rgba(255, 255, 255, 0.75);
+}
+
 /* --- BUTTONS --- */
 .auth-btn {
   width: 100%;
@@ -538,6 +568,21 @@ html[data-reduce-motion='true'] .auth-form-container {
 }
 
 .auth-form--login .auth-btn-primary:hover:not(:disabled) {
+  background: #f4f4f8;
+  border-color: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  transform: translateY(-1px);
+}
+
+/* Inscription : « Créer mon compte » comme « Se connecter » */
+.auth-form--register .auth-btn-primary {
+  background: #fff;
+  color: #12121f;
+  border-color: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.2);
+}
+
+.auth-form--register .auth-btn-primary:hover:not(:disabled) {
   background: #f4f4f8;
   border-color: #fff;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
@@ -588,10 +633,7 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
     0 0 0 1px rgba(255, 255, 255, 0.1);
 }
 
-.auth-btn-42-wrap:hover .auth-btn-42 {
-  transform: translateY(-2px);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
+/* Pas de translateY : évite l’écart visuel entre le dégradé du wrap et le fond du bouton */
 
 /* Intérieur = fond du panneau (.auth-form-container), texte blanc */
 .auth-btn-42 {
@@ -599,15 +641,14 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   margin: 0;
   border: none !important;
   border-radius: 10px;
-  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1), background 0.3s ease, box-shadow 0.3s ease;
+  transition: background 0.25s ease, filter 0.25s ease;
   background: linear-gradient(155deg, rgba(22, 22, 38, 0.75) 0%, rgba(12, 12, 24, 0.88) 100%);
   color: #fff;
 }
 
 .auth-btn-42:hover {
   background: linear-gradient(155deg, rgba(28, 28, 48, 0.82) 0%, rgba(18, 18, 32, 0.92) 100%);
-  box-shadow: none;
-  transform: translateY(-1px);
+  filter: brightness(1.04);
 }
 
 .auth-42-logo {
