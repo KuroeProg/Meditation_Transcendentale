@@ -25,7 +25,7 @@ function Sidebar() {
 				<li>
 					<Link to="/dashboard">
 						<span className="icon">
-							<i className="fa-solid fa-gauge-high" />
+							<i className="fa-solid fa-table-columns" />
 						</span>
 						<span className="text">Dashboard</span>
 					</Link>
@@ -72,7 +72,7 @@ function Sidebar() {
 				</li>
 				<li>
 					{isAuthenticated ? (
-						<button type="button" className="sidebar-btn" onClick={handleLogout}>
+						<button type="button" className="sidebar-btn sidebar-btn--logout" onClick={handleLogout}>
 							<span className="icon">
 								<i className="fa-solid fa-right-from-bracket" />
 							</span>

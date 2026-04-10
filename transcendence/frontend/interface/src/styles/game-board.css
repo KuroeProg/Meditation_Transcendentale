@@ -203,8 +203,12 @@ html[data-reduce-motion='true'] .board-move-ghost {
     --bottom-nav-height: 60px;
     /* .player-bar mobile : 44px — aligné avec la réserve verticale */
     --player-bar-height: 44px;
-    /* Gouttière fixe (évite la boucle board-size → cell → gutter) pour que plateau + lettres tiennent en largeur */
-    --board-coord-gutter: 0.4rem;
+    /*
+      Gouttière coords (a–h / 1–8) : 0.4rem collait au bord des cases ; on aligne
+      l’espace visuel sur le rendu « tablette » (max(0.65rem, cell×0.3)) sans boucle
+      de calcul en fixant un plancher + plafond en vw.
+    */
+    --board-coord-gutter: clamp(0.78rem, 3.6vw, 1.05rem);
     /*
       Chrome vertical page jeu : padding main-content (bas = nav) + barres + gaps flex + cadre.
       Les bandes coords sont absorbées par le facteur 1.082 (comme en desktop).
@@ -216,7 +220,7 @@ html[data-reduce-motion='true'] .board-move-ghost {
     );
     --board-size: min(
       calc((100vh - var(--game-mobile-chrome-y)) / 1.082),
-      calc(100vw - 0.85rem - 2 * var(--board-coord-gutter))
+      calc(100vw - 1rem - 2 * var(--board-coord-gutter))
     );
     --cell: calc(var(--board-size) / 8);
     --board-outer-width: calc(var(--board-size) + 2 * var(--board-coord-gutter));

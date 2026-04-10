@@ -34,6 +34,16 @@
 	transition: 0.3s ease;
 }
 
+.sidebar ul li .sidebar-btn--logout,
+.sidebar ul li .sidebar-btn--logout .icon,
+.sidebar ul li .sidebar-btn--logout .text {
+	color: #e57373;
+}
+
+.sidebar ul li:has(.sidebar-btn--logout):hover {
+	background-color: rgba(180, 60, 60, 0.22);
+}
+
 .sidebar ul li a {
 	position: relative;
 	display: flex;
