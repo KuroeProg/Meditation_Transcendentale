@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchMessages } from '../services/chatApi.js'
+import { useFriendInvite } from '../context/FriendInviteContext.jsx'
 import { useChatSocket } from '../hooks/useChatSocket.js'
 import GameInviteCard from './GameInviteCard.jsx'
 
@@ -32,6 +33,7 @@ function MessageBubble({ msg, isOwn, currentUserId }) {
 }
 
 export default function MessageThread({ conversation, userId, username }) {
+	const { openFriendInvite } = useFriendInvite()
 	const scrollRef = useRef(null)
 	const inputRef = useRef(null)
 	const [draft, setDraft] = useState('')
@@ -46,7 +48,6 @@ export default function MessageThread({ conversation, userId, username }) {
 		sendMessage,
 		sendTyping,
 		markAsRead,
-		sendGameInvite,
 	} = useChatSocket(conversation?.id, userId)
 
 	useEffect(() => {
@@ -104,8 +105,14 @@ export default function MessageThread({ conversation, userId, username }) {
 	}
 
 	const handleGameInvite = useCallback(() => {
-		sendGameInvite('10 min', false)
-	}, [sendGameInvite])
+		const other = conversation?.participants?.[0]
+		if (!other?.id || !conversation?.id) return
+		openFriendInvite({
+			friendUserId: other.id,
+			conversationId: conversation.id,
+			friendLabel: other.username,
+		})
+	}, [conversation, openFriendInvite])
 
 	if (!conversation) return <div className="chat-empty">Selectionne une conversation</div>
 

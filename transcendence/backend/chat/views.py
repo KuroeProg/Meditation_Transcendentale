@@ -6,6 +6,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from accounts.models import Friendship, LocalUser
+from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, Message
 
 
@@ -181,11 +182,9 @@ def send_game_invite(request, conversation_id):
     except (json.JSONDecodeError, UnicodeDecodeError):
         return JsonResponse({'error': 'Invalid JSON'}, status=400)
 
-    invite_data = json.dumps({
-        'time_control': payload.get('time_control', '10 min'),
-        'competitive': payload.get('competitive', False),
-        'sender_username': user.username,
-    })
+    invite_obj = build_game_invite_content_dict(payload)
+    invite_obj['sender_username'] = user.username
+    invite_data = json.dumps(invite_obj)
 
     msg = Message.objects.create(
         conversation=conversation,

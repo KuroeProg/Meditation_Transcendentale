@@ -2,48 +2,14 @@ import '../styles/Dashboard.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
+import { useFriendInvite } from '../../chat/index.js'
+import { TimeControlSection } from '../../chess/components/TimeControlPicker.jsx'
+import { CATEGORY_META, CATEGORY_RATING_FIELD, TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useChessSocket } from '../../chess/hooks/useChessSocket.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 
 const MATCHMAKING_ROOM_ID = 'matchmaking'
-
-const TIME_CONTROLS = {
-	bullet: [
-		{ label: '1 min', time: 60, increment: 0 },
-		{ label: '1 | 1', time: 60, increment: 1 },
-		{ label: '2 | 1', time: 120, increment: 1 },
-	],
-	blitz: [
-		{ label: '3 min', time: 180, increment: 0 },
-		{ label: '3 | 2', time: 180, increment: 2 },
-		{ label: '5 min', time: 300, increment: 0 },
-	],
-	rapid: [
-		{ label: '10 min', time: 600, increment: 0 },
-		{ label: '15 | 10', time: 900, increment: 10 },
-		{ label: '30 min', time: 1800, increment: 0 },
-	],
-	correspondence: [
-		{ label: '1 jour', time: 86400, increment: 0 },
-		{ label: '3 jours', time: 259200, increment: 0 },
-		{ label: '7 jours', time: 604800, increment: 0 },
-	],
-}
-
-const CATEGORY_META = {
-	bullet: { icon: 'ri-speed-up-line', label: 'Bullet', color: '#ff6b6b' },
-	blitz: { icon: 'ri-flashlight-line', label: 'Blitz', color: '#ffd93d' },
-	rapid: { icon: 'ri-timer-line', label: 'Rapide', color: '#6bcb77' },
-	correspondence: { icon: 'ri-sun-line', label: 'Correspondance', color: '#4d96ff' },
-}
-
-const CATEGORY_RATING_FIELD = {
-	bullet: 'elo_bullet',
-	blitz: 'elo_blitz',
-	rapid: 'elo_rapid',
-	correspondence: 'elo_rapid',
-}
 
 function normalizeWirePlayerId(value) {
 	if (value == null) return null
@@ -52,42 +18,13 @@ function normalizeWirePlayerId(value) {
 	return legacyBytesMatch ? legacyBytesMatch[1] : raw
 }
 
-function TimeControlButton({ control, selected, onSelect }) {
-	const isSelected = selected?.label === control.label
-	return (
-		<button
-			className={`dash-tc-btn ${isSelected ? 'dash-tc-btn--selected' : ''}`}
-			type="button"
-			onClick={() => onSelect(control)}
-		>
-			{control.label}
-		</button>
-	)
-}
-
-function TimeControlSection({ category, controls, selected, onSelect }) {
-	const meta = CATEGORY_META[category]
-	return (
-		<div className="dash-tc-section">
-			<h3 className="dash-tc-category" style={{ '--cat-color': meta.color }}>
-				<i className={meta.icon} /> {meta.label}
-			</h3>
-			<div className="dash-tc-grid">
-				{controls.map((c) => (
-					<TimeControlButton key={c.label} control={c} selected={selected} onSelect={onSelect} />
-				))}
-			</div>
-		</div>
-	)
-}
-
 function FriendChip({ friend, onChallenge }) {
 	return (
 		<div className="dash-friend-chip">
 			<span className={`dash-friend-dot ${friend.user?.is_online ? 'online' : ''}`} />
 			<span className="dash-friend-name">{friend.user?.username}</span>
 			{friend.user?.is_online && (
-				<button className="dash-friend-action" type="button" onClick={() => onChallenge(friend.user.id)}>
+				<button className="dash-friend-action" type="button" onClick={() => onChallenge(friend.user)}>
 					<i className="ri-sword-line" />
 				</button>
 			)}
@@ -112,6 +49,7 @@ function LeaderboardRow({ entry, isCurrentUser }) {
 
 export default function Dashboard() {
 	const navigate = useNavigate()
+	const { openFriendInvite } = useFriendInvite()
 	const { user, isAuthenticated } = useAuth()
 	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID)
 	const [queueSize, setQueueSize] = useState(0)
@@ -274,7 +212,7 @@ export default function Dashboard() {
 					<div className="dash-preset-header">
 						<div className="dash-preset-current">
 							<i className={catMeta.icon} style={{ color: catMeta.color }} />
-							<span>{selectedTC.label} ({isCompetitive ? 'Competitive' : 'Amicale'})</span>
+							<span>{selectedTC.label} ({isCompetitive ? 'Classée' : 'Amicale'})</span>
 						</div>
 						<div className="dash-preset-variant">
 							<i className="ri-chess-line" /> Standard
@@ -291,7 +229,7 @@ export default function Dashboard() {
 						>
 							<span className="dash-toggle-thumb" />
 						</button>
-						<span className={isCompetitive ? 'active' : ''}>Competitive</span>
+						<span className={isCompetitive ? 'active' : ''}>Classée</span>
 					</div>
 
 					<TimeControlSection category="bullet" controls={TIME_CONTROLS.bullet} selected={selectedTC} onSelect={setSelectedTC} />
@@ -332,7 +270,16 @@ export default function Dashboard() {
 						{friends.length > 0 ? (
 							<div className="dash-friends-chips">
 								{friends.map((f) => (
-									<FriendChip key={f.friendship_id} friend={f} onChallenge={() => {}} />
+									<FriendChip
+										key={f.friendship_id}
+										friend={f}
+										onChallenge={(u) =>
+											openFriendInvite({
+												friendUserId: u.id,
+												friendLabel: u.username,
+											})
+										}
+									/>
 								))}
 							</div>
 						) : (
@@ -380,7 +327,7 @@ export default function Dashboard() {
 					<div className="dash-mm-card">
 						<div className="dash-mm-spinner" aria-hidden="true" />
 						<h3>Recherche d'un adversaire...</h3>
-						<p className="dash-mm-preset">{selectedTC.label} — {isCompetitive ? 'Competitive' : 'Amicale'}</p>
+						<p className="dash-mm-preset">{selectedTC.label} — {isCompetitive ? 'Classée' : 'Amicale'}</p>
 						<p>{statusMessage}</p>
 						<p className="dash-mm-queue">Joueurs en file : {queueSize}</p>
 						{socketError && <p className="dash-mm-error">{socketError}</p>}

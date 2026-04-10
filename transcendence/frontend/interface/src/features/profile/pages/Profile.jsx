@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useAuth } from '../../auth/index.js'
+import { useFriendInvite } from '../../chat/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'
@@ -74,7 +75,7 @@ function FriendItem({ friend, onChallenge }) {
 				</span>
 			</div>
 			{u.is_online && friend.status === 'accepted' && (
-				<button className="profile-friend-challenge" onClick={() => onChallenge(u.id)} type="button">
+				<button className="profile-friend-challenge" onClick={() => onChallenge(u)} type="button">
 					Defier
 				</button>
 			)}
@@ -83,6 +84,7 @@ function FriendItem({ friend, onChallenge }) {
 }
 
 function Profile() {
+	const { openFriendInvite } = useFriendInvite()
 	const { user, loading, error, refetch, isDevMockAuth } = useAuth()
 	const [friends, setFriends] = useState([])
 	const [profileSaveError, setProfileSaveError] = useState(null)
@@ -293,7 +295,13 @@ function Profile() {
 					{friends.length > 0 ? (
 						<ul className="profile-friends-list">
 							{friends.map((f) => (
-								<FriendItem key={f.friendship_id} friend={f} onChallenge={() => {}} />
+								<FriendItem
+									key={f.friendship_id}
+									friend={f}
+									onChallenge={(u) =>
+										openFriendInvite({ friendUserId: u.id, friendLabel: u.username })
+									}
+								/>
 							))}
 						</ul>
 					) : (

@@ -20,7 +20,7 @@ export default function GameInviteCard({ msg, isOwn }) {
 						{isOwn ? 'Invitation envoyee' : 'Invitation de partie'}
 					</span>
 					<span className="chat-invite-detail">
-						{data.time_control || '10 min'} — {data.competitive ? 'Competitive' : 'Amicale'}
+						{data.time_control || '10 min'} — {data.competitive ? 'Classée' : 'Amicale'}
 					</span>
 				</div>
 				{!isOwn && (

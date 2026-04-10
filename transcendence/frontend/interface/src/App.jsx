@@ -15,6 +15,7 @@ import {
 	CoalitionAmbient,
 	HomeAmbientBgm,
 	ChatDrawer,
+	FriendInviteProvider,
 	useAuth,
 } from './features/index.js'
 import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
@@ -59,6 +60,7 @@ function AppContent() {
 	}
 
 	return (
+		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
 		<div className="app-layout">
 			<ThemeSync />
 			<CoalitionHtmlSync />
@@ -157,6 +159,7 @@ function AppContent() {
 				</>
 			)}
 		</div>
+		</FriendInviteProvider>
 	)
 }
 

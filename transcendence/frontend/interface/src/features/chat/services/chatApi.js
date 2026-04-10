@@ -61,10 +61,11 @@ export function sendMessageHttp(conversationId, content, messageType = 'text') {
 	})
 }
 
-export function sendGameInviteHttp(conversationId, timeControl, competitive = false) {
+/** @param {object} body — time_control, competitive, time_seconds?, increment? */
+export function sendGameInviteHttp(conversationId, body) {
 	return jsonFetch(`${BASE}/conversations/${conversationId}/invite`, {
 		method: 'POST',
-		body: JSON.stringify({ time_control: timeControl, competitive }),
+		body: JSON.stringify(body),
 	})
 }
 

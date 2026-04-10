@@ -89,9 +89,10 @@ export function useChatSocket(conversationId, userId) {
 		}
 	}, [])
 
-	const sendGameInvite = useCallback((timeControl, competitive) => {
+	/** @param {{ time_control: string, competitive: boolean, time_seconds?: number, increment?: number }} payload */
+	const sendGameInvite = useCallback((payload) => {
 		if (wsRef.current?.readyState === WebSocket.OPEN) {
-			wsRef.current.send(JSON.stringify({ action: 'game_invite', time_control: timeControl, competitive }))
+			wsRef.current.send(JSON.stringify({ action: 'game_invite', ...payload }))
 		}
 	}, [])
 

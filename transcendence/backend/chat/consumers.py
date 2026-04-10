@@ -4,6 +4,7 @@ from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 
 from accounts.models import Friendship, LocalUser
+from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, Message
 
 
@@ -101,10 +102,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not self.user_id:
             return
 
-        content = json.dumps({
-            'time_control': data.get('time_control', '10 min'),
-            'competitive': data.get('competitive', False),
-        })
+        content = json.dumps(build_game_invite_content_dict(data))
 
         message = await self._save_message(
             self.user_id, self.conversation_id, content, 'game_invite'

@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/index.js'
 
 const NAV_ITEMS = [
-	{ to: '/dashboard', icon: 'fa-house', label: 'Home' },
+	{ to: '/dashboard', icon: 'fa-gauge-high', label: 'Dashboard' },
 	{ to: '/game', icon: 'fa-chess', label: 'Game' },
 	{ to: '/profile', icon: 'fa-user', label: 'Profile' },
 	{ to: '/statistics', icon: 'fa-chart-pie', label: 'Stats' },

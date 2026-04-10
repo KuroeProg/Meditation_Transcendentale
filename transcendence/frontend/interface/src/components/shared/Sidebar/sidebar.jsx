@@ -25,9 +25,17 @@ function Sidebar() {
 				<li>
 					<Link to="/dashboard">
 						<span className="icon">
-							<i className="fa-solid fa-house" />
+							<i className="fa-solid fa-gauge-high" />
 						</span>
-						<span className="text">Home</span>
+						<span className="text">Dashboard</span>
+					</Link>
+				</li>
+				<li>
+					<Link to="/game">
+						<span className="icon">
+							<i className="fa-solid fa-chess" />
+						</span>
+						<span className="text">Game</span>
 					</Link>
 				</li>
 				<li>
