@@ -1,7 +1,7 @@
 import { useRef, useLayoutEffect } from 'react'
 import { resultShortNotation } from '../services/statsCalculator.js'
 
-export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
+export function MoveListView({ moveLog, viewPlies, onViewPlies, winner, tabBarEnd = null }) {
   const listScrollRef = useRef(null)
   const selectedHalfIdx =
     viewPlies === null
@@ -37,6 +37,7 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
       <div className="stats-moves-block stats-moves-block--pgn">
         <div className="stats-moves-pgn__tabbar">
           <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">Coups</span>
+          {tabBarEnd ? <div className="stats-moves-pgn__tabbar-end">{tabBarEnd}</div> : null}
         </div>
         <p className="stats-empty-moves">Aucun coup pour l’instant.</p>
       </div>
@@ -47,10 +48,15 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner }) {
     <div className="stats-moves-block stats-moves-block--pgn">
       <div className="stats-moves-pgn__tabbar">
         <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">Coups</span>
-        {viewPlies != null ? (
-          <button type="button" className="stats-moves-pgn__live" onClick={() => onViewPlies(null)}>
-            Partie en cours
-          </button>
+        {(viewPlies != null || tabBarEnd) ? (
+          <div className="stats-moves-pgn__tabbar-end">
+            {viewPlies != null ? (
+              <button type="button" className="stats-moves-pgn__live" onClick={() => onViewPlies(null)}>
+                Partie en cours
+              </button>
+            ) : null}
+            {tabBarEnd}
+          </div>
         ) : null}
       </div>
       <div

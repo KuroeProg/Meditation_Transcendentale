@@ -193,32 +193,12 @@ html[data-reduce-motion='true'] .btn {
 		flex-direction: column;
 	}
 
-	.game-music-panel-wrap {
-		position: fixed;
-		top: auto;
-		left: auto;
-		right: max(12px, env(safe-area-inset-right, 0px));
-		bottom: max(12px, env(safe-area-inset-bottom, 0px));
-		z-index: 45;
-	}
-
-	.game-music-popover {
-		left: auto;
-		right: 0;
-		bottom: calc(100% + 8px);
-		top: auto;
-	}
 }
 
 @media (max-width: 768px) {
 	.main-content:has(.game-container) {
 		padding: 0.25rem;
 		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.35rem);
-	}
-
-	.game-music-panel-wrap {
-		bottom: calc(var(--bottom-nav-height, 60px) + 10px + env(safe-area-inset-bottom, 0px));
-		right: max(10px, env(safe-area-inset-right, 0px));
 	}
 
 	.player-bar {
@@ -246,12 +226,6 @@ html[data-reduce-motion='true'] .btn {
 	.game-stats-panel-wrap {
 		min-height: 280px;
 		max-height: min(50vh, 520px);
-	}
-
-	.game-music-fab {
-		width: 40px;
-		height: 40px;
-		font-size: 1.05rem;
 	}
 
 	.game-debug-hud {
