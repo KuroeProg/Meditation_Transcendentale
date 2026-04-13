@@ -152,7 +152,7 @@ html[data-reduce-motion='true'] .btn {
 @media (max-width: 1175px) {
 	.main-content:has(.game-container) {
 		padding: 0.35rem 0.35rem
-			calc(0.5rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.85rem));
+			calc(0.5rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem));
 		box-sizing: border-box;
 	}
 
@@ -201,7 +201,7 @@ html[data-reduce-motion='true'] .btn {
 		padding: 0.25rem;
 		padding-bottom: calc(
 			var(--bottom-nav-height, 60px) + 0.35rem + var(--site-footer-reserve) +
-				var(--game-footer-overscan, 0.85rem)
+				var(--game-footer-overscan, 0.4rem)
 		);
 	}
 

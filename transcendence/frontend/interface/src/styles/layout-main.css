@@ -34,6 +34,21 @@
 	box-sizing: border-box;
 }
 
+/* Auth : pas de scroll document (overflow venait de .full-width + contenu pleine hauteur) */
+html:has(.auth-page),
+body:has(.auth-page),
+#root:has(.auth-page) {
+	overflow: hidden;
+	height: 100%;
+}
+
+.main-content.full-width:has(.auth-page) {
+	overflow: hidden;
+	min-height: 0;
+	flex: 1 1 auto;
+	align-self: stretch;
+}
+
 /* Pas de sidebar : Home / pages publiques en pleine largeur */
 .main-content--guest {
 	margin-left: 0 !important;
@@ -43,7 +58,7 @@
 .main-content:has(.game-container) {
 	max-width: none;
 	width: auto;
-	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.85rem)) 1.5rem;
+	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem)) 1.5rem;
 }
 
 /* Statistiques perso */

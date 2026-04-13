@@ -182,7 +182,7 @@ html[data-reduce-motion='true'] .board-move-ghost {
   /* .game-board-col : 2 × gap entre barre / cadre / barre */
   --game-board-col-gap-total: 0.8rem;
   /* Marge sous le jeu : footer fixe (souvent 2 lignes) — aligné avec .main-content:has(.game-container) */
-  --game-footer-overscan: 0.85rem;
+  --game-footer-overscan: 0.4rem;
   --game-main-pad-top: 0.75rem;
   --game-main-pad-bottom: calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan));
   /*
