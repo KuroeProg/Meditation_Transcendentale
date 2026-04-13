@@ -2,9 +2,11 @@
 
 .app-layout {
 	min-height: 100vh;
+	min-height: 100dvh;
 	position: relative;
 	display: flex;
 	align-items: stretch;
+	min-width: 0;
 }
 
 .main-content {
@@ -50,6 +52,25 @@
 	padding-right: 0;
 	padding-top: 0;
 	padding-bottom: 0;
+}
+
+/* Contact / À propos : hauteur bornée pour que overflow-y fasse défiler (sinon la colonne s’étire et rien ne scroll) */
+.main-content:has(.contact-page),
+.main-content:has(.about-page) {
+	overflow-x: hidden;
+	overflow-y: auto;
+	-webkit-overflow-scrolling: touch;
+	min-height: 0;
+	max-height: 100vh;
+	max-height: 100dvh;
+	align-self: stretch;
+}
+
+@media (max-width: 768px) {
+	.main-content:has(.contact-page),
+	.main-content:has(.about-page) {
+		max-height: calc(100dvh - var(--bottom-nav-height, 60px));
+	}
 }
 
 /* Dashboard : hauteur viewport, scroll interne aux panneaux (pas de contenu coupé en bas) */

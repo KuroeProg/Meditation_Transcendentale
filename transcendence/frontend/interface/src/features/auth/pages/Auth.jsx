@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Link, Navigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { TwoFactorVerify } from '../components/TwoFactorVerify.jsx'
 import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
@@ -11,6 +11,7 @@ import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Ea
 import '../styles/Auth.css'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
+import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
 
 function LoginForm({ on2FARequired, onSwitchToRegister }) {
   const { loginLocal, error, setError } = useAuth()
@@ -206,14 +207,41 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
 }
 
 export default function AuthPage() {
-  const { isAuthenticated, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
+  const navigate = useNavigate()
+  const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
   const [stage, setStage] = useState('login')
+  const postAuthRedirectRef = useRef(false)
   const userInfo = twoFactorChallenge
     ? { userId: twoFactorChallenge.user_id, email: twoFactorChallenge.email, preAuthToken: twoFactorChallenge.pre_auth_token }
     : null
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      postAuthRedirectRef.current = false
+      return
+    }
+    if (postAuthRedirectRef.current) return
+    postAuthRedirectRef.current = true
+    const dest = getPostAuthDestination(user.id)
+    navigate(dest, { replace: true })
+  }, [isAuthenticated, user?.id, navigate])
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" />
+        <p>Chargement…</p>
+      </div>
+    )
+  }
+
+  if (isAuthenticated && user?.id) {
+    return (
+      <div className="loading-screen" aria-busy="true">
+        <div className="spinner" />
+        <p>Redirection…</p>
+      </div>
+    )
   }
 
   const handleRegistrationSuccess = ({ user_id }) => {
@@ -273,7 +301,7 @@ export default function AuthPage() {
               userId={userInfo.userId}
               email={userInfo.email}
               preAuthToken={userInfo.preAuthToken}
-              onVerificationSuccess={() => (window.location.href = '/dashboard')}
+              onVerificationSuccess={() => {}}
               onCancel={() => { clearTwoFactorChallenge(); setStage('login') }}
             />
           )}

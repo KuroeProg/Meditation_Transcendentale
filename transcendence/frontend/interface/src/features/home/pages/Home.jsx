@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import '../styles/Home.css'
 import MenuHome from '../components/MenuHome'
 import { SiteBrandLogo } from '../../../components/common/index.js'
@@ -6,10 +7,18 @@ import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '..
 import { motion as Motion } from 'framer-motion'
 import { useReduceMotionPref } from '../../theme/index.js'
 import { Link } from 'react-router-dom'
-import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL } from '../../../config/legalPages.js'
+import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
+import { useAuth } from '../../auth/index.js'
+import { markWelcomeHomeSeen } from '../../../utils/postLoginRedirect.js'
 
 function Home() {
 	const reduceMotion = useReduceMotionPref()
+	const { user } = useAuth()
+	const userId = user?.id ?? user?.user_id ?? null
+
+	useEffect(() => {
+		if (userId != null) markWelcomeHomeSeen(userId)
+	}, [userId])
 
 	return (
 		<div
@@ -88,6 +97,12 @@ function Home() {
 						</span>
 						<a className="footer-link" href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer">
 							Confidentialité
+						</a>
+						<span className="footer-separator" aria-hidden="true">
+							·
+						</span>
+						<a className="footer-link" href={LEGAL_TOS_URL} target="_blank" rel="noreferrer">
+							CGU
 						</a>
 						<span className="footer-separator" aria-hidden="true">
 							·

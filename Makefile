@@ -52,7 +52,7 @@ ifeq ($(strip $(PROFILE)),localhost)
 endif
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
-.PHONY: help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload
+.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -67,6 +67,20 @@ help: ## Afficher cette aide (cible par défaut)
 	@grep -hE '^[a-zA-Z0-9_.-]+:.*?##' $(MAKEFILE_LIST) \
 		| sort \
 		| awk 'BEGIN {FS = ":.*?## "}; {printf "  $(C_GREEN)%-16s$(C_RESET) %s\n", $$1, $$2}'
+	@printf '%b\n' ""
+
+mock-help: ## Vite : rappel .env.local pour user fictif + choixpeau (voir interface/.env.example)
+	@printf '%b\n' "$(C_BOLD)Mock utilisateur (npm run dev)$(C_RESET)"
+	@printf '%b\n' "$(C_DIM)Créer$(C_RESET) $(C_YELLOW)$(COMPOSE_DIR)/frontend/interface/.env.local$(C_RESET) $(C_DIM)avec par ex. :$(C_RESET)"
+	@printf '%b\n' ""
+	@printf '%b\n' "  $(C_GREEN)VITE_DEV_MOCK_USER=true$(C_RESET)"
+	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_COALITION=eau$(C_RESET)          $(C_DIM)# feu | eau | terre | air$(C_RESET)"
+	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_AUTH_PROVIDER=local$(C_RESET)   $(C_DIM)# pour tester le choixpeau$(C_RESET)"
+	@printf '%b\n' "  $(C_GREEN)VITE_SORTING_HAT_COALITION=true$(C_RESET)"
+	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_RESET_SORTING_HAT=true$(C_RESET) $(C_DIM)# efface le flag choixpeau à chaque reload$(C_RESET)"
+	@printf '%b\n' "  $(C_DIM)# optionnel : VITE_MOCK_USER_ID=42$(C_RESET)"
+	@printf '%b\n' ""
+	@printf '%b\n' "$(C_DIM)Compte réel : choixpeau si auth_provider=local (API), variable ci-dessus, et pas de clé localStorage transcendance_sorting_hat_v1_<id>.$(C_RESET)"
 	@printf '%b\n' ""
 
 all: certs build up-bg migrations ## Certificats + build + démarrage en arrière-plan

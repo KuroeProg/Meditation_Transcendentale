@@ -1,4 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import {
+	getMockSessionUser,
+	isDevMockAuthEnabled,
+	maybeClearSortingHatStorageForMock,
+} from '../../mock/mockSessionUser.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -40,6 +45,14 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return
+      }
+
       const response = await fetch('/api/auth/me', {
         credentials: 'include',
       })
@@ -64,6 +77,18 @@ export function AuthProvider({ children }) {
   async function loginLocal(email, password) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       await ensureCsrfCookie()
       const csrf = readCookie('csrftoken')
       const headers = { 'Content-Type': 'application/json' }
@@ -114,6 +139,18 @@ export function AuthProvider({ children }) {
   async function registerLocal(username, password, email, firstName, lastName) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         credentials: 'include',
@@ -206,18 +243,20 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await ensureCsrfCookie()
-      const csrf = readCookie('csrftoken')
-      const headers = {}
-      if (csrf) {
-        headers['X-CSRFToken'] = csrf
-      }
+      if (!isDevMockAuthEnabled()) {
+        await ensureCsrfCookie()
+        const csrf = readCookie('csrftoken')
+        const headers = {}
+        if (csrf) {
+          headers['X-CSRFToken'] = csrf
+        }
 
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-      })
+        await fetch('/api/auth/logout', {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        })
+      }
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
@@ -250,7 +289,7 @@ export function AuthProvider({ children }) {
     clearTwoFactorChallenge,
     logout,
     refetch: checkAuth,
-    isDevMockAuth: false,
+    isDevMockAuth: isDevMockAuthEnabled(),
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
   }
