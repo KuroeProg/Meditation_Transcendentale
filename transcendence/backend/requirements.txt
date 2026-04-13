@@ -12,3 +12,4 @@ python-chess==1.999
 requests>=2.31.0
 Pillow>=10.0.0
 elasticsearch>=8.0.0
+hvac==2.1.0

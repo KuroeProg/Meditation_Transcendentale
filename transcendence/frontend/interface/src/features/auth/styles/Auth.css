@@ -680,6 +680,16 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   text-align: center;
 }
 
+.auth-success {
+  background: rgba(58, 163, 77, 0.12);
+  border: 1px solid rgba(58, 163, 77, 0.45);
+  color: #8de39a;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .auth-switch-text {
   text-align: center;
   color: rgba(255, 255, 255, 0.45);

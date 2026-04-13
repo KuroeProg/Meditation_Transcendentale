@@ -46,6 +46,24 @@ services:
     logging: *default-logging
     networks:
       - monitor_net
+  
+  vault-init:
+    image: hashicorp/vault:latest
+    container_name: vault_init
+    depends_on:
+      - vault
+    env_file: .env
+    environment:
+      - VAULT_ADDR=http://vault:8202
+      - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
+    command: >
+      sh -c "
+      sleep 5;
+      vault kv put secret/database db_user=\"$${POSTGRES_USER}\" db_password=\"$${POSTGRES_PASSWORD}\" db_name=\"$${POSTGRES_DB}\" redis_pass=\"$${REDIS_PASSWORD}\" ft_client=\"$${FORTYTWO_CLIENT_ID}\" ft_secret=\"$${FORTYTWO_CLIENT_SECRET}\" email_pass=\"$${EMAIL_HOST_PASSWORD}\";
+      echo 'Secrets are now in vault !';
+      "
+    networks:
+      - monitor_net
 
   redis:
     image: redis:7-alpine
@@ -87,6 +105,8 @@ services:
       - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
+      - VAULT_ADDR=http://vault:8202
+      - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
     # ports:
     # A voir avec Cloe
       # - "8000:8000"
@@ -99,8 +119,11 @@ services:
         condition: service_started
       mailhog:
         condition: service_started
+      vault-init:
+        condition: service_completed_successfully
     networks:
       - backend_net
+      - monitor_net
     restart: always
     logging: *default-logging
 
@@ -209,7 +232,7 @@ services:
     image: prom/prometheus
     container_name: transcendence_prom
     ports:
-      - "127.0.0.1:9090:9090"
+      - "127.0.0.1:9090:9090" #127.0.0.1 
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml # alerts_rules.yml is now visible for prometheus.
@@ -221,6 +244,9 @@ services:
     networks:
       - monitor_net
       - backend_net
+    # voir pour recevoir un email si alerte (?)
+    # mettre un mdp sur prometheus en 127.0.0.1:9090
+    # voir pour passer par un autre port pour le côté site et administration
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:latest

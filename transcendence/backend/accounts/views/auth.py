@@ -4,6 +4,7 @@ import os
 
 from django.conf import settings
 from django.core import signing
+from django.core.mail import send_mail
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
@@ -32,6 +33,8 @@ PRE_AUTH_TOKEN_MAX_AGE_SECONDS = 300
 TRUSTED_2FA_COOKIE_NAME = 'trusted_2fa_device'
 TRUSTED_2FA_COOKIE_SALT = 'trusted-2fa-device'
 TRUSTED_2FA_MAX_AGE_SECONDS = int(os.environ.get('TRUSTED_2FA_MAX_AGE_SECONDS', '31536000'))
+PASSWORD_RESET_TOKEN_SALT = 'password-reset'
+PASSWORD_RESET_TOKEN_MAX_AGE_SECONDS = int(os.environ.get('PASSWORD_RESET_TOKEN_MAX_AGE_SECONDS', '1800'))
 
 
 def _issue_pre_auth_token(user_id: int, flow: str = 'login'):
@@ -90,6 +93,46 @@ def _set_trusted_2fa_cookie(response, user):
         secure=not settings.DEBUG,
         samesite='Lax',
         path='/',
+    )
+
+
+def _issue_password_reset_token(user_id: int):
+    payload = {'user_id': int(user_id), 'flow': 'password_reset'}
+    return signing.dumps(payload, salt=PASSWORD_RESET_TOKEN_SALT)
+
+
+def _read_password_reset_token(token: str):
+    try:
+        payload = signing.loads(
+            str(token),
+            salt=PASSWORD_RESET_TOKEN_SALT,
+            max_age=PASSWORD_RESET_TOKEN_MAX_AGE_SECONDS,
+        )
+        if payload.get('flow') != 'password_reset':
+            return None
+        return payload
+    except signing.BadSignature:
+        return None
+
+
+def _send_password_reset_email(request, user):
+    token = _issue_password_reset_token(user.id)
+    reset_url = request.build_absolute_uri(f'/auth/reset-password?token={token}')
+    subject = 'Reinitialisation de mot de passe'
+    message = (
+        'Bonjour,\n\n'
+        'Vous avez demande la reinitialisation de votre mot de passe.\n'
+        f'Ouvrez ce lien pour definir un nouveau mot de passe : {reset_url}\n\n'
+        'Ce lien expire dans 30 minutes.\n'
+        'Si vous n etes pas a l origine de cette demande, ignorez cet email.'
+    )
+
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
     )
 
 
@@ -234,6 +277,61 @@ def auth_seed_users(request):
             created.append(user.username)
 
     return JsonResponse({'ok': True, 'created': created})
+
+
+@require_POST
+def auth_forgot_password(request):
+    payload = _read_json_body(request)
+    email = str(payload.get('email', '')).strip()
+
+    if not email:
+        return JsonResponse({'error': 'Email requis'}, status=400)
+
+    users = LocalUser.objects.filter(email__iexact=email)
+    generic_response = {
+        'ok': True,
+        'message': 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.'
+    }
+
+    if not users.exists() or users.count() > 1:
+        if users.count() > 1:
+            logger = logging.getLogger(__name__)
+            logger.warning('Password reset requested for duplicate email address')
+        return JsonResponse(generic_response, status=200)
+
+    user = users.first()
+    try:
+        _send_password_reset_email(request, user)
+    except Exception as exc:
+        logger = logging.getLogger(__name__)
+        logger.error(f'Failed to send password reset email for user {user.id}: {exc}')
+
+    return JsonResponse(generic_response, status=200)
+
+
+@require_POST
+def auth_reset_password(request):
+    payload = _read_json_body(request)
+    token = str(payload.get('token', '')).strip()
+    new_password = str(payload.get('new_password', '')).strip()
+
+    if not token or not new_password:
+        return JsonResponse({'error': 'token and new_password are required'}, status=400)
+
+    token_payload = _read_password_reset_token(token)
+    if not token_payload:
+        return JsonResponse({'error': 'Lien invalide ou expire'}, status=400)
+
+    user_id = token_payload.get('user_id')
+    try:
+        user = LocalUser.objects.get(id=user_id)
+    except LocalUser.DoesNotExist:
+        return JsonResponse({'error': 'Utilisateur introuvable'}, status=404)
+
+    user.set_password(new_password)
+    user.save(update_fields=['password_hash'])
+
+    return JsonResponse({'ok': True, 'message': 'Mot de passe mis a jour avec succes'}, status=200)
 
 
 @method_decorator(csrf_exempt, name='dispatch')

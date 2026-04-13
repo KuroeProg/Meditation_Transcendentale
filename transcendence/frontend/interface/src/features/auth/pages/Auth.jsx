@@ -13,7 +13,7 @@ import AuthChessFloat from '../components/AuthChessFloat.jsx'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
 
-function LoginForm({ on2FARequired, onSwitchToRegister }) {
+function LoginForm({ on2FARequired, onSwitchToRegister, onForgotPassword }) {
   const { loginLocal, error, setError } = useAuth()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -88,7 +88,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
           <input type="checkbox" name="remember" checked={formData.remember} onChange={handleChange} />
           <span>Se souvenir de moi</span>
         </label>
-        <button type="button" className="auth-link-btn" tabIndex={-1}>
+        <button type="button" className="auth-link-btn" tabIndex={-1} onClick={onForgotPassword}>
           Mot de passe oublie ?
         </button>
       </div>
@@ -206,6 +206,60 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
   )
 }
 
+function ForgotPasswordForm({ onBackToLogin }) {
+  const { forgotPassword, error, setError } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setMessage('')
+    setLoading(true)
+    const result = await forgotPassword(email)
+    if (result?.ok) {
+      setMessage(result.message || 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <form className="auth-form auth-form--login" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
+      <p className="auth-switch-text">Entre ton email pour recevoir un lien de reinitialisation.</p>
+
+      <div className="auth-form-group">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
+          <i className="ri-mail-line auth-input-icon" />
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Adresse email"
+            required
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      {error && <div className="auth-error">{error}</div>}
+      {message && <div className="auth-success">{message}</div>}
+
+      <button type="submit" className="auth-btn auth-btn-primary" disabled={loading}>
+        {loading ? 'Envoi...' : 'Envoyer le lien'}
+      </button>
+
+      <p className="auth-switch-text">
+        <button type="button" className="auth-link-btn auth-link-underline" onClick={onBackToLogin}>
+          Retour a la connexion
+        </button>
+      </p>
+    </form>
+  )
+}
+
 export default function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -293,7 +347,7 @@ export default function AuthPage() {
           <div className="auth-form-header">
             <Logo42 className="auth-header-42-logo" />
             <h2 className="auth-form-heading">
-              {stage === 'register' ? 'Rejoindre l\'Arene' : 'Connexion a l\'Arene'}
+              {stage === 'register' ? 'Rejoindre l\'Arene' : stage === 'forgot' ? 'Recuperer l\'acces' : 'Connexion a l\'Arene'}
             </h2>
           </div>
 
@@ -301,6 +355,7 @@ export default function AuthPage() {
             <LoginForm
               on2FARequired={handleLogin2FARequired}
               onSwitchToRegister={() => setStage('register')}
+              onForgotPassword={() => setStage('forgot')}
             />
           )}
 
@@ -309,6 +364,10 @@ export default function AuthPage() {
               onRegistrationSuccess={handleRegistrationSuccess}
               onSwitchToLogin={() => setStage('login')}
             />
+          )}
+
+          {stage === 'forgot' && (
+            <ForgotPasswordForm onBackToLogin={() => setStage('login')} />
           )}
 
           {stage === '2fa' && userInfo && (

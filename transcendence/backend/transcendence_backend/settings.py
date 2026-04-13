@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 """
 
 import os
+import hvac
 from pathlib import Path
 
 
@@ -127,16 +128,72 @@ ASGI_APPLICATION = 'transcendence_backend.asgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.0/ref/settings/#databases
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': os.environ.get('DB_NAME'),
+#         'USER': os.environ.get('DB_USER'),
+#         'PASSWORD': os.environ.get('DB_PASSWORD'),
+#         'HOST': os.environ.get('DB_HOST', 'db'),
+#         'PORT': '5432',
+#     }
+# }
+
+# VAULT
+# ==========================================
+# --- ÉTAPE 3 : INTÉGRATION VAULT ---
+# ==========================================
+vault_url = os.environ.get('VAULT_ADDR', 'http://vault:8202')
+vault_token = os.environ.get('VAULT_TOKEN')
+
+# init a vide
+db_user = os.environ.get('DB_USER', 'postgres')
+db_password = os.environ.get('DB_PASSWORD', '')
+db_name = os.environ.get('DB_NAME', 'transcendence')
+redis_password = ''
+ft_client_id = ''
+ft_client_secret = ''
+email_password = ''
+
+if vault_token:
+    try:
+        client = hvac.Client(url=vault_url, token=vault_token)
+        read_response = client.secrets.kv.v2.read_secret_version(path='database')
+        secrets = read_response['data']['data']
+        
+        db_user = secrets.get('db_user', db_user)
+        db_password = secrets.get('db_password', db_password)
+        db_name = secrets.get('db_name', db_name)
+        
+        redis_password = secrets.get('redis_pass', redis_password)
+        ft_client_id = secrets.get('ft_client', ft_client_id)
+        ft_client_secret = secrets.get('ft_secret', ft_client_secret)
+        email_password = secrets.get('email_pass', email_password)
+        
+        print("All the secrets are now in vault!")
+    except Exception as e:
+        print(f"Connection error with vault : {e}")
+
+# ==========================================
+# --- ÉTAPE 4 : APPLICATION DES SECRETS ---
+# ==========================================
+
+REDIS_PASSWORD = redis_password
+FORTYTWO_CLIENT_ID = ft_client_id
+FORTYTWO_CLIENT_SECRET = ft_client_secret
+EMAIL_HOST_PASSWORD = email_password
+
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME'),
-        'USER': os.environ.get('DB_USER'),
-        'PASSWORD': os.environ.get('DB_PASSWORD'),
+        'NAME': db_name,
+        'USER': db_user,
+        'PASSWORD': db_password,
         'HOST': os.environ.get('DB_HOST', 'db'),
         'PORT': '5432',
     }
 }
+
 
 # 1. Define the Redis connection
 CACHES = {
