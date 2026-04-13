@@ -4,7 +4,7 @@ import {
 	isDevMockAuthEnabled,
 	maybeClearSortingHatStorageForMock,
 } from '../../mock/mockSessionUser.js'
-import { disableDevGuestPreview, isDevGuestPreviewActive } from '../../utils/devGuestPreview.js'
+import { disableDevGuestPreview } from '../../utils/devGuestPreview.js'
 import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
@@ -250,11 +250,12 @@ export function AuthProvider({ children }) {
           headers['X-CSRFToken'] = csrf
         }
 
-      await fetch(AUTH_PATHS.logout, {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-      })
+        await fetch(AUTH_PATHS.logout, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        })
+      }
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
