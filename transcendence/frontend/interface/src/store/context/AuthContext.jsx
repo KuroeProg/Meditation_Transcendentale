@@ -26,6 +26,20 @@ async function safeJson(response) {
   }
 }
 
+function getWebSocketOrigin() {
+  const explicitWsOrigin = import.meta.env.VITE_WS_ORIGIN
+  const explicitApiOrigin = import.meta.env.VITE_API_ORIGIN
+  const appOrigin = import.meta.env.VITE_APP_ORIGIN
+  const baseOrigin = explicitWsOrigin || explicitApiOrigin || appOrigin || window.location.origin
+
+  if (baseOrigin.startsWith('https://')) return baseOrigin.replace('https://', 'wss://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('http://')) return baseOrigin.replace('http://', 'ws://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('wss://') || baseOrigin.startsWith('ws://')) return baseOrigin.replace(/\/$/, '')
+
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${protocol}://${window.location.host}`
+}
+
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
@@ -33,6 +47,7 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null)
+  const [presenceByUserId, setPresenceByUserId] = useState({})
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -61,6 +76,34 @@ export function AuthProvider({ children }) {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.user_id ?? null
+    if (!userId || twoFactorChallenge) return undefined
+
+    const ws = new WebSocket(`${getWebSocketOrigin()}/ws/notifications/${userId}/`)
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data?.action !== 'friend_presence') return
+
+        const friendId = Number(data.user_id)
+        if (!Number.isFinite(friendId)) return
+
+        setPresenceByUserId((prev) => ({
+          ...prev,
+          [friendId]: Boolean(data.is_online),
+        }))
+      } catch {
+        // ignore malformed websocket payloads
+      }
+    }
+
+    return () => {
+      ws.close()
+    }
+  }, [user, twoFactorChallenge])
 
   async function loginLocal(email, password) {
     setError(null)
@@ -225,7 +268,16 @@ export function AuthProvider({ children }) {
       sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
       setUser(null)
       setTwoFactorChallenge(null)
+      setPresenceByUserId({})
     }
+  }
+
+  function resolveUserOnline(userLike) {
+    const id = Number(userLike?.id ?? userLike?.user_id)
+    if (Number.isFinite(id) && Object.prototype.hasOwnProperty.call(presenceByUserId, id)) {
+      return Boolean(presenceByUserId[id])
+    }
+    return Boolean(userLike?.is_online)
   }
 
   function loginWith42() {
@@ -318,6 +370,8 @@ export function AuthProvider({ children }) {
     logout,
     refetch: checkAuth,
     isDevMockAuth: false,
+    presenceByUserId,
+    resolveUserOnline,
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
   }
