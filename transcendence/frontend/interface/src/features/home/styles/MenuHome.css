@@ -10,7 +10,7 @@
 	z-index: 5;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.top-bar {
 		left: 0;
 		width: 100%;

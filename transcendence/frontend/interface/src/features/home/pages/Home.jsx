@@ -22,7 +22,7 @@ function Home() {
 
 	return (
 		<div
-			className="home"
+			className={`home${user ? ' home--chat-fab-room' : ''}`}
 			onPointerDown={() => {
 				void tryPlayHomeBgm()
 			}}

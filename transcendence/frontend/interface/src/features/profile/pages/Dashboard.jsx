@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { useFriendInvite } from '../../chat/index.js'
 import { TimeControlSection } from '../../chess/components/TimeControlPicker.jsx'
-import { CATEGORY_META, CATEGORY_RATING_FIELD, TIME_CONTROLS } from '../../chess/constants/timeControls.js'
+import { CATEGORY_META, TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useChessSocket } from '../../chess/hooks/useChessSocket.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
@@ -80,9 +80,7 @@ export default function Dashboard() {
 		)?.[0] || 'rapid'
 	}, [selectedTC])
 
-	const selectedRatingField = CATEGORY_RATING_FIELD[selectedCategory] || 'elo_rapid'
 	const selectedRatingLabel = CATEGORY_META[selectedCategory]?.label || 'Rapide'
-	const selectedElo = user?.[selectedRatingField] ?? user?.elo_rapid ?? 1200
 
 	const fetchFriends = useCallback(async () => {
 		try {
@@ -189,24 +187,6 @@ export default function Dashboard() {
 							</div>
 						</div>
 					</div>
-					<div className="dash-hero-stats" aria-label="Statistiques rapides">
-						<div className="dash-hero-stat">
-							<span className="dash-hero-stat-val">{selectedElo}</span>
-							<span className="dash-hero-stat-label">ELO {selectedRatingLabel}</span>
-						</div>
-						<div className="dash-hero-stat">
-							<span className="dash-hero-stat-val">{user?.elo_blitz ?? 1200}</span>
-							<span className="dash-hero-stat-label">ELO Blitz</span>
-						</div>
-						<div className="dash-hero-stat">
-							<span className="dash-hero-stat-val">{user?.games_played ?? 0}</span>
-							<span className="dash-hero-stat-label">Parties</span>
-						</div>
-						<div className="dash-hero-stat">
-							<span className="dash-hero-stat-val">{user?.games_won ?? 0}</span>
-							<span className="dash-hero-stat-label">Victoires</span>
-						</div>
-					</div>
 				</div>
 			</section>
 
@@ -236,12 +216,12 @@ export default function Dashboard() {
 						<span className={isCompetitive ? 'active' : ''}>Classée</span>
 					</div>
 
-					<TimeControlSection category="bullet" controls={TIME_CONTROLS.bullet} selected={selectedTC} onSelect={setSelectedTC} />
-					<TimeControlSection category="blitz" controls={TIME_CONTROLS.blitz} selected={selectedTC} onSelect={setSelectedTC} />
-					<TimeControlSection category="rapid" controls={TIME_CONTROLS.rapid} selected={selectedTC} onSelect={setSelectedTC} />
+					<TimeControlSection category="bullet" controls={TIME_CONTROLS.bullet} selected={selectedTC} onSelect={setSelectedTC} isCompetitive={isCompetitive} user={user} />
+					<TimeControlSection category="blitz" controls={TIME_CONTROLS.blitz} selected={selectedTC} onSelect={setSelectedTC} isCompetitive={isCompetitive} user={user} />
+					<TimeControlSection category="rapid" controls={TIME_CONTROLS.rapid} selected={selectedTC} onSelect={setSelectedTC} isCompetitive={isCompetitive} user={user} />
 
 					{showMoreTC && (
-						<TimeControlSection category="correspondence" controls={TIME_CONTROLS.correspondence} selected={selectedTC} onSelect={setSelectedTC} />
+						<TimeControlSection category="correspondence" controls={TIME_CONTROLS.correspondence} selected={selectedTC} onSelect={setSelectedTC} isCompetitive={isCompetitive} user={user} />
 					)}
 
 					<button className="dash-more-tc" type="button" onClick={() => setShowMoreTC(!showMoreTC)}>

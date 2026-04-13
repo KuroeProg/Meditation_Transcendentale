@@ -1,6 +1,16 @@
 .contact-page {
 	min-height: min(100vh, 100dvh);
 	padding-bottom: 2rem;
+	background: radial-gradient(
+		ellipse 100% 55% at 50% -15%,
+		color-mix(in srgb, var(--coalition-accent-soft) 70%, transparent),
+		transparent 58%
+	);
+}
+
+.contact-page .page-title {
+	color: color-mix(in srgb, var(--coalition-accent-muted) 22%, #f4f7ff);
+	text-shadow: 0 0 40px var(--coalition-accent-glow);
 }
 
 .contact-page-header {
@@ -39,6 +49,15 @@
 	display: flex;
 	flex-direction: column;
 	gap: 1.1rem;
+	border-color: color-mix(in srgb, var(--coalition-accent-border) 55%, rgba(99, 102, 241, 0.18));
+	background: linear-gradient(
+		145deg,
+		color-mix(in srgb, var(--coalition-accent-soft) 22%, rgba(20, 28, 42, 0.88)),
+		rgba(12, 16, 26, 0.92)
+	);
+	box-shadow:
+		0 8px 32px rgba(0, 0, 0, 0.28),
+		0 0 0 1px color-mix(in srgb, var(--coalition-accent-border) 15%, transparent) inset;
 }
 
 .contact-field {

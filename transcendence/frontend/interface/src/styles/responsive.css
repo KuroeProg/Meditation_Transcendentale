@@ -18,13 +18,13 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   BOTTOM NAVIGATION — mobile only (<=768px)
+   BOTTOM NAVIGATION — mobile only (<=770px)
    ===================================================================== */
 .bottom-nav {
 	display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.sidebar {
 		display: none;
 	}
@@ -74,8 +74,8 @@ html[data-reduce-motion='true'] .btn {
 		color: #fff;
 	}
 
-	.bottom-nav__logout {
-		color: #e57373;
+	.bottom-nav__chat {
+		color: color-mix(in srgb, var(--coalition-accent, #79c0ff) 88%, #fff);
 	}
 
 	.main-content {
@@ -85,9 +85,9 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   RESPONSIVE — tablette (769px — 1024px)
+   RESPONSIVE — tablette (771px — 1024px)
    ===================================================================== */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (min-width: 771px) and (max-width: 1024px) {
 	.sidebar {
 		width: 60px;
 	}
@@ -114,9 +114,9 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   RESPONSIVE — Profile / Settings (mobile <=768px)
+   RESPONSIVE — Profile / Settings (mobile <=770px)
    ===================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.page-shell {
 		padding: 0 0.25rem;
 	}
@@ -195,7 +195,7 @@ html[data-reduce-motion='true'] .btn {
 
 }
 
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.main-content:has(.game-container) {
 		padding: 0.25rem;
 		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.35rem);

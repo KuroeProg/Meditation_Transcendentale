@@ -18,6 +18,7 @@ import {
 	HomeAmbientBgm,
 	ChatDrawer,
 	FriendInviteProvider,
+	ChatUiProvider,
 	useAuth,
 } from './features/index.js'
 import SortingHatGate from './features/auth/components/SortingHatGate.jsx'
@@ -64,6 +65,7 @@ function AppContent() {
 
 	return (
 		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
+		<ChatUiProvider openChat={() => setChatOpen(true)}>
 		<div className="app-layout">
 			<ThemeSync />
 			<SortingHatGate />
@@ -165,6 +167,7 @@ function AppContent() {
 				</>
 			)}
 		</div>
+		</ChatUiProvider>
 		</FriendInviteProvider>
 	)
 }
