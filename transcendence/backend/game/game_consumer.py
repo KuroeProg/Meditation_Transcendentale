@@ -9,6 +9,7 @@ import contextlib
 import chess
 import time
 import redis.asyncio as redis
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from game.services.actions import (
@@ -111,6 +112,28 @@ class GameConsumer(AsyncWebsocketConsumer):
 	async def _broadcast_current_game_state(self, game_state):
 		"""Broadcast game state to all connected clients in the game group."""
 		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
+
+	async def _close_invite_joinability(self, reason='game_finished'):
+		closed_invites = await _close_invite_joinability_for_game(self.game_id, reason)
+		for invite in closed_invites:
+			payload = {
+				'action': 'invite_updated',
+				'invite': invite,
+			}
+			await self.channel_layer.group_send(
+				f"user_{int(invite['sender_id'])}",
+				{
+					'type': 'notification',
+					'data': payload,
+				},
+			)
+			await self.channel_layer.group_send(
+				f"user_{int(invite['receiver_id'])}",
+				{
+					'type': 'notification',
+					'data': payload,
+				},
+			)
 
 	async def _tick_game_clock(self):
 		"""Apply one second of time decay and detect timeouts."""
@@ -252,6 +275,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if mark_timeout_if_needed(game_state, board):
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
 			await self._broadcast_current_game_state(game_state)
+			await self._close_invite_joinability('game_finished')
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
 			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
@@ -304,6 +328,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 			final_game_data = self._build_final_game_data(game_state, winner_id, 'checkmate_or_draw')
 	
 			success = await async_save_full_game(final_game_data)
+			await self._close_invite_joinability('game_finished')
 			if success:
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
@@ -330,6 +355,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
 
 		success = await async_save_full_game(final_game_data)
+		await self._close_invite_joinability('game_finished')
 		if success:
 			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 		else:
@@ -372,6 +398,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if game_state.get('status') == 'draw':
 			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
 			success = await async_save_full_game(final_game_data)
+			await self._close_invite_joinability('game_finished')
 			if success:
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
@@ -389,3 +416,35 @@ class GameConsumer(AsyncWebsocketConsumer):
 	async def broadcast_game_state(self, event):
 		"""Send game state to this WebSocket client (called by group_send)."""
 		await self.send(text_data=json.dumps(build_ws_game_state_payload(event['game_state'], event['action'])))
+
+
+@database_sync_to_async
+def _close_invite_joinability_for_game(game_id, reason='game_finished'):
+	from chat.models import GameInvite
+
+	closed = []
+	invites = GameInvite.objects.filter(
+		game_id=str(game_id),
+		status=GameInvite.STATUS_ACCEPTED,
+	).select_related('source_message')
+
+	for invite in invites:
+		invite.cancel_reason = reason
+		invite.game_id = None
+		invite.save(update_fields=['cancel_reason', 'game_id', 'updated_at'])
+
+		msg = invite.source_message
+		if msg is not None:
+			try:
+				content_obj = json.loads(msg.content)
+			except (TypeError, ValueError, json.JSONDecodeError):
+				content_obj = {}
+			content_obj['invite_status'] = invite.status
+			content_obj['cancel_reason'] = invite.cancel_reason
+			content_obj['game_id'] = None
+			msg.content = json.dumps(content_obj)
+			msg.save(update_fields=['content'])
+
+		closed.append(invite.to_dict())
+
+	return closed

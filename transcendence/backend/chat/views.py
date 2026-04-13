@@ -1,7 +1,9 @@
 import json
 import secrets
+import time
 from datetime import timedelta
 
+import chess
 import redis
 from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
@@ -16,7 +18,6 @@ from django.views.decorators.http import require_GET
 from accounts.models import Friendship, LocalUser
 from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, GameInvite, Message
-from game.services.state_builder import build_new_game_state
 
 
 INVITE_TTL_MINUTES = 5
@@ -40,15 +41,57 @@ def _format_time_control_label(seconds):
     return f'{seconds}s'
 
 
+def _infer_time_category(time_control):
+    seconds = int(time_control)
+    if seconds <= 120:
+        return 'bullet'
+    if seconds <= 300:
+        return 'blitz'
+    if seconds >= 86400:
+        return 'correspondence'
+    return 'rapid'
+
+
 def _create_online_game_for_invite(invite):
     game_id = f"friend_{int(timezone.now().timestamp() * 1000)}_{secrets.token_hex(4)}"
-    game_state = async_to_sync(build_new_game_state)(
-        invite.sender_id,
-        invite.receiver_id,
-        invite.time_control_seconds,
-        invite.increment_seconds,
-        invite.competitive,
-    )
+
+    board = chess.Board()
+    now_ts = time.time()
+    time_control = int(invite.time_control_seconds or 600)
+    increment = int(invite.increment_seconds or 0)
+    is_competitive = bool(invite.competitive)
+
+    sender = LocalUser.objects.filter(id=invite.sender_id).first()
+    receiver = LocalUser.objects.filter(id=invite.receiver_id).first()
+
+    white_coalition = str(sender.coalition) if sender and sender.coalition else 'feu'
+    black_coalition = str(receiver.coalition) if receiver and receiver.coalition else 'feu'
+    white_profile = sender.to_public_dict() if sender else None
+    black_profile = receiver.to_public_dict() if receiver else None
+
+    game_state = {
+        'fen': board.fen(),
+        'status': 'active',
+        'white_player_id': invite.sender_id,
+        'black_player_id': invite.receiver_id,
+        'white_player_coalition': white_coalition,
+        'black_player_coalition': black_coalition,
+        'white_player_profile': white_profile,
+        'black_player_profile': black_profile,
+        'white_time_left': time_control,
+        'black_time_left': time_control,
+        'time_control_seconds': time_control,
+        'increment': increment,
+        'increment_seconds': increment,
+        'time_category': _infer_time_category(time_control),
+        'is_competitive': is_competitive,
+        'is_rated': is_competitive,
+        'game_mode': 'standard',
+        'last_move_timestamp': now_ts,
+        'start_timestamp': now_ts,
+        'draw_offer_from_player_id': None,
+        'moves': [],
+    }
 
     redis_client = redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
     redis_client.set(game_id, json.dumps(game_state))
@@ -94,6 +137,19 @@ def _broadcast_game_ready(invite):
     }
     _notify_user(invite.sender_id, payload)
     _notify_user(invite.receiver_id, payload)
+
+
+def _broadcast_chat_message(conversation_id, message_dict):
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f'chat_{int(conversation_id)}',
+        {
+            'type': 'chat_message',
+            'message': message_dict,
+        },
+    )
 
 
 def _get_authenticated_user(request):
@@ -381,6 +437,7 @@ def send_game_invite(request, conversation_id):
         )
 
     _broadcast_invite_event('invite_created', invite)
+    _broadcast_chat_message(conversation.id, msg.to_dict())
 
     return JsonResponse(
         {
@@ -410,7 +467,7 @@ def respond_game_invite(request, invite_id):
 
     with transaction.atomic():
         try:
-            invite = GameInvite.objects.select_for_update().select_related('conversation', 'sender', 'receiver', 'source_message').get(id=invite_id)
+            invite = GameInvite.objects.select_for_update().select_related('conversation', 'sender', 'receiver').get(id=invite_id)
         except GameInvite.DoesNotExist:
             return JsonResponse({'error': 'Invitation introuvable'}, status=404)
 
@@ -469,7 +526,7 @@ def cancel_game_invite(request, invite_id):
 
     with transaction.atomic():
         try:
-            invite = GameInvite.objects.select_for_update().select_related('source_message').get(id=invite_id)
+            invite = GameInvite.objects.select_for_update().get(id=invite_id)
         except GameInvite.DoesNotExist:
             return JsonResponse({'error': 'Invitation introuvable'}, status=404)
 
