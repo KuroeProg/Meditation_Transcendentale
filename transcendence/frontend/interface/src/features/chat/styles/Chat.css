@@ -893,30 +893,3 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 		right: max(0.75rem, env(safe-area-inset-right, 0px));
 	}
 }
-
-/* --- Responsive --- */
-@media (max-width: 480px) {
-	.chat-drawer {
-		width: 100vw;
-	}
-
-	.chat-fab-cluster {
-		bottom: calc(var(--bottom-nav-height, 60px) + 0.75rem);
-		right: max(0.65rem, env(safe-area-inset-right, 0px));
-		max-width: min(100vw - 1.5rem, 360px);
-	}
-
-	.chat-fab {
-		width: 50px;
-		height: 50px;
-		font-size: 1.2rem;
-	}
-
-	.chat-fab-cluster--toast .chat-fab {
-		width: 50px;
-	}
-
-	.chat-fab-cluster--toast .chat-fab-toast {
-		max-width: min(220px, 58vw);
-	}
-}
