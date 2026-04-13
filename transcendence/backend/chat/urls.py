@@ -29,4 +29,14 @@ urlpatterns = [
         views.send_game_invite,
         name='send_game_invite',
     ),
+    *with_optional_trailing_slash(
+        'invites/<int:invite_id>/respond',
+        views.respond_game_invite,
+        name='respond_game_invite',
+    ),
+    *with_optional_trailing_slash(
+        'invites/<int:invite_id>/cancel',
+        views.cancel_game_invite,
+        name='cancel_game_invite',
+    ),
 ]
