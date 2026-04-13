@@ -372,7 +372,7 @@ export default function SortingHatGate() {
 											>
 												{phase === 'reveal' && finalSlug
 													? `Ta coalition : ${coalitionSlugToLabel(finalSlug)} — que les parties te soient favorables.`
-													: `${coalitionSlugToLabel(displaySlug)}… ou peut-être pas ?`}
+													: `${coalitionSlugToLabel(displaySlug)}...`}
 											</Motion.p>
 										</AnimatePresence>
 									</Motion.div>
