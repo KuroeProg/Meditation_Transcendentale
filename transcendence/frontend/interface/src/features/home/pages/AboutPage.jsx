@@ -34,7 +34,7 @@ const TEAM = [
 ]
 
 const TEAM_INTRO_LOREM =
-	'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula. Cras ultricies ligula sed magna dictum porta.'
+	'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula. Cras ultricies ligula sed magna dictum porta. Mauris blandit aliquet elit, eget tincidunt nibh pulvinar a. Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem. Vivamus magna justo, lacinia eget consectetur sed, convallis at tellus.'
 
 export default function AboutPage() {
 	const backHref = '/'
@@ -54,10 +54,24 @@ export default function AboutPage() {
 			</div>
 
 			<section className="about-team-intro surface-card" aria-labelledby="about-team-heading">
-				<h2 id="about-team-heading" className="about-team-intro-title">
-					L’équipe
-				</h2>
-				<p className="about-team-intro-text">{TEAM_INTRO_LOREM}</p>
+				<div className="about-team-intro-inner">
+					<div className="about-team-intro-visual">
+						<div
+							className="about-team-intro-photo-placeholder"
+							role="img"
+							aria-label="Photo de groupe de l’équipe (placeholder)"
+						>
+							<i className="ri-team-line" aria-hidden="true" />
+							<span className="about-team-intro-photo-caption">Photo d’équipe à venir</span>
+						</div>
+					</div>
+					<div className="about-team-intro-copy">
+						<h2 id="about-team-heading" className="about-team-intro-title">
+							L’équipe
+						</h2>
+						<p className="about-team-intro-text">{TEAM_INTRO_LOREM}</p>
+					</div>
+				</div>
 			</section>
 
 			<div className="about-members">

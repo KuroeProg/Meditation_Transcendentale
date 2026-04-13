@@ -20,14 +20,18 @@ export default function ContactPage() {
 	return (
 		<div className="contact-page page-shell">
 			<div className="contact-page-header">
-				<Link to={backHref} className="contact-back">
-					<i className="ri-arrow-left-line" aria-hidden="true" />
-					Retour
-				</Link>
-				<h1 className="page-title">Contact</h1>
-				<p className="contact-lead">
-					Une question sur Transcendance ? Écris-nous — cette page est une démo front (aucun envoi serveur).
-				</p>
+				<div className="contact-page-header__back-row">
+					<Link to={backHref} className="contact-back">
+						<i className="ri-arrow-left-line" aria-hidden="true" />
+						Retour
+					</Link>
+				</div>
+				<div className="contact-page-header__center">
+					<h1 className="page-title">Contact</h1>
+					<p className="contact-lead">
+						Une question sur Transcendance ? Écris-nous — cette page est une démo front (aucun envoi serveur).
+					</p>
+				</div>
 			</div>
 
 			<div className="contact-layout">

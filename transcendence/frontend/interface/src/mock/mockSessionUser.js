@@ -14,6 +14,8 @@
  * - VITE_MOCK_AUTH_PROVIDER=oauth42 → évite le choixpeau (défaut)
  * - VITE_MOCK_USER_ID=42           → fixe l’id (sinon 42 ou 999 aléatoire par onglet)
  * - VITE_MOCK_RESET_SORTING_HAT=true → au chargement mock, efface le stockage choixpeau pour cet id (retester l’anim)
+ *
+ * Valeur spéciale `transcendance_dev_mock_coalition=pending_hat` : coalition non assignée (avant cérémonie choixpeau).
  */
 
 import mockPersonalStats from '../features/stats/assets/mockPersonalStats.json'
@@ -99,6 +101,11 @@ function getMockUserId() {
 	return parseInt(id, 10)
 }
 
+/** Id stable du mock courant (sessionStorage / VITE_MOCK_USER_ID) — pour effacer le stockage choixpeau. */
+export function getDevMockUserId() {
+	return getMockUserId()
+}
+
 /**
  * Efface les clés localStorage du choixpeau pour cet id (dev : retester l’animation).
  */
@@ -115,12 +122,18 @@ export function maybeClearSortingHatStorageForMock(userId) {
 	}
 }
 
+const PENDING_HAT_SENTINEL = 'pending_hat'
+
 export function getMockSessionUser() {
 	const userId = getMockUserId()
 	const isWhite = userId === 42
 	const ps = mockPersonalStats.profileSummary
 	const coalitionFromStore = readDevMockCoalitionFromStorage()
-	const coalition = normalizeMockCoalition(coalitionFromStore ?? import.meta.env.VITE_MOCK_COALITION)
+	const coalitionPending =
+		coalitionFromStore != null && String(coalitionFromStore).toLowerCase().trim() === PENDING_HAT_SENTINEL
+	const coalition = coalitionPending
+		? null
+		: normalizeMockCoalition(coalitionFromStore ?? import.meta.env.VITE_MOCK_COALITION)
 	const authFromStore = readDevMockAuthProviderFromStorage()
 	const authRaw = String(authFromStore ?? import.meta.env.VITE_MOCK_AUTH_PROVIDER ?? '')
 		.toLowerCase()
@@ -140,7 +153,7 @@ export function getMockSessionUser() {
 			},
 		},
 		coalition,
-		coalition_name: coalition,
+		coalition_name: coalition ?? null,
 		auth_provider,
 		cursus_level: 7,
 		level: 7,

@@ -31,9 +31,10 @@
 }
 
 .about-team-intro {
-	margin: 0 0 2.5rem;
-	padding: 1.35rem 1.25rem;
-	max-width: 44rem;
+	margin: 0 0 2.75rem;
+	padding: 0;
+	max-width: min(56rem, 100%);
+	overflow: hidden;
 	border-color: color-mix(in srgb, var(--coalition-accent-border) 50%, rgba(99, 102, 241, 0.15));
 	background: linear-gradient(
 		155deg,
@@ -43,9 +44,61 @@
 	box-shadow: 0 10px 36px rgba(0, 0, 0, 0.22);
 }
 
+.about-team-intro-inner {
+	display: grid;
+	grid-template-columns: minmax(200px, 2fr) minmax(0, 3fr);
+	min-height: min(280px, 42vw);
+	align-items: stretch;
+}
+
+.about-team-intro-visual {
+	min-width: 0;
+	background: linear-gradient(
+		145deg,
+		color-mix(in srgb, var(--coalition-accent) 18%, rgba(12, 14, 22, 0.95)),
+		rgba(8, 10, 16, 0.98)
+	);
+	border-right: 1px solid color-mix(in srgb, var(--coalition-accent-border) 40%, transparent);
+}
+
+.about-team-intro-photo-placeholder {
+	height: 100%;
+	min-height: 220px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.65rem;
+	padding: 1.5rem 1rem;
+	color: var(--coalition-accent-muted);
+}
+
+.about-team-intro-photo-placeholder i {
+	font-size: clamp(3.5rem, 10vw, 5rem);
+	opacity: 0.45;
+	filter: drop-shadow(0 0 20px var(--coalition-accent-soft));
+}
+
+.about-team-intro-photo-caption {
+	font-size: 0.75rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.12em;
+	color: rgba(230, 237, 247, 0.38);
+}
+
+.about-team-intro-copy {
+	padding: clamp(1.25rem, 3vw, 2rem) clamp(1.25rem, 3vw, 2.25rem);
+	display: flex;
+	flex-direction: column;
+	justify-content: center;
+	min-width: 0;
+	text-align: left;
+}
+
 .about-team-intro-title {
-	margin: 0 0 0.75rem;
-	font-size: clamp(1.2rem, 2.8vw, 1.45rem);
+	margin: 0 0 0.85rem;
+	font-size: clamp(1.35rem, 3.2vw, 1.75rem);
 	font-weight: 800;
 	color: #f4f7ff;
 	text-shadow: 0 0 20px var(--coalition-accent-soft);
@@ -53,9 +106,29 @@
 
 .about-team-intro-text {
 	margin: 0;
-	font-size: 0.95rem;
-	line-height: 1.7;
-	color: rgba(230, 237, 247, 0.68);
+	font-size: clamp(0.95rem, 2vw, 1.05rem);
+	line-height: 1.75;
+	color: rgba(230, 237, 247, 0.7);
+}
+
+@media (max-width: 720px) {
+	.about-team-intro-inner {
+		grid-template-columns: 1fr;
+		min-height: unset;
+	}
+
+	.about-team-intro-visual {
+		border-right: none;
+		border-bottom: 1px solid color-mix(in srgb, var(--coalition-accent-border) 40%, transparent);
+	}
+
+	.about-team-intro-photo-placeholder {
+		min-height: 180px;
+	}
+
+	.about-team-intro-copy {
+		text-align: center;
+	}
 }
 
 .about-members {

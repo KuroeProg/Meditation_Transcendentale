@@ -15,10 +15,19 @@
 
 .contact-page-header {
 	margin-bottom: 1.5rem;
-	text-align: center;
+	max-width: 40rem;
 	margin-left: auto;
 	margin-right: auto;
-	max-width: 40rem;
+}
+
+.contact-page-header__back-row {
+	display: flex;
+	justify-content: flex-start;
+	margin-bottom: 0.75rem;
+}
+
+.contact-page-header__center {
+	text-align: center;
 }
 
 .contact-back {
@@ -28,7 +37,6 @@
 	font-size: 0.88rem;
 	color: var(--coalition-accent-muted);
 	text-decoration: none;
-	margin-bottom: 0.75rem;
 	transition: color 0.2s;
 }
 
@@ -52,6 +60,8 @@
 }
 
 .contact-card {
+	min-width: 0;
+	overflow: hidden;
 	padding: 1.5rem 1.35rem;
 	display: flex;
 	flex-direction: column;
@@ -74,6 +84,7 @@
 	font-size: 0.82rem;
 	font-weight: 600;
 	color: rgba(240, 245, 255, 0.75);
+	min-width: 0;
 }
 
 .contact-field input,
@@ -86,9 +97,17 @@
 	background: color-mix(in srgb, var(--coalition-accent-soft) 22%, rgba(8, 10, 16, 0.92));
 	color: #f0f4ff;
 	outline: none;
+	width: 100%;
+	max-width: 100%;
+	box-sizing: border-box;
 	transition:
 		border-color 0.2s,
 		box-shadow 0.2s;
+}
+
+.contact-field textarea {
+	resize: vertical;
+	min-height: 6.5rem;
 }
 
 .contact-field input::placeholder,

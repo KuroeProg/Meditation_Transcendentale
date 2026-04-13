@@ -4,7 +4,7 @@ import { useAuth } from '../../../features/auth/index.js'
 import {
 	DEV_MOCK_STORAGE,
 	clearSortingHatStorageForUserId,
-	SORTING_HAT_DEV_RETRY_EVENT,
+	getDevMockUserId,
 } from '../../../mock/mockSessionUser.js'
 import {
 	disableDevGuestPreview,
@@ -55,6 +55,7 @@ export default function DevAuthToolbar() {
 	const [mode, setMode] = useState(readStoredMode)
 	const [coalition, setCoalition] = useState(readStoredCoalition)
 	const [authProvider, setAuthProvider] = useState(readStoredAuthProvider)
+	const [hatReplayBusy, setHatReplayBusy] = useState(false)
 
 	const uid = useMemo(() => resolveUserId(user), [user])
 
@@ -71,12 +72,32 @@ export default function DevAuthToolbar() {
 		void refetch()
 	}, [mode, coalition, authProvider, refetch])
 
-	/** Efface le flag choixpeau + relance l’effet (compte local + flag VITE_SORTING_HAT…). */
-	const launchSortingHatAnimation = useCallback(() => {
-		if (uid == null) return
-		clearSortingHatStorageForUserId(uid)
-		window.dispatchEvent(new Event(SORTING_HAT_DEV_RETRY_EVENT))
-	}, [uid])
+	/**
+	 * Simule une première connexion mock : déconnexion, session fictive locale sans coalition,
+	 * stockage choixpeau effacé — la cérémonie se lance au rechargement de session.
+	 */
+	const replaySortingHatCeremony = useCallback(async () => {
+		const mockId = getDevMockUserId()
+		try {
+			localStorage.setItem(DEV_MOCK_STORAGE.MODE, 'force_on')
+			localStorage.setItem(DEV_MOCK_STORAGE.AUTH_PROVIDER, 'local')
+			localStorage.setItem(DEV_MOCK_STORAGE.COALITION, 'pending_hat')
+		} catch {
+			/* ignore */
+		}
+		setMode('force_on')
+		setAuthProvider('local')
+		setCoalition('pending_hat')
+		clearSortingHatStorageForUserId(mockId)
+		if (uid != null && uid !== mockId) clearSortingHatStorageForUserId(uid)
+		setHatReplayBusy(true)
+		try {
+			await logout()
+			await refetch()
+		} finally {
+			setHatReplayBusy(false)
+		}
+	}, [uid, logout, refetch])
 
 	const handleGuestHome = useCallback(async () => {
 		await goToGuestHome(logout, navigate)
@@ -127,6 +148,7 @@ export default function DevAuthToolbar() {
 								<option value="eau">eau</option>
 								<option value="terre">terre</option>
 								<option value="air">air</option>
+								<option value="pending_hat">pending_hat (avant choixpeau)</option>
 							</select>
 						</label>
 						<label>
@@ -169,7 +191,7 @@ export default function DevAuthToolbar() {
 						</button>
 					</div>
 					<p className="dev-auth-toolbar__hint">
-						Choixpeau : compte <strong>local</strong> + <code>VITE_SORTING_HAT_COALITION</code>. En mock, le PUT API peut échouer : l’anim se joue quand même et le flag « vu » est posé.
+						Choixpeau : <code>VITE_SORTING_HAT_COALITION=true</code>. Le bouton ci‑dessous force le mock local, coalition « en attente », déconnecte puis recharge la session comme après une première inscription.
 					</p>
 
 					<div className="dev-auth-toolbar__actions">
@@ -179,11 +201,11 @@ export default function DevAuthToolbar() {
 						<button
 							type="button"
 							className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent"
-							onClick={launchSortingHatAnimation}
-							disabled={uid == null}
-							title="Efface le stockage choixpeau pour cet id et relance l’animation"
+							onClick={() => void replaySortingHatCeremony()}
+							disabled={hatReplayBusy}
+							title="Déconnexion puis session mock locale sans coalition — relance la cérémonie"
 						>
-							▶ Lancer l’animation choixpeau
+							{hatReplayBusy ? 'Préparation…' : '▶ Lancer l’animation choixpeau'}
 						</button>
 					</div>
 

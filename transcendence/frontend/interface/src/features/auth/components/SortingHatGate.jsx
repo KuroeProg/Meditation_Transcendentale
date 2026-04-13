@@ -11,7 +11,7 @@ import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth.js'
 import { useReduceMotionPref, coalitionSlugToLabel } from '../../theme/index.js'
 import { SORTING_HAT_COALITION_ENABLED } from '../../../config/featureFlags.js'
-import { SORTING_HAT_DEV_RETRY_EVENT } from '../../../mock/mockSessionUser.js'
+import { DEV_MOCK_STORAGE, SORTING_HAT_DEV_RETRY_EVENT } from '../../../mock/mockSessionUser.js'
 import choixpeauUrl from '../assets/choixpeau.png'
 import '../styles/SortingHatGate.css'
 
@@ -215,6 +215,13 @@ export default function SortingHatGate() {
 			}
 			/* Mock sans cookie API : éviter la boucle infinie si le PUT échoue ; dev replay OAuth idem */
 			if (persisted || (import.meta.env.DEV && (isDevMockAuth || devReplay))) {
+				if (import.meta.env.DEV === true && isDevMockAuth) {
+					try {
+						window.localStorage.setItem(DEV_MOCK_STORAGE.COALITION, target)
+					} catch {
+						/* ignore */
+					}
+				}
 				await refetch()
 				try {
 					window.localStorage.setItem(key, '1')
