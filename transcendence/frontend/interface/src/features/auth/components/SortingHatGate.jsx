@@ -27,6 +27,37 @@ function pickRandomSlug() {
 	return SLUGS[Math.floor(Math.random() * SLUGS.length)]
 }
 
+/** Ancien format `pending` = "1" pouvait bloquer l’anim après crash ; timestamp = fenêtre anti-doublon courte. */
+/** Au-delà, un `pending` orphelin (crash / onglet fermé) est purgé au prochain montage. */
+const PENDING_MAX_AGE_MS = 90_000
+
+/**
+ * @returns {'absent' | 'recent'}
+ */
+function normalizeSortingHatPending(pendingKey) {
+	try {
+		const raw = window.localStorage.getItem(pendingKey)
+		if (!raw) return 'absent'
+		if (raw === '1') {
+			window.localStorage.removeItem(pendingKey)
+			return 'absent'
+		}
+		const ts = parseInt(raw, 10)
+		if (Number.isNaN(ts)) {
+			window.localStorage.removeItem(pendingKey)
+			return 'absent'
+		}
+		const age = Date.now() - ts
+		if (age > PENDING_MAX_AGE_MS || age < -120_000) {
+			window.localStorage.removeItem(pendingKey)
+			return 'absent'
+		}
+		return 'recent'
+	} catch {
+		return 'absent'
+	}
+}
+
 export default function SortingHatGate() {
 	const { user, refetch, isAuthenticated, isDevMockAuth } = useAuth()
 	const reduceMotion = useReduceMotionPref()
@@ -45,14 +76,17 @@ export default function SortingHatGate() {
 
 	useEffect(() => {
 		if (!SORTING_HAT_COALITION_ENABLED || !isAuthenticated || !user?.id) return
-		if (user.auth_provider !== 'local') return
+		const authProv = String(user.auth_provider ?? '')
+			.toLowerCase()
+			.trim()
+		if (authProv !== 'local') return
 		if (typeof window === 'undefined') return
 
 		const key = `${STORAGE_PREFIX}${user.id}`
 		const pendingKey = `${key}_pending`
 		if (window.localStorage.getItem(key)) return
-		if (window.localStorage.getItem(pendingKey)) return
-		window.localStorage.setItem(pendingKey, '1')
+		if (normalizeSortingHatPending(pendingKey) === 'recent') return
+		window.localStorage.setItem(pendingKey, String(Date.now()))
 
 		cancelledRef.current = false
 

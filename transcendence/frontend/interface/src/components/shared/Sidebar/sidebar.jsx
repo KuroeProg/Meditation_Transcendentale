@@ -1,7 +1,6 @@
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/index.js'
 import SiteBrandLogo from '../../common/Logo/SiteBrandLogo.jsx'
-import { goToGuestHome } from '../../../utils/devGuestPreview.js'
 
 function Sidebar() {
 	const navigate = useNavigate()
@@ -12,18 +11,11 @@ function Sidebar() {
 		navigate('/auth', { replace: true })
 	}
 
-	const handleLogoNav = import.meta.env.DEV
-		? async (e) => {
-				e.preventDefault()
-				await goToGuestHome(logout, navigate)
-			}
-		: undefined
-
 	return (
 		<div className="sidebar">
 			<ul>
 				<li>
-					<Link to="/" className="logo" onClick={handleLogoNav}>
+					<Link to="/" className="logo">
 						<span className="icon">
 							<SiteBrandLogo className="Profile-logo site-brand-logo" alt="" />
 						</span>

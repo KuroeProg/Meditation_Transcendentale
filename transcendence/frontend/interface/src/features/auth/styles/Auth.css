@@ -121,10 +121,22 @@ html[data-reduce-motion='true'] .auth-branding {
   z-index: 1;
 }
 
-.auth-branding .auth-site-logo {
+.auth-branding .auth-site-logo-link {
+  display: inline-block;
+  line-height: 0;
   width: min(140px, 28vw);
   margin-bottom: 0.5rem;
+  text-decoration: none;
+  color: inherit;
   animation: auth-logo-float 6s ease-in-out infinite;
+}
+
+.auth-branding .auth-site-logo-link .site-brand-logo-wrap {
+  width: 100%;
+}
+
+.auth-branding .auth-site-logo {
+  width: 100%;
 }
 
 @keyframes auth-logo-float {
@@ -132,7 +144,7 @@ html[data-reduce-motion='true'] .auth-branding {
   50% { transform: translateY(-6px); }
 }
 
-html[data-reduce-motion='true'] .auth-branding .auth-site-logo {
+html[data-reduce-motion='true'] .auth-branding .auth-site-logo-link {
   animation: none;
 }
 
