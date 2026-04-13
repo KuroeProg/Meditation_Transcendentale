@@ -59,6 +59,15 @@ export default function CoalitionParticleCanvas({ slug, reducedMotion }) {
 
 			if (bundle?.kind === 'eau') {
 				const now = performance.now()
+				const { ripples, maxRipples } = bundle
+				const cap = maxRipples ?? 40
+				for (let i = ripples.length - 1; i >= 0; i--) {
+					ripples[i].update(dt)
+					if (ripples[i].dead) ripples.splice(i, 1)
+				}
+				for (const d of bundle.back) d.processImpacts(ripples, cap, w, h, now)
+				for (const d of bundle.front) d.processImpacts(ripples, cap, w, h, now)
+				for (const r of ripples) r.draw(ctx)
 				for (const d of bundle.back) d.draw(ctx, w, h, now)
 				for (const d of bundle.front) d.draw(ctx, w, h, now)
 			} else if (bundle?.kind === 'air') {
@@ -195,7 +204,8 @@ function makeCodePenEauRain(w, h) {
 			const randoFiver = Math.floor(Math.random() * 4) + 2
 			increment += randoFiver
 			if (increment >= limit) break
-			const durationSec = 0.5 + randoHundo / 1000
+			/* Plus lent qu’avant (~×1.85) : chute moins « nerveuse » */
+			const durationSec = (0.5 + randoHundo / 1000) * 1.85
 			const delaySec = randoHundo / 1000
 			drops.push(
 				new CodePenRainDrop(w, h, {
@@ -214,6 +224,8 @@ function makeCodePenEauRain(w, h) {
 		kind: 'eau',
 		front: buildRow(false, 1, 0),
 		back: buildRow(true, 0.5, -Math.min(68, h * 0.065)),
+		ripples: [],
+		maxRipples: 44,
 	}
 }
 
@@ -229,6 +241,38 @@ class CodePenRainDrop {
 		this.verticalNudge = opts.verticalNudge ?? 0
 		this.dropHeightPx = 96 + Math.random() * 56
 		this.stemRatio = 0.56 + Math.random() * 0.1
+		this._prevPhase = -1
+	}
+
+	/** Une fois par cycle, au passage p < 0.75 → p ≥ 0.75 : ondes à la surface. */
+	processImpacts(ripples, cap, w, h, nowMs) {
+		const t = nowMs / 1000 + this.delaySec
+		const d = this.durationSec
+		const p = (((t % d) + d) % d) / d
+		const prev = this._prevPhase
+		const hit = prev >= 0 && prev < 0.75 && p >= 0.75
+		this._prevPhase = p
+		if (!hit) return
+
+		let x = (this.xPct / 100) * w
+		if (this.fromRight) x = w - (this.xPct / 100) * w
+		const yLand = h * 0.91 + this.verticalNudge
+
+		const n = 1 + (Math.random() < 0.22 ? 1 : 0)
+		for (let i = 0; i < n; i++) {
+			if (ripples.length >= cap) ripples.shift()
+			ripples.push(
+				new WaterRipple(
+					x + (Math.random() - 0.5) * 12,
+					yLand,
+					i * 20 + Math.random() * 12,
+				),
+			)
+		}
+		if (Math.random() < 0.07) {
+			if (ripples.length >= cap) ripples.shift()
+			ripples.push(new SplashSpark(x, yLand))
+		}
 	}
 
 	draw(ctx, w, h, nowMs) {
@@ -236,7 +280,7 @@ class CodePenRainDrop {
 		this.h = h
 		const t = nowMs / 1000 + this.delaySec
 		const d = this.durationSec
-		const p = ((t % d) + d) % d / d
+		const p = (((t % d) + d) % d) / d
 
 		const travelEnd = 0.75
 		const travel = Math.min(p / travelEnd, 1)
@@ -313,6 +357,82 @@ class CodePenRainDrop {
 			ctx.stroke()
 			ctx.restore()
 		}
+	}
+}
+
+/** Onde concentrique (goutte dans l’eau) — comme l’ancienne version. */
+class WaterRipple {
+	constructor(x, y, delayMs = 0) {
+		this.x = x
+		this.y = y
+		this.r = 0
+		this.delay = delayMs
+		this.maxR = 24 + Math.random() * 68
+		this.grow = 0.2 + Math.random() * 0.5
+		this.alpha = 0.48 + Math.random() * 0.42
+		this.baseAlpha = this.alpha
+		this.w = 1.1 + Math.random() * 2.1
+		this.dead = false
+		this.hue = 192 + Math.random() * 28
+	}
+	update(dt) {
+		if (this.delay > 0) {
+			this.delay -= dt
+			return
+		}
+		this.r += this.grow * dt * 0.11
+		this.alpha = this.baseAlpha * (1 - this.r / (this.maxR * 1.12))
+		if (this.alpha <= 0.02 || this.r > this.maxR) this.dead = true
+	}
+	draw(ctx) {
+		if (this.delay > 0) return
+		const a = Math.max(0, this.alpha)
+		const py = this.y * 0.998
+		const rx = this.r
+		const ry = this.r * 0.28
+		ctx.save()
+		ctx.globalAlpha = a * 0.34
+		ctx.lineWidth = this.w * 2.1
+		ctx.strokeStyle = `hsla(${this.hue}, 72%, 86%, 0.42)`
+		ctx.beginPath()
+		ctx.ellipse(this.x, py, rx * 1.02, ry * 1.05, 0, 0, Math.PI * 2)
+		ctx.stroke()
+		ctx.globalAlpha = a
+		ctx.lineWidth = Math.max(0.75, this.w * (1 - this.r / (this.maxR + 10)))
+		ctx.strokeStyle = `hsla(${this.hue}, 88%, 80%, 0.8)`
+		ctx.beginPath()
+		ctx.ellipse(this.x, py, rx, ry, 0, 0, Math.PI * 2)
+		ctx.stroke()
+		ctx.restore()
+	}
+}
+
+class SplashSpark {
+	constructor(x, y) {
+		this.x = x
+		this.y = y
+		this.life = 1
+		this.dead = false
+		this.r = 4 + Math.random() * 9
+	}
+	update(dt) {
+		this.life -= dt * 0.0042
+		if (this.life <= 0) this.dead = true
+	}
+	draw(ctx) {
+		if (this.dead) return
+		ctx.save()
+		ctx.globalAlpha = this.life * 0.72
+		ctx.fillStyle = 'rgba(200, 240, 255, 0.5)'
+		ctx.beginPath()
+		ctx.arc(this.x, this.y, this.r * 1.55, 0, Math.PI * 2)
+		ctx.fill()
+		ctx.globalAlpha = this.life
+		ctx.fillStyle = 'rgba(248, 252, 255, 0.88)'
+		ctx.beginPath()
+		ctx.arc(this.x, this.y, this.r * 0.42, 0, Math.PI * 2)
+		ctx.fill()
+		ctx.restore()
 	}
 }
 
