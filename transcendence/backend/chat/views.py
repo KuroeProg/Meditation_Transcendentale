@@ -1,6 +1,11 @@
 import json
+import secrets
 from datetime import timedelta
 
+import redis
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
+from django.conf import settings
 from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import JsonResponse
@@ -11,6 +16,7 @@ from django.views.decorators.http import require_GET
 from accounts.models import Friendship, LocalUser
 from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, GameInvite, Message
+from game.services.state_builder import build_new_game_state
 
 
 INVITE_TTL_MINUTES = 5
@@ -32,6 +38,62 @@ def _format_time_control_label(seconds):
     if seconds % 60 == 0:
         return f'{seconds // 60} min'
     return f'{seconds}s'
+
+
+def _create_online_game_for_invite(invite):
+    game_id = f"friend_{int(timezone.now().timestamp() * 1000)}_{secrets.token_hex(4)}"
+    game_state = async_to_sync(build_new_game_state)(
+        invite.sender_id,
+        invite.receiver_id,
+        invite.time_control_seconds,
+        invite.increment_seconds,
+        invite.competitive,
+    )
+
+    redis_client = redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
+    redis_client.set(game_id, json.dumps(game_state))
+    return game_id
+
+
+def _notify_user(user_id, payload):
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f'user_{int(user_id)}',
+        {
+            'type': 'notification',
+            'data': payload,
+        },
+    )
+
+
+def _invite_event_payload(action, invite):
+    payload = {
+        'action': action,
+        'invite': invite.to_dict(),
+    }
+    return payload
+
+
+def _broadcast_invite_event(action, invite):
+    payload = _invite_event_payload(action, invite)
+    _notify_user(invite.sender_id, payload)
+    _notify_user(invite.receiver_id, payload)
+
+
+def _broadcast_game_ready(invite):
+    if not invite.game_id:
+        return
+    payload = {
+        'action': 'game_ready',
+        'invite_id': invite.id,
+        'game_id': invite.game_id,
+        'sender_id': invite.sender_id,
+        'receiver_id': invite.receiver_id,
+    }
+    _notify_user(invite.sender_id, payload)
+    _notify_user(invite.receiver_id, payload)
 
 
 def _get_authenticated_user(request):
@@ -59,6 +121,30 @@ def conversation_list(request):
     return JsonResponse({
         'conversations': [c.to_dict(current_user=user) for c in conversations]
     })
+
+
+@require_GET
+def pending_outgoing_invite(request):
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    now = timezone.now()
+    pending = GameInvite.objects.filter(
+        sender=user,
+        status=GameInvite.STATUS_PENDING,
+    ).order_by('-created_at').first()
+
+    if pending and pending.expires_at and pending.expires_at <= now:
+        pending.status = GameInvite.STATUS_EXPIRED
+        pending.cancel_reason = 'system'
+        pending.responded_at = now
+        pending.save(update_fields=['status', 'cancel_reason', 'responded_at', 'updated_at'])
+        _sync_source_message_status(pending)
+        _broadcast_invite_event('invite_updated', pending)
+        pending = None
+
+    return JsonResponse({'invite': pending.to_dict() if pending else None})
 
 
 @csrf_exempt
@@ -294,6 +380,8 @@ def send_game_invite(request, conversation_id):
             status=409,
         )
 
+    _broadcast_invite_event('invite_created', invite)
+
     return JsonResponse(
         {
             'message': msg.to_dict(),
@@ -346,11 +434,20 @@ def respond_game_invite(request, invite_id):
                 status=200,
             )
 
-        invite.status = GameInvite.STATUS_ACCEPTED if action == 'accept' else GameInvite.STATUS_DECLINED
+        if action == 'accept':
+            invite.status = GameInvite.STATUS_ACCEPTED
+            invite.game_id = _create_online_game_for_invite(invite)
+        else:
+            invite.status = GameInvite.STATUS_DECLINED
+            invite.game_id = None
         invite.responded_at = now
         invite.cancel_reason = None
-        invite.save(update_fields=['status', 'responded_at', 'cancel_reason', 'updated_at'])
+        invite.save(update_fields=['status', 'game_id', 'responded_at', 'cancel_reason', 'updated_at'])
         _sync_source_message_status(invite)
+
+    _broadcast_invite_event('invite_updated', invite)
+    if invite.status == GameInvite.STATUS_ACCEPTED:
+        _broadcast_game_ready(invite)
 
     return JsonResponse({'invite': invite.to_dict()}, status=200)
 
@@ -402,6 +499,7 @@ def cancel_game_invite(request, invite_id):
         invite.save(update_fields=['status', 'cancel_reason', 'responded_at', 'updated_at'])
         _sync_source_message_status(invite)
 
+    _broadcast_invite_event('invite_updated', invite)
     return JsonResponse({'invite': invite.to_dict()}, status=200)
 
 
