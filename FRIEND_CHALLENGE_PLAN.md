@@ -3,6 +3,18 @@
 Date: 13 avril 2026
 Branche: feature/friend-challenge-orchestration
 
+## Etat d'avancement
+
+- [x] Etape 1 lancee: base backend invitation dediee ajoutee (modele + migration)
+- [ ] Etape 2: endpoints metier create/respond/cancel avec idempotence
+- [ ] Etape 3: creation game online sur accept
+- [ ] Etape 4: evenements temps reel invite/game_ready
+- [ ] Etape 5: CTA prioritaire global
+- [ ] Etape 6: desactivation boutons Defier quand pending sortante
+- [ ] Etape 7: auto-cancel sender_busy au demarrage online
+- [ ] Etape 8: expiration TTL + resync reconnexion
+- [ ] Etape 9: validation E2E
+
 ## 1) Decisions produit validees
 
 - UX: CTA prioritaire quand une invitation est acceptee pendant la navigation.
