@@ -4,6 +4,8 @@ import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components
 import { useBreakpoint } from './hooks/useBreakpoint.js'
 import {
 	HomePage,
+	ContactPage,
+	AboutPage,
 	GamePage,
 	DashboardPage,
 	ProfilePage,
@@ -130,6 +132,8 @@ function AppContent() {
 							</ProtectedRoute>
 						}
 					/>
+					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/about" element={<AboutPage />} />
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</div>

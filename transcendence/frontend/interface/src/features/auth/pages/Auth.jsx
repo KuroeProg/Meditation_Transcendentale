@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import { Link, Navigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { TwoFactorVerify } from '../components/TwoFactorVerify.jsx'
 import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
@@ -298,7 +298,15 @@ export default function AuthPage() {
           <span className="auth-footer-sep" aria-hidden="true">
             |
           </span>
-          <span>Contact</span>
+          <Link to="/contact" className="auth-footer-link">
+            Contact
+          </Link>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
+          <Link to="/about" className="auth-footer-link">
+            À propos
+          </Link>
           <span className="auth-footer-sep" aria-hidden="true">
             |
           </span>
