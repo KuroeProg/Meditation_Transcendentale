@@ -33,6 +33,7 @@ function AppContent() {
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const isAuthRoute = location.pathname === '/auth'
+	const hideChatFabOnHomeMobile = isMobile && location.pathname === '/'
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
 	const inboxEnabled = isAuthenticated && !isAuthRoute
@@ -140,7 +141,7 @@ function AppContent() {
 				</Routes>
 			</div>
 
-			{isAuthenticated && !isAuthRoute && (
+			{isAuthenticated && !isAuthRoute && !hideChatFabOnHomeMobile && (
 				<>
 					<ChatFabCluster
 						textUnread={textUnread}

@@ -1,0 +1,155 @@
+/* Barre debug dev : mock session, coalition, choixpeau — au-dessus de la bottom nav sur mobile */
+
+.dev-auth-toolbar-host {
+	position: fixed;
+	z-index: 1100;
+	display: flex;
+	flex-direction: column-reverse;
+	align-items: stretch;
+	gap: 0.35rem;
+	left: max(0.5rem, env(safe-area-inset-left));
+	right: max(0.5rem, env(safe-area-inset-right));
+	bottom: max(0.5rem, env(safe-area-inset-bottom));
+	max-width: min(100vw - 1rem, 420px);
+	pointer-events: none;
+}
+
+.dev-auth-toolbar-host > * {
+	pointer-events: auto;
+}
+
+@media (min-width: 771px) {
+	.dev-auth-toolbar-host {
+		left: calc(var(--sidebar-width, 75px) + 0.5rem);
+		right: auto;
+		bottom: 0.5rem;
+		width: min(380px, calc(100vw - var(--sidebar-width, 75px) - 1rem));
+		max-width: none;
+	}
+}
+
+@media (max-width: 770px) {
+	.dev-auth-toolbar-host {
+		bottom: calc(var(--bottom-nav-height, 60px) + 0.5rem + env(safe-area-inset-bottom, 0px));
+	}
+}
+
+.dev-auth-toolbar__toggle {
+	font: inherit;
+	font-size: 0.72rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	padding: 0.4rem 0.65rem;
+	border-radius: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.25);
+	background: linear-gradient(135deg, #fbbf24, #f59e0b);
+	color: #1c1917;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+	align-self: flex-start;
+}
+
+.dev-auth-toolbar__toggle:hover {
+	filter: brightness(1.05);
+}
+
+.dev-auth-toolbar {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.65rem 0.75rem;
+	background: linear-gradient(180deg, rgba(254, 243, 199, 0.98), rgba(253, 230, 138, 0.96));
+	color: #1c1917;
+	font-family: system-ui, sans-serif;
+	font-size: 0.78rem;
+	font-weight: 600;
+	border-radius: 10px;
+	border: 1px solid rgba(0, 0, 0, 0.12);
+	box-shadow: 0 -6px 24px rgba(0, 0, 0, 0.22);
+	max-height: min(340px, 48vh);
+	overflow-y: auto;
+}
+
+.dev-auth-toolbar--panel {
+	scrollbar-width: thin;
+}
+
+.dev-auth-toolbar__row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 0.35rem;
+}
+
+.dev-auth-toolbar__row label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+	flex: 1 1 140px;
+	min-width: 0;
+	font-size: 0.68rem;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	opacity: 0.85;
+}
+
+.dev-auth-toolbar__row select {
+	font: inherit;
+	font-size: 0.8rem;
+	font-weight: 600;
+	padding: 0.35rem 0.45rem;
+	border-radius: 6px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background: #fff;
+	color: #1c1917;
+	width: 100%;
+}
+
+.dev-auth-toolbar__actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.35rem;
+	margin-top: 0.15rem;
+}
+
+.dev-auth-toolbar__btn {
+	font: inherit;
+	font-size: 0.74rem;
+	font-weight: 700;
+	padding: 0.4rem 0.65rem;
+	border-radius: 8px;
+	border: 1px solid rgba(0, 0, 0, 0.2);
+	background: #fff;
+	color: #1c1917;
+	cursor: pointer;
+}
+
+.dev-auth-toolbar__btn:hover {
+	background: #fef9c3;
+}
+
+.dev-auth-toolbar__btn--accent {
+	background: #1c1917;
+	color: #fef3c7;
+	border-color: #1c1917;
+}
+
+.dev-auth-toolbar__btn--accent:hover {
+	filter: brightness(1.12);
+}
+
+.dev-auth-toolbar__hint {
+	font-size: 0.7rem;
+	font-weight: 500;
+	opacity: 0.85;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.dev-auth-toolbar__hint code {
+	font-size: 0.68em;
+	background: rgba(0, 0, 0, 0.06);
+	padding: 0.1rem 0.25rem;
+	border-radius: 4px;
+}

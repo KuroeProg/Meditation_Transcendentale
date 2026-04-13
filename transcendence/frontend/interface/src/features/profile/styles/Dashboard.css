@@ -600,10 +600,6 @@
 		padding: 1.15rem 1.25rem;
 	}
 
-	.dash-hero-stats {
-		gap: 0.65rem 1rem;
-	}
-
 	.dash-preset-extras {
 		grid-template-columns: 1fr;
 	}
@@ -625,6 +621,10 @@
 		padding: 0.5rem 0.6rem;
 		border-radius: 12px;
 		box-shadow: 0 14px 36px rgba(0, 0, 0, 0.42);
+	}
+
+	.dash-hero-bg {
+		display: none !important;
 	}
 
 	.dash-hero-row {
@@ -659,7 +659,7 @@
 		display: flex;
 		flex-direction: column;
 		gap: 0.75rem;
-		padding-top: clamp(4.25rem, 22vw, 5.5rem);
+		padding-top: clamp(3.35rem, 17vw, 4.75rem);
 		margin-top: 0;
 		min-height: 0;
 	}

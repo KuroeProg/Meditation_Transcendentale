@@ -8,14 +8,18 @@ html, body, #root {
 	overflow-x: hidden;
 }
 
-@media (min-width: 769px) {
-	html, body, #root {
+/* Ne pas bloquer le scroll des pages hors jeu (ex. profil) : overflow caché seulement sur l’écran partie */
+@media (min-width: 771px) {
+	html:has(.game-container),
+	body:has(.game-container),
+	#root:has(.game-container) {
 		overflow: hidden;
+		height: 100%;
 	}
 }
 
 /* Jeu en colonne (≤1175px) : le contenu dépasse souvent la hauteur — autoriser le défilement */
-@media (min-width: 769px) and (max-width: 1175px) {
+@media (min-width: 771px) and (max-width: 1175px) {
 	html:has(.game-container),
 	body:has(.game-container),
 	#root:has(.game-container) {

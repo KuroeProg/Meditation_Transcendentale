@@ -102,44 +102,6 @@
 	border-radius: 4px;
 }
 
-/* Barre dev : session fictive (VITE_DEV_MOCK_USER) */
-.dev-auth-toolbar {
-	position: fixed;
-	bottom: 0;
-	left: 75px;
-	right: 0;
-	z-index: 50;
-	isolation: isolate;
-	transform: translateZ(0);
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 1rem;
-	flex-wrap: wrap;
-	padding: 0.5rem 1rem;
-	background: linear-gradient(90deg, rgba(234, 179, 8, 0.95), rgba(245, 158, 11, 0.92));
-	color: #1c1917;
-	font-family: system-ui, sans-serif;
-	font-size: 0.8rem;
-	font-weight: 600;
-	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.2);
-}
-
-.dev-auth-toolbar__btn {
-	font: inherit;
-	font-size: 0.78rem;
-	padding: 0.35rem 0.75rem;
-	border-radius: 8px;
-	border: 1px solid rgba(0, 0, 0, 0.2);
-	background: #fff;
-	cursor: pointer;
-	font-weight: 700;
-}
-
-.dev-auth-toolbar__btn:hover {
-	background: #fef3c7;
-}
-
 .page-header {
 	margin-bottom: 1.75rem;
 }

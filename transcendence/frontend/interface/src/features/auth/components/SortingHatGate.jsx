@@ -11,6 +11,7 @@ import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth.js'
 import { useReduceMotionPref, coalitionSlugToLabel } from '../../theme/index.js'
 import { SORTING_HAT_COALITION_ENABLED } from '../../../config/featureFlags.js'
+import { SORTING_HAT_DEV_RETRY_EVENT } from '../../../mock/mockSessionUser.js'
 import '../styles/SortingHatGate.css'
 
 const STORAGE_PREFIX = 'transcendance_sorting_hat_v1_'
@@ -34,6 +35,13 @@ export default function SortingHatGate() {
 	const [displaySlug, setDisplaySlug] = useState('feu')
 	const [finalSlug, setFinalSlug] = useState(null)
 	const cancelledRef = useRef(false)
+	const [replayTick, setReplayTick] = useState(0)
+
+	useEffect(() => {
+		const bump = () => setReplayTick((n) => n + 1)
+		window.addEventListener(SORTING_HAT_DEV_RETRY_EVENT, bump)
+		return () => window.removeEventListener(SORTING_HAT_DEV_RETRY_EVENT, bump)
+	}, [])
 
 	useEffect(() => {
 		if (!SORTING_HAT_COALITION_ENABLED || !isAuthenticated || !user?.id) return
@@ -129,7 +137,7 @@ export default function SortingHatGate() {
 				/* ignore */
 			}
 		}
-	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion])
+	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion, replayTick])
 
 	if (!SORTING_HAT_COALITION_ENABLED) return null
 

@@ -2,6 +2,10 @@
  * Utilisateur fictif (Vite dev uniquement).
  *
  * Fichier : `transcendence/frontend/interface/.env.local` (voir `make mock-help`).
+ * En complément, la barre « Dev mock » (import.meta.env.DEV) écrit dans localStorage :
+ * - transcendance_dev_mock_mode : follow_env | force_on | force_off
+ * - transcendance_dev_mock_coalition : feu | eau | terre | air (optionnel, sinon .env)
+ * - transcendance_dev_mock_auth_provider : local | oauth42 (optionnel, sinon .env)
  *
  * Variables :
  * - VITE_DEV_MOCK_USER=true        → active le mock (session auto au chargement)
@@ -16,8 +20,64 @@ import mockPersonalStats from '../features/stats/assets/mockPersonalStats.json'
 
 const COALITIONS = ['feu', 'eau', 'terre', 'air']
 
+/** Clés localStorage — surcharges dev (barre debug), sans redémarrer Vite. */
+export const DEV_MOCK_STORAGE = {
+	MODE: 'transcendance_dev_mock_mode',
+	COALITION: 'transcendance_dev_mock_coalition',
+	AUTH_PROVIDER: 'transcendance_dev_mock_auth_provider',
+}
+
+/** Émis par la barre dev pour relancer la logique choixpeau (même utilisateur). */
+export const SORTING_HAT_DEV_RETRY_EVENT = 'transcendance-sorting-hat-retry'
+
+/** @typedef {'follow_env' | 'force_on' | 'force_off'} DevMockMode */
+
+/**
+ * Mock session activé en dev si .env le demande ou si la barre force « on »,
+ * sauf si la barre force « off ».
+ */
 export function isDevMockAuthEnabled() {
-	return import.meta.env.DEV === true && import.meta.env.VITE_DEV_MOCK_USER === 'true'
+	if (import.meta.env.DEV !== true) return false
+	try {
+		const mode = localStorage.getItem(DEV_MOCK_STORAGE.MODE)
+		if (mode === 'force_off') return false
+		if (mode === 'force_on') return true
+	} catch {
+		/* ignore */
+	}
+	return import.meta.env.VITE_DEV_MOCK_USER === 'true'
+}
+
+export function readDevMockCoalitionFromStorage() {
+	try {
+		const v = localStorage.getItem(DEV_MOCK_STORAGE.COALITION)
+		return v && String(v).trim() !== '' ? v : null
+	} catch {
+		return null
+	}
+}
+
+export function readDevMockAuthProviderFromStorage() {
+	try {
+		const v = localStorage.getItem(DEV_MOCK_STORAGE.AUTH_PROVIDER)
+		return v && String(v).trim() !== '' ? v : null
+	} catch {
+		return null
+	}
+}
+
+const SORTING_HAT_PREFIX = 'transcendance_sorting_hat_v1_'
+
+/** Efface le stockage choixpeau pour un id (dev / tests). */
+export function clearSortingHatStorageForUserId(userId) {
+	if (typeof window === 'undefined' || userId == null) return
+	const base = `${SORTING_HAT_PREFIX}${userId}`
+	try {
+		window.localStorage.removeItem(base)
+		window.localStorage.removeItem(`${base}_pending`)
+	} catch {
+		/* ignore */
+	}
 }
 
 function normalizeMockCoalition(raw) {
@@ -59,8 +119,12 @@ export function getMockSessionUser() {
 	const userId = getMockUserId()
 	const isWhite = userId === 42
 	const ps = mockPersonalStats.profileSummary
-	const coalition = normalizeMockCoalition(import.meta.env.VITE_MOCK_COALITION)
-	const authRaw = String(import.meta.env.VITE_MOCK_AUTH_PROVIDER ?? '').toLowerCase().trim()
+	const coalitionFromStore = readDevMockCoalitionFromStorage()
+	const coalition = normalizeMockCoalition(coalitionFromStore ?? import.meta.env.VITE_MOCK_COALITION)
+	const authFromStore = readDevMockAuthProviderFromStorage()
+	const authRaw = String(authFromStore ?? import.meta.env.VITE_MOCK_AUTH_PROVIDER ?? '')
+		.toLowerCase()
+		.trim()
 	const auth_provider = authRaw === 'local' ? 'local' : 'oauth42'
 
 	return {
