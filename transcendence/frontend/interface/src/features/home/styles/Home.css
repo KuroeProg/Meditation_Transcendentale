@@ -189,117 +189,10 @@ text-align: center;
 	scroll-snap-align: start;
 }
 
-/* Pas de margin-left ici : .main-content a déjà margin-left pour la sidebar (sinon overflow + logo coupé). */
-.footer {
-	display: flex;
-	flex-direction: column;
-	align-items: stretch;
-	gap: 0.35rem;
-	padding: 14px clamp(1rem, 3vw, 32px) 18px;
-	margin-left: 0;
-	width: 100%;
-	max-width: 100%;
-	box-sizing: border-box;
-	background: linear-gradient(180deg, rgba(22, 27, 34, 0.65) 0%, #0d1117 100%);
-	color: #9aa7b8;
-	font-size: 0.78rem;
-	letter-spacing: 0.02em;
-	font-family:
-		system-ui,
-		-apple-system,
-		'Segoe UI',
-		Roboto,
-		'Helvetica Neue',
-		sans-serif;
-	scroll-snap-align: start;
-	border-top: 1px solid color-mix(in srgb, var(--coalition-accent-border, rgba(99, 179, 237, 0.12)) 85%, transparent);
-	box-shadow: 0 -12px 40px rgba(0, 0, 0, 0.25);
-}
-
-.footer-top {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.65rem 1rem;
-}
-
-.footer-nav {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 0.35rem 0.5rem;
-	min-width: 0;
-	flex: 1 1 auto;
-}
-
-.footer-link {
-	color: color-mix(in srgb, var(--coalition-accent-muted, #9aa7b8) 82%, #fff);
-	text-decoration: none;
-	cursor: pointer;
-	transition: color 0.2s, text-shadow 0.2s;
-	font-weight: 500;
-	white-space: nowrap;
-}
-
-.footer-link:hover {
-	color: #f0f3f7;
-	text-shadow: 0 0 14px var(--coalition-accent-soft, rgba(125, 211, 252, 0.22));
-}
-
-.footer-link--app {
-	color: color-mix(in srgb, var(--coalition-accent-muted, #9aa7b8) 70%, var(--coalition-accent, #79c0ff));
-	font-weight: 600;
-}
-
-.footer-link--app:hover {
-	color: var(--coalition-accent, #79c0ff);
-}
-
-.footer-separator {
-	cursor: default;
-	user-select: none;
-	opacity: 0.4;
-	padding: 0 0.1rem;
-}
-
-.footer-github {
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	width: 40px;
-	height: 40px;
-	border-radius: 10px;
-	color: rgba(230, 237, 247, 0.85);
-	background: rgba(255, 255, 255, 0.06);
-	border: 1px solid rgba(255, 255, 255, 0.1);
-	text-decoration: none;
-	transition:
-		color 0.2s,
-		background 0.2s,
-		border-color 0.2s,
-		transform 0.2s,
-		box-shadow 0.2s;
-}
-
-.footer-github i {
-	font-size: 1.45rem;
-	line-height: 1;
-}
-
-.footer-github:hover {
-	color: #fff;
-	background: color-mix(in srgb, var(--coalition-accent-soft) 45%, rgba(255, 255, 255, 0.08));
-	border-color: var(--coalition-accent-border);
-	box-shadow: 0 0 20px var(--coalition-accent-glow);
-	transform: translateY(-1px);
-}
-
 @media (max-width: 770px) {
-	/* Espace sous le scroll pour le FAB messages (footer utilisable en bas de page) */
+	/* Espace sous le scroll : FAB + pied de page global fixe */
 	.home.home--chat-fab-room {
-		padding-bottom: calc(5.5rem + env(safe-area-inset-bottom, 0px));
+		padding-bottom: calc(5.5rem + var(--site-footer-reserve) + env(safe-area-inset-bottom, 0px));
 	}
 
 	.home {
@@ -347,18 +240,5 @@ text-align: center;
 	.third-section {
 		flex-direction: column;
 		padding: 2rem 1rem;
-	}
-
-	.footer {
-		padding: 12px 1rem 16px;
-	}
-
-	.footer-top {
-		flex-direction: column;
-		align-items: flex-start;
-	}
-
-	.footer-github {
-		align-self: flex-end;
 	}
 }

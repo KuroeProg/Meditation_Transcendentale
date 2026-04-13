@@ -6,8 +6,6 @@ import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
 import { useReduceMotionPref } from '../../theme/index.js'
-import { Link } from 'react-router-dom'
-import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 import { useAuth } from '../../auth/index.js'
 import { markWelcomeHomeSeen } from '../../../utils/postLoginRedirect.js'
 
@@ -79,49 +77,6 @@ function Home() {
 			</div>
 
 			<div className="third-section" />
-
-			<footer className="footer">
-				<div className="footer-top">
-					<nav className="footer-nav" aria-label="Liens pied de page">
-						<Link className="footer-link footer-link--app" to="/contact">
-							Contact
-						</Link>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
-						<Link className="footer-link footer-link--app" to="/about">
-							À propos
-						</Link>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
-						<a className="footer-link" href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer">
-							Confidentialité
-						</a>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
-						<a className="footer-link" href={LEGAL_TOS_URL} target="_blank" rel="noreferrer">
-							CGU
-						</a>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
-						<a className="footer-link" href={LEGAL_COOKIES_URL} target="_blank" rel="noreferrer">
-							Cookies
-						</a>
-					</nav>
-					<a
-						className="footer-github"
-						href="https://github.com/KuroeProg/Meditation_Transcendentale"
-						target="_blank"
-						rel="noreferrer"
-						aria-label="Dépôt GitHub du projet"
-					>
-						<i className="ri-github-fill" aria-hidden="true" />
-					</a>
-				</div>
-			</footer>
 		</div>
 	)
 }

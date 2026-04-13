@@ -26,7 +26,13 @@
 }
 
 .contact-page-header__center {
-	text-align: center;
+	text-align: left;
+}
+
+.contact-page .page-title {
+	text-align: left;
+	margin-top: 0;
+	margin-bottom: 0.35rem;
 }
 
 .contact-back {
@@ -48,7 +54,8 @@
 	font-size: 0.95rem;
 	line-height: 1.55;
 	max-width: 36rem;
-	margin: 0.5rem auto 0;
+	margin: 0.5rem 0 0;
+	text-align: left;
 }
 
 .contact-layout {

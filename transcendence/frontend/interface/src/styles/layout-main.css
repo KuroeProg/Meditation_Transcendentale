@@ -1,5 +1,9 @@
 /* Layout global : shell app, zones de contenu, boutons génériques, erreurs, dev toolbar */
 
+:root {
+	--site-footer-reserve: 2.35rem;
+}
+
 .app-layout {
 	min-height: 100vh;
 	min-height: 100dvh;
@@ -14,7 +18,7 @@
 	min-width: 0;
 	margin-left: var(--sidebar-width, 75px);
 	min-height: 100vh;
-	padding: 1.5rem var(--content-padding, 2rem) 3rem;
+	padding: 1.5rem var(--content-padding, 2rem) calc(3rem + var(--site-footer-reserve));
 	position: relative;
 	z-index: 1;
 	isolation: isolate;
@@ -23,9 +27,11 @@
 .main-content.full-width {
 	margin-left: 0;
 	padding: 0;
+	padding-bottom: calc(var(--site-footer-reserve) + env(safe-area-inset-bottom, 0px));
 	min-height: 100dvh;
 	min-height: 100vh;
 	overflow: auto;
+	box-sizing: border-box;
 }
 
 /* Pas de sidebar : Home / pages publiques en pleine largeur */
@@ -37,14 +43,14 @@
 .main-content:has(.game-container) {
 	max-width: none;
 	width: auto;
-	padding: 0.75rem 1rem 1rem 1.5rem;
+	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve)) 1.5rem;
 }
 
 /* Statistiques perso */
 .main-content:has(.pstats-page) {
 	max-width: none;
 	width: 100%;
-	padding: 1rem 1.25rem 2rem;
+	padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
 	box-sizing: border-box;
 }
 
@@ -56,7 +62,7 @@
 	padding-left: 0;
 	padding-right: 0;
 	padding-top: 0;
-	padding-bottom: 0;
+	padding-bottom: var(--site-footer-reserve);
 }
 
 /* Contact / À propos : hauteur bornée pour que overflow-y fasse défiler (sinon la colonne s’étire et rien ne scroll) */

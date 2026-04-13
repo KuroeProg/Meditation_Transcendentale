@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
+import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar, SiteFooter } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
 import {
 	HomePage,
@@ -44,6 +44,7 @@ function AppContent() {
 	const currentGameId = isOnGameRoute ? location.pathname.replace('/game/', '') : null
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
+	const footerSidewallOffset = isAuthenticated && !isAuthRoute && !isMobile
 
 	useEffect(() => {
 		if (!isAuthenticated) return
@@ -134,6 +135,8 @@ function AppContent() {
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</div>
+
+			<SiteFooter sidewallOffset={footerSidewallOffset} />
 
 			{isAuthenticated && !isAuthRoute && (
 				<>
