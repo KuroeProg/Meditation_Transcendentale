@@ -1,14 +1,43 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { cancelGameInviteHttp, respondGameInviteHttp } from '../services/chatApi.js'
 
 export default function GameInviteCard({ msg, isOwn }) {
 	const navigate = useNavigate()
+	const [busyAction, setBusyAction] = useState(null)
+	const [localStatus, setLocalStatus] = useState(null)
 	const data = useMemo(() => {
 		try { return JSON.parse(msg.content) } catch { return {} }
 	}, [msg.content])
+	const inviteId = Number(data.invite_id)
+	const inviteStatus = localStatus || data.invite_status || 'pending'
+	const canAct = Number.isFinite(inviteId) && inviteStatus === 'pending'
 
-	const handleAccept = () => {
-		navigate('/dashboard')
+	const runAction = async (action) => {
+		if (!canAct || busyAction) return
+		setBusyAction(action)
+		try {
+			if (action === 'cancel') {
+				const res = await cancelGameInviteHttp(inviteId, 'manual_cancel')
+				setLocalStatus(res?.invite?.status || 'cancelled')
+				return
+			}
+
+			const res = await respondGameInviteHttp(inviteId, action)
+			const nextStatus = res?.invite?.status || (action === 'accept' ? 'accepted' : 'declined')
+			setLocalStatus(nextStatus)
+			if (nextStatus === 'accepted' && res?.invite?.game_id) {
+				navigate(`/game/${res.invite.game_id}`)
+			}
+		} catch {
+			// keep current UI state on transient API failures
+		} finally {
+			setBusyAction(null)
+		}
+	}
+
+	const handleJoin = () => {
+		if (data.game_id) navigate(`/game/${data.game_id}`)
 	}
 
 	return (
@@ -23,10 +52,30 @@ export default function GameInviteCard({ msg, isOwn }) {
 						{data.time_control || '10 min'} — {data.competitive ? 'Classée' : 'Amicale'}
 					</span>
 				</div>
-				{!isOwn && (
-					<button className="chat-invite-accept" type="button" onClick={handleAccept}>
-						Accepter
+				{canAct && !isOwn && (
+					<div className="chat-invite-actions">
+						<button className="chat-invite-accept" type="button" onClick={() => runAction('accept')} disabled={Boolean(busyAction)}>
+							{busyAction === 'accept' ? '...' : 'Accepter'}
+						</button>
+						<button className="chat-invite-accept" type="button" onClick={() => runAction('decline')} disabled={Boolean(busyAction)}>
+							Refuser
+						</button>
+					</div>
+				)}
+				{canAct && isOwn && (
+					<button className="chat-invite-accept" type="button" onClick={() => runAction('cancel')} disabled={Boolean(busyAction)}>
+						{busyAction === 'cancel' ? '...' : 'Annuler'}
 					</button>
+				)}
+				{inviteStatus === 'accepted' && data.game_id && (
+					<button className="chat-invite-accept" type="button" onClick={handleJoin}>
+						Rejoindre
+					</button>
+				)}
+				{inviteStatus !== 'pending' && !(inviteStatus === 'accepted' && data.game_id) && (
+					<span className="chat-invite-detail">
+						{inviteStatus === 'declined' ? 'Invitation refusee' : inviteStatus === 'cancelled' ? 'Invitation annulee' : inviteStatus === 'expired' ? 'Invitation expiree' : 'Invitation acceptee'}
+					</span>
 				)}
 			</div>
 		</div>

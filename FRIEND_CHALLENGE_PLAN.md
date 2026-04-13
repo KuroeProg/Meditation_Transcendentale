@@ -6,14 +6,14 @@ Branche: feature/friend-challenge-orchestration
 ## Etat d'avancement
 
 - [x] Etape 1 lancee: base backend invitation dediee ajoutee (modele + migration)
-- [ ] Etape 2: endpoints metier create/respond/cancel avec idempotence
-- [ ] Etape 3: creation game online sur accept
-- [ ] Etape 4: evenements temps reel invite/game_ready
-- [ ] Etape 5: CTA prioritaire global
-- [ ] Etape 6: desactivation boutons Defier quand pending sortante
-- [ ] Etape 7: auto-cancel sender_busy au demarrage online
-- [ ] Etape 8: expiration TTL + resync reconnexion
-- [ ] Etape 9: validation E2E
+- [x] Etape 2 lancee: endpoints metier create/respond/cancel avec idempotence (socle backend)
+- [x] Etape 3 lancee: creation game online sur accept (backend invite->game_id)
+- [x] Etape 4 lancee: evenements temps reel invite_created/invite_updated/game_ready (backend)
+- [x] Etape 5 lancee: CTA prioritaire global (frontend shell)
+- [x] Etape 6 lancee: desactivation boutons Defier quand pending sortante
+- [x] Etape 7 lancee: auto-cancel sender_busy au demarrage online (frontend trigger)
+- [x] Etape 8 lancee: expiration TTL (a l'acces) + resync reconnexion pending-outgoing
+- [ ] Etape 9: validation E2E (a executer)
 
 ## 1) Decisions produit validees
 

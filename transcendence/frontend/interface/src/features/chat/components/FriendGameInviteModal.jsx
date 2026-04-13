@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { TimeControlSection, defaultSelectedControl } from '../../chess/components/TimeControlPicker.jsx'
 import { TIME_CONTROLS } from '../../chess/constants/timeControls.js'
+import { useAuth } from '../../auth/index.js'
 import '../../profile/styles/Dashboard.css'
 import './FriendGameInviteModal.css'
 import { createConversation, sendGameInviteHttp } from '../services/chatApi.js'
@@ -21,6 +22,7 @@ export default function FriendGameInviteModal({
 	onClose,
 	onSent,
 }) {
+	const { registerOutgoingPendingInvite } = useAuth()
 	const [selectedTC, setSelectedTC] = useState(defaultSelectedControl)
 	const [isCompetitive, setIsCompetitive] = useState(false)
 	const [showCorrespondence, setShowCorrespondence] = useState(false)
@@ -38,7 +40,8 @@ export default function FriendGameInviteModal({
 				convId = conv?.id
 			}
 			if (convId == null) throw new Error('Conversation introuvable')
-			await sendGameInviteHttp(convId, buildInviteBody(selectedTC, isCompetitive))
+			const result = await sendGameInviteHttp(convId, buildInviteBody(selectedTC, isCompetitive))
+			registerOutgoingPendingInvite(result?.invite)
 			onSent?.()
 			onClose()
 		} catch (e) {
@@ -46,7 +49,7 @@ export default function FriendGameInviteModal({
 		} finally {
 			setSending(false)
 		}
-	}, [friendUserId, existingConversationId, selectedTC, isCompetitive, onClose, onSent])
+	}, [friendUserId, existingConversationId, selectedTC, isCompetitive, onClose, onSent, registerOutgoingPendingInvite])
 
 	const title = friendLabel ? `Defier ${friendLabel}` : 'Defier un ami'
 

@@ -64,7 +64,7 @@ function EditableField({ value, onSave, label, placeholder, multiline = false })
 	)
 }
 
-function FriendItem({ friend, onChallenge }) {
+function FriendItem({ friend, onChallenge, challengeDisabled }) {
 	const u = friend.user
 	const online = Boolean(u.is_online)
 	return (
@@ -77,7 +77,13 @@ function FriendItem({ friend, onChallenge }) {
 				</span>
 			</div>
 			{online && friend.status === 'accepted' && (
-				<button className="profile-friend-challenge" onClick={() => onChallenge(u)} type="button">
+				<button
+					className="profile-friend-challenge"
+					onClick={() => onChallenge(u)}
+					type="button"
+					disabled={challengeDisabled}
+					title={challengeDisabled ? 'Invitation deja en attente' : 'Defier'}
+				>
 					Defier
 				</button>
 			)}
@@ -88,7 +94,7 @@ function FriendItem({ friend, onChallenge }) {
 function Profile() {
 	const navigate = useNavigate()
 	const { openFriendInvite } = useFriendInvite()
-	const { user, loading, error, refetch, isDevMockAuth, logout, resolveUserOnline } = useAuth()
+	const { user, loading, error, refetch, isDevMockAuth, logout, resolveUserOnline, hasOutgoingPendingInvite } = useAuth()
 	const [friends, setFriends] = useState([])
 	const [profileSaveError, setProfileSaveError] = useState(null)
 	const [avatarUploadError, setAvatarUploadError] = useState(null)
@@ -313,9 +319,8 @@ function Profile() {
 								<FriendItem
 									key={f.friendship_id}
 									friend={f}
-									onChallenge={(u) =>
-										openFriendInvite({ friendUserId: u.id, friendLabel: u.username })
-									}
+									onChallenge={(u) => openFriendInvite({ friendUserId: u.id, friendLabel: u.username })}
+									challengeDisabled={hasOutgoingPendingInvite}
 								/>
 							))}
 						</ul>
