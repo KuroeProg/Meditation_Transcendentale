@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
-import { coalitionToSlug } from '../services/coalitionTheme.js'
+import { coalitionToSlug, shouldUseNeutralGuestTheme } from '../services/coalitionTheme.js'
 import { COALITION_ACCENTS, COALITION_BACKGROUNDS } from '../services/coalitionAmbience.js'
 import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'
 import '../styles/CoalitionAmbient.css'
@@ -10,7 +10,11 @@ import '../styles/CoalitionAmbient.css'
 export default function CoalitionAmbient() {
 	const location = useLocation()
 	const { user, loading } = useAuth()
-	const slug = coalitionToSlug(user?.coalition ?? user?.coalition_name)
+	const slug = user
+		? coalitionToSlug(user?.coalition ?? user?.coalition_name)
+		: shouldUseNeutralGuestTheme(location.pathname, Boolean(user), loading)
+			? 'neutral'
+			: coalitionToSlug(null)
 	const [reducedMotion, setReducedMotion] = useState(
 		() => document.documentElement.getAttribute('data-reduce-motion') === 'true',
 	)
@@ -50,6 +54,14 @@ export default function CoalitionAmbient() {
 			}
 		}
 		markNotReady()
+		if (slug === 'neutral') {
+			void Promise.resolve().then(() => {
+				if (!cancelled) setBgReady(true)
+			})
+			return () => {
+				cancelled = true
+			}
+		}
 		const url = COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
 		const img = new Image()
 		img.decoding = 'async'
@@ -118,9 +130,29 @@ export default function CoalitionAmbient() {
 	if (!onAppRoute) return null
 	if (loading) return null
 
-	const bg = COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
+	const isNeutral = slug === 'neutral'
+	const bg = isNeutral ? null : COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
 	const accent = COALITION_ACCENTS[slug] ?? COALITION_ACCENTS.feu
-	const showParticles = !reducedMotion && bgReady
+	const showParticles = !reducedMotion && bgReady && !isNeutral
+
+	const deepStyle = isNeutral
+		? {
+				backgroundImage: 'none',
+				backgroundColor: '#060814',
+				background:
+					'radial-gradient(ellipse 95% 70% at 50% 18%, rgba(72, 96, 150, 0.28) 0%, transparent 52%), radial-gradient(ellipse 80% 55% at 80% 90%, rgba(30, 45, 88, 0.22) 0%, transparent 45%), linear-gradient(168deg, #070a14 0%, #0c1226 42%, #080a12 100%)',
+				backgroundSize: 'cover',
+				backgroundRepeat: 'no-repeat',
+				transform: reducedMotion ? 'scale(1.06)' : 'scale(1.08)',
+				backgroundPosition: '50% 50%',
+			}
+		: {
+				backgroundImage: `url(${bg})`,
+				backgroundSize: 'cover',
+				backgroundRepeat: 'no-repeat',
+				transform: reducedMotion ? 'scale(1.14)' : 'scale(1.18)',
+				backgroundPosition: '50% 50%',
+			}
 
 	return (
 		<div
@@ -133,13 +165,7 @@ export default function CoalitionAmbient() {
 			<div
 				ref={deepRef}
 				className="coalition-ambient__layer coalition-ambient__layer--deep"
-				style={{
-					backgroundImage: `url(${bg})`,
-					backgroundSize: 'cover',
-					backgroundRepeat: 'no-repeat',
-					transform: reducedMotion ? 'scale(1.14)' : 'scale(1.18)',
-					backgroundPosition: '50% 50%',
-				}}
+				style={deepStyle}
 			/>
 			<div className="coalition-ambient__punch" />
 			<div className="coalition-ambient__veil" />

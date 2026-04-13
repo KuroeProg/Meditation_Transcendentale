@@ -88,14 +88,13 @@
 }
 
 /*
- * Pages /auth* en visiteur : fond très sombre (split auth) — Contact / À propos en blanc.
- * Uniquement avec .app-layout--auth-public (voir App.jsx), le reste du footer inchangé.
+ * Non connecté : Contact / À propos lisibles (home, auth, etc.) — voir App.jsx .app-layout--guest-session
  */
-.app-layout--auth-public .site-footer__link--app {
+.app-layout--guest-session .site-footer__link--app {
 	color: #fff;
 }
 
-.app-layout--auth-public .site-footer__link--app:hover {
+.app-layout--guest-session .site-footer__link--app:hover {
 	color: rgba(255, 255, 255, 0.95);
 	text-shadow:
 		0 0 14px rgba(255, 255, 255, 0.12),

@@ -113,8 +113,8 @@ function initParticles(slug, w, h) {
 		case 'feu':
 			return Array.from({ length: 120 }, () => new Ember(w, h))
 		case 'eau': {
-			/* ~90–130 gouttes selon la surface (shadowBlur retiré : le coût était énorme) */
-			const n = Math.min(130, Math.max(72, Math.floor((w * h) / 18000)))
+			/* Gouttes + bruine (moins de « traits » longs qu’avant) */
+			const n = Math.min(118, Math.max(68, Math.floor((w * h) / 19500)))
 			return {
 				kind: 'eau',
 				drops: Array.from({ length: n }, () => new RainDrop(w, h)),
@@ -122,6 +122,8 @@ function initParticles(slug, w, h) {
 				maxRipples: 32,
 			}
 		}
+		case 'neutral':
+			return []
 		case 'terre':
 			return [
 				...Array.from({ length: 72 }, () => new Leaf(w, h)),
@@ -211,9 +213,10 @@ class RainDrop {
 		const w = this.w
 		const h = this.h
 		const t = Math.random()
-		if (t < 0.12) this.mode = 'drizzle'
-		else if (t < 0.22) this.mode = 'blob'
-		else if (t < 0.88) this.mode = 'streak'
+		/* Plus de bruine / gouttes, moins de traits longs type « sheet » */
+		if (t < 0.38) this.mode = 'drizzle'
+		else if (t < 0.72) this.mode = 'blob'
+		else if (t < 0.94) this.mode = 'streak'
 		else this.mode = 'sheet'
 
 		this.x = Math.random() * (w + 400) - 200
@@ -222,26 +225,35 @@ class RainDrop {
 		this.impactY = h * (0.52 + Math.random() * 0.44) + (Math.random() - 0.5) * 40
 		this.len =
 			this.mode === 'drizzle'
-				? 6 + Math.random() * 14
+				? 5 + Math.random() * 11
 				: this.mode === 'blob'
 					? 3 + Math.random() * 6
 					: this.mode === 'sheet'
-						? 28 + Math.random() * 45
-						: 16 + Math.random() * 38
+						? 18 + Math.random() * 26
+						: 9 + Math.random() * 16
 
 		this.speed =
 			this.mode === 'drizzle'
-				? 0.55 + Math.random() * 0.65
+				? 0.48 + Math.random() * 0.55
 				: this.mode === 'blob'
-					? 1.4 + Math.random() * 1.2
-					: 1.05 + Math.random() * 1.85
+					? 1.2 + Math.random() * 1.1
+					: this.mode === 'sheet'
+						? 0.95 + Math.random() * 1.15
+						: 0.82 + Math.random() * 1.05
 
 		this.thick =
 			this.mode === 'blob'
-				? 1.2 + Math.random() * 2.2
-				: 0.45 + Math.random() * 1.35
+				? 1.35 + Math.random() * 2.4
+				: this.mode === 'drizzle'
+					? 0.65 + Math.random() * 1.1
+					: 0.5 + Math.random() * 0.95
 
-		this.alpha = 0.14 + Math.random() * 0.42
+		this.alpha =
+			this.mode === 'drizzle'
+				? 0.1 + Math.random() * 0.22
+				: this.mode === 'blob'
+					? 0.18 + Math.random() * 0.38
+					: 0.12 + Math.random() * 0.32
 		this.angle = (Math.random() - 0.5) * 0.55
 		this.windBase = (Math.random() - 0.5) * 2.4
 		this.gustPhase = Math.random() * Math.PI * 2
@@ -312,17 +324,19 @@ class RainDrop {
 			return
 		}
 
-		/* Un seul trait : large atténué + pas de shadowBlur (très coûteux) */
-		ctx.globalAlpha = alpha * 0.45
-		ctx.strokeStyle = 'rgba(160, 210, 245, 0.9)'
-		ctx.lineWidth = thick + 2.5
-		ctx.beginPath()
-		ctx.moveTo(x1, y1)
-		ctx.lineTo(x2, y2)
-		ctx.stroke()
-		ctx.globalAlpha = alpha * 0.95
-		ctx.strokeStyle = 'rgba(248, 252, 255, 0.92)'
-		ctx.lineWidth = Math.max(0.5, thick * 0.55)
+		/* Trait adouci : dégradé le long de la chute (moins « ligne crantée ») */
+		const g = ctx.createLinearGradient(x1, y1, x2, y2)
+		const a0 = alpha * 0.15
+		const a1 = alpha * 0.88
+		const a2 = alpha * 0.35
+		g.addColorStop(0, `rgba(255, 255, 255, ${a0})`)
+		g.addColorStop(0.22, `rgba(230, 248, 255, ${a1})`)
+		g.addColorStop(0.78, `rgba(190, 225, 250, ${a2})`)
+		g.addColorStop(1, `rgba(160, 210, 240, ${a0})`)
+		ctx.globalAlpha = 1
+		ctx.strokeStyle = g
+		ctx.lineWidth = Math.max(1, thick * (mode === 'sheet' ? 2.2 : 1.65))
+		ctx.lineJoin = 'round'
 		ctx.beginPath()
 		ctx.moveTo(x1, y1)
 		ctx.lineTo(x2, y2)
