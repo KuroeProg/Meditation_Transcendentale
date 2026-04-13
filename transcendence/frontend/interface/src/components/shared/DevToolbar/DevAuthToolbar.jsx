@@ -1,10 +1,16 @@
 import { useCallback, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/index.js'
 import {
 	DEV_MOCK_STORAGE,
 	clearSortingHatStorageForUserId,
 	SORTING_HAT_DEV_RETRY_EVENT,
 } from '../../../mock/mockSessionUser.js'
+import {
+	disableDevGuestPreview,
+	goToGuestHome,
+	isDevGuestPreviewActive,
+} from '../../../utils/devGuestPreview.js'
 import './DevAuthToolbar.css'
 
 function readStoredMode() {
@@ -42,8 +48,10 @@ function resolveUserId(user) {
  * Dev uniquement : mock session (surcharge .env), coalition, compte local vs 42, réinit choixpeau.
  */
 export default function DevAuthToolbar() {
-	const { user, refetch, isDevMockAuth } = useAuth()
+	const navigate = useNavigate()
+	const { user, refetch, isDevMockAuth, logout } = useAuth()
 	const [open, setOpen] = useState(false)
+	const guestPreview = isDevGuestPreviewActive()
 	const [mode, setMode] = useState(readStoredMode)
 	const [coalition, setCoalition] = useState(readStoredCoalition)
 	const [authProvider, setAuthProvider] = useState(readStoredAuthProvider)
@@ -69,6 +77,15 @@ export default function DevAuthToolbar() {
 		clearSortingHatStorageForUserId(uid)
 		window.dispatchEvent(new Event(SORTING_HAT_DEV_RETRY_EVENT))
 	}, [uid])
+
+	const handleGuestHome = useCallback(async () => {
+		await goToGuestHome(logout, navigate)
+	}, [logout, navigate])
+
+	const handleResumeSession = useCallback(() => {
+		disableDevGuestPreview()
+		void refetch()
+	}, [refetch])
 
 	if (!import.meta.env.DEV) return null
 
@@ -125,7 +142,32 @@ export default function DevAuthToolbar() {
 					<p className="dev-auth-toolbar__hint">
 						État actuel : <strong>{isDevMockAuth ? 'mock actif' : 'mock inactif'}</strong>
 						{user ? ` · id ${uid ?? '?'}` : ' · pas de session'}
+						{guestPreview ? (
+							<>
+								{' '}
+								· <strong>aperçu invité</strong> (cookies ignorés jusqu’à réactivation)
+							</>
+						) : null}
 					</p>
+
+					<div className="dev-auth-toolbar__actions">
+						<button
+							type="button"
+							className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent"
+							onClick={() => void handleGuestHome()}
+						>
+							Home invité (déco + ignorer session)
+						</button>
+						<button
+							type="button"
+							className="dev-auth-toolbar__btn"
+							onClick={handleResumeSession}
+							disabled={!guestPreview}
+							title="Retire le flag dev et relance /api/auth/me"
+						>
+							Réactiver la session
+						</button>
+					</div>
 					<p className="dev-auth-toolbar__hint">
 						Choixpeau : compte <strong>local</strong> + <code>VITE_SORTING_HAT_COALITION</code>. En mock, le PUT API peut échouer : l’anim se joue quand même et le flag « vu » est posé.
 					</p>

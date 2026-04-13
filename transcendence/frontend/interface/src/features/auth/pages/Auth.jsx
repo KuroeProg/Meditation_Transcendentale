@@ -12,6 +12,7 @@ import '../styles/Auth.css'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
+import { goToGuestHome } from '../../../utils/devGuestPreview.js'
 
 function LoginForm({ on2FARequired, onSwitchToRegister }) {
   const { loginLocal, error, setError } = useAuth()
@@ -209,7 +210,7 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
 export default function AuthPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
+  const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge, logout } = useAuth()
   const [stage, setStage] = useState('login')
   const postAuthRedirectRef = useRef(false)
   const userInfo = twoFactorChallenge
@@ -267,6 +268,13 @@ export default function AuthPage() {
     setStage('2fa')
   }
 
+  const handleDevLogoGuestHome =
+    import.meta.env.DEV
+      ? async () => {
+          await goToGuestHome(logout, navigate)
+        }
+      : undefined
+
   return (
     <div className="auth-page">
       <div className="auth-branding">
@@ -277,7 +285,7 @@ export default function AuthPage() {
             <div className="auth-coalition-symbol auth-coalition-wind"><CoalitionWind /></div>
             <div className="auth-coalition-symbol auth-coalition-earth"><CoalitionEarth /></div>
           </div>
-          <SiteBrandLogo className="auth-site-logo" />
+          <SiteBrandLogo className="auth-site-logo" onClick={handleDevLogoGuestHome} />
           <h1 className="auth-brand-title">TRANSCENDANCE</h1>
           <p className="auth-brand-subtitle">L'Arene Echecs de 42 Perpignan</p>
           <p className="auth-brand-tagline">Affutez votre logique. Dominez le plateau.<br />Elevez votre coalition.</p>

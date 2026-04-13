@@ -6,15 +6,23 @@ import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
 import { useReduceMotionPref } from '../../theme/index.js'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 import { useAuth } from '../../auth/index.js'
 import { markWelcomeHomeSeen } from '../../../utils/postLoginRedirect.js'
+import { goToGuestHome } from '../../../utils/devGuestPreview.js'
 
 function Home() {
 	const reduceMotion = useReduceMotionPref()
-	const { user } = useAuth()
+	const navigate = useNavigate()
+	const { user, logout } = useAuth()
 	const userId = user?.id ?? user?.user_id ?? null
+	const devLogoGuestHome =
+		import.meta.env.DEV
+			? async () => {
+					await goToGuestHome(logout, navigate)
+				}
+			: undefined
 
 	useEffect(() => {
 		if (userId != null) markWelcomeHomeSeen(userId)
@@ -74,7 +82,7 @@ function Home() {
 				</div>
 
 				<div className="second-right">
-					<SiteBrandLogo className="home-second-logo" alt="Transcendance" />
+					<SiteBrandLogo className="home-second-logo" alt="Transcendance" onClick={devLogoGuestHome} />
 				</div>
 			</div>
 

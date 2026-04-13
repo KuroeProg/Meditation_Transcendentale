@@ -4,6 +4,7 @@ import {
 	isDevMockAuthEnabled,
 	maybeClearSortingHatStorageForMock,
 } from '../../mock/mockSessionUser.js'
+import { disableDevGuestPreview, isDevGuestPreviewActive } from '../../utils/devGuestPreview.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -45,6 +46,12 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     try {
+      if (isDevGuestPreviewActive()) {
+        setUser(null)
+        setTwoFactorChallenge(null)
+        return
+      }
+
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
         maybeClearSortingHatStorageForMock(u.id)
@@ -80,6 +87,7 @@ export function AuthProvider({ children }) {
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
         maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
         setUser(u)
         setTwoFactorChallenge(null)
         return {
@@ -123,6 +131,7 @@ export function AuthProvider({ children }) {
         return { ok: false, ...challenge }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return {
@@ -142,6 +151,7 @@ export function AuthProvider({ children }) {
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
         maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
         setUser(u)
         setTwoFactorChallenge(null)
         return {
@@ -186,6 +196,7 @@ export function AuthProvider({ children }) {
       }
 
       if (data?.user) {
+        disableDevGuestPreview()
         setUser(data.user)
         setTwoFactorChallenge(null)
         return {
@@ -228,6 +239,7 @@ export function AuthProvider({ children }) {
         return { ok: false, status: 'error', error: data?.error || 'Verification failed' }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return { ok: true, status: 'authenticated', user: data.user }
