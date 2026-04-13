@@ -242,6 +242,21 @@ class CodePenRainDrop {
 		this.dropHeightPx = 96 + Math.random() * 56
 		this.stemRatio = 0.56 + Math.random() * 0.1
 		this._prevPhase = -1
+		/*
+		 * Hauteur d’impact variable = profondeur (plan d’eau fictif).
+		 * Arrière-plan : plus « loin » (ligne plus haute à l’écran). Premier plan : plus bas.
+		 */
+		const back = opts.fromRight
+		const lo = back ? 0.69 : 0.78
+		const hi = back ? 0.9 : 0.97
+		this.landFrac = lo + Math.random() * (hi - lo)
+		/* 0 ≈ loin (petit), 1 ≈ près (plus lisible) — pour échelle tige / splat */
+		this.depthScale = 0.52 + ((this.landFrac - 0.66) / 0.34) * 0.58
+		this.depthScale = Math.max(0.48, Math.min(1.22, this.depthScale))
+	}
+
+	yLandPx(h) {
+		return h * this.landFrac + this.verticalNudge
 	}
 
 	/** Une fois par cycle, au passage p < 0.75 → p ≥ 0.75 : ondes à la surface. */
@@ -256,7 +271,7 @@ class CodePenRainDrop {
 
 		let x = (this.xPct / 100) * w
 		if (this.fromRight) x = w - (this.xPct / 100) * w
-		const yLand = h * 0.91 + this.verticalNudge
+		const yLand = this.yLandPx(h)
 
 		const n = 1 + (Math.random() < 0.22 ? 1 : 0)
 		for (let i = 0; i < n; i++) {
@@ -284,14 +299,15 @@ class CodePenRainDrop {
 
 		const travelEnd = 0.75
 		const travel = Math.min(p / travelEnd, 1)
-		const yLand = h * 0.91 + this.verticalNudge
+		const yLand = this.yLandPx(h)
 		const above = this.dropHeightPx + 28
 		const yTop = -above + (yLand + above) * travel
 
 		let x = (this.xPct / 100) * w
 		if (this.fromRight) x = w - (this.xPct / 100) * w
 
-		const stemLen = this.dropHeightPx * this.stemRatio
+		const ds = this.depthScale
+		const stemLen = this.dropHeightPx * this.stemRatio * ds
 		const stemBottom = yTop + stemLen
 
 		let stemOpacity = 1
@@ -306,7 +322,7 @@ class CodePenRainDrop {
 		g.addColorStop(0.45, 'rgba(185, 235, 255, 0.14)')
 		g.addColorStop(1, 'rgba(160, 220, 250, 0.42)')
 		ctx.strokeStyle = g
-		ctx.lineWidth = 1.25
+		ctx.lineWidth = Math.max(0.85, 1.25 * ds)
 		ctx.beginPath()
 		ctx.moveTo(x, yTop)
 		ctx.lineTo(x, stemBottom)
@@ -314,14 +330,14 @@ class CodePenRainDrop {
 
 		ctx.globalAlpha = stemOpacity * this.layerAlpha * 0.35
 		ctx.strokeStyle = 'rgba(120, 200, 255, 0.45)'
-		ctx.lineWidth = 3
+		ctx.lineWidth = Math.max(1.5, 3 * ds)
 		ctx.beginPath()
 		ctx.moveTo(x, yTop)
 		ctx.lineTo(x, stemBottom)
 		ctx.stroke()
 		ctx.restore()
 
-		const splatBaseY = yTop + this.dropHeightPx
+		const splatBaseY = yTop + this.dropHeightPx * ds
 		let splatScale = 0
 		let splatOp = 0
 		if (p >= 0.8 && p < 0.9) {
@@ -336,8 +352,8 @@ class CodePenRainDrop {
 
 		if (splatScale > 0.02 && splatOp > 0.03) {
 			const ref = Math.min(w, h) / 900
-			const rw = (7 + splatScale * 7) * ref * 18
-			const rhFlat = (4 + splatScale * 5) * ref * 12
+			const rw = (7 + splatScale * 7) * ref * 18 * ds
+			const rhFlat = (4 + splatScale * 5) * ref * 12 * ds
 			ctx.save()
 			ctx.globalAlpha = splatOp * this.layerAlpha
 			ctx.translate(x, splatBaseY)
