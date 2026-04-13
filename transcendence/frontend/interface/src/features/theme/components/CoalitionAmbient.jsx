@@ -20,6 +20,7 @@ export default function CoalitionAmbient() {
 	)
 	const [bgReady, setBgReady] = useState(false)
 	const deepRef = useRef(null)
+	const particlesRef = useRef(null)
 	const mouseRef = useRef({ x: 0, y: 0 })
 	const reducedMotionRef = useRef(reducedMotion)
 
@@ -104,12 +105,17 @@ export default function CoalitionAmbient() {
 			d.style.backgroundPosition = `${posX}% ${posY}%`
 			d.style.transform = tf
 		}
+		/* Même transform que le fond : sinon la pluie (canvas) semble dériver en X/Y (effet « neige »). */
+		const pc = particlesRef.current
+		if (pc) {
+			pc.style.transform = tf
+		}
 	}
 
 	useLayoutEffect(() => {
 		if (!onAppRoute || loading || !bgReady) return
 		applyParallax(performance.now(), performance.now())
-	}, [onAppRoute, loading, bgReady])
+	}, [onAppRoute, loading, bgReady, slug])
 
 	useEffect(() => {
 		if (!onAppRoute || loading || !bgReady) return
@@ -125,7 +131,7 @@ export default function CoalitionAmbient() {
 		}
 		id = requestAnimationFrame(tick)
 		return () => cancelAnimationFrame(id)
-	}, [onAppRoute, loading, bgReady, reducedMotion])
+	}, [onAppRoute, loading, bgReady, reducedMotion, slug])
 
 	if (!onAppRoute) return null
 	if (loading) return null
@@ -135,6 +141,8 @@ export default function CoalitionAmbient() {
 	const accent = COALITION_ACCENTS[slug] ?? COALITION_ACCENTS.feu
 	const showParticles = !reducedMotion && bgReady && !isNeutral
 
+	const deepTfNeutral = reducedMotion ? 'scale(1.06)' : 'scale(1.08)'
+	const deepTfCoalition = reducedMotion ? 'scale(1.14)' : 'scale(1.18)'
 	const deepStyle = isNeutral
 		? {
 				backgroundImage: 'none',
@@ -143,14 +151,14 @@ export default function CoalitionAmbient() {
 					'radial-gradient(ellipse 95% 70% at 50% 18%, rgba(72, 96, 150, 0.28) 0%, transparent 52%), radial-gradient(ellipse 80% 55% at 80% 90%, rgba(30, 45, 88, 0.22) 0%, transparent 45%), linear-gradient(168deg, #070a14 0%, #0c1226 42%, #080a12 100%)',
 				backgroundSize: 'cover',
 				backgroundRepeat: 'no-repeat',
-				transform: reducedMotion ? 'scale(1.06)' : 'scale(1.08)',
+				transform: deepTfNeutral,
 				backgroundPosition: '50% 50%',
 			}
 		: {
 				backgroundImage: `url(${bg})`,
 				backgroundSize: 'cover',
 				backgroundRepeat: 'no-repeat',
-				transform: reducedMotion ? 'scale(1.14)' : 'scale(1.18)',
+				transform: deepTfCoalition,
 				backgroundPosition: '50% 50%',
 			}
 
@@ -169,7 +177,15 @@ export default function CoalitionAmbient() {
 			/>
 			<div className="coalition-ambient__punch" />
 			<div className="coalition-ambient__veil" />
-			{showParticles && <CoalitionParticleCanvas slug={slug} reducedMotion={false} />}
+			{showParticles && (
+				<div
+					ref={particlesRef}
+					className="coalition-ambient__particles-parallax"
+					style={{ transform: deepTfCoalition }}
+				>
+					<CoalitionParticleCanvas slug={slug} reducedMotion={false} />
+				</div>
+			)}
 			<div className="coalition-ambient__vignette" />
 		</div>
 	)

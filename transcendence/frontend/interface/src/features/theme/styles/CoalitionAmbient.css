@@ -78,6 +78,15 @@
 	pointer-events: none;
 }
 
+/* Conteneur = même translate/scale que le fond (évite dérive relative de la pluie). */
+.coalition-ambient__particles-parallax {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	transform-origin: 50% 50%;
+	will-change: transform;
+}
+
 .coalition-ambient__particles {
 	position: absolute;
 	inset: 0;
