@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { useFriendInvite } from '../../chat/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
@@ -85,8 +86,9 @@ function FriendItem({ friend, onChallenge }) {
 }
 
 function Profile() {
+	const navigate = useNavigate()
 	const { openFriendInvite } = useFriendInvite()
-	const { user, loading, error, refetch, isDevMockAuth, resolveUserOnline } = useAuth()
+	const { user, loading, error, refetch, isDevMockAuth, logout, resolveUserOnline } = useAuth()
 	const [friends, setFriends] = useState([])
 	const [profileSaveError, setProfileSaveError] = useState(null)
 	const [avatarUploadError, setAvatarUploadError] = useState(null)
@@ -127,6 +129,11 @@ function Profile() {
 			setProfileSaveError('Erreur réseau.')
 			return false
 		}
+	}
+
+	const handleLogout = async () => {
+		await logout()
+		navigate('/auth', { replace: true })
 	}
 
 	const handleAvatarUpload = async (e) => {
@@ -316,6 +323,13 @@ function Profile() {
 						<p className="muted small">Aucun ami pour le moment. Recherche des joueurs depuis le chat !</p>
 					)}
 				</section>
+
+				<div className="profile-mobile-logout">
+					<button type="button" className="profile-mobile-logout__btn" onClick={handleLogout}>
+						<i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
+						Déconnexion
+					</button>
+				</div>
 			</div>
 		</div>
 	)

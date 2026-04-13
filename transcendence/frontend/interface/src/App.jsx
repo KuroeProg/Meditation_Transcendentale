@@ -1,9 +1,11 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar } from './components/shared/index.js'
+import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar, SiteFooter } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
 import {
 	HomePage,
+	ContactPage,
+	AboutPage,
 	GamePage,
 	DashboardPage,
 	ProfilePage,
@@ -17,8 +19,10 @@ import {
 	HomeAmbientBgm,
 	ChatDrawer,
 	FriendInviteProvider,
+	ChatUiProvider,
 	useAuth,
 } from './features/index.js'
+import SortingHatGate from './features/auth/components/SortingHatGate.jsx'
 import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
 import { useChatInbox } from './features/chat/hooks/useChatInbox.js'
 import { presencePing } from './features/chat/services/chatApi.js'
@@ -41,6 +45,7 @@ function AppContent() {
 	const currentGameId = isOnGameRoute ? location.pathname.replace('/game/', '') : null
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
+	const footerSidewallOffset = isAuthenticated && !isAuthRoute && !isMobile
 
 	useEffect(() => {
 		if (!isAuthenticated) return
@@ -62,15 +67,19 @@ function AppContent() {
 
 	return (
 		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
+		<ChatUiProvider openChat={() => setChatOpen(true)}>
 		<div className="app-layout">
 			<ThemeSync />
+			<SortingHatGate />
 			<CoalitionHtmlSync />
 			<DevAuthToolbar />
 			<HomeAmbientBgm />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
-			{!isAuthRoute && (isMobile ? <BottomNav /> : <Sidebar />)}
-			<div className={`main-content ${isAuthRoute ? 'full-width' : ''}`}>
+			{!isAuthRoute && isAuthenticated && (isMobile ? <BottomNav /> : <Sidebar />)}
+			<div
+				className={`main-content ${isAuthRoute ? 'full-width' : ''} ${!isAuthenticated && !isAuthRoute ? 'main-content--guest' : ''}`}
+			>
 				<Routes>
 					<Route path="/auth" element={<AuthPage />} />
 					<Route path="/auth/reset-password" element={<ResetPasswordPage />} />
@@ -130,9 +139,13 @@ function AppContent() {
 							</ProtectedRoute>
 						}
 					/>
+					<Route path="/contact" element={<ContactPage />} />
+					<Route path="/about" element={<AboutPage />} />
 					<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</div>
+
+			<SiteFooter sidewallOffset={footerSidewallOffset} />
 
 			{isAuthenticated && !isAuthRoute && (
 				<>
@@ -161,6 +174,7 @@ function AppContent() {
 				</>
 			)}
 		</div>
+		</ChatUiProvider>
 		</FriendInviteProvider>
 	)
 }

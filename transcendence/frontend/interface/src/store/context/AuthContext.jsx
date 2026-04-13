@@ -1,4 +1,10 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import {
+	getMockSessionUser,
+	isDevMockAuthEnabled,
+	maybeClearSortingHatStorageForMock,
+} from '../../mock/mockSessionUser.js'
+import { disableDevGuestPreview } from '../../utils/devGuestPreview.js'
 import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
@@ -108,6 +114,19 @@ export function AuthProvider({ children }) {
   async function loginLocal(email, password) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       await ensureCsrfCookie()
       const csrf = readCookie('csrftoken')
       const headers = { 'Content-Type': 'application/json' }
@@ -142,6 +161,7 @@ export function AuthProvider({ children }) {
         return { ok: false, ...challenge }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return {
@@ -158,6 +178,19 @@ export function AuthProvider({ children }) {
   async function registerLocal(username, password, email, firstName, lastName) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         credentials: 'include',
@@ -193,6 +226,7 @@ export function AuthProvider({ children }) {
       }
 
       if (data?.user) {
+        disableDevGuestPreview()
         setUser(data.user)
         setTwoFactorChallenge(null)
         return {
@@ -235,6 +269,7 @@ export function AuthProvider({ children }) {
         return { ok: false, status: 'error', error: data?.error || 'Verification failed' }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return { ok: true, status: 'authenticated', user: data.user }
@@ -250,18 +285,20 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await ensureCsrfCookie()
-      const csrf = readCookie('csrftoken')
-      const headers = {}
-      if (csrf) {
-        headers['X-CSRFToken'] = csrf
-      }
+      if (!isDevMockAuthEnabled()) {
+        await ensureCsrfCookie()
+        const csrf = readCookie('csrftoken')
+        const headers = {}
+        if (csrf) {
+          headers['X-CSRFToken'] = csrf
+        }
 
-      await fetch(AUTH_PATHS.logout, {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-      })
+        await fetch(AUTH_PATHS.logout, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        })
+      }
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
@@ -369,7 +406,7 @@ export function AuthProvider({ children }) {
     clearTwoFactorChallenge,
     logout,
     refetch: checkAuth,
-    isDevMockAuth: false,
+    isDevMockAuth: isDevMockAuthEnabled(),
     presenceByUserId,
     resolveUserOnline,
     isTwoFactorVerified: !!user && !twoFactorChallenge,

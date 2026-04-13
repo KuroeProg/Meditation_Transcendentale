@@ -504,3 +504,40 @@
 .leaderboard-elo {
 	font-weight: 600;
 }
+
+/* Déconnexion : barre du bas = Msg ; visible ici uniquement en mobile (≤770px) */
+.profile-mobile-logout {
+	display: none;
+}
+
+@media (max-width: 770px) {
+	.profile-mobile-logout {
+		display: block;
+		margin-top: 0.5rem;
+	}
+
+	.profile-mobile-logout__btn {
+		width: 100%;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.5rem;
+		padding: 0.85rem 1rem;
+		border-radius: 12px;
+		border: 1px solid rgba(229, 115, 115, 0.45);
+		background: rgba(220, 38, 38, 0.12);
+		color: #fecaca;
+		font-family: inherit;
+		font-size: 0.95rem;
+		font-weight: 600;
+		cursor: pointer;
+		transition:
+			background 0.2s,
+			border-color 0.2s;
+	}
+
+	.profile-mobile-logout__btn:hover {
+		background: rgba(220, 38, 38, 0.2);
+		border-color: rgba(248, 113, 113, 0.55);
+	}
+}

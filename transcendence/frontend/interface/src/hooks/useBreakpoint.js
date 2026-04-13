@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react'
 
-const MOBILE_QUERY = '(max-width: 768px)'
-const TABLET_QUERY = '(min-width: 769px) and (max-width: 1024px)'
+const MOBILE_QUERY = '(max-width: 770px)'
+const TABLET_QUERY = '(min-width: 771px) and (max-width: 1024px)'
 
 function createMediaStore(query) {
 	const mql = typeof window !== 'undefined' ? window.matchMedia(query) : null

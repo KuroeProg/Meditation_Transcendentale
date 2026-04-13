@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchConversations } from '../services/chatApi.js'
 import { useAuth } from '../../auth/index.js'
 
@@ -37,6 +39,7 @@ export default function ConversationList({ onSelect, activeId }) {
 				const other = c.participants?.[0]
 				const otherOnline = resolveUserOnline(other)
 				const isActive = c.id === activeId
+				const coalSlug = coalitionToSlug(other?.coalition)
 				return (
 					<li
 						key={c.id}
@@ -46,7 +49,12 @@ export default function ConversationList({ onSelect, activeId }) {
 						<img className="chat-conv-avatar" src={other?.avatar || ''} alt="" />
 						<div className="chat-conv-info">
 							<div className="chat-conv-top">
-								<span className="chat-conv-name">{other?.username || 'Inconnu'}</span>
+								<div className="chat-conv-name-line">
+									<span className="chat-conv-name">{other?.username || 'Inconnu'}</span>
+									<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
+										<ProfileCoalitionIcon slug={coalSlug} />
+									</span>
+								</div>
 								{c.unread_count > 0 && <span className="chat-conv-badge">{c.unread_count}</span>}
 							</div>
 							<p className="chat-conv-last">

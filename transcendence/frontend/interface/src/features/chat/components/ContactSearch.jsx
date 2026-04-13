@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useAuth } from '../../auth/index.js'
+import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import {
 	fetchFriends,
 	friendAction,
@@ -12,6 +14,7 @@ import {
 function ContactItem({ contact, onAction, onStartChat }) {
 	const u = contact.user
 	const online = Boolean(u.is_online)
+	const coalSlug = coalitionToSlug(u?.coalition)
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
@@ -19,6 +22,12 @@ function ContactItem({ contact, onAction, onStartChat }) {
 				<span className="chat-contact-name">{u.username}</span>
 				<span className={`chat-contact-status ${online ? 'online' : ''}`}>
 					{online ? 'En ligne' : 'Hors ligne'}
+					<span className="chat-contact-name-row">
+						<span className="chat-contact-name">{u.username}</span>
+						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
+							<ProfileCoalitionIcon slug={coalSlug} />
+						</span>
+					</span>
 				</span>
 			</div>
 			<div className="chat-contact-actions">
@@ -57,6 +66,7 @@ function ContactItem({ contact, onAction, onStartChat }) {
 
 function SearchResultItem({ user, onAdd }) {
 	const online = Boolean(user.is_online)
+	const coalSlug = coalitionToSlug(user?.coalition)
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={user.avatar} alt="" />
@@ -64,6 +74,12 @@ function SearchResultItem({ user, onAdd }) {
 				<span className="chat-contact-name">{user.username}</span>
 				<span className={`chat-contact-status ${online ? 'online' : ''}`}>
 					{online ? 'En ligne' : 'Hors ligne'}
+					<span className="chat-contact-name-row">
+						<span className="chat-contact-name">{user.username}</span>
+						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
+							<ProfileCoalitionIcon slug={coalSlug} />
+						</span>
+					</span>
 				</span>
 			</div>
 			<button type="button" className="chat-ca-btn chat-ca-add" onClick={() => onAdd(user.id)} title="Ajouter en ami">

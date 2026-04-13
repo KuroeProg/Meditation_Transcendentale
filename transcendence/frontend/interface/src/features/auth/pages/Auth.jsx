@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { TwoFactorVerify } from '../components/TwoFactorVerify.jsx'
 import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
@@ -10,6 +10,8 @@ import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Win
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
 import '../styles/Auth.css'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
+import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
+import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
 
 function LoginForm({ on2FARequired, onSwitchToRegister, onForgotPassword }) {
   const { loginLocal, error, setError } = useAuth()
@@ -259,14 +261,54 @@ function ForgotPasswordForm({ onBackToLogin }) {
 }
 
 export default function AuthPage() {
-  const { isAuthenticated, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
   const [stage, setStage] = useState('login')
+  const postAuthRedirectRef = useRef(false)
   const userInfo = twoFactorChallenge
     ? { userId: twoFactorChallenge.user_id, email: twoFactorChallenge.email, preAuthToken: twoFactorChallenge.pre_auth_token }
     : null
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+  /* Synchroniser ?mode=register|login avec l’onglet formulaire (sans toucher à la 2FA). */
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture URL → étape auth
+    setStage((prev) => {
+      if (prev === '2fa') return prev
+      if (mode === 'register') return 'register'
+      if (mode === 'login') return 'login'
+      return prev
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      postAuthRedirectRef.current = false
+      return
+    }
+    if (postAuthRedirectRef.current) return
+    postAuthRedirectRef.current = true
+    const dest = getPostAuthDestination(user.id)
+    navigate(dest, { replace: true })
+  }, [isAuthenticated, user?.id, navigate])
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" />
+        <p>Chargement…</p>
+      </div>
+    )
+  }
+
+  if (isAuthenticated && user?.id) {
+    return (
+      <div className="loading-screen" aria-busy="true">
+        <div className="spinner" />
+        <p>Redirection…</p>
+      </div>
+    )
   }
 
   const handleRegistrationSuccess = ({ user_id }) => {
@@ -289,7 +331,9 @@ export default function AuthPage() {
             <div className="auth-coalition-symbol auth-coalition-wind"><CoalitionWind /></div>
             <div className="auth-coalition-symbol auth-coalition-earth"><CoalitionEarth /></div>
           </div>
-          <SiteBrandLogo className="auth-site-logo" />
+          <Link to="/" className="auth-site-logo-link" aria-label="Accueil Transcendance">
+            <SiteBrandLogo className="auth-site-logo" />
+          </Link>
           <h1 className="auth-brand-title">TRANSCENDANCE</h1>
           <p className="auth-brand-subtitle">L'Arene Echecs de 42 Perpignan</p>
           <p className="auth-brand-tagline">Affutez votre logique. Dominez le plateau.<br />Elevez votre coalition.</p>
@@ -331,17 +375,19 @@ export default function AuthPage() {
               userId={userInfo.userId}
               email={userInfo.email}
               preAuthToken={userInfo.preAuthToken}
-              onVerificationSuccess={() => (window.location.href = '/dashboard')}
+              onVerificationSuccess={() => {}}
               onCancel={() => { clearTwoFactorChallenge(); setStage('login') }}
             />
           )}
         </div>
 
         <footer className="auth-footer">
-          <span>Mentions legales</span>
-          <span className="auth-footer-sep">|</span>
-          <span>Contact</span>
-          <span className="auth-footer-sep">|</span>
+          <Link to="/" className="auth-footer-link">
+            Accueil
+          </Link>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
           <span>Ecole 42 Perpignan</span>
         </footer>
       </div>

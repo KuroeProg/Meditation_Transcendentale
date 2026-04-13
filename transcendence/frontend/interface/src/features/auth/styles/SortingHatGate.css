@@ -1,0 +1,244 @@
+.sorting-hat-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 12000;
+	display: grid;
+	place-items: center;
+	padding: 1.25rem;
+	padding-top: max(1.25rem, env(safe-area-inset-top));
+	background: rgba(4, 6, 12, 0.88);
+	backdrop-filter: blur(10px);
+}
+
+.sorting-hat-dismiss {
+	position: fixed;
+	top: max(0.75rem, env(safe-area-inset-top));
+	right: max(0.75rem, env(safe-area-inset-right));
+	z-index: 12002;
+	width: 2.5rem;
+	height: 2.5rem;
+	display: grid;
+	place-items: center;
+	border-radius: 10px;
+	border: 1px solid rgba(139, 115, 85, 0.45);
+	background: rgba(28, 22, 16, 0.92);
+	color: rgba(245, 240, 230, 0.85);
+	font-size: 1.35rem;
+	line-height: 1;
+	cursor: pointer;
+	transition:
+		background 0.2s,
+		color 0.2s,
+		transform 0.2s;
+}
+
+.sorting-hat-dismiss:hover {
+	background: rgba(45, 36, 26, 0.95);
+	color: #fff;
+	transform: scale(1.05);
+}
+
+.sorting-hat-frame {
+	position: relative;
+	width: min(480px, 100%);
+	border-radius: 6px;
+	padding: 0;
+	border: 10px solid transparent;
+	background:
+		linear-gradient(160deg, rgba(32, 24, 18, 0.97), rgba(18, 14, 10, 0.98)) padding-box,
+		linear-gradient(145deg, #5c4033, #2a1f18 42%, #4a3428 58%, #1f1610) border-box;
+	box-shadow:
+		0 0 0 2px rgba(20, 14, 10, 0.95),
+		0 28px 80px rgba(0, 0, 0, 0.55),
+		inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.sorting-hat-frame::before {
+	content: '';
+	position: absolute;
+	inset: 4px;
+	border-radius: 2px;
+	pointer-events: none;
+	opacity: 0.22;
+	background: repeating-linear-gradient(
+		90deg,
+		transparent,
+		transparent 18px,
+		rgba(0, 0, 0, 0.12) 18px,
+		rgba(0, 0, 0, 0.12) 19px
+	);
+}
+
+.sorting-hat-banner {
+	position: relative;
+	margin: -2px -2px 0;
+	padding: 0.65rem 2.25rem 0.75rem;
+	text-align: center;
+	background: linear-gradient(180deg, #4a3428 0%, #2d2119 55%, #231a14 100%);
+	border-bottom: 2px solid rgba(20, 14, 10, 0.85);
+	box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.sorting-hat-banner-title {
+	margin: 0;
+	font-size: clamp(0.72rem, 2.8vw, 0.82rem);
+	font-weight: 800;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+	color: #f5efe6;
+	text-shadow:
+		0 1px 0 rgba(0, 0, 0, 0.45),
+		0 0 24px rgba(180, 140, 200, 0.15);
+}
+
+.sorting-hat-panel {
+	position: relative;
+	padding: 1.25rem 1.35rem 1.35rem;
+	background:
+		repeating-linear-gradient(
+			-8deg,
+			rgba(40, 30, 22, 0.35) 0 2px,
+			rgba(28, 22, 16, 0.2) 2px 5px
+		),
+		linear-gradient(175deg, rgba(42, 32, 24, 0.55), rgba(14, 11, 8, 0.92));
+	min-height: 12rem;
+}
+
+.sorting-hat-pedestal {
+	display: flex;
+	justify-content: center;
+	margin: 0 auto 1rem;
+	max-width: 220px;
+}
+
+.sorting-hat-pedestal::after {
+	content: '';
+	display: block;
+	width: min(200px, 70%);
+	height: 10px;
+	margin: -6px auto 0;
+	border-radius: 50%;
+	background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
+	filter: blur(4px);
+}
+
+.sorting-hat-asset {
+	width: min(200px, 55vw);
+	height: auto;
+	display: block;
+	filter: drop-shadow(0 12px 28px rgba(0, 0, 0, 0.5)) drop-shadow(0 0 20px rgba(168, 85, 247, 0.12));
+}
+
+.sorting-hat-prose {
+	margin: 0 0 0.5rem;
+	min-height: 4.5rem;
+	font-size: 0.95rem;
+	line-height: 1.65;
+	font-style: italic;
+	color: rgba(235, 228, 215, 0.82);
+	text-align: center;
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.sorting-hat-count-wrap {
+	text-align: center;
+	margin: 0.5rem 0 1rem;
+}
+
+.sorting-hat-count-label {
+	margin: 0 0 0.35rem;
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.2em;
+	color: rgba(200, 185, 165, 0.55);
+}
+
+.sorting-hat-count {
+	font-size: clamp(3.5rem, 14vw, 4.5rem);
+	font-weight: 800;
+	line-height: 1;
+	font-variant-numeric: tabular-nums;
+	color: #e8dcc8;
+	text-shadow:
+		0 0 28px rgba(192, 132, 252, 0.35),
+		0 2px 0 rgba(0, 0, 0, 0.5);
+}
+
+.sorting-hat-suspense {
+	margin: 1rem 0;
+	text-align: center;
+	font-size: 1.05rem;
+	font-weight: 600;
+	font-style: italic;
+	color: rgba(216, 180, 254, 0.75);
+	letter-spacing: 0.04em;
+}
+
+.sorting-hat-result-block {
+	margin-top: 0.25rem;
+	text-align: center;
+}
+
+.sorting-hat-kicker {
+	margin: 0 0 0.4rem;
+	font-size: 0.72rem;
+	text-transform: uppercase;
+	letter-spacing: 0.16em;
+	color: rgba(200, 185, 165, 0.48);
+}
+
+.sorting-hat-result {
+	margin: 0 0 0.5rem;
+	min-height: 3.2rem;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: clamp(1.05rem, 3.5vw, 1.25rem);
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	line-height: 1.35;
+	padding: 0 0.25rem;
+}
+
+.sorting-hat-result--feu {
+	color: #ff6b4a;
+	text-shadow: 0 0 24px rgba(255, 90, 60, 0.35);
+}
+
+.sorting-hat-result--eau {
+	color: #5ecfff;
+	text-shadow: 0 0 24px rgba(56, 189, 248, 0.35);
+}
+
+.sorting-hat-result--terre {
+	color: #a3d636;
+	text-shadow: 0 0 24px rgba(152, 171, 27, 0.35);
+}
+
+.sorting-hat-result--air {
+	color: #d8b4fe;
+	text-shadow: 0 0 24px rgba(192, 132, 252, 0.35);
+}
+
+.sorting-hat-hint {
+	margin: 0.85rem 0 0;
+	font-size: 0.72rem;
+	color: rgba(200, 185, 165, 0.35);
+	line-height: 1.45;
+	text-align: center;
+}
+
+html[data-reduce-motion='true'] .sorting-hat-overlay {
+	backdrop-filter: none;
+}
+
+@media (max-width: 480px) {
+	.sorting-hat-frame {
+		border-width: 6px;
+	}
+
+	.sorting-hat-banner {
+		padding-left: 1.5rem;
+		padding-right: 1.5rem;
+	}
+}

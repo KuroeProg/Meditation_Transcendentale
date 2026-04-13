@@ -9,6 +9,7 @@
 	flex: 1;
 	min-height: 0;
 	overflow: hidden;
+	position: relative;
 }
 
 /* --- Hero Banner --- */
@@ -16,10 +17,30 @@
 	position: relative;
 	border-radius: 16px;
 	overflow: hidden;
-	padding: 1.8rem 2rem;
+	padding: 1.35rem 1.75rem 1.45rem;
 	display: flex;
 	flex-direction: column;
-	gap: 1.2rem;
+	gap: 0;
+}
+
+.dash-hero-row {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: row;
+	flex-wrap: wrap;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.85rem 1.25rem;
+}
+
+.dash-hero-main {
+	flex: 1 1 200px;
+	min-width: 0;
+}
+
+.dash-hero-text {
+	min-width: 0;
 }
 
 .dash-hero-bg {
@@ -32,11 +53,9 @@
 }
 
 .dash-hero-content {
-	position: relative;
-	z-index: 1;
 	display: flex;
 	align-items: center;
-	gap: 1rem;
+	gap: 0.85rem;
 }
 
 .dash-hero-icon {
@@ -63,38 +82,11 @@
 	font-size: 0.92rem;
 }
 
-.dash-hero-stats {
-	position: relative;
-	z-index: 1;
-	display: flex;
-	gap: 1.5rem;
-	flex-wrap: wrap;
-}
-
-.dash-hero-stat {
-	display: flex;
-	flex-direction: column;
-	min-width: 80px;
-}
-
-.dash-hero-stat-val {
-	font-size: 1.4rem;
-	font-weight: 700;
-	color: #f0f5ff;
-}
-
-.dash-hero-stat-label {
-	font-size: 0.74rem;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
-	color: rgba(240, 245, 255, 0.45);
-}
-
 /* --- Main Grid --- */
 .dash-grid {
 	display: grid;
-	grid-template-columns: 1fr 320px;
-	gap: 1.2rem;
+	grid-template-columns: minmax(0, 1fr) minmax(340px, 480px);
+	gap: 1.4rem;
 	align-items: stretch;
 	flex: 1;
 	min-height: 0;
@@ -118,7 +110,6 @@
 	overflow: hidden;
 }
 
-.dash-side-col .dash-panel-actions,
 .dash-side-col .dash-panel-friends {
 	flex-shrink: 0;
 }
@@ -158,7 +149,7 @@
 /* --- Panels (bordure / fond coalition : coalition-ui.css) --- */
 .dash-panel {
 	border-radius: 14px;
-	padding: 1.2rem;
+	padding: 1.45rem 1.35rem;
 }
 
 .dash-panel h2 {
@@ -255,16 +246,35 @@
 	margin-bottom: 0.8rem;
 }
 
+.dash-tc-category-row {
+	margin-bottom: 0.5rem;
+}
+
 .dash-tc-category {
 	font-size: 0.82rem;
 	font-weight: 700;
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	color: var(--cat-color, rgba(240, 245, 255, 0.5));
-	margin: 0 0 0.5rem;
+	margin: 0;
 	display: flex;
-	align-items: center;
-	gap: 0.4rem;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.35rem;
+	min-width: 0;
+}
+
+.dash-tc-category-name {
+	letter-spacing: inherit;
+}
+
+.dash-tc-category-elo {
+	font-size: 0.68rem;
+	font-weight: 600;
+	text-transform: none;
+	letter-spacing: 0.02em;
+	color: rgba(240, 245, 255, 0.32);
+	font-variant-numeric: tabular-nums;
 }
 
 .dash-tc-grid {
@@ -312,7 +322,7 @@
 
 .dash-start-btn {
 	width: 100%;
-	margin-top: 0.8rem;
+	margin-top: 0.65rem;
 	padding: 0.95rem 1.5rem;
 	border: none;
 	border-radius: 12px;
@@ -326,26 +336,35 @@
 	/* Dégradé & hover coalition : coalition-ui.css */
 }
 
-/* --- Quick Actions --- */
-.dash-quick-btns {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
+/* Entraînement / IA (fusionné dans le panneau cadences) */
+.dash-preset-extras {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.55rem;
+	margin-top: 0.65rem;
 }
 
 .dash-qbtn {
 	display: flex;
 	align-items: center;
-	gap: 0.5rem;
-	padding: 0.7rem 0.9rem;
+	justify-content: flex-start;
+	gap: 0.45rem;
+	padding: 0.65rem 0.75rem;
 	border-radius: 10px;
 	border: 1px solid rgba(255, 255, 255, 0.1);
 	background: rgba(255, 255, 255, 0.04);
 	color: #d0d8ef;
-	font-size: 0.9rem;
+	font-size: 0.86rem;
 	font-weight: 600;
 	cursor: pointer;
 	transition: all 0.2s;
+	text-align: left;
+	min-height: 44px;
+}
+
+.dash-qbtn span:first-of-type {
+	flex: 1;
+	min-width: 0;
 }
 
 .dash-qbtn:hover:not(:disabled) {
@@ -510,51 +529,129 @@
 	to { transform: rotate(360deg); }
 }
 
-/* --- Responsive --- */
-@media (max-width: 900px) {
+/* --- Responsive : tablette étroite (modules compacts à droite) --- */
+@media (min-width: 770px) and (max-width: 900px) {
+	.dashboard-v2 {
+		padding: 1.1rem 1rem 1rem;
+	}
+
 	.dash-grid {
-		grid-template-columns: 1fr;
+		display: grid;
+		grid-template-columns: minmax(0, 1.12fr) minmax(260px, 1fr);
+		grid-template-rows: minmax(200px, 1fr) minmax(200px, 1fr);
+		gap: 0.85rem;
+		align-items: stretch;
+	}
+
+	.dash-panel-presets {
+		grid-column: 1;
+		grid-row: 1 / 3;
+		min-height: 0;
 	}
 
 	.dash-side-col {
-		order: -1;
+		display: contents;
 	}
-}
 
-@media (max-width: 768px) {
-	.dashboard-v2 {
-		padding: 1rem 0.75rem calc(var(--bottom-nav-height, 60px) + 1rem);
+	.dash-panel-friends {
+		grid-column: 2;
+		grid-row: 1;
+		min-height: 0;
+		max-height: min(40vh, 320px);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.dash-panel-leaderboard {
+		grid-column: 2;
+		grid-row: 2;
+		min-height: 0;
+		max-height: min(40vh, 320px);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.dash-friends-chips {
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		min-height: 0;
 	}
 
 	.dash-hero {
-		padding: 1.2rem 1rem;
+		padding: 1.15rem 1.25rem;
 	}
 
-	.dash-hero-title {
-		font-size: 1.2rem;
+	.dash-preset-extras {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* --- Mobile : hero coin, puis amis | classement, puis cadences --- */
+@media (max-width: 770px) {
+
+	.chat-fab-cluster {
+		display: none;
 	}
 
-	.dash-hero-stats {
-		gap: 1rem;
+	.dashboard-v2 {
+		padding: 0.35rem 0.65rem calc(var(--bottom-nav-height, 60px) + 1rem);
 	}
 
-	.dash-hero-stat-val {
-		font-size: 1.15rem;
+	.dash-hero{
+		display: none;
+	}
+
+	.dash-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		margin-top: 0;
+		min-height: 0;
+	}
+
+	.dash-side-col {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.65rem;
+		order: 1;
+		min-height: 0;
+	}
+
+	.dash-panel-presets {
+		order: 2;
+		min-height: 0;
+		flex: 1 1 auto;
+	}
+
+	.dash-panel-friends,
+	.dash-panel-leaderboard {
+		min-height: 0;
+		max-height: min(42vh, 300px);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+
+	.dash-friends-chips {
+		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
+		min-height: 0;
+		flex: 1;
 	}
 
 	.dash-tc-grid {
 		grid-template-columns: repeat(3, 1fr);
 	}
 
+	.dash-preset-extras {
+		grid-template-columns: 1fr;
+	}
+
 	.dash-start-btn {
 		font-size: 1rem;
 		min-height: 48px;
-	}
-}
-
-@media (max-width: 900px) and (min-width: 769px) {
-	.dashboard-v2 {
-		padding: 5.2rem 1rem 1rem;
 	}
 }
 

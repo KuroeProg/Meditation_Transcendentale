@@ -53,6 +53,14 @@ def update_profile(request):
             setattr(user, field, value)
             update_fields.append(field)
 
+    # Coalition : réservée aux comptes locaux (OAuth 42 garde la synchro intra).
+    if payload.get('coalition') is not None:
+        if (user.password_hash or '').strip():
+            c = str(payload.get('coalition')).strip().lower()
+            if c in ('feu', 'eau', 'terre', 'air') and user.coalition != c:
+                user.coalition = c
+                update_fields.append('coalition')
+
     if update_fields:
         user.save(update_fields=update_fields)
 
