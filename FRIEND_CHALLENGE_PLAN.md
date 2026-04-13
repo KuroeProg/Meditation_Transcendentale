@@ -13,7 +13,7 @@ Branche: feature/friend-challenge-orchestration
 - [x] Etape 6 lancee: desactivation boutons Defier quand pending sortante
 - [x] Etape 7 lancee: auto-cancel sender_busy au demarrage online (frontend trigger)
 - [x] Etape 8 lancee: expiration TTL (a l'acces) + resync reconnexion pending-outgoing
-- [ ] Etape 9: validation E2E (a executer)
+- [x] Etape 9 terminee: validation E2E OK (checklist FRIEND_CHALLENGE_QA.md)
 
 ## 1) Decisions produit validees
 
