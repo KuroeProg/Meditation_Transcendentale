@@ -75,3 +75,14 @@ def mark_user_presence_disconnected(user_id: int):
 
     changed = _set_presence_in_db(user_id, online=should_be_online, now=now)
     return {'online': should_be_online, 'changed': changed}
+
+
+def mark_user_presence_logged_out(user_id: int):
+    now = timezone.now()
+    redis_conn = _get_redis_connection_safe()
+
+    if redis_conn is not None:
+        redis_conn.delete(_connections_key(user_id), _heartbeat_key(user_id))
+
+    changed = _set_presence_in_db(user_id, online=False, now=now)
+    return {'online': False, 'changed': changed}

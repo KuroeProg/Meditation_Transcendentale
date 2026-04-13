@@ -2,9 +2,12 @@ import json
 import logging
 import os
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.conf import settings
 from django.core import signing
 from django.core.mail import send_mail
+from django.db.models import Q
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
@@ -12,7 +15,8 @@ from django.views.decorators.csrf import csrf_exempt, ensure_csrf_cookie
 from django.views.decorators.http import require_GET, require_POST
 from django.utils.decorators import method_decorator
 
-from accounts.models import LocalUser
+from accounts.models import Friendship, LocalUser
+from utils.presence import mark_user_presence_logged_out
 from utils.two_factor import (
     generate_2fa_code,
     is_user_blocked,
@@ -230,8 +234,45 @@ def auth_user_by_id(request, user_id):
 
 @require_POST
 def auth_logout(request):
+    user_id = request.session.get('local_user_id')
+    if user_id:
+        presence_state = mark_user_presence_logged_out(int(user_id))
+        if presence_state.get('changed'):
+            _broadcast_friend_presence_update(int(user_id), is_online=False)
+
     request.session.pop('local_user_id', None)
     return JsonResponse({'ok': True})
+
+
+def _broadcast_friend_presence_update(user_id: int, is_online: bool):
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+
+    relations = Friendship.objects.filter(
+        status='accepted'
+    ).filter(
+        Q(from_user_id=user_id) | Q(to_user_id=user_id)
+    ).values_list('from_user_id', 'to_user_id')
+
+    friend_ids = set()
+    for from_id, to_id in relations:
+        friend_ids.add(int(to_id if int(from_id) == int(user_id) else from_id))
+
+    payload = {
+        'action': 'friend_presence',
+        'user_id': int(user_id),
+        'is_online': bool(is_online),
+    }
+
+    for friend_id in friend_ids:
+        async_to_sync(channel_layer.group_send)(
+            f'user_{friend_id}',
+            {
+                'type': 'notification',
+                'data': payload,
+            }
+        )
 
 
 @require_POST

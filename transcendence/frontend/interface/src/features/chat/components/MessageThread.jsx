@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchMessages } from '../services/chatApi.js'
 import { useFriendInvite } from '../context/FriendInviteContext.jsx'
 import { useChatSocket } from '../hooks/useChatSocket.js'
+import { useAuth } from '../../auth/index.js'
 import GameInviteCard from './GameInviteCard.jsx'
 
 function MessageBubble({ msg, isOwn, currentUserId }) {
@@ -34,6 +35,7 @@ function MessageBubble({ msg, isOwn, currentUserId }) {
 
 export default function MessageThread({ conversation, userId, username }) {
 	const { openFriendInvite } = useFriendInvite()
+	const { resolveUserOnline } = useAuth()
 	const scrollRef = useRef(null)
 	const inputRef = useRef(null)
 	const [draft, setDraft] = useState('')
@@ -117,6 +119,7 @@ export default function MessageThread({ conversation, userId, username }) {
 	if (!conversation) return <div className="chat-empty">Selectionne une conversation</div>
 
 	const other = conversation.participants?.[0]
+	const otherOnline = resolveUserOnline(other)
 
 	return (
 		<div className="chat-thread">
@@ -124,8 +127,8 @@ export default function MessageThread({ conversation, userId, username }) {
 				<img className="chat-thread-avatar" src={other?.avatar || ''} alt="" />
 				<div className="chat-thread-info">
 					<span className="chat-thread-name">{other?.username || 'Inconnu'}</span>
-					<span className={`chat-thread-status ${other?.is_online ? 'online' : ''}`}>
-						{other?.is_online ? 'En ligne' : 'Hors ligne'}
+					<span className={`chat-thread-status ${otherOnline ? 'online' : ''}`}>
+						{otherOnline ? 'En ligne' : 'Hors ligne'}
 					</span>
 				</div>
 				<button className="chat-thread-invite" type="button" onClick={handleGameInvite} title="Inviter a jouer">

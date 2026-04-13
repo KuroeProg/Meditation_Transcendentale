@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { fetchConversations } from '../services/chatApi.js'
+import { useAuth } from '../../auth/index.js'
 
 export default function ConversationList({ onSelect, activeId }) {
+	const { resolveUserOnline } = useAuth()
 	const [conversations, setConversations] = useState([])
 	const [loading, setLoading] = useState(true)
 
@@ -33,6 +35,7 @@ export default function ConversationList({ onSelect, activeId }) {
 		<ul className="chat-conv-list">
 			{conversations.map((c) => {
 				const other = c.participants?.[0]
+				const otherOnline = resolveUserOnline(other)
 				const isActive = c.id === activeId
 				return (
 					<li
@@ -52,7 +55,7 @@ export default function ConversationList({ onSelect, activeId }) {
 									: c.last_message?.content?.slice(0, 40) || 'Pas de message'}
 							</p>
 						</div>
-						<span className={`chat-conv-dot ${other?.is_online ? 'online' : ''}`} />
+						<span className={`chat-conv-dot ${otherOnline ? 'online' : ''}`} />
 					</li>
 				)
 			})}
