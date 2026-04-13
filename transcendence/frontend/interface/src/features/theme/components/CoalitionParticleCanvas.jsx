@@ -58,23 +58,9 @@ export default function CoalitionParticleCanvas({ slug, reducedMotion }) {
 			ctx.clearRect(0, 0, w, h)
 
 			if (bundle?.kind === 'eau') {
-				const { drops, ripples, maxRipples } = bundle
-				const cap = maxRipples ?? 32
-				for (let i = ripples.length - 1; i >= 0; i--) {
-					ripples[i].update(dt)
-					if (ripples[i].dead) ripples.splice(i, 1)
-				}
-				for (const d of drops) {
-					const spawned = d.update(w, h, dt)
-					if (spawned?.length) {
-						for (const s of spawned) {
-							if (ripples.length >= cap) ripples.shift()
-							ripples.push(s)
-						}
-					}
-				}
-				for (const r of ripples) r.draw(ctx)
-				for (const d of drops) d.draw(ctx)
+				const now = performance.now()
+				for (const d of bundle.back) d.draw(ctx, w, h, now)
+				for (const d of bundle.front) d.draw(ctx, w, h, now)
 			} else if (bundle?.kind === 'air') {
 				bundle.lightning.update(now, w, h, dt)
 				for (const s of bundle.streaks) {
@@ -112,16 +98,8 @@ function initParticles(slug, w, h) {
 	switch (slug) {
 		case 'feu':
 			return Array.from({ length: 120 }, () => new Ember(w, h))
-		case 'eau': {
-			/* Gouttes + bruine (moins de « traits » longs qu’avant) */
-			const n = Math.min(118, Math.max(68, Math.floor((w * h) / 19500)))
-			return {
-				kind: 'eau',
-				drops: Array.from({ length: n }, () => new RainDrop(w, h)),
-				ripples: [],
-				maxRipples: 32,
-			}
-		}
+		case 'eau':
+			return makeCodePenEauRain(w, h)
 		case 'neutral':
 			return []
 		case 'terre':
@@ -202,223 +180,139 @@ class Ember {
 	}
 }
 
-/* --- Eau : pluie riche + éclaboussures en ondes --- */
-class RainDrop {
-	constructor(w, h) {
-		this.w = w
-		this.h = h
-		this.reset(true)
-	}
-	reset(initial) {
-		const w = this.w
-		const h = this.h
-		const t = Math.random()
-		/* Plus de bruine / gouttes, moins de traits longs type « sheet » */
-		if (t < 0.38) this.mode = 'drizzle'
-		else if (t < 0.72) this.mode = 'blob'
-		else if (t < 0.94) this.mode = 'streak'
-		else this.mode = 'sheet'
-
-		this.x = Math.random() * (w + 400) - 200
-		this.y = initial ? Math.random() * h * 1.1 : -30 - Math.random() * 600
-
-		this.impactY = h * (0.52 + Math.random() * 0.44) + (Math.random() - 0.5) * 40
-		this.len =
-			this.mode === 'drizzle'
-				? 5 + Math.random() * 11
-				: this.mode === 'blob'
-					? 3 + Math.random() * 6
-					: this.mode === 'sheet'
-						? 18 + Math.random() * 26
-						: 9 + Math.random() * 16
-
-		this.speed =
-			this.mode === 'drizzle'
-				? 0.48 + Math.random() * 0.55
-				: this.mode === 'blob'
-					? 1.2 + Math.random() * 1.1
-					: this.mode === 'sheet'
-						? 0.95 + Math.random() * 1.15
-						: 0.82 + Math.random() * 1.05
-
-		this.thick =
-			this.mode === 'blob'
-				? 1.35 + Math.random() * 2.4
-				: this.mode === 'drizzle'
-					? 0.65 + Math.random() * 1.1
-					: 0.5 + Math.random() * 0.95
-
-		this.alpha =
-			this.mode === 'drizzle'
-				? 0.1 + Math.random() * 0.22
-				: this.mode === 'blob'
-					? 0.18 + Math.random() * 0.38
-					: 0.12 + Math.random() * 0.32
-		this.angle = (Math.random() - 0.5) * 0.55
-		this.windBase = (Math.random() - 0.5) * 2.4
-		this.gustPhase = Math.random() * Math.PI * 2
-		this.gustFreq = 0.0008 + Math.random() * 0.0022
-		this.turbSeed = Math.random() * 10
-		this.twist = (Math.random() - 0.5) * 0.02
-	}
-	update(w, h, dt) {
-		this.w = w
-		this.h = h
-		this.gustPhase += dt * this.gustFreq
-		const gust = Math.sin(this.gustPhase) * 1.1 + Math.sin(this.gustPhase * 2.3 + this.turbSeed) * 0.45
-		const turb = Math.sin(this.y * 0.04 + this.turbSeed) * 0.35
-		const vx = (this.windBase + gust + turb) * dt * 0.07
-		this.x += vx + this.twist * dt * 0.05
-		this.y += this.speed * dt * (this.mode === 'blob' ? 0.22 : 0.19)
-
-		if (this.y >= this.impactY) {
-			const spawned = this.splash()
-			this.reset(false)
-			return spawned
-		}
-		if (this.y > h + 40 || this.x < -80 || this.x > w + 80) {
-			this.reset(false)
-		}
-		return null
-	}
-	splash() {
-		const n = 1 + (Math.random() < 0.22 ? 1 : 0)
-		const out = []
-		for (let i = 0; i < n; i++) {
-			out.push(
-				new WaterRipple(
-					this.x + (Math.random() - 0.5) * 10,
-					this.impactY,
-					i * 22 + Math.random() * 14,
-				),
+/*
+ * Eau : pluie inspirée de https://codepen.io/arickle/pen/XKjMZY
+ * (boucle increment + durée / délai aléatoires, tige en dégradé, splat en fin de cycle).
+ * Couleurs adaptées à la DA eau du site (cyan / glacial).
+ */
+function makeCodePenEauRain(w, h) {
+	const limit = w > 1500 ? 118 : 100
+	const buildRow = (fromRight, layerAlpha, verticalNudge) => {
+		const drops = []
+		let increment = 0
+		while (increment < limit) {
+			const randoHundo = Math.floor(Math.random() * 98) + 1
+			const randoFiver = Math.floor(Math.random() * 4) + 2
+			increment += randoFiver
+			if (increment >= limit) break
+			const durationSec = 0.5 + randoHundo / 1000
+			const delaySec = randoHundo / 1000
+			drops.push(
+				new CodePenRainDrop(w, h, {
+					xPct: increment,
+					durationSec,
+					delaySec,
+					fromRight,
+					layerAlpha,
+					verticalNudge,
+				}),
 			)
 		}
-		if (Math.random() < 0.06) {
-			out.push(new SplashSpark(this.x, this.impactY))
-		}
-		return out
+		return drops
 	}
-	draw(ctx) {
-		const { x, y, len, angle, thick, alpha, mode } = this
-		const ux = Math.sin(angle)
-		const uy = Math.cos(angle)
-		const x1 = x
-		const y1 = y
-		const x2 = x + ux * len
-		const y2 = y + uy * len
+	return {
+		kind: 'eau',
+		front: buildRow(false, 1, 0),
+		back: buildRow(true, 0.5, -Math.min(68, h * 0.065)),
+	}
+}
+
+class CodePenRainDrop {
+	constructor(w, h, opts) {
+		this.w = w
+		this.h = h
+		this.xPct = opts.xPct
+		this.durationSec = opts.durationSec
+		this.delaySec = opts.delaySec
+		this.fromRight = Boolean(opts.fromRight)
+		this.layerAlpha = opts.layerAlpha ?? 1
+		this.verticalNudge = opts.verticalNudge ?? 0
+		this.dropHeightPx = 96 + Math.random() * 56
+		this.stemRatio = 0.56 + Math.random() * 0.1
+	}
+
+	draw(ctx, w, h, nowMs) {
+		this.w = w
+		this.h = h
+		const t = nowMs / 1000 + this.delaySec
+		const d = this.durationSec
+		const p = ((t % d) + d) % d / d
+
+		const travelEnd = 0.75
+		const travel = Math.min(p / travelEnd, 1)
+		const yLand = h * 0.91 + this.verticalNudge
+		const above = this.dropHeightPx + 28
+		const yTop = -above + (yLand + above) * travel
+
+		let x = (this.xPct / 100) * w
+		if (this.fromRight) x = w - (this.xPct / 100) * w
+
+		const stemLen = this.dropHeightPx * this.stemRatio
+		const stemBottom = yTop + stemLen
+
+		let stemOpacity = 1
+		if (p >= 0.65 && p < 0.75) stemOpacity = 1 - (p - 0.65) / 0.1
+		else if (p >= 0.75) stemOpacity = 0
 
 		ctx.save()
+		ctx.globalAlpha = stemOpacity * this.layerAlpha
 		ctx.lineCap = 'round'
-		if (mode === 'blob') {
-			ctx.globalAlpha = alpha * 0.9
-			ctx.fillStyle = `rgba(200, 235, 255, ${alpha * 0.55})`
-			ctx.beginPath()
-			ctx.ellipse(x, y, thick * 1.15, thick * 1.45, angle, 0, Math.PI * 2)
-			ctx.fill()
-			ctx.globalAlpha = alpha
-			ctx.fillStyle = `rgba(248, 252, 255, ${alpha * 0.85})`
-			ctx.beginPath()
-			ctx.ellipse(x, y, thick * 0.45, thick * 0.55, angle, 0, Math.PI * 2)
-			ctx.fill()
-			ctx.restore()
-			return
-		}
-
-		/* Trait adouci : dégradé le long de la chute (moins « ligne crantée ») */
-		const g = ctx.createLinearGradient(x1, y1, x2, y2)
-		const a0 = alpha * 0.15
-		const a1 = alpha * 0.88
-		const a2 = alpha * 0.35
-		g.addColorStop(0, `rgba(255, 255, 255, ${a0})`)
-		g.addColorStop(0.22, `rgba(230, 248, 255, ${a1})`)
-		g.addColorStop(0.78, `rgba(190, 225, 250, ${a2})`)
-		g.addColorStop(1, `rgba(160, 210, 240, ${a0})`)
-		ctx.globalAlpha = 1
+		const g = ctx.createLinearGradient(x, yTop, x, stemBottom)
+		g.addColorStop(0, 'rgba(210, 248, 255, 0)')
+		g.addColorStop(0.45, 'rgba(185, 235, 255, 0.14)')
+		g.addColorStop(1, 'rgba(160, 220, 250, 0.42)')
 		ctx.strokeStyle = g
-		ctx.lineWidth = Math.max(1, thick * (mode === 'sheet' ? 2.2 : 1.65))
-		ctx.lineJoin = 'round'
+		ctx.lineWidth = 1.25
 		ctx.beginPath()
-		ctx.moveTo(x1, y1)
-		ctx.lineTo(x2, y2)
+		ctx.moveTo(x, yTop)
+		ctx.lineTo(x, stemBottom)
+		ctx.stroke()
+
+		ctx.globalAlpha = stemOpacity * this.layerAlpha * 0.35
+		ctx.strokeStyle = 'rgba(120, 200, 255, 0.45)'
+		ctx.lineWidth = 3
+		ctx.beginPath()
+		ctx.moveTo(x, yTop)
+		ctx.lineTo(x, stemBottom)
 		ctx.stroke()
 		ctx.restore()
-	}
-}
 
-/** Onde concentrique à la surface de l’eau */
-class WaterRipple {
-	constructor(x, y, delayMs = 0) {
-		this.x = x
-		this.y = y
-		this.r = 0
-		this.delay = delayMs
-		this.maxR = 22 + Math.random() * 72
-		this.grow = 0.22 + Math.random() * 0.55
-		this.alpha = 0.5 + Math.random() * 0.45
-		this.baseAlpha = this.alpha
-		this.w = 1.2 + Math.random() * 2.2
-		this.dead = false
-		this.hue = 195 + Math.random() * 25
-	}
-	update(dt) {
-		if (this.delay > 0) {
-			this.delay -= dt
-			return
+		const splatBaseY = yTop + this.dropHeightPx
+		let splatScale = 0
+		let splatOp = 0
+		if (p >= 0.8 && p < 0.9) {
+			const u = (p - 0.8) / 0.1
+			splatScale = u
+			splatOp = 1 - u * 0.35
+		} else if (p >= 0.9) {
+			const u = (p - 0.9) / 0.1
+			splatScale = 1 + u * 0.55
+			splatOp = 0.65 * (1 - u)
 		}
-		this.r += this.grow * dt * 0.11
-		this.alpha = this.baseAlpha * (1 - this.r / (this.maxR * 1.15))
-		if (this.alpha <= 0.02 || this.r > this.maxR) this.dead = true
-	}
-	draw(ctx) {
-		if (this.delay > 0) return
-		const a = Math.max(0, this.alpha)
-		const py = this.y * 0.998
-		const rx = this.r
-		const ry = this.r * 0.28
-		ctx.save()
-		ctx.globalAlpha = a * 0.35
-		ctx.lineWidth = this.w * 2.2
-		ctx.strokeStyle = `hsla(${this.hue}, 75%, 88%, 0.4)`
-		ctx.beginPath()
-		ctx.ellipse(this.x, py, rx * 1.02, ry * 1.05, 0, 0, Math.PI * 2)
-		ctx.stroke()
-		ctx.globalAlpha = a
-		ctx.lineWidth = Math.max(0.8, this.w * (1 - this.r / (this.maxR + 10)))
-		ctx.strokeStyle = `hsla(${this.hue}, 90%, 82%, 0.82)`
-		ctx.beginPath()
-		ctx.ellipse(this.x, py, rx, ry, 0, 0, Math.PI * 2)
-		ctx.stroke()
-		ctx.restore()
-	}
-}
 
-/** Petit éclair lumineux ponctuel à l’impact */
-class SplashSpark {
-	constructor(x, y) {
-		this.x = x
-		this.y = y
-		this.life = 1
-		this.dead = false
-		this.r = 4 + Math.random() * 10
-	}
-	update(dt) {
-		this.life -= dt * 0.0045
-		if (this.life <= 0) this.dead = true
-	}
-	draw(ctx) {
-		if (this.dead) return
-		ctx.save()
-		ctx.globalAlpha = this.life * 0.75
-		ctx.fillStyle = 'rgba(220, 245, 255, 0.55)'
-		ctx.beginPath()
-		ctx.arc(this.x, this.y, this.r * 1.6, 0, Math.PI * 2)
-		ctx.fill()
-		ctx.globalAlpha = this.life
-		ctx.fillStyle = 'rgba(255, 255, 255, 0.9)'
-		ctx.beginPath()
-		ctx.arc(this.x, this.y, this.r * 0.45, 0, Math.PI * 2)
-		ctx.fill()
-		ctx.restore()
+		if (splatScale > 0.02 && splatOp > 0.03) {
+			const ref = Math.min(w, h) / 900
+			const rw = (7 + splatScale * 7) * ref * 18
+			const rhFlat = (4 + splatScale * 5) * ref * 12
+			ctx.save()
+			ctx.globalAlpha = splatOp * this.layerAlpha
+			ctx.translate(x, splatBaseY)
+			ctx.scale(1, 0.42)
+			ctx.strokeStyle = 'rgba(200, 240, 255, 0.62)'
+			ctx.lineWidth = 1.6
+			ctx.setLineDash([2, 3])
+			ctx.beginPath()
+			ctx.ellipse(0, 0, rw, rhFlat, 0, 0, Math.PI * 2)
+			ctx.stroke()
+			ctx.setLineDash([])
+			ctx.lineWidth = 1
+			ctx.globalAlpha = splatOp * this.layerAlpha * 0.35
+			ctx.strokeStyle = 'rgba(170, 230, 255, 0.5)'
+			ctx.beginPath()
+			ctx.arc(0, -rhFlat * 0.35, rw * 0.92, Math.PI * 1.05, Math.PI * 1.95)
+			ctx.stroke()
+			ctx.restore()
+		}
 	}
 }
 
