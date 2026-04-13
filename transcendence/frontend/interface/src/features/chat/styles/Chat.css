@@ -483,12 +483,23 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 }
 
 .chat-msg--own .chat-msg-bubble {
-	background: linear-gradient(135deg, #4a5ebd, #3d4fa0);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--coalition-accent) 78%, #1e1b4b),
+		color-mix(in srgb, var(--coalition-accent) 42%, #0f172a)
+	);
+	border: 1px solid color-mix(in srgb, var(--coalition-accent-border) 70%, transparent);
+	box-shadow: 0 4px 18px var(--coalition-accent-glow);
 	border-bottom-right-radius: 4px;
 }
 
 .chat-msg--other .chat-msg-bubble {
-	background: rgba(255, 255, 255, 0.06);
+	background: linear-gradient(
+		165deg,
+		color-mix(in srgb, var(--coalition-accent-soft) 35%, rgba(255, 255, 255, 0.05)),
+		rgba(255, 255, 255, 0.04)
+	);
+	border: 1px solid color-mix(in srgb, var(--coalition-accent-border) 25%, rgba(255, 255, 255, 0.06));
 	border-bottom-left-radius: 4px;
 }
 
@@ -509,7 +520,7 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 }
 
 .chat-msg-read {
-	color: #4a9eff;
+	color: var(--coalition-accent-muted);
 	font-size: 0.85rem;
 }
 

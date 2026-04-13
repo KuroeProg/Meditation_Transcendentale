@@ -24,6 +24,8 @@ function getMockUserId() {
 }
 
 export function getMockSessionUser() {
+	const userId = getMockUserId()
+	const isWhite = userId === 42
 	const ps = mockPersonalStats.profileSummary
 	return {
 		id: userId,
@@ -40,6 +42,8 @@ export function getMockSessionUser() {
 		// ← Modifie cette valeur pour voir les pièces Feu / Eau / Terre / Air sur l’échiquier
 		coalition: 'eau',
 		coalition_name: 'eau',
+		// OAuth fictif : évite le flux « choixpeau » (VITE_SORTING_HAT_COALITION) en mock
+		auth_provider: 'oauth42',
 		cursus_level: 7,
 		level: 7,
 		stats: {

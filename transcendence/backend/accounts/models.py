@@ -45,6 +45,8 @@ class LocalUser(models.Model):
 
     def to_public_dict(self):
         image_link = self.get_avatar_url()
+        # Comptes créés via OAuth 42 : password_hash vide ; inscription locale : hash présent.
+        auth_provider = 'oauth42' if not (self.password_hash or '').strip() else 'local'
         return {
             'id': self.id,
             'login': self.username,
@@ -55,6 +57,7 @@ class LocalUser(models.Model):
             'bio': self.bio,
             'coalition': self.coalition,
             'coalition_name': self.coalition,
+            'auth_provider': auth_provider,
             'level': self.level,
             'is_online': self.is_online,
             'last_seen': self.last_seen.isoformat() if self.last_seen else None,

@@ -18,6 +18,7 @@ import {
 	FriendInviteProvider,
 	useAuth,
 } from './features/index.js'
+import SortingHatGate from './features/auth/components/SortingHatGate.jsx'
 import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
 import { useChatInbox } from './features/chat/hooks/useChatInbox.js'
 import { presencePing } from './features/chat/services/chatApi.js'
@@ -63,6 +64,7 @@ function AppContent() {
 		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
 		<div className="app-layout">
 			<ThemeSync />
+			<SortingHatGate />
 			<CoalitionHtmlSync />
 			<DevAuthToolbar />
 			<HomeAmbientBgm />
