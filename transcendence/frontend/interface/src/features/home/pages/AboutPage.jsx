@@ -6,32 +6,35 @@ const TEAM = [
 	{
 		name: 'Membre 1',
 		role: 'Backend & infra',
-		bio: 'Branche la stack Docker, le jeu temps réel et la sécurité. Remplace ce texte par ta présentation.',
+		bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.',
 		coalitionSlug: 'feu',
 		photoSrc: null,
 	},
 	{
 		name: 'Membre 2',
 		role: 'Frontend & UX',
-		bio: 'Interface React, thème coalitions et expérience mobile. Ajoute ta photo dans les props plus tard.',
+		bio: 'Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.',
 		coalitionSlug: 'eau',
 		photoSrc: null,
 	},
 	{
 		name: 'Membre 3',
 		role: 'Full-stack / jeu',
-		bio: 'Matchmaking, échiquier et logique de partie. Personnalise ce bloc comme tu veux.',
+		bio: 'Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra.',
 		coalitionSlug: 'terre',
 		photoSrc: null,
 	},
 	{
 		name: 'Membre 4',
 		role: 'Chat & social',
-		bio: 'Messagerie, amis et invites. Un parallax t’accompagne en scrollant vers la section suivante.',
+		bio: 'Per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor.',
 		coalitionSlug: 'air',
 		photoSrc: null,
 	},
 ]
+
+const TEAM_INTRO_LOREM =
+	'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula. Cras ultricies ligula sed magna dictum porta.'
 
 export default function AboutPage() {
 	const backHref = '/'
@@ -49,6 +52,13 @@ export default function AboutPage() {
 					Fais défiler pour découvrir l’équipe — chaque section joue un léger effet de profondeur.
 				</p>
 			</div>
+
+			<section className="about-team-intro surface-card" aria-labelledby="about-team-heading">
+				<h2 id="about-team-heading" className="about-team-intro-title">
+					L’équipe
+				</h2>
+				<p className="about-team-intro-text">{TEAM_INTRO_LOREM}</p>
+			</section>
 
 			<div className="about-members">
 				{TEAM.map((m) => (

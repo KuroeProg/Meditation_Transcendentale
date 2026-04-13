@@ -30,6 +30,34 @@
 	color: rgba(230, 237, 247, 0.68);
 }
 
+.about-team-intro {
+	margin: 0 0 2.5rem;
+	padding: 1.35rem 1.25rem;
+	max-width: 44rem;
+	border-color: color-mix(in srgb, var(--coalition-accent-border) 50%, rgba(99, 102, 241, 0.15));
+	background: linear-gradient(
+		155deg,
+		color-mix(in srgb, var(--coalition-accent-soft) 20%, rgba(16, 20, 32, 0.92)),
+		rgba(10, 12, 20, 0.94)
+	);
+	box-shadow: 0 10px 36px rgba(0, 0, 0, 0.22);
+}
+
+.about-team-intro-title {
+	margin: 0 0 0.75rem;
+	font-size: clamp(1.2rem, 2.8vw, 1.45rem);
+	font-weight: 800;
+	color: #f4f7ff;
+	text-shadow: 0 0 20px var(--coalition-accent-soft);
+}
+
+.about-team-intro-text {
+	margin: 0;
+	font-size: 0.95rem;
+	line-height: 1.7;
+	color: rgba(230, 237, 247, 0.68);
+}
+
 .about-members {
 	display: flex;
 	flex-direction: column;
