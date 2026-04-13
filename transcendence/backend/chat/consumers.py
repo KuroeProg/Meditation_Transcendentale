@@ -153,6 +153,9 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_ids': event['message_ids'],
         }))
 
+    async def notification(self, event):
+        await self.send(text_data=json.dumps(event.get('data', {})))
+
     async def _broadcast_presence_if_changed(self, user_id, presence_state):
         if not presence_state or not presence_state.get('changed'):
             return
