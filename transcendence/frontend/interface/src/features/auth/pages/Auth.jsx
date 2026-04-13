@@ -329,36 +329,6 @@ export default function AuthPage() {
           <span className="auth-footer-sep" aria-hidden="true">
             |
           </span>
-          <a href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
-            Confidentialité
-          </a>
-          <span className="auth-footer-sep" aria-hidden="true">
-            |
-          </span>
-          <a href={LEGAL_TOS_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
-            Mentions legales
-          </a>
-          <span className="auth-footer-sep" aria-hidden="true">
-            |
-          </span>
-          <a href={LEGAL_COOKIES_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
-            Cookies
-          </a>
-          <span className="auth-footer-sep" aria-hidden="true">
-            |
-          </span>
-          <Link to="/contact" className="auth-footer-link">
-            Contact
-          </Link>
-          <span className="auth-footer-sep" aria-hidden="true">
-            |
-          </span>
-          <Link to="/about" className="auth-footer-link">
-            À propos
-          </Link>
-          <span className="auth-footer-sep" aria-hidden="true">
-            |
-          </span>
           <span>Ecole 42 Perpignan</span>
         </footer>
       </div>
