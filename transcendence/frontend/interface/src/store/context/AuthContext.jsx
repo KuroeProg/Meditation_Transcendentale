@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -10,7 +11,7 @@ function readCookie(name) {
 }
 
 async function ensureCsrfCookie() {
-  await fetch('/api/auth/csrf', {
+  await fetch(AUTH_PATHS.csrf, {
     method: 'GET',
     credentials: 'include',
     headers: { Accept: 'application/json' },
@@ -40,7 +41,7 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     try {
-      const response = await fetch('/api/auth/me', {
+      const response = await fetch(AUTH_PATHS.me, {
         credentials: 'include',
       })
 
@@ -71,7 +72,7 @@ export function AuthProvider({ children }) {
         headers['X-CSRFToken'] = csrf
       }
 
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(AUTH_PATHS.loginDb, {
         method: 'POST',
         credentials: 'include',
         headers,
@@ -213,7 +214,7 @@ export function AuthProvider({ children }) {
         headers['X-CSRFToken'] = csrf
       }
 
-      await fetch('/api/auth/logout', {
+      await fetch(AUTH_PATHS.logout, {
         method: 'POST',
         credentials: 'include',
         headers,
@@ -231,6 +232,70 @@ export function AuthProvider({ children }) {
     window.location.href = '/api/auth/42/login'
   }
 
+  async function forgotPassword(email) {
+    setError(null)
+    try {
+      await ensureCsrfCookie()
+      const csrf = readCookie('csrftoken')
+      const headers = { 'Content-Type': 'application/json' }
+      if (csrf) headers['X-CSRFToken'] = csrf
+
+      const response = await fetch(AUTH_PATHS.forgotPassword, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await safeJson(response)
+      if (!response.ok) {
+        setError(data?.error || 'Password reset request failed')
+        return { ok: false, status: 'error', error: data?.error || 'Password reset request failed' }
+      }
+
+      return {
+        ok: true,
+        status: 'requested',
+        message: data?.message || 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.',
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+      return { ok: false, status: 'error', error: 'Network error. Please try again.' }
+    }
+  }
+
+  async function resetPassword(token, newPassword) {
+    setError(null)
+    try {
+      await ensureCsrfCookie()
+      const csrf = readCookie('csrftoken')
+      const headers = { 'Content-Type': 'application/json' }
+      if (csrf) headers['X-CSRFToken'] = csrf
+
+      const response = await fetch(AUTH_PATHS.resetPassword, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ token, new_password: newPassword }),
+      })
+
+      const data = await safeJson(response)
+      if (!response.ok) {
+        setError(data?.error || 'Password reset failed')
+        return { ok: false, status: 'error', error: data?.error || 'Password reset failed' }
+      }
+
+      return {
+        ok: true,
+        status: 'reset',
+        message: data?.message || 'Mot de passe mis a jour avec succes',
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+      return { ok: false, status: 'error', error: 'Network error. Please try again.' }
+    }
+  }
+
   async function loginWithDb({ email, password }) {
     return loginLocal(email, password)
   }
@@ -244,6 +309,8 @@ export function AuthProvider({ children }) {
     loginLocal,
     loginWithDb,
     loginWith42,
+    forgotPassword,
+    resetPassword,
     registerLocal,
     verify2FA,
     twoFactorChallenge,

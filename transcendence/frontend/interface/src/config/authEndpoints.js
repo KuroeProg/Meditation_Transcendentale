@@ -37,6 +37,8 @@ export const AUTH_PATHS = {
 	me: `${API_PREFIX}/api/auth/me`,
 	csrf: `${API_PREFIX}/api/auth/csrf`,
 	loginDb: `${API_PREFIX}/api/auth/login`,
+	forgotPassword: `${API_PREFIX}/api/auth/forgot-password`,
+	resetPassword: `${API_PREFIX}/api/auth/reset-password`,
 	login42: '/api/auth/42/login',
 	logout: `${API_PREFIX}/api/auth/logout`,
 	userByIdBase: `${API_PREFIX}/api/auth/users`,

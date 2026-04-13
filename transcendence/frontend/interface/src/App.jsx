@@ -9,6 +9,7 @@ import {
 	ProfilePage,
 	SettingsPage,
 	AuthPage,
+	ResetPasswordPage,
 	StatisticsPage,
 	ThemeSync,
 	CoalitionHtmlSync,
@@ -28,7 +29,7 @@ function AppContent() {
 	const { isAuthenticated } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
-	const isAuthRoute = location.pathname === '/auth'
+	const isAuthRoute = location.pathname.startsWith('/auth')
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
 	const inboxEnabled = isAuthenticated && !isAuthRoute
@@ -72,6 +73,7 @@ function AppContent() {
 			<div className={`main-content ${isAuthRoute ? 'full-width' : ''}`}>
 				<Routes>
 					<Route path="/auth" element={<AuthPage />} />
+					<Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 					<Route
 						path="/"
 						element={
