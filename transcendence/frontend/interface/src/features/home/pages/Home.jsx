@@ -91,18 +91,6 @@ function Home() {
 			<footer className="footer">
 				<div className="footer-top">
 					<nav className="footer-nav" aria-label="Liens pied de page">
-						<Link className="footer-link footer-link--app" to="/auth">
-							Connexion
-						</Link>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
-						<Link className="footer-link footer-link--app" to="/auth?mode=register">
-							Créer un compte
-						</Link>
-						<span className="footer-separator" aria-hidden="true">
-							·
-						</span>
 						<Link className="footer-link footer-link--app" to="/contact">
 							Contact
 						</Link>
