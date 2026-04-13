@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { TwoFactorVerify } from '../components/TwoFactorVerify.jsx'
 import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
@@ -208,12 +208,25 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
 
 export default function AuthPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
   const [stage, setStage] = useState('login')
   const postAuthRedirectRef = useRef(false)
   const userInfo = twoFactorChallenge
     ? { userId: twoFactorChallenge.user_id, email: twoFactorChallenge.email, preAuthToken: twoFactorChallenge.pre_auth_token }
     : null
+
+  /* Synchroniser ?mode=register|login avec l’onglet formulaire (sans toucher à la 2FA). */
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture URL → étape auth
+    setStage((prev) => {
+      if (prev === '2fa') return prev
+      if (mode === 'register') return 'register'
+      if (mode === 'login') return 'login'
+      return prev
+    })
+  }, [searchParams])
 
   useEffect(() => {
     if (!isAuthenticated || !user?.id) {
@@ -308,6 +321,12 @@ export default function AuthPage() {
         </div>
 
         <footer className="auth-footer">
+          <Link to="/" className="auth-footer-link">
+            Accueil
+          </Link>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
           <a href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
             Confidentialité
           </a>

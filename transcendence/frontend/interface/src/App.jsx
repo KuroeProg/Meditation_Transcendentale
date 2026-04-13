@@ -33,7 +33,6 @@ function AppContent() {
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const isAuthRoute = location.pathname === '/auth'
-	const hideChatFabOnHomeMobile = isMobile && location.pathname === '/'
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
 	const inboxEnabled = isAuthenticated && !isAuthRoute
@@ -75,18 +74,13 @@ function AppContent() {
 			<HomeAmbientBgm />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
-			{!isAuthRoute && (isMobile ? <BottomNav /> : <Sidebar />)}
-			<div className={`main-content ${isAuthRoute ? 'full-width' : ''}`}>
+			{!isAuthRoute && isAuthenticated && (isMobile ? <BottomNav /> : <Sidebar />)}
+			<div
+				className={`main-content ${isAuthRoute ? 'full-width' : ''} ${!isAuthenticated && !isAuthRoute ? 'main-content--guest' : ''}`}
+			>
 				<Routes>
 					<Route path="/auth" element={<AuthPage />} />
-					<Route
-						path="/"
-						element={
-							<ProtectedRoute>
-								<HomePage />
-							</ProtectedRoute>
-						}
-					/>
+					<Route path="/" element={<HomePage />} />
 					<Route
 						path="/game"
 						element={
@@ -141,7 +135,7 @@ function AppContent() {
 				</Routes>
 			</div>
 
-			{isAuthenticated && !isAuthRoute && !hideChatFabOnHomeMobile && (
+			{isAuthenticated && !isAuthRoute && (
 				<>
 					<ChatFabCluster
 						textUnread={textUnread}

@@ -28,6 +28,11 @@
 	overflow: auto;
 }
 
+/* Pas de sidebar : Home / pages publiques en pleine largeur */
+.main-content--guest {
+	margin-left: 0 !important;
+}
+
 /* Page jeu : pleine largeur restante (échiquier + panneau stats sans coupure) */
 .main-content:has(.game-container) {
 	max-width: none;

@@ -28,7 +28,7 @@ function pickRandomSlug() {
 }
 
 export default function SortingHatGate() {
-	const { user, refetch, isAuthenticated } = useAuth()
+	const { user, refetch, isAuthenticated, isDevMockAuth } = useAuth()
 	const reduceMotion = useReduceMotionPref()
 	const [open, setOpen] = useState(false)
 	const [phase, setPhase] = useState('idle')
@@ -95,6 +95,7 @@ export default function SortingHatGate() {
 				return
 			}
 
+			let persisted = false
 			try {
 				const res = await fetch('/api/auth/me/update', {
 					method: 'PUT',
@@ -102,16 +103,20 @@ export default function SortingHatGate() {
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ coalition: target }),
 				})
-				if (res.ok) {
-					await refetch()
-					window.localStorage.setItem(key, '1')
-					clearPending()
-				} else {
-					clearPending()
-				}
+				persisted = res.ok
 			} catch {
-				clearPending()
+				persisted = false
 			}
+			/* Mock sans cookie API : éviter la boucle infinie si le PUT échoue */
+			if (persisted || (import.meta.env.DEV && isDevMockAuth)) {
+				await refetch()
+				try {
+					window.localStorage.setItem(key, '1')
+				} catch {
+					/* ignore */
+				}
+			}
+			clearPending()
 
 			if (!cancelledRef.current) {
 				setPhase('done')
@@ -137,7 +142,7 @@ export default function SortingHatGate() {
 				/* ignore */
 			}
 		}
-	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion, replayTick])
+	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion, replayTick, isDevMockAuth])
 
 	if (!SORTING_HAT_COALITION_ENABLED) return null
 

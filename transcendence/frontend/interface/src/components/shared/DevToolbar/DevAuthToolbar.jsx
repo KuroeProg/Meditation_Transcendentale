@@ -63,7 +63,8 @@ export default function DevAuthToolbar() {
 		void refetch()
 	}, [mode, coalition, authProvider, refetch])
 
-	const resetSortingHat = useCallback(() => {
+	/** Efface le flag choixpeau + relance l’effet (compte local + flag VITE_SORTING_HAT…). */
+	const launchSortingHatAnimation = useCallback(() => {
 		if (uid == null) return
 		clearSortingHatStorageForUserId(uid)
 		window.dispatchEvent(new Event(SORTING_HAT_DEV_RETRY_EVENT))
@@ -125,13 +126,22 @@ export default function DevAuthToolbar() {
 						État actuel : <strong>{isDevMockAuth ? 'mock actif' : 'mock inactif'}</strong>
 						{user ? ` · id ${uid ?? '?'}` : ' · pas de session'}
 					</p>
+					<p className="dev-auth-toolbar__hint">
+						Choixpeau : compte <strong>local</strong> + <code>VITE_SORTING_HAT_COALITION</code>. En mock, le PUT API peut échouer : l’anim se joue quand même et le flag « vu » est posé.
+					</p>
 
 					<div className="dev-auth-toolbar__actions">
 						<button type="button" className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent" onClick={applySettings}>
 							Appliquer et recharger la session
 						</button>
-						<button type="button" className="dev-auth-toolbar__btn" onClick={resetSortingHat} disabled={uid == null}>
-							Réinit choixpeau (storage)
+						<button
+							type="button"
+							className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent"
+							onClick={launchSortingHatAnimation}
+							disabled={uid == null}
+							title="Efface le stockage choixpeau pour cet id et relance l’animation"
+						>
+							▶ Lancer l’animation choixpeau
 						</button>
 					</div>
 

@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../auth/index.js'
 import TeamMemberSection from '../components/TeamMemberSection.jsx'
 import '../styles/AboutPage.css'
 
@@ -35,9 +34,7 @@ const TEAM = [
 ]
 
 export default function AboutPage() {
-	const { isAuthenticated, isTwoFactorVerified, isLoading } = useAuth()
-	const backHref =
-		!isLoading && isAuthenticated && isTwoFactorVerified ? '/' : '/auth'
+	const backHref = '/'
 
 	return (
 		<div className="about-page page-shell">

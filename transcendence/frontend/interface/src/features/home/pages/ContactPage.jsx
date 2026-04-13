@@ -1,12 +1,9 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
-import { useAuth } from '../../auth/index.js'
 import '../styles/ContactPage.css'
 
 export default function ContactPage() {
-	const { isAuthenticated, isTwoFactorVerified, isLoading } = useAuth()
-	const backHref =
-		!isLoading && isAuthenticated && isTwoFactorVerified ? '/' : '/auth'
+	const backHref = '/'
 	const [sent, setSent] = useState(false)
 	const [busy, setBusy] = useState(false)
 
