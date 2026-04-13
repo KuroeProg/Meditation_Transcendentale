@@ -10,6 +10,7 @@ import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Win
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
 import '../styles/Auth.css'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
+import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 
 function LoginForm({ on2FARequired, onSwitchToRegister }) {
   const { loginLocal, error, setError } = useAuth()
@@ -279,10 +280,28 @@ export default function AuthPage() {
         </div>
 
         <footer className="auth-footer">
-          <span>Mentions legales</span>
-          <span className="auth-footer-sep">|</span>
+          <a href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
+            Confidentialité
+          </a>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
+          <a href={LEGAL_TOS_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
+            Mentions legales
+          </a>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
+          <a href={LEGAL_COOKIES_URL} target="_blank" rel="noreferrer" className="auth-footer-link">
+            Cookies
+          </a>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
           <span>Contact</span>
-          <span className="auth-footer-sep">|</span>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
           <span>Ecole 42 Perpignan</span>
         </footer>
       </div>

@@ -697,6 +697,17 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   cursor: default;
 }
 
+.auth-footer-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link:hover {
+  color: rgba(255, 255, 255, 0.95);
+}
+
 .auth-footer-sep {
   color: rgba(255, 255, 255, 0.2);
 }

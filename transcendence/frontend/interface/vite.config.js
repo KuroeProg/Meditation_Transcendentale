@@ -67,6 +67,12 @@ export default defineConfig({
         changeOrigin: true,
         secure: false,
       },
+      // Pages légales statiques (même origine qu’en prod derrière nginx)
+      '/legal': {
+        target: proxyTarget,
+        changeOrigin: true,
+        secure: false,
+      },
     },
   },
 })

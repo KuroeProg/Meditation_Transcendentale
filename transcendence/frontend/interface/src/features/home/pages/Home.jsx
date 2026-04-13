@@ -5,6 +5,7 @@ import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
 import { useReduceMotionPref } from '../../theme/index.js'
+import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL } from '../../../config/legalPages.js'
 
 function Home() {
 	const reduceMotion = useReduceMotionPref()
@@ -68,6 +69,34 @@ function Home() {
 			</div>
 
 			<div className="third-section" />
+
+			<footer className="footer">
+				<div className="footer-left">
+					<a href={LEGAL_PRIVACY_URL} target="_blank" rel="noreferrer">
+						Privacy Policy
+					</a>
+					<span className="footer-separator" aria-hidden="true">
+						·
+					</span>
+					<a href={LEGAL_COOKIES_URL} target="_blank" rel="noreferrer">
+						Manage Cookies
+					</a>
+				</div>
+				<div className="footer-right">
+					<a
+						href="https://github.com/KuroeProg/Meditation_Transcendentale"
+						target="_blank"
+						rel="noreferrer"
+					>
+						<img
+							src="https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png"
+							alt="GitHub"
+							width="24"
+							height="24"
+						/>
+					</a>
+				</div>
+			</footer>
 		</div>
 	)
 }

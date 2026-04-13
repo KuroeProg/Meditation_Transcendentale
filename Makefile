@@ -2,14 +2,17 @@
 # Désactiver les couleurs : NO_COLOR=1 make help
 
 NAME        := transcendence
-COMPOSE_DIR := transcendence
-COMPOSE     := cd $(COMPOSE_DIR) && docker compose
+# Répertoire du dépôt (Makefile à la racine) : `make` fonctionne même lancé depuis un sous-dossier.
+_REPO_MAKEFILE := $(abspath $(lastword $(MAKEFILE_LIST)))
+REPO_ROOT      := $(dir $(_REPO_MAKEFILE))
+COMPOSE_DIR    := $(REPO_ROOT)transcendence
+COMPOSE        := cd $(COMPOSE_DIR) && docker compose
 
 # Logs affichés par « make up » / « make logs » (hors ELK / monitoring / vault)
 LOGS_CORE := frontend backend nginx db redis worker
 
-CERT_NGINX_DIR   := ./transcendence/nginx/certs
-CERT_ELASTIC_DIR := ./transcendence/elasticsearch/certs
+CERT_NGINX_DIR   := $(COMPOSE_DIR)/nginx/certs
+CERT_ELASTIC_DIR := $(COMPOSE_DIR)/elasticsearch/certs
 CERT_NGINX_FILE  := $(CERT_NGINX_DIR)/nginx.crt
 KEY_NGINX_FILE   := $(CERT_NGINX_DIR)/nginx.key
 CERT_ELASTIC_FILE := $(CERT_ELASTIC_DIR)/elasticsearch.crt
