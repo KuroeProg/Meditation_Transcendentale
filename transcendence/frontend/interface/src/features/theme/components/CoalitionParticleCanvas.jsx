@@ -384,7 +384,14 @@ class WaterRipple {
 		this.r = 0
 		this.delay = delayMs
 		this.maxR = 24 + Math.random() * 68
-		this.grow = 0.2 + Math.random() * 0.5
+		/* Grandes ondes : expansion plus lente + disparition moins brutale */
+		const sizeK = (this.maxR - 24) / 68
+		const slow = 1 - sizeK * 0.5
+		this.grow = (0.15 + Math.random() * 0.26) * slow
+		this.grow = Math.max(0.075, this.grow)
+		this.fadeStretch = 1.08 + sizeK * 0.38
+		/* >1 : la bague reste lisible plus longtemps avant de s’estomper (surtout les grandes). */
+		this.fadePow = 1.1 + sizeK * 0.42
 		this.alpha = 0.48 + Math.random() * 0.42
 		this.baseAlpha = this.alpha
 		this.w = 1.1 + Math.random() * 2.1
@@ -397,8 +404,10 @@ class WaterRipple {
 			return
 		}
 		this.r += this.grow * dt * 0.11
-		this.alpha = this.baseAlpha * (1 - this.r / (this.maxR * 1.12))
-		if (this.alpha <= 0.02 || this.r > this.maxR) this.dead = true
+		const u = Math.min(1, this.r / (this.maxR * this.fadeStretch))
+		this.alpha = this.baseAlpha * Math.max(0, 1 - u ** this.fadePow)
+		const rEnd = this.maxR * this.fadeStretch
+		if (this.alpha <= 0.02 || this.r > rEnd) this.dead = true
 	}
 	draw(ctx) {
 		if (this.delay > 0) return
