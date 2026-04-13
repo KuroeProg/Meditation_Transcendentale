@@ -21,14 +21,18 @@ export function TimeControlSection({ category, controls, selected, onSelect, isC
 		<div className="dash-tc-section">
 			<div className="dash-tc-category-row">
 				<h3 className="dash-tc-category" style={{ '--cat-color': meta.color }}>
-					<i className={meta.icon} /> {meta.label}
+					<i className={meta.icon} aria-hidden />
+					<span className="dash-tc-category-name">{meta.label}</span>
+					{isCompetitive && (
+						<span
+							className="dash-tc-category-elo"
+							aria-label={`ELO ${ratingVal} — ${meta.label}`}
+							title={`ELO ${meta.label}`}
+						>
+							({ratingVal})
+						</span>
+					)}
 				</h3>
-				{isCompetitive && (
-					<div className="dash-tc-category-elo" aria-label={`ELO ${meta.label}`}>
-						<span className="dash-tc-category-elo-val">{ratingVal}</span>
-						<span className="dash-tc-category-elo-lbl">ELO</span>
-					</div>
-				)}
 			</div>
 			<div className="dash-tc-grid">
 				{controls.map((c) => (

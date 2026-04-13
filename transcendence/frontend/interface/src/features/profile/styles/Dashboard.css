@@ -247,12 +247,7 @@
 }
 
 .dash-tc-category-row {
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	gap: 0.5rem 0.75rem;
 	margin-bottom: 0.5rem;
-	flex-wrap: wrap;
 }
 
 .dash-tc-category {
@@ -263,35 +258,23 @@
 	color: var(--cat-color, rgba(240, 245, 255, 0.5));
 	margin: 0;
 	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	flex: 1 1 auto;
+	align-items: baseline;
+	flex-wrap: wrap;
+	gap: 0.25rem 0.35rem;
 	min-width: 0;
 }
 
+.dash-tc-category-name {
+	letter-spacing: inherit;
+}
+
 .dash-tc-category-elo {
-	display: flex;
-	flex-direction: column;
-	align-items: flex-end;
-	flex-shrink: 0;
-	padding: 0.2rem 0.55rem;
-	border-radius: 10px;
-	border: 1px solid color-mix(in srgb, var(--coalition-accent-border) 45%, transparent);
-	background: color-mix(in srgb, var(--coalition-accent-soft) 28%, rgba(8, 10, 16, 0.5));
-}
-
-.dash-tc-category-elo-val {
-	font-size: 0.95rem;
-	font-weight: 800;
-	color: #f0f5ff;
-	line-height: 1.1;
-}
-
-.dash-tc-category-elo-lbl {
-	font-size: 0.58rem;
-	text-transform: uppercase;
-	letter-spacing: 0.06em;
-	color: var(--coalition-accent-muted);
+	font-size: 0.68rem;
+	font-weight: 600;
+	text-transform: none;
+	letter-spacing: 0.02em;
+	color: rgba(240, 245, 255, 0.32);
+	font-variant-numeric: tabular-nums;
 }
 
 .dash-tc-grid {
