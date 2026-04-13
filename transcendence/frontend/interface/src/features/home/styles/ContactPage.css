@@ -13,11 +13,10 @@
 	text-shadow: 0 0 40px var(--coalition-accent-glow);
 }
 
+/* Comme .about-hero : pas de margin auto — le Retour reste aligné à gauche du contenu principal. */
 .contact-page-header {
 	margin-bottom: 1.5rem;
 	max-width: 40rem;
-	margin-left: auto;
-	margin-right: auto;
 }
 
 .contact-page-header__back-row {

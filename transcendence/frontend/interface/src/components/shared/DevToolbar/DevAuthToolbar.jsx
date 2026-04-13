@@ -11,6 +11,7 @@ import {
 	goToGuestHome,
 	isDevGuestPreviewActive,
 } from '../../../utils/devGuestPreview.js'
+import { SORTING_HAT_COALITION_ENABLED } from '../../../config/featureFlags.js'
 import './DevAuthToolbar.css'
 
 function readStoredMode() {
@@ -191,8 +192,17 @@ export default function DevAuthToolbar() {
 						</button>
 					</div>
 					<p className="dev-auth-toolbar__hint">
-						Choixpeau : <code>VITE_SORTING_HAT_COALITION=true</code>. Le bouton ci‑dessous force le mock local, coalition « en attente », déconnecte puis recharge la session comme après une première inscription.
+						Choixpeau : variable <code>VITE_SORTING_HAT_COALITION</code> dans le dossier{' '}
+						<code>interface/</code> (Vite n’utilise pas <code>transcendence/.env</code>). Le bouton ci‑dessous
+						force le mock local, coalition « en attente », déconnecte puis recharge la session.
 					</p>
+					{!SORTING_HAT_COALITION_ENABLED ? (
+						<p className="dev-auth-toolbar__hint dev-auth-toolbar__hint--warn" role="status">
+							<strong>Popup absente ?</strong> Ajoute <code>VITE_SORTING_HAT_COALITION=true</code> dans{' '}
+							<code>interface/.env.development</code> ou <code>interface/.env.local</code>, puis{' '}
+							<strong>redémarre</strong> le serveur Vite (<code>npm run dev</code>).
+						</p>
+					) : null}
 
 					<div className="dev-auth-toolbar__actions">
 						<button type="button" className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent" onClick={applySettings}>
@@ -202,8 +212,12 @@ export default function DevAuthToolbar() {
 							type="button"
 							className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent"
 							onClick={() => void replaySortingHatCeremony()}
-							disabled={hatReplayBusy}
-							title="Déconnexion puis session mock locale sans coalition — relance la cérémonie"
+							disabled={hatReplayBusy || !SORTING_HAT_COALITION_ENABLED}
+							title={
+								!SORTING_HAT_COALITION_ENABLED
+									? 'Active VITE_SORTING_HAT_COALITION dans interface/.env puis redémarre Vite'
+									: 'Déconnexion puis session mock locale sans coalition — relance la cérémonie'
+							}
 						>
 							{hatReplayBusy ? 'Préparation…' : '▶ Lancer l’animation choixpeau'}
 						</button>
