@@ -1,16 +1,20 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { cancelGameInviteHttp, respondGameInviteHttp } from '../services/chatApi.js'
+import { useAuth } from '../../auth/index.js'
 
 export default function GameInviteCard({ msg, isOwn }) {
 	const navigate = useNavigate()
+	const { resolveInviteState } = useAuth()
 	const [busyAction, setBusyAction] = useState(null)
 	const [localStatus, setLocalStatus] = useState(null)
 	const data = useMemo(() => {
 		try { return JSON.parse(msg.content) } catch { return {} }
 	}, [msg.content])
 	const inviteId = Number(data.invite_id)
-	const inviteStatus = localStatus || data.invite_status || 'pending'
+	const liveInvite = resolveInviteState(inviteId)
+	const effectiveData = liveInvite || data
+	const inviteStatus = localStatus || effectiveData.invite_status || effectiveData.status || 'pending'
 	const canAct = Number.isFinite(inviteId) && inviteStatus === 'pending'
 
 	const runAction = async (action) => {
@@ -37,7 +41,8 @@ export default function GameInviteCard({ msg, isOwn }) {
 	}
 
 	const handleJoin = () => {
-		if (data.game_id) navigate(`/game/${data.game_id}`)
+		const gameId = effectiveData.game_id
+		if (gameId) navigate(`/game/${gameId}`)
 	}
 
 	return (
@@ -49,7 +54,7 @@ export default function GameInviteCard({ msg, isOwn }) {
 						{isOwn ? 'Invitation envoyee' : 'Invitation de partie'}
 					</span>
 					<span className="chat-invite-detail">
-						{data.time_control || '10 min'} — {data.competitive ? 'Classée' : 'Amicale'}
+						{effectiveData.time_control || '10 min'} — {effectiveData.competitive ? 'Classée' : 'Amicale'}
 					</span>
 				</div>
 				{canAct && !isOwn && (
@@ -67,12 +72,12 @@ export default function GameInviteCard({ msg, isOwn }) {
 						{busyAction === 'cancel' ? '...' : 'Annuler'}
 					</button>
 				)}
-				{inviteStatus === 'accepted' && data.game_id && (
+				{inviteStatus === 'accepted' && effectiveData.game_id && (
 					<button className="chat-invite-accept" type="button" onClick={handleJoin}>
 						Rejoindre
 					</button>
 				)}
-				{inviteStatus !== 'pending' && !(inviteStatus === 'accepted' && data.game_id) && (
+				{inviteStatus !== 'pending' && !(inviteStatus === 'accepted' && effectiveData.game_id) && (
 					<span className="chat-invite-detail">
 						{inviteStatus === 'declined' ? 'Invitation refusee' : inviteStatus === 'cancelled' ? 'Invitation annulee' : inviteStatus === 'expired' ? 'Invitation expiree' : 'Invitation acceptee'}
 					</span>

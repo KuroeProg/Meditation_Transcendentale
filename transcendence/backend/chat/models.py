@@ -151,7 +151,7 @@ class GameInvite(models.Model):
             ),
             models.UniqueConstraint(
                 fields=['sender'],
-                condition=models.Q(status=STATUS_PENDING),
+                condition=models.Q(status='pending'),
                 name='chat_one_pending_outgoing_invite_per_sender',
             ),
         ]

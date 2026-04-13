@@ -2,10 +2,15 @@ import json
 
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.db.models import Q
 
 from accounts.models import Friendship, LocalUser
 from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, Message
+from utils.presence import (
+    mark_user_presence_connected,
+    mark_user_presence_disconnected,
+)
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -13,11 +18,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.conversation_id = self.scope['url_route']['kwargs'].get('conversation_id')
         self.room_group_name = f'chat_{self.conversation_id}'
         self.user_id = None
+        self.user_group_name = None
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
+        if self.user_group_name:
+            await self.channel_layer.group_discard(self.user_group_name, self.channel_name)
+        if self.user_id:
+            presence_state = await self._presence_disconnect(self.user_id)
+            await self._broadcast_presence_if_changed(self.user_id, presence_state)
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 
     async def receive(self, text_data):
@@ -30,11 +41,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
         action = data.get('action', '')
 
         if action == 'authenticate':
-            self.user_id = data.get('user_id')
+            try:
+                self.user_id = int(data.get('user_id'))
+            except (TypeError, ValueError):
+                self.user_id = None
+
             if self.user_id:
-                await self._set_user_online(self.user_id, True)
-                user_group = f'user_{self.user_id}'
-                await self.channel_layer.group_add(user_group, self.channel_name)
+                presence_state = await self._presence_connect(self.user_id)
+                self.user_group_name = f'user_{self.user_id}'
+                await self.channel_layer.group_add(self.user_group_name, self.channel_name)
+                await self._broadcast_presence_if_changed(self.user_id, presence_state)
             return
 
         if action == 'send_message':
@@ -137,6 +153,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_ids': event['message_ids'],
         }))
 
+    async def notification(self, event):
+        await self.send(text_data=json.dumps(event.get('data', {})))
+
+    async def _broadcast_presence_if_changed(self, user_id, presence_state):
+        if not presence_state or not presence_state.get('changed'):
+            return
+
+        friend_ids = await _get_accepted_friend_ids(user_id)
+        payload = {
+            'action': 'friend_presence',
+            'user_id': int(user_id),
+            'is_online': bool(presence_state.get('online')),
+        }
+
+        for friend_id in friend_ids:
+            await self.channel_layer.group_send(
+                f'user_{friend_id}',
+                {
+                    'type': 'notification',
+                    'data': payload,
+                }
+            )
+
     @database_sync_to_async
     def _save_message(self, user_id, conversation_id, content, msg_type):
         try:
@@ -177,7 +216,6 @@ class ChatConsumer(AsyncWebsocketConsumer):
             other_ids = [pid for pid in participants if pid != user_id]
             if not other_ids:
                 return False
-            from django.db.models import Q
             return Friendship.objects.filter(
                 Q(from_user_id=user_id, to_user_id__in=other_ids, status='blocked') |
                 Q(from_user_id__in=other_ids, to_user_id=user_id, status='blocked')
@@ -186,29 +224,36 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return True
 
     @database_sync_to_async
-    def _set_user_online(self, user_id, online):
-        from django.utils import timezone
-        LocalUser.objects.filter(id=user_id).update(
-            is_online=online,
-            last_seen=timezone.now(),
-        )
+    def _presence_connect(self, user_id):
+        return mark_user_presence_connected(user_id)
+
+    @database_sync_to_async
+    def _presence_disconnect(self, user_id):
+        return mark_user_presence_disconnected(user_id)
 
 
 class NotificationConsumer(AsyncWebsocketConsumer):
     """Per-user WebSocket for global notifications (new messages, friend requests)."""
 
     async def connect(self):
-        self.user_id = self.scope['url_route']['kwargs'].get('user_id')
+        try:
+            self.user_id = int(self.scope['url_route']['kwargs'].get('user_id'))
+        except (TypeError, ValueError):
+            await self.close(code=4400)
+            return
+
         self.room_group_name = f'user_{self.user_id}'
 
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
-        await self._set_user_online(int(self.user_id), True)
+        presence_state = await self._presence_connect(self.user_id)
+        await self._broadcast_presence_if_changed(self.user_id, presence_state)
 
     async def disconnect(self, close_code):
         await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-        await self._set_user_online(int(self.user_id), False)
+        presence_state = await self._presence_disconnect(self.user_id)
+        await self._broadcast_presence_if_changed(self.user_id, presence_state)
 
     async def receive(self, text_data):
         pass
@@ -222,10 +267,47 @@ class NotificationConsumer(AsyncWebsocketConsumer):
     async def notification(self, event):
         await self.send(text_data=json.dumps(event['data']))
 
+    async def _broadcast_presence_if_changed(self, user_id, presence_state):
+        if not presence_state or not presence_state.get('changed'):
+            return
+
+        friend_ids = await _get_accepted_friend_ids(user_id)
+        payload = {
+            'action': 'friend_presence',
+            'user_id': int(user_id),
+            'is_online': bool(presence_state.get('online')),
+        }
+
+        for friend_id in friend_ids:
+            await self.channel_layer.group_send(
+                f'user_{friend_id}',
+                {
+                    'type': 'notification',
+                    'data': payload,
+                }
+            )
+
     @database_sync_to_async
-    def _set_user_online(self, user_id, online):
-        from django.utils import timezone
-        LocalUser.objects.filter(id=user_id).update(
-            is_online=online,
-            last_seen=timezone.now(),
-        )
+    def _presence_connect(self, user_id):
+        return mark_user_presence_connected(user_id)
+
+    @database_sync_to_async
+    def _presence_disconnect(self, user_id):
+        return mark_user_presence_disconnected(user_id)
+
+
+@database_sync_to_async
+def _get_accepted_friend_ids(user_id):
+    relations = Friendship.objects.filter(
+        status='accepted'
+    ).filter(
+        Q(from_user_id=user_id) | Q(to_user_id=user_id)
+    ).values_list('from_user_id', 'to_user_id')
+
+    friend_ids = set()
+    current_id = int(user_id)
+    for from_id, to_id in relations:
+        other_id = to_id if int(from_id) == current_id else from_id
+        friend_ids.add(int(other_id))
+
+    return list(friend_ids)

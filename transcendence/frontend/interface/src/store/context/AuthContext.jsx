@@ -56,6 +56,7 @@ export function AuthProvider({ children }) {
   const [presenceByUserId, setPresenceByUserId] = useState({})
   const [outgoingPendingInvite, setOutgoingPendingInvite] = useState(null)
   const [priorityGameReady, setPriorityGameReady] = useState(null)
+  const [inviteById, setInviteById] = useState({})
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -108,8 +109,15 @@ export function AuthProvider({ children }) {
         if (data?.action === 'invite_created' || data?.action === 'invite_updated') {
           const invite = data?.invite
           const currentUserId = Number(userId)
+          const inviteId = Number(invite?.id)
           const senderId = Number(invite?.sender_id)
-          if (!invite || !Number.isFinite(currentUserId) || !Number.isFinite(senderId)) return
+          const receiverId = Number(invite?.receiver_id)
+          if (!invite || !Number.isFinite(currentUserId) || !Number.isFinite(senderId) || !Number.isFinite(inviteId)) return
+
+          if (currentUserId === senderId || currentUserId === receiverId) {
+            setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+          }
+
           if (senderId !== currentUserId) return
 
           if (String(invite.status) === 'pending') {
@@ -126,13 +134,12 @@ export function AuthProvider({ children }) {
         if (data?.action === 'game_ready') {
           const currentUserId = Number(userId)
           const senderId = Number(data.sender_id)
-          const receiverId = Number(data.receiver_id)
-          if (currentUserId === senderId || currentUserId === receiverId) {
+          if (currentUserId === senderId) {
             setPriorityGameReady({
               gameId: data.game_id,
               inviteId: data.invite_id,
               senderId,
-              receiverId,
+              receiverId: Number(data.receiver_id),
               receivedAt: Date.now(),
             })
           }
@@ -371,6 +378,7 @@ export function AuthProvider({ children }) {
       setPresenceByUserId({})
       setOutgoingPendingInvite(null)
       setPriorityGameReady(null)
+      setInviteById({})
     }
   }
 
@@ -385,6 +393,16 @@ export function AuthProvider({ children }) {
     if (!Number.isFinite(currentUserId) || !Number.isFinite(senderId)) return
     if (currentUserId !== senderId) return
     setOutgoingPendingInvite(invite)
+    const inviteId = Number(invite.id)
+    if (Number.isFinite(inviteId)) {
+      setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+    }
+  }
+
+  function resolveInviteState(inviteId) {
+    const id = Number(inviteId)
+    if (!Number.isFinite(id)) return null
+    return inviteById[id] || null
   }
 
   function resolveUserOnline(userLike) {
@@ -490,6 +508,7 @@ export function AuthProvider({ children }) {
     outgoingPendingInvite,
     hasOutgoingPendingInvite: Boolean(outgoingPendingInvite),
     registerOutgoingPendingInvite,
+    resolveInviteState,
     priorityGameReady,
     dismissPriorityGameReady,
     isTwoFactorVerified: !!user && !twoFactorChallenge,
