@@ -46,8 +46,8 @@ html, body, #root {
   align-items: stretch;
   justify-content: flex-start;
   width: 100%;
-  min-height: calc(100vh - 1.5rem);
-  max-height: 100vh;
+  min-height: calc(100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom));
+  max-height: calc(100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom));
   margin-left: 0;
   padding-left: 0;
   padding-right: 0;
@@ -181,14 +181,20 @@ html[data-reduce-motion='true'] .board-move-ghost {
   --board-frame-pad-y: 8px;
   /* .game-board-col : 2 × gap entre barre / cadre / barre */
   --game-board-col-gap-total: 0.8rem;
+  /* Marge sous le jeu : footer fixe (souvent 2 lignes) — aligné avec .main-content:has(.game-container) */
+  --game-footer-overscan: 0.85rem;
+  --game-main-pad-top: 0.75rem;
+  --game-main-pad-bottom: calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan));
   /*
     Colonnes coords (haut+bas) ≈ 2 × max(0.65rem, cell×0.3) ≤ ~0.075×board-size.
-    (100vh − chrome − cadre) / 1.082 garantit barres + plateau + lettres dans la hauteur utile.
+    (100dvh − padding page − chrome barres/cadre) / 1.082 : le timer ne passe pas sous le footer.
   */
   --board-size: min(
     calc(
-      (100vh - (var(--player-bar-height) * 2) - var(--board-frame-pad-y) - var(--game-board-col-gap-total)) /
-        1.082
+      (
+          100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom) -
+            (var(--player-bar-height) * 2) - var(--board-frame-pad-y) - var(--game-board-col-gap-total)
+        ) / 1.082
     ),
     calc(100vw - var(--sidebar-width) - 8rem)
   );

@@ -43,7 +43,7 @@
 .main-content:has(.game-container) {
 	max-width: none;
 	width: auto;
-	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve)) 1.5rem;
+	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.85rem)) 1.5rem;
 }
 
 /* Statistiques perso */
