@@ -140,10 +140,7 @@ ASGI_APPLICATION = 'transcendence_backend.asgi.application'
 # }
 
 # VAULT
-# ==========================================
-# --- ÉTAPE 3 : INTÉGRATION VAULT ---
-# ==========================================
-vault_url = os.environ.get('VAULT_ADDR', 'http://vault:8202')
+vault_url = os.environ.get('VAULT_ADDR', 'https://vault:8202')
 vault_token = os.environ.get('VAULT_TOKEN')
 
 # init a vide
@@ -157,7 +154,7 @@ email_password = ''
 
 if vault_token:
     try:
-        client = hvac.Client(url=vault_url, token=vault_token)
+        client = hvac.Client(url=vault_url, token=vault_token, verify=False)
         read_response = client.secrets.kv.v2.read_secret_version(path='database')
         secrets = read_response['data']['data']
         
@@ -173,10 +170,6 @@ if vault_token:
         print("All the secrets are now in vault!")
     except Exception as e:
         print(f"Connection error with vault : {e}")
-
-# ==========================================
-# --- ÉTAPE 4 : APPLICATION DES SECRETS ---
-# ==========================================
 
 REDIS_PASSWORD = redis_password
 FORTYTWO_CLIENT_ID = ft_client_id
@@ -200,7 +193,7 @@ CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
         # Notice we use the service name 'redis' from your docker-compose
-        "LOCATION": f"redis://:{os.environ.get('REDIS_PASSWORD')}@redis:6379/1",
+        "LOCATION": f"redis://:{REDIS_PASSWORD}@redis:6379/1",
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
         }
@@ -259,7 +252,7 @@ EMAIL_HOST = os.environ.get('EMAIL_HOST', 'smtp.gmail.com')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', '587'))
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True') == 'True'
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
-EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
+EMAIL_HOST_PASSWORD = EMAIL_HOST_PASSWORD
 
 
 # Internationalization
