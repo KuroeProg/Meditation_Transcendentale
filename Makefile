@@ -15,6 +15,7 @@ PROJECT ?= chromium
 WORKERS ?=
 FILE ?=
 GREP ?=
+SUITE ?=
 
 # Logs affichés par « make up » / « make logs » (hors ELK / monitoring / vault)
 LOGS_CORE := frontend backend nginx db redis worker
@@ -60,7 +61,7 @@ ifeq ($(strip $(PROFILE)),localhost)
 endif
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
-.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload seed-e2e-users test-e2e-list test-e2e test-e2e-headed test-e2e-file test-e2e-grep
+.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload seed-e2e-users test-e2e-list test-e2e test-e2e-headed test-e2e-file test-e2e-grep test-e2e-suite
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -267,3 +268,11 @@ test-e2e-grep: ## Lancer des tests E2E filtrés par nom (usage: make test-e2e-gr
 	fi
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E filtrée grep='$(GREP)' (project=$(PROJECT))…"
 	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test --grep "$(GREP)" --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)
+
+test-e2e-suite: ## Lancer une suite par dossier (usage: make test-e2e-suite SUITE=smoke)
+	@if [ -z "$(SUITE)" ]; then \
+		printf '%b\n' "$(C_RED)✗$(C_RESET) SUITE est requis. Ex: make test-e2e-suite SUITE=smoke"; \
+		exit 1; \
+	fi
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E suite=$(SUITE) (project=$(PROJECT))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test "tests/e2e/$(SUITE)" --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)

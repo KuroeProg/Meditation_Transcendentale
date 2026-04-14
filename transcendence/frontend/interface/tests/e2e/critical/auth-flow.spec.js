@@ -1,6 +1,6 @@
 import { test } from '@playwright/test'
-import { loginAndOpenDashboard } from './helpers/auth.js'
-import { getE2ERoleCredentials, hasE2ERoleCredentials } from './helpers/e2eEnv.js'
+import { loginAndOpenDashboard } from '../helpers/auth.js'
+import { getE2ERoleCredentials, hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 
 const { email, password } = getE2ERoleCredentials('SMOKE_USER')
 const hasCredentials = hasE2ERoleCredentials('SMOKE_USER')

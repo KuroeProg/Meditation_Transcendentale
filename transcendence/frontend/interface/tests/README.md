@@ -4,10 +4,26 @@ This folder contains end-to-end test architecture for the frontend interface.
 
 ## Structure
 
-- `tests/e2e/`: executable E2E specs
+- `tests/e2e/smoke/`: fast checks for app health and entry points
+- `tests/e2e/critical/`: blocking business flows (auth, matchmaking, payments, etc.)
+- `tests/e2e/extended/`: non-blocking longer flows and edge cases
 - `tests/e2e/helpers/`: shared helpers for auth, navigation, and setup
-- `tests/e2e/auth-flow.spec.js`: first auth scenario using the shared helper
+- `tests/e2e/critical/auth-flow.spec.js`: first auth scenario using the shared helper
 - `playwright.config.js`: shared runtime config
+
+## 3-Step Technical Plan
+
+1. Foundation stability:
+  - deterministic E2E users (`make seed-e2e-users`)
+  - centralized env loading (`.env.e2e`, optional `.env.e2e.local`)
+  - robust Playwright defaults for CI diagnostics (trace/video/screenshot on failure)
+2. Suite scaling:
+  - split tests into `smoke`, `critical`, `extended`
+  - keep helpers reusable and side-effect free
+  - run the minimum needed suite per context (local PR/nightly)
+3. Execution targeting:
+  - run by file, grep, suite, project and workers via Makefile variables
+  - standardize naming so grep/suite filtering remains predictable
 
 ## Commands
 
@@ -17,7 +33,8 @@ From repository root:
 - `npm run test:e2e:headed`
 - `make test-e2e-list`
 - `make test-e2e`
-- `make test-e2e-file FILE=tests/e2e/auth-flow.spec.js`
+- `make test-e2e-suite SUITE=smoke`
+- `make test-e2e-file FILE=tests/e2e/critical/auth-flow.spec.js`
 - `make test-e2e-grep GREP="auth flow"`
 
 Or from `transcendence/frontend/interface`:
@@ -55,3 +72,4 @@ Or from `transcendence/frontend/interface`:
 - Prefer the shared auth helper instead of reimplementing login steps in each spec.
 - Reuse `auth-flow.spec.js` as the reference pattern for future E2E scenarios.
 - Makefile variables for scalable targeting: `PROJECT`, `WORKERS`, `E2E_BASE_URL`, `FILE`, `GREP`.
+- Add `SUITE` to select `smoke`, `critical`, or `extended` folders quickly.
