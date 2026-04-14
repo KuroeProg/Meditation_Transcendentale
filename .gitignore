@@ -20,6 +20,8 @@ __pycache__/
 node_modules/
 dist/
 .DS_Store
+playwright-report/
+test-results/
 
 # Cursor : règles personnelles locales (non partagées). Les commandes projet sont dans .cursor/commands/
 .cursor/rules/
