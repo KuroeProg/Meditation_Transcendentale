@@ -6,6 +6,7 @@ const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost')
 export default defineConfig({
 	testDir: './tests/e2e',
 	testMatch: ['**/*.spec.js'],
+	globalSetup: './tests/e2e/setup/global.setup.js',
 	timeout: 60_000,
 	expect: {
 		timeout: 10_000,

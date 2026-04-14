@@ -56,6 +56,16 @@ Or from `transcendence/frontend/interface`:
   - `USER_B`
   - `USER_C`
 
+## Role Storage States
+
+Playwright runs a global setup before tests and creates role session files in `tests/e2e/.auth/`.
+
+- If credentials exist for a role, setup logs in and writes a valid storage state.
+- If credentials are missing (or login fails), setup writes an empty state file instead of failing the run.
+- Authenticated specs can reuse these files with `test.use({ storageState: getRoleStateFilePath('ROLE_NAME') })`.
+
+This keeps auth-dependent tests faster and reduces flaky re-login steps.
+
 ## First-time setup
 
 1. Copy `.env.e2e.example` to `.env.e2e` and fill the real test accounts.

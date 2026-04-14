@@ -30,3 +30,4 @@ test-results/
 /transcendence/env/profiles/*.env
 /transcendence/frontend/interface/.env.e2e
 /transcendence/frontend/interface/.env.e2e.local
+/transcendence/frontend/interface/tests/e2e/.auth/
