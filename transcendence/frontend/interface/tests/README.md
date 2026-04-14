@@ -24,12 +24,22 @@ Or from `transcendence/frontend/interface`:
 
 ## Environment Variables
 
+- Local configuration is loaded from `transcendence/frontend/interface/.env.e2e`.
+- Optional local overrides can live in `transcendence/frontend/interface/.env.e2e.local`.
+- Example file: `transcendence/frontend/interface/.env.e2e.example`
 - `E2E_BASE_URL` (default: `https://localhost`)
+- Shared credential roles use the pattern `E2E_<ROLE>_EMAIL` and `E2E_<ROLE>_PASSWORD`.
+- Current roles used by the scaffold:
+  - `SMOKE_USER`
+  - `USER_A`
+  - `USER_B`
+  - `USER_C`
 
 ## First-time setup
 
-1. Install dependencies in `transcendence/frontend/interface`.
-2. Install Playwright browser:
+1. Copy `.env.e2e.example` to `.env.e2e` and fill the real test accounts.
+2. Install dependencies in `transcendence/frontend/interface`.
+3. Install Playwright browser:
    - `npx playwright install chromium`
 
 ## Notes

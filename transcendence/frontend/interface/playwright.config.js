@@ -1,6 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
+import { getE2EEnv } from './tests/e2e/helpers/e2eEnv.js'
 
-const baseURL = process.env.E2E_BASE_URL || 'https://localhost'
+const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost')
 
 export default defineConfig({
 	testDir: './tests/e2e',
