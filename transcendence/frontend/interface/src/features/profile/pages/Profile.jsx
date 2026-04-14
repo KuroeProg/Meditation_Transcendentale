@@ -64,19 +64,26 @@ function EditableField({ value, onSave, label, placeholder, multiline = false })
 	)
 }
 
-function FriendItem({ friend, onChallenge }) {
+function FriendItem({ friend, onChallenge, challengeDisabled }) {
 	const u = friend.user
+	const online = Boolean(u.is_online)
 	return (
 		<li className="profile-friend-item">
 			<img className="profile-friend-avatar" src={u.avatar} alt="" />
 			<div className="profile-friend-info">
 				<span className="profile-friend-name">{u.username}</span>
-				<span className={`profile-friend-status ${u.is_online ? 'is-online' : ''}`}>
-					{u.is_online ? 'En ligne' : 'Hors ligne'}
+				<span className={`profile-friend-status ${online ? 'is-online' : ''}`}>
+					{online ? 'En ligne' : 'Hors ligne'}
 				</span>
 			</div>
-			{u.is_online && friend.status === 'accepted' && (
-				<button className="profile-friend-challenge" onClick={() => onChallenge(u)} type="button">
+			{online && friend.status === 'accepted' && (
+				<button
+					className="profile-friend-challenge"
+					onClick={() => onChallenge(u)}
+					type="button"
+					disabled={challengeDisabled}
+					title={challengeDisabled ? 'Invitation deja en attente' : 'Defier'}
+				>
 					Defier
 				</button>
 			)}
@@ -87,7 +94,7 @@ function FriendItem({ friend, onChallenge }) {
 function Profile() {
 	const navigate = useNavigate()
 	const { openFriendInvite } = useFriendInvite()
-	const { user, loading, error, refetch, isDevMockAuth, logout } = useAuth()
+	const { user, loading, error, refetch, isDevMockAuth, logout, resolveUserOnline, hasOutgoingPendingInvite } = useAuth()
 	const [friends, setFriends] = useState([])
 	const [profileSaveError, setProfileSaveError] = useState(null)
 	const [avatarUploadError, setAvatarUploadError] = useState(null)
@@ -188,6 +195,13 @@ function Profile() {
 	} = deriveCoalitionPresentation(user, coalitionToSlug, coalitionSlugToLabel)
 	const levelCursus = deriveCursusLevel(user)
 	const avatarSrc = get42AvatarUrl(user)
+	const friendsWithLivePresence = friends.map((friend) => ({
+		...friend,
+		user: {
+			...friend.user,
+			is_online: resolveUserOnline(friend.user),
+		},
+	}))
 
 	return (
 		<div className="page-shell">
@@ -301,13 +315,12 @@ function Profile() {
 					</h2>
 					{friends.length > 0 ? (
 						<ul className="profile-friends-list">
-							{friends.map((f) => (
+							{friendsWithLivePresence.map((f) => (
 								<FriendItem
 									key={f.friendship_id}
 									friend={f}
-									onChallenge={(u) =>
-										openFriendInvite({ friendUserId: u.id, friendLabel: u.username })
-									}
+									onChallenge={(u) => openFriendInvite({ friendUserId: u.id, friendLabel: u.username })}
+									challengeDisabled={hasOutgoingPendingInvite}
 								/>
 							))}
 						</ul>

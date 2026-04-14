@@ -32,6 +32,20 @@ async function safeJson(response) {
   }
 }
 
+function getWebSocketOrigin() {
+  const explicitWsOrigin = import.meta.env.VITE_WS_ORIGIN
+  const explicitApiOrigin = import.meta.env.VITE_API_ORIGIN
+  const appOrigin = import.meta.env.VITE_APP_ORIGIN
+  const baseOrigin = explicitWsOrigin || explicitApiOrigin || appOrigin || window.location.origin
+
+  if (baseOrigin.startsWith('https://')) return baseOrigin.replace('https://', 'wss://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('http://')) return baseOrigin.replace('http://', 'ws://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('wss://') || baseOrigin.startsWith('ws://')) return baseOrigin.replace(/\/$/, '')
+
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${protocol}://${window.location.host}`
+}
+
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
@@ -39,6 +53,10 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null)
+  const [presenceByUserId, setPresenceByUserId] = useState({})
+  const [outgoingPendingInvite, setOutgoingPendingInvite] = useState(null)
+  const [priorityGameReady, setPriorityGameReady] = useState(null)
+  const [inviteById, setInviteById] = useState({})
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -87,6 +105,101 @@ export function AuthProvider({ children }) {
       setIsLoading(false)
     }
   }
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.user_id ?? null
+    if (!userId || twoFactorChallenge) return undefined
+
+    const ws = new WebSocket(`${getWebSocketOrigin()}/ws/notifications/${userId}/`)
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data?.action === 'friend_presence') {
+          const friendId = Number(data.user_id)
+          if (!Number.isFinite(friendId)) return
+
+          setPresenceByUserId((prev) => ({
+            ...prev,
+            [friendId]: Boolean(data.is_online),
+          }))
+          return
+        }
+
+        if (data?.action === 'invite_created' || data?.action === 'invite_updated') {
+          const invite = data?.invite
+          const currentUserId = Number(userId)
+          const inviteId = Number(invite?.id)
+          const senderId = Number(invite?.sender_id)
+          const receiverId = Number(invite?.receiver_id)
+          if (!invite || !Number.isFinite(currentUserId) || !Number.isFinite(senderId) || !Number.isFinite(inviteId)) return
+
+          if (currentUserId === senderId || currentUserId === receiverId) {
+            setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+          }
+
+          if (senderId !== currentUserId) return
+
+          if (String(invite.status) === 'pending') {
+            setOutgoingPendingInvite(invite)
+          } else {
+            setOutgoingPendingInvite((prev) => {
+              if (!prev) return null
+              return Number(prev.id) === Number(invite.id) ? null : prev
+            })
+          }
+          return
+        }
+
+        if (data?.action === 'game_ready') {
+          const currentUserId = Number(userId)
+          const senderId = Number(data.sender_id)
+          if (currentUserId === senderId) {
+            setPriorityGameReady({
+              gameId: data.game_id,
+              inviteId: data.invite_id,
+              senderId,
+              receiverId: Number(data.receiver_id),
+              receivedAt: Date.now(),
+            })
+          }
+        }
+      } catch {
+        // ignore malformed websocket payloads
+      }
+    }
+
+    return () => {
+      ws.close()
+    }
+  }, [user, twoFactorChallenge])
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.user_id ?? null
+    if (!userId || twoFactorChallenge) {
+      setOutgoingPendingInvite(null)
+      return undefined
+    }
+
+    let cancelled = false
+    fetch('/api/chat/invites/pending-outgoing', {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        const invite = data?.invite ?? null
+        setOutgoingPendingInvite(invite)
+      })
+      .catch(() => {
+        if (!cancelled) setOutgoingPendingInvite(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user, twoFactorChallenge])
 
   async function loginLocal(email, password) {
     setError(null)
@@ -282,7 +395,42 @@ export function AuthProvider({ children }) {
       sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
       setUser(null)
       setTwoFactorChallenge(null)
+      setPresenceByUserId({})
+      setOutgoingPendingInvite(null)
+      setPriorityGameReady(null)
+      setInviteById({})
     }
+  }
+
+  function dismissPriorityGameReady() {
+    setPriorityGameReady(null)
+  }
+
+  function registerOutgoingPendingInvite(invite) {
+    if (!invite || String(invite.status) !== 'pending') return
+    const currentUserId = Number(user?.id ?? user?.user_id)
+    const senderId = Number(invite.sender_id)
+    if (!Number.isFinite(currentUserId) || !Number.isFinite(senderId)) return
+    if (currentUserId !== senderId) return
+    setOutgoingPendingInvite(invite)
+    const inviteId = Number(invite.id)
+    if (Number.isFinite(inviteId)) {
+      setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+    }
+  }
+
+  function resolveInviteState(inviteId) {
+    const id = Number(inviteId)
+    if (!Number.isFinite(id)) return null
+    return inviteById[id] || null
+  }
+
+  function resolveUserOnline(userLike) {
+    const id = Number(userLike?.id ?? userLike?.user_id)
+    if (Number.isFinite(id) && Object.prototype.hasOwnProperty.call(presenceByUserId, id)) {
+      return Boolean(presenceByUserId[id])
+    }
+    return Boolean(userLike?.is_online)
   }
 
   function loginWith42() {
@@ -375,6 +523,14 @@ export function AuthProvider({ children }) {
     logout,
     refetch: checkAuth,
     isDevMockAuth: isDevMockAuthEnabled(),
+    presenceByUserId,
+    resolveUserOnline,
+    outgoingPendingInvite,
+    hasOutgoingPendingInvite: Boolean(outgoingPendingInvite),
+    registerOutgoingPendingInvite,
+    resolveInviteState,
+    priorityGameReady,
+    dismissPriorityGameReady,
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
   }

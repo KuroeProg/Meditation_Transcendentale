@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react'
-import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { ProtectedRoute, Sidebar, BottomNav, DevAuthToolbar, SiteFooter } from './components/shared/index.js'
 import { useBreakpoint } from './hooks/useBreakpoint.js'
 import {
@@ -25,14 +25,15 @@ import {
 import SortingHatGate from './features/auth/components/SortingHatGate.jsx'
 import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
 import { useChatInbox } from './features/chat/hooks/useChatInbox.js'
-import { presencePing } from './features/chat/services/chatApi.js'
+import { cancelGameInviteHttp, presencePing } from './features/chat/services/chatApi.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
 function AppContent() {
-	const { isAuthenticated } = useAuth()
+	const { isAuthenticated, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
+	const navigate = useNavigate()
 	const isAuthRoute = location.pathname.startsWith('/auth')
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
@@ -43,9 +44,21 @@ function AppContent() {
 	const activeGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY)
 	const isOnGameRoute = location.pathname.startsWith('/game/')
 	const currentGameId = isOnGameRoute ? location.pathname.replace('/game/', '') : null
+	const isOnlineGameRoute = Boolean(
+		currentGameId &&
+		currentGameId !== 'training' &&
+		currentGameId !== 'local' &&
+		!String(currentGameId).startsWith('training_')
+	)
 	const mustRedirectToActiveGame =
 		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
 	const footerSidewallOffset = isAuthenticated && !isAuthRoute && !isMobile
+
+	const handleJoinReadyGame = useCallback(() => {
+		if (!priorityGameReady?.gameId) return
+		navigate(`/game/${priorityGameReady.gameId}`)
+		dismissPriorityGameReady()
+	}, [priorityGameReady, navigate, dismissPriorityGameReady])
 
 	useEffect(() => {
 		if (!isAuthenticated) return
@@ -60,6 +73,13 @@ function AppContent() {
 			document.removeEventListener('visibilitychange', onVis)
 		}
 	}, [isAuthenticated])
+
+	useEffect(() => {
+		if (!isAuthenticated || !isOnlineGameRoute) return
+		const inviteId = outgoingPendingInvite?.id
+		if (!inviteId) return
+		cancelGameInviteHttp(inviteId, 'sender_busy').catch(() => {})
+	}, [isAuthenticated, isOnlineGameRoute, outgoingPendingInvite?.id])
 
 	if (mustRedirectToActiveGame) {
 		return <Navigate to={`/game/${activeGameId}`} replace />
@@ -147,6 +167,22 @@ function AppContent() {
 
 			{isAuthenticated && !isAuthRoute && (
 				<>
+					{priorityGameReady?.gameId && (
+						<div className="priority-game-cta" role="status" aria-live="polite">
+							<div className="priority-game-cta__text">
+								<strong>Partie prete</strong>
+								<span>Ton ami a accepte l'invitation. Rejoindre maintenant ?</span>
+							</div>
+							<div className="priority-game-cta__actions">
+								<button type="button" className="priority-game-cta__btn" onClick={dismissPriorityGameReady}>
+									Plus tard
+								</button>
+								<button type="button" className="priority-game-cta__btn priority-game-cta__btn--primary" onClick={handleJoinReadyGame}>
+									Rejoindre
+								</button>
+							</div>
+						</div>
+					)}
 					<ChatFabCluster
 						textUnread={textUnread}
 						inviteUnread={inviteUnread}

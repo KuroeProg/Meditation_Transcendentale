@@ -69,6 +69,20 @@ export function sendGameInviteHttp(conversationId, body) {
 	})
 }
 
+export function cancelGameInviteHttp(inviteId, reason = 'manual_cancel') {
+	return jsonFetch(`${BASE}/invites/${inviteId}/cancel`, {
+		method: 'POST',
+		body: JSON.stringify({ reason }),
+	})
+}
+
+export function respondGameInviteHttp(inviteId, action) {
+	return jsonFetch(`${BASE}/invites/${inviteId}/respond`, {
+		method: 'POST',
+		body: JSON.stringify({ action }),
+	})
+}
+
 export function searchUsers(query) {
 	return jsonFetch(`/api/auth/search?q=${encodeURIComponent(query)}`)
 }
