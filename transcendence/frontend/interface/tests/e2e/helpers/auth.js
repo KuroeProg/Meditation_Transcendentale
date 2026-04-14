@@ -4,7 +4,7 @@ export async function login(page, email, password) {
 	await page.goto('/auth')
 	await page.locator('#login-email').fill(email)
 	await page.locator('#login-password').fill(password)
-	await page.getByRole('button', { name: /se connecter/i }).click()
+	await page.getByRole('button', { name: 'Se Connecter', exact: true }).click()
 	await expect(page).not.toHaveURL(/\/auth/)
 }
 

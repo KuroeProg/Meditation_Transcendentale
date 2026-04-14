@@ -15,6 +15,10 @@ From repository root:
 
 - `npm run test:e2e`
 - `npm run test:e2e:headed`
+- `make test-e2e-list`
+- `make test-e2e`
+- `make test-e2e-file FILE=tests/e2e/auth-flow.spec.js`
+- `make test-e2e-grep GREP="auth flow"`
 
 Or from `transcendence/frontend/interface`:
 
@@ -50,3 +54,4 @@ Or from `transcendence/frontend/interface`:
 - Add business-critical scenarios in dedicated follow-up PRs.
 - Prefer the shared auth helper instead of reimplementing login steps in each spec.
 - Reuse `auth-flow.spec.js` as the reference pattern for future E2E scenarios.
+- Makefile variables for scalable targeting: `PROJECT`, `WORKERS`, `E2E_BASE_URL`, `FILE`, `GREP`.
