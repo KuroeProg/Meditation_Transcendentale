@@ -5,6 +5,7 @@ This folder contains end-to-end test architecture for the frontend interface.
 ## Structure
 
 - `tests/e2e/`: executable E2E specs
+- `tests/e2e/helpers/`: shared helpers for auth, navigation, and setup
 - `playwright.config.js`: shared runtime config
 
 ## Commands
@@ -34,3 +35,4 @@ Or from `transcendence/frontend/interface`:
 
 - Keep this branch focused on test architecture only.
 - Add business-critical scenarios in dedicated follow-up PRs.
+- Prefer the shared auth helper instead of reimplementing login steps in each spec.
