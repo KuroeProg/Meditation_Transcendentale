@@ -52,7 +52,7 @@ ifeq ($(strip $(PROFILE)),localhost)
 endif
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
-.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload
+.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload seed-e2e-users
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -226,3 +226,8 @@ env-reload: ## Recréer la stack pour recharger toutes les variables d'environne
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Recréation des services (reload des variables d'environnement)…"
 	@$(COMPOSE) up -d --force-recreate
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Variables d'environnement rechargées sur la stack."
+
+seed-e2e-users: ## Créer ou rafraîchir les comptes E2E en base
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Seeding des comptes E2E…"
+	@$(COMPOSE) exec -T backend python manage.py seed_e2e_users
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Comptes E2E prêts."

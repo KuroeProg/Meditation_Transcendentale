@@ -39,7 +39,9 @@ Or from `transcendence/frontend/interface`:
 
 1. Copy `.env.e2e.example` to `.env.e2e` and fill the real test accounts.
 2. Install dependencies in `transcendence/frontend/interface`.
-3. Install Playwright browser:
+3. Create or refresh E2E users in DB:
+  - `make seed-e2e-users`
+4. Install Playwright browser:
    - `npx playwright install chromium`
 
 ## Notes
