@@ -179,3 +179,6 @@ Create and implement the first 5 critical business scenarios in this order:
 3) friend invite accept -> game
 4) profile edit persistence
 5) avatar upload success/failure boundary
+
+Execution backlog prepared in:
+- docs/e2e/FRONTEND_E2E_TASKS.md
