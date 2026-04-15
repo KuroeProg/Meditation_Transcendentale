@@ -9,7 +9,7 @@ import { deriveCoalitionPresentation, deriveCursusLevel } from '../services/prof
 import { get42AvatarUrl } from '../../../utils/sessionUser.js'
 import GameStatsSummarySection from '../../stats/components/GameStatsSummarySection.jsx'
 
-function EditableField({ value, onSave, label, placeholder, multiline = false }) {
+function EditableField({ value, onSave, label, placeholder, multiline = false, testId = null }) {
 	const [editing, setEditing] = useState(false)
 	const [draft, setDraft] = useState(value || '')
 	const inputRef = useRef(null)
@@ -27,6 +27,7 @@ function EditableField({ value, onSave, label, placeholder, multiline = false })
 		return (
 			<span
 				className="profile-editable"
+				data-testid={testId ? `${testId}-display` : undefined}
 				onClick={() => { setDraft(value || ''); setEditing(true) }}
 				title={`Cliquer pour modifier ${label}`}
 			>
@@ -41,6 +42,7 @@ function EditableField({ value, onSave, label, placeholder, multiline = false })
 			<textarea
 				ref={inputRef}
 				className="profile-edit-input profile-edit-textarea"
+				data-testid={testId ? `${testId}-input` : undefined}
 				value={draft}
 				onChange={(e) => setDraft(e.target.value)}
 				onBlur={commit}
@@ -55,6 +57,7 @@ function EditableField({ value, onSave, label, placeholder, multiline = false })
 		<input
 			ref={inputRef}
 			className="profile-edit-input"
+			data-testid={testId ? `${testId}-input` : undefined}
 			value={draft}
 			onChange={(e) => setDraft(e.target.value)}
 			onBlur={commit}
@@ -204,7 +207,7 @@ function Profile() {
 	}))
 
 	return (
-		<div className="page-shell">
+		<div className="page-shell" data-testid="profile-page">
 			<div className="page-header">
 				<h1 className="page-title">Profil</h1>
 			</div>
@@ -259,6 +262,7 @@ function Profile() {
 								onSave={(v) => updateField('username', v)}
 								label="pseudo"
 								placeholder="Pseudo"
+								testId="profile-username"
 							/>
 						</p>
 						{email && <p className="muted small profile-email"><strong>Email :</strong> {email}</p>}
@@ -269,6 +273,7 @@ function Profile() {
 								label="bio"
 								placeholder="Ajouter une bio..."
 								multiline
+								testId="profile-bio"
 							/>
 						</p>
 					</div>

@@ -42,8 +42,8 @@ export default function ChatDrawer({ isOpen, onClose, initialConversation = null
 	if (!isOpen) return null
 
 	return (
-		<div className="chat-drawer-overlay" onClick={onClose}>
-			<aside className="chat-drawer" onClick={(e) => e.stopPropagation()}>
+		<div className="chat-drawer-overlay" onClick={onClose} data-testid="chat-drawer-overlay">
+			<aside className="chat-drawer" onClick={(e) => e.stopPropagation()} data-testid="chat-drawer">
 				<header className="chat-drawer-header">
 					{view !== 'conversations' && (
 						<button className="chat-drawer-back" type="button" onClick={handleBack}>
@@ -72,7 +72,7 @@ export default function ChatDrawer({ isOpen, onClose, initialConversation = null
 					</div>
 				</header>
 
-				<div className="chat-drawer-body">
+				<div className="chat-drawer-body" data-testid="chat-drawer-body">
 					{view === 'conversations' && (
 						<ConversationList
 							onSelect={handleSelectConversation}

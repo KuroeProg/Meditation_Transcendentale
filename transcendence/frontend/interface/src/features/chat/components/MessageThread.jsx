@@ -117,13 +117,13 @@ export default function MessageThread({ conversation, userId, username }) {
 		})
 	}, [conversation, openFriendInvite, hasOutgoingPendingInvite])
 
-	if (!conversation) return <div className="chat-empty">Selectionne une conversation</div>
+	if (!conversation) return <div className="chat-empty" data-testid="chat-thread-empty">Selectionne une conversation</div>
 
 	const other = conversation.participants?.[0]
 	const otherOnline = resolveUserOnline(other)
 
 	return (
-		<div className="chat-thread">
+		<div className="chat-thread" data-testid="chat-thread">
 			<div className="chat-thread-header">
 				<img className="chat-thread-avatar" src={other?.avatar || ''} alt="" />
 				<div className="chat-thread-info">
@@ -143,7 +143,7 @@ export default function MessageThread({ conversation, userId, username }) {
 				</button>
 			</div>
 
-			<div className="chat-thread-messages" ref={scrollRef}>
+			<div className="chat-thread-messages" ref={scrollRef} data-testid="chat-thread-messages">
 				{allMessages.map((msg) => (
 					<MessageBubble key={msg.id} msg={msg} isOwn={msg.sender?.id === userId} currentUserId={userId} />
 				))}
@@ -158,13 +158,14 @@ export default function MessageThread({ conversation, userId, username }) {
 				<input
 					ref={inputRef}
 					className="chat-input"
+					data-testid="chat-message-input"
 					type="text"
 					value={draft}
 					onChange={handleInput}
 					onKeyDown={handleKeyDown}
 					placeholder="Ecrire un message..."
 				/>
-				<button className="chat-send-btn" type="button" onClick={handleSend} disabled={!draft.trim()}>
+				<button className="chat-send-btn" type="button" onClick={handleSend} disabled={!draft.trim()} data-testid="chat-send-button">
 					<i className="ri-send-plane-2-fill" />
 				</button>
 			</div>

@@ -169,7 +169,7 @@ export default function Dashboard() {
 	const catMeta = CATEGORY_META[selectedCategory]
 
 	return (
-		<div className={`dashboard-v2 dashboard-coalition-${coalitionSlug}`}>
+		<div className={`dashboard-v2 dashboard-coalition-${coalitionSlug}`} data-testid="dashboard-page">
 			{/* Hero Banner */}
 			<section className="dash-hero">
 				<div className="dash-hero-bg" />
@@ -240,7 +240,7 @@ export default function Dashboard() {
 						</button>
 					</div>
 
-					<button className="dash-start-btn" type="button" onClick={startSearch}>
+					<button className="dash-start-btn" type="button" onClick={startSearch} data-testid="dashboard-start-matchmaking">
 						Commencer la partie
 					</button>
 				</section>
@@ -305,15 +305,15 @@ export default function Dashboard() {
 
 			{/* Matchmaking Modal */}
 			{searching && (
-				<div className="dash-mm-overlay" role="dialog" aria-modal="true" aria-label="Recherche de partie">
+				<div className="dash-mm-overlay" role="dialog" aria-modal="true" aria-label="Recherche de partie" data-testid="matchmaking-modal">
 					<div className="dash-mm-card">
 						<div className="dash-mm-spinner" aria-hidden="true" />
 						<h3>Recherche d'un adversaire...</h3>
 						<p className="dash-mm-preset">{selectedTC.label} — {isCompetitive ? 'Classée' : 'Amicale'}</p>
 						<p>{statusMessage}</p>
-						<p className="dash-mm-queue">Joueurs en file : {queueSize}</p>
+						<p className="dash-mm-queue" data-testid="matchmaking-queue-size">Joueurs en file : {queueSize}</p>
 						{socketError && <p className="dash-mm-error">{socketError}</p>}
-						<button className="dash-mm-cancel" type="button" onClick={cancelSearch}>Annuler</button>
+						<button className="dash-mm-cancel" type="button" onClick={cancelSearch} data-testid="matchmaking-cancel">Annuler</button>
 					</div>
 				</div>
 			)}
