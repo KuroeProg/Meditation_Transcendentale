@@ -257,6 +257,7 @@ services:
       - ./nginx/certs:/etc/nginx/certs:ro
       # .htpasswd pour prometheus
       - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
+      - ./nginx/modsec/api-rules.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSIONS.conf:ro
     restart: always
     logging: *default-logging
     networks:
