@@ -32,6 +32,26 @@ services:
       retries: 20
       start_period: 45s
 
+  # vault:
+  #   image: hashicorp/vault:latest
+  #   container_name: vault_server
+  #   restart: always
+  #   ports:
+  #     - "127.0.0.1:8202:8202"
+  #   environment:
+  #     - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
+  #     - VAULT_LOCAL_CONFIG='{"listener":[{"tcp":{"address":"0.0.0.0:8202","tls_disable":0,"tls_cert_file":"/vault/certs/nginx.crt","tls_key_file":"/vault/certs/nginx.key"}}], "disable_mlock": true}'
+  #   # cap_add:
+  #   #   - IPC_LOCK
+  #   #   - SETFCAP
+  #   logging: *default-logging
+  #   networks:
+  #     monitor_net :
+  #         aliases:
+  #           - vault
+  #   volumes:
+  #     - ./nginx/certs:/vault/certs
+
   vault:
     image: hashicorp/vault:latest
     container_name: vault_server
@@ -39,13 +59,25 @@ services:
     ports:
       - "127.0.0.1:8202:8202"
     environment:
-      - VAULT_DEV_ROOT_TOKEN_ID=${VAULT_ROOT_TOKEN}
-      - VAULT_LOCAL_CONFIG={"listener":[{"tcp":{"address":"0.0.0.0:8202","tls_disable":0,"tls_cert_file":"/vault/certs/nginx.crt","tls_key_file":"/vault/certs/nginx.key"}}]}
-    cap_add:
-      - IPC_LOCK
+      VAULT_DEV_ROOT_TOKEN_ID: ${VAULT_ROOT_TOKEN}
+      SKIP_SETCAP: "true"
+      VAULT_LOCAL_CONFIG: >
+        {
+          "listener": [{
+            "tcp": {
+              "address": "0.0.0.0:8202",
+              "tls_disable": 0,
+              "tls_cert_file": "/vault/certs/nginx.crt",
+              "tls_key_file": "/vault/certs/nginx.key"
+            }
+          }],
+          "disable_mlock": true
+        }
     logging: *default-logging
     networks:
-      - monitor_net
+      monitor_net:
+        aliases:
+          - vault
     volumes:
       - ./nginx/certs:/vault/certs
   
@@ -86,6 +118,7 @@ services:
     volumes:
       - ./backend:/app
       - shared_assets:/app/shared_plots:ro
+      - ./nginx/certs:/app/certs:ro
     environment:
       - DB_NAME=${POSTGRES_DB}
       - DB_USER=${POSTGRES_USER}
@@ -108,7 +141,7 @@ services:
       - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
-      - VAULT_ADDR=http://vault:8202
+      - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
     # ports:
     # A voir avec Cloe

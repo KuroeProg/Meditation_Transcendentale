@@ -14,6 +14,9 @@ import os
 import hvac
 from pathlib import Path
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 
 def _env_bool(name, default=False):
     raw = os.environ.get(name)
@@ -154,6 +157,7 @@ email_password = ''
 
 if vault_token:
     try:
+        # cert_path = '/app/certs/nginx.crt'
         client = hvac.Client(url=vault_url, token=vault_token, verify=False)
         read_response = client.secrets.kv.v2.read_secret_version(path='database')
         secrets = read_response['data']['data']
