@@ -24,6 +24,7 @@ from game.services.clock import (
 )
 from game.services.game_state import (
 	ensure_draw_fields,
+	calculate_material_advantage,
 )
 from game.services.payloads import (
 	build_group_game_state_event,
@@ -184,8 +185,13 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
+		time_control = data.get('time_control', 600)
+		increment = data.get('increment', 0)
 
-		new_game_state = await build_new_game_state(white_id, black_id)
+		now = time.time()
+		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)
+		new_game_state['last_move_timestamp'] = now
+		new_game_state['turn_start_timestamp'] = now
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		await self._broadcast_current_game_state(new_game_state)
 
@@ -197,7 +203,7 @@ class GameConsumer(AsyncWebsocketConsumer):
  
 		board = chess.Board(game_state['fen'])
 		move_number = len(game_state.get('moves', [])) + 1
-		move_start_time = game_state['last_move_timestamp']	
+		move_start_time = game_state.get('turn_start_timestamp', game_state.get('last_move_timestamp', time.time()))
 		pieces = {"p": "pawn", "n": "knight", "b": "bishop", "r": "rook", "q": "queen", "k": "king"}
 		now_ts = time.time()
 		ensure_clock_fields(game_state, now_ts)
@@ -215,7 +221,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 				'player_black_id': game_state['black_player_id'],
 				'winner_id': winner_id,
 				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'time_control': game_state.get('time_control', 0),
+				'increment': game_state.get('increment', 0),
+				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
 				'moves': game_state.get('moves', [])
 			}
 	
@@ -231,44 +239,47 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
 			return
 
+		# --- IDENTIFICATION DE LA PIÈCE (AVANT APPLICATION DU COUP) ---
+		move = chess.Move.from_uci(data.get('move'))
+		piece = board.piece_at(move.from_square)
+		piece_symbol = piece.symbol().lower() if piece else "unknown"
+
+		# On applique le mouvement
 		success, error = apply_play_move(game_state, data.get('player_id'), data.get('move'))
 		if not success:
 			await self.send(text_data=json.dumps({'error': error}))
 			return
+		
+		# Après le coup, on évalue l'avantage matériel sur le nouvel état
+		final_board = chess.Board(game_state['fen'])
+		advantage = calculate_material_advantage(final_board)
 
-		# On traque le mouvement AVANT de sauvegarder dans Redis !
-		move = chess.Move.from_uci(data.get('move'))
-		piece = board.piece_at(move.from_square)
-		piece_symbol = piece.symbol().lower()
+		# On traque le mouvement
 		move_obj = {
-			'player_id': data.get('player_id'),
+			'player_id': str(data.get('player_id')),
 			'move_number': move_number,
 			'san_notation': data.get('move'),
 			'piece_played': pieces.get(piece_symbol, "unknown"),
 			'time_taken_ms': int((time.time() - move_start_time) * 1000),
-			'material_advantage': 0
+			'material_advantage': advantage
 		}
+		print(f"DEBUG: Coup {move_number} enregistré pour {move_obj['player_id']} - Temps: {move_obj['time_taken_ms']}ms")
 		game_state.setdefault('moves', []).append(move_obj)
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		
-		if board.is_game_over():
-			result = board.result()
-			if result.winner == chess.WHITE:
-				winner_id = game_state['white_player_id']
-			elif result.winner == chess.BLACK:
-				winner_id = game_state['black_player_id']
-			else:
-				winner_id = None
+		if game_state.get('status') not in (None, 'active'):
 
 			final_game_data = {
 				'player_white_id': game_state['white_player_id'],
 				'player_black_id': game_state['black_player_id'],
-				'winner_id': winner_id,
+				'winner_id': game_state.get('winner_player_id'),
 				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'time_control': game_state.get('time_control', 0),
+				'increment': game_state.get('increment', 0),
+				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
 				'moves': game_state.get('moves', [])
 			}
 	
@@ -300,7 +311,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 			'player_white_id': game_state['white_player_id'],
 			'player_black_id': game_state['black_player_id'],
 			'winner_id': winner_id,
-			'duration_seconds': int(time.time() - game_state['start_timestamp']),
+			'start_timestamp': game_state['start_timestamp'],
+			'time_control': game_state.get('time_control', 0),
+			'increment': game_state.get('increment', 0),
+			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
 			'moves': game_state.get('moves', [])
    		}
 
@@ -350,7 +364,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 				'player_black_id': game_state['black_player_id'],
 				'winner_id': None,
 				'start_timestamp': game_state['start_timestamp'],
-				'duration_seconds': int(time.time() - game_state['start_timestamp']),
+				'time_control': game_state.get('time_control', 0),
+				'increment': game_state.get('increment', 0),
+				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
 				'moves': game_state.get('moves', [])
 			}
 			success = await async_save_full_game(final_game_data)

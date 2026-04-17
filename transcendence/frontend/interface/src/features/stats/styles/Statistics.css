@@ -333,19 +333,38 @@ html[data-reduce-motion='true'] .pstats-page {
 .pstats-metrics__row {
 	display: flex;
 	justify-content: space-between;
-	align-items: baseline;
-	padding: 0.4rem 0.7rem;
+	align-items: center;
+	padding: 0.45rem 0.7rem;
 	gap: 0.5rem;
+	position: relative;
 }
 
 .pstats-metrics__row--even {
 	background: rgba(255,255,255,0.02);
 }
 
+.pstats-metrics__key-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	flex: 1;
+}
+
 .pstats-metrics__key {
 	font-size: 0.62rem;
 	color: rgba(255,255,255,0.7);
 	line-height: 1.35;
+}
+
+.pstats-metrics__help-trigger {
+	font-size: 0.7rem;
+	color: rgba(255,255,255,0.15);
+	cursor: inherit;
+	transition: color 0.15s;
+}
+
+.pstats-metrics__row:hover .pstats-metrics__help-trigger {
+	color: var(--pstats-accent);
 }
 
 .pstats-metrics__val {
@@ -355,6 +374,64 @@ html[data-reduce-motion='true'] .pstats-page {
 	white-space: nowrap;
 	text-align: right;
 	font-variant-numeric: tabular-nums;
+	background: rgba(255,255,255,0.04);
+	padding: 0.15rem 0.35rem;
+	border-radius: 4px;
+}
+
+/* ── Help Tooltip ── */
+.pstats-help-tooltip {
+	position: absolute;
+	bottom: 85%;
+	left: 1rem;
+	width: clamp(160px, 80%, 220px);
+	background: rgba(13, 17, 23, 0.96);
+	backdrop-filter: blur(12px);
+	border: 1px solid rgba(255,255,255,0.15);
+	border-radius: 8px;
+	padding: 0.55rem 0.65rem;
+	font-size: 0.58rem;
+	line-height: 1.45;
+	color: rgba(255,255,255,0.9);
+	box-shadow: 0 10px 40px rgba(0,0,0,0.6);
+	z-index: 100;
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+	transition: all 0.2s cubic-bezier(0.23, 1, 0.32, 1);
+	transform: translateY(4px);
+}
+
+.pstats-metrics__row:hover .pstats-help-tooltip {
+	opacity: 1;
+	visibility: visible;
+	transform: translateY(0);
+}
+
+/* ── Correction Clipping Haut : Tooltips vers le bas pour les premières lignes ── */
+.pstats-metrics__row:nth-child(-n+5) .pstats-help-tooltip {
+	bottom: auto;
+	top: 85%;
+	transform: translateY(-4px);
+}
+
+.pstats-metrics__row:nth-child(-n+5):hover .pstats-help-tooltip {
+	transform: translateY(0);
+}
+
+.pstats-help-tooltip__desc {
+	display: block;
+}
+
+.pstats-help-tooltip__title {
+	display: block;
+	font-weight: 700;
+	color: var(--pstats-accent);
+	margin-bottom: 0.25rem;
+	border-bottom: 1px solid rgba(255,255,255,0.08);
+	padding-bottom: 0.2rem;
+	text-transform: uppercase;
+	font-size: 0.52rem;
 }
 
 /* ──────────────────────────────────────────────────

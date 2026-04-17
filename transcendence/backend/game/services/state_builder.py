@@ -27,6 +27,7 @@ async def build_new_game_state(white_id, black_id, time_control, increment):
 		'black_player_profile': black_profile,
 		'white_time_left': time_control,
 		'black_time_left': time_control,
+		'time_total': time_control,
 		'increment': increment,
 		'last_move_timestamp': time.time(),
 		'start_timestamp': time.time(),

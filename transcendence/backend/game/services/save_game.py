@@ -30,7 +30,7 @@ def save_game_data_atomically(game_data: dict) -> bool:
             # 1.5 Calcul de la date de debut
             start_ts = game_data.get('start_timestamp')
             if start_ts:
-                start_dt = datetime.datetime.fromtimestamp(start_ts, tz=timezone.utc)
+                start_dt = datetime.datetime.fromtimestamp(start_ts, tz=datetime.timezone.utc)
             else:
                 start_dt = timezone.now()
 
@@ -40,6 +40,8 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 player_black=black_user,
                 winner=winner_user,
                 duration_seconds=game_data.get('duration_seconds', 0),
+                time_control=game_data.get('time_control', 600),
+                increment=game_data.get('increment', 0),
                 started_at=start_dt,
             )
             

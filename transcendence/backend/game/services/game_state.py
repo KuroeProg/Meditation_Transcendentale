@@ -71,3 +71,24 @@ def update_game_status(game_state, board):
 	game_state['status'] = 'active'
 	game_state['winner_player_id'] = None
 	game_state['result'] = '*'
+
+
+def calculate_material_advantage(board):
+	"""Calculate material difference between white and black.
+	
+	Returns (Sum White Values - Sum Black Values).
+	Values: P=1, N=3, B=3, R=5, Q=9. King has no relative capture value.
+	"""
+	import chess
+	piece_values = {
+		chess.PAWN: 1,
+		chess.KNIGHT: 3,
+		chess.BISHOP: 3,
+		chess.ROOK: 5,
+		chess.QUEEN: 9
+	}
+	advantage = 0
+	for piece_type, value in piece_values.items():
+		advantage += len(board.pieces(piece_type, chess.WHITE)) * value
+		advantage -= len(board.pieces(piece_type, chess.BLACK)) * value
+	return advantage

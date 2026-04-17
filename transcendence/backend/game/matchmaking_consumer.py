@@ -4,6 +4,8 @@ Handles queue join/leave and broadcasts match_found events.
 Delegates queue management to services.
 """
 import json
+from asgiref.sync import sync_to_async
+from game.services.elasticsearch_service import get_player_stats
 import redis.asyncio as redis
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
@@ -99,6 +101,8 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			await self.handle_join_queue(data)
 		elif action == 'leave_queue':
 			await self.handle_leave_queue(data)
+		elif action == 'get_stats':
+			await self.handle_get_stats(data)
 		else:
 			await self.send(text_data=json.dumps(action_unknown()))
 
@@ -147,6 +151,26 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			)
 		if self.matchmaking_player_id == player_id:
 			self.matchmaking_player_id = None
+
+	async def handle_get_stats(self, data):
+		"""Retrieve and return player statistics from Elasticsearch."""
+		# 1. Retrieve and verify the player ID sent by the frontend
+		player_id = normalize_player_id(data.get('player_id'))
+		if player_id is None:
+			await self.send(text_data=json.dumps({'error': 'Player ID is required'}))
+			return
+			
+		# 2. Query Elasticsearch (wrapping the synchronous method to avoid blocking the WebSocket)
+		print(f"CQRS : Demande de stats reçue pour le joueur {player_id}")
+		stats = await sync_to_async(get_player_stats)(player_id)
+		
+		# 3. Send the result back to the frontend
+		print(f"CQRS : Envoi des stats à {player_id} : {stats}")
+		await self.send(text_data=json.dumps({
+			'action': 'player_stats',
+			'player_id': player_id,
+			'stats': stats
+		}))
 
 	async def broadcast_matchmaking_event(self, event):
 		"""Send matchmaking event to this WebSocket client (called by group_send)."""
