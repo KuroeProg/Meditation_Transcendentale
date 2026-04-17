@@ -126,6 +126,7 @@ services:
       - DB_HOST=db
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       - FORTYTWO_CLIENT_ID=${FORTYTWO_CLIENT_ID}
       - FORTYTWO_CLIENT_SECRET=${FORTYTWO_CLIENT_SECRET}
       - FORTYTWO_REDIRECT_URI=${FORTYTWO_REDIRECT_URI}
@@ -356,6 +357,7 @@ services:
     restart: always
     logging: *default-logging
     networks:
+      - backend_net
       - monitor_net
 
   kibana:
@@ -369,13 +371,14 @@ services:
       - ELASTICSEARCH_SSL_VERIFICATIONMODE=none # Since you use self-signed certs
       - SERVER_BASEPATH="/kibana"
       - SERVER_REWRITEBASEPATH="true"
-      - NODE_OPTIONS="--max-old-space-size=256" # Limite stricte pour l'interface web Kibana
+      - NODE_OPTIONS="--max-old-space-size=768" # Limite stricte pour l'interface web Kibana
     depends_on:
       - elasticsearch
     restart: always
     logging: *default-logging
     # On expose pas le port 5601 sur le net on passe par le 443
     networks:
+      - backend_net
       - monitor_net
 
   logstash:

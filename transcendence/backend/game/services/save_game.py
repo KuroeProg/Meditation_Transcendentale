@@ -37,7 +37,7 @@ def save_game_data_atomically(game_data: dict) -> bool:
             # 1.5 Calcul de la date de debut
             start_ts = game_data.get('start_timestamp')
             if start_ts:
-                start_dt = datetime.datetime.fromtimestamp(start_ts, tz=timezone.utc)
+                start_dt = datetime.datetime.fromtimestamp(start_ts, tz=datetime.timezone.utc)
             else:
                 start_dt = timezone.now()
 

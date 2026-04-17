@@ -40,10 +40,18 @@ def apply_play_move(game_state, sender_id, attempted_move):
 	if move not in board.legal_moves:
 		return False, 'Coup illégal'
 
+	increment = game_state.get('increment', 0)
+	if board.turn == chess.WHITE:
+		game_state['white_time_left'] += increment
+	else:
+		game_state['black_time_left'] += increment
+
 	board.push(move)
 	game_state['fen'] = board.fen()
 	game_state['last_move_uci'] = attempted_move
-	game_state['last_move_timestamp'] = time.time()
+	now = time.time()
+	game_state['last_move_timestamp'] = now
+	game_state['turn_start_timestamp'] = now
 	clear_draw_offer(game_state)
 	update_game_status(game_state, board)
 	return True, None
