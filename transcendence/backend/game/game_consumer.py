@@ -9,6 +9,7 @@ import contextlib
 import chess
 import time
 import redis.asyncio as redis
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
 from django.conf import settings
 from game.services.actions import (
@@ -20,6 +21,7 @@ from game.services.actions import (
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_realtime_clock_enabled,
 	mark_timeout_if_needed,
 )
 from game.services.game_state import (
@@ -81,23 +83,58 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		# Reconnecting client: sync state immediately
 		game_state_json = await self.get_redis().get(self.game_id)
+		game_state = None
 		if game_state_json is not None:
+			game_state = json.loads(game_state_json)
 			await self.handle_reconnect(game_state_json)
 
-		self.clock_task = asyncio.create_task(self._clock_loop())
+		await self._sync_clock_task(game_state)
 
 	async def disconnect(self, close_code):
 		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+		await self._stop_clock_task()
 
+	async def _stop_clock_task(self):
+		"""Stop background clock task if it is currently running."""
 		if self.clock_task is not None:
 			self.clock_task.cancel()
 			with contextlib.suppress(asyncio.CancelledError):
 				await self.clock_task
 			self.clock_task = None
 
+	async def _sync_clock_task(self, game_state):
+		"""Start or stop per-second ticking depending on cadence metadata."""
+		should_run = game_state is None or is_realtime_clock_enabled(game_state)
+		if should_run and self.clock_task is None:
+			self.clock_task = asyncio.create_task(self._clock_loop())
+		elif not should_run:
+			await self._stop_clock_task()
+
 	async def _broadcast_current_game_state(self, game_state):
 		"""Broadcast game state to all connected clients in the game group."""
 		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
+
+	async def _close_invite_joinability(self, reason='game_finished'):
+		closed_invites = await _close_invite_joinability_for_game(self.game_id, reason)
+		for invite in closed_invites:
+			payload = {
+				'action': 'invite_updated',
+				'invite': invite,
+			}
+			await self.channel_layer.group_send(
+				f"user_{int(invite['sender_id'])}",
+				{
+					'type': 'notification',
+					'data': payload,
+				},
+			)
+			await self.channel_layer.group_send(
+				f"user_{int(invite['receiver_id'])}",
+				{
+					'type': 'notification',
+					'data': payload,
+				},
+			)
 
 	async def _tick_game_clock(self):
 		"""Apply one second of time decay and detect timeouts."""
@@ -128,6 +165,32 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
 			return None
 		return json.loads(game_state_json)
+
+	def _build_final_game_data(self, game_state, winner_id, termination_reason):
+		"""Build normalized payload for final game persistence."""
+		start_timestamp = game_state.get('start_timestamp', time.time())
+		if winner_id == game_state.get('white_player_id'):
+			game_result = 'white'
+		elif winner_id == game_state.get('black_player_id'):
+			game_result = 'black'
+		else:
+			game_result = 'draw'
+		return {
+			'player_white_id': game_state['white_player_id'],
+			'player_black_id': game_state['black_player_id'],
+			'winner_id': winner_id,
+			'game_result': game_result,
+			'start_timestamp': start_timestamp,
+			'duration_seconds': int(time.time() - start_timestamp),
+			'time_control_seconds': int(game_state.get('time_control_seconds', 600)),
+			'increment_seconds': int(game_state.get('increment_seconds', game_state.get('increment', 0))),
+			'time_category': game_state.get('time_category', 'rapid'),
+			'is_competitive': bool(game_state.get('is_competitive', False)),
+			'is_rated': bool(game_state.get('is_rated', game_state.get('is_competitive', False))),
+			'game_mode': game_state.get('game_mode', 'standard'),
+			'termination_reason': termination_reason,
+			'moves': game_state.get('moves', []),
+		}
 
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
 		"""Route action to appropriate handler based on action type."""
@@ -188,11 +251,15 @@ class GameConsumer(AsyncWebsocketConsumer):
 		time_control = data.get('time_control', 600)
 		increment = data.get('increment', 0)
 
-		now = time.time()
-		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)
-		new_game_state['last_move_timestamp'] = now
-		new_game_state['turn_start_timestamp'] = now
+#		now = time.time()
+#		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)
+#		new_game_state['last_move_timestamp'] = now
+#		new_game_state['turn_start_timestamp'] = now
+		competitive = bool(data.get('competitive', False))
+
+		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
+		await self._sync_clock_task(new_game_state)
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
@@ -214,18 +281,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if mark_timeout_if_needed(game_state, board):
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
 			await self._broadcast_current_game_state(game_state)
+			await self._close_invite_joinability('game_finished')
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': winner_id,
-				'start_timestamp': game_state['start_timestamp'],
-				'time_control': game_state.get('time_control', 0),
-				'increment': game_state.get('increment', 0),
-				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-				'moves': game_state.get('moves', [])
-			}
+	#		final_game_data = {
+	#			'player_white_id': game_state['white_player_id'],
+	#			'player_black_id': game_state['black_player_id'],
+	#			'winner_id': winner_id,
+	#			'start_timestamp': game_state['start_timestamp'],
+	#			'time_control': game_state.get('time_control', 0),
+	#			'increment': game_state.get('increment', 0),
+	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
+	#			'moves': game_state.get('moves', [])
+	#		}
+			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
 	
 			success = await async_save_full_game(final_game_data)
 			if success:
@@ -270,20 +339,33 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		
-		if game_state.get('status') not in (None, 'active'):
+	#	if game_state.get('status') not in (None, 'active'):
 
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': game_state.get('winner_player_id'),
-				'start_timestamp': game_state['start_timestamp'],
-				'time_control': game_state.get('time_control', 0),
-				'increment': game_state.get('increment', 0),
-				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-				'moves': game_state.get('moves', [])
-			}
+	#		final_game_data = {
+	#			'player_white_id': game_state['white_player_id'],
+	#			'player_black_id': game_state['black_player_id'],
+	#			'winner_id': game_state.get('winner_player_id'),
+	#			'start_timestamp': game_state['start_timestamp'],
+	#			'time_control': game_state.get('time_control', 0),
+	#			'increment': game_state.get('increment', 0),
+	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
+	#			'moves': game_state.get('moves', [])
+		#	}
+
+		updated_board = chess.Board(game_state['fen'])
+		if updated_board.is_game_over():
+			outcome = updated_board.outcome()
+			if outcome and outcome.winner == chess.WHITE:
+				winner_id = game_state['white_player_id']
+			elif outcome and outcome.winner == chess.BLACK:
+				winner_id = game_state['black_player_id']
+			else:
+				winner_id = None
+
+			final_game_data = self._build_final_game_data(game_state, winner_id, 'checkmate_or_draw')
 	
 			success = await async_save_full_game(final_game_data)
+			await self._close_invite_joinability('game_finished')
 			if success:
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
@@ -307,18 +389,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 ##########################
 		winner_id = game_state.get('winner_player_id')
 
-		final_game_data = {
-			'player_white_id': game_state['white_player_id'],
-			'player_black_id': game_state['black_player_id'],
-			'winner_id': winner_id,
-			'start_timestamp': game_state['start_timestamp'],
-			'time_control': game_state.get('time_control', 0),
-			'increment': game_state.get('increment', 0),
-			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-			'moves': game_state.get('moves', [])
-   		}
+	#	final_game_data = {
+	#		'player_white_id': game_state['white_player_id'],
+	#		'player_black_id': game_state['black_player_id'],
+	#		'winner_id': winner_id,
+	#		'start_timestamp': game_state['start_timestamp'],
+	#		'time_control': game_state.get('time_control', 0),
+	#		'increment': game_state.get('increment', 0),
+	#		'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
+	#		'moves': game_state.get('moves', [])
+  # 		}
+		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
 
 		success = await async_save_full_game(final_game_data)
+		await self._close_invite_joinability('game_finished')
 		if success:
 			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 		else:
@@ -359,17 +443,19 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		if game_state.get('status') == 'draw':
-			final_game_data = {
-				'player_white_id': game_state['white_player_id'],
-				'player_black_id': game_state['black_player_id'],
-				'winner_id': None,
-				'start_timestamp': game_state['start_timestamp'],
-				'time_control': game_state.get('time_control', 0),
-				'increment': game_state.get('increment', 0),
-				'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-				'moves': game_state.get('moves', [])
-			}
+	#		final_game_data = {
+	#			'player_white_id': game_state['white_player_id'],
+	#			'player_black_id': game_state['black_player_id'],
+	#			'winner_id': None,
+	#			'start_timestamp': game_state['start_timestamp'],
+	#			'time_control': game_state.get('time_control', 0),
+	#			'increment': game_state.get('increment', 0),
+	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
+	#			'moves': game_state.get('moves', [])
+	#		}
+			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
 			success = await async_save_full_game(final_game_data)
+			await self._close_invite_joinability('game_finished')
 			if success:
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
@@ -387,3 +473,35 @@ class GameConsumer(AsyncWebsocketConsumer):
 	async def broadcast_game_state(self, event):
 		"""Send game state to this WebSocket client (called by group_send)."""
 		await self.send(text_data=json.dumps(build_ws_game_state_payload(event['game_state'], event['action'])))
+
+
+@database_sync_to_async
+def _close_invite_joinability_for_game(game_id, reason='game_finished'):
+	from chat.models import GameInvite
+
+	closed = []
+	invites = GameInvite.objects.filter(
+		game_id=str(game_id),
+		status=GameInvite.STATUS_ACCEPTED,
+	).select_related('source_message')
+
+	for invite in invites:
+		invite.cancel_reason = reason
+		invite.game_id = None
+		invite.save(update_fields=['cancel_reason', 'game_id', 'updated_at'])
+
+		msg = invite.source_message
+		if msg is not None:
+			try:
+				content_obj = json.loads(msg.content)
+			except (TypeError, ValueError, json.JSONDecodeError):
+				content_obj = {}
+			content_obj['invite_status'] = invite.status
+			content_obj['cancel_reason'] = invite.cancel_reason
+			content_obj['game_id'] = None
+			msg.content = json.dumps(content_obj)
+			msg.save(update_fields=['content'])
+
+		closed.append(invite.to_dict())
+
+	return closed

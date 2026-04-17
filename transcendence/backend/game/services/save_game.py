@@ -5,6 +5,12 @@ from asgiref.sync import sync_to_async
 import datetime
 from django.utils import timezone
 from game.services.elasticsearch_service import index_game_result
+from game.services.rating import (
+    compute_elo_delta,
+    get_game_score,
+    get_rating_field,
+    normalize_time_category,
+)
 
 # =====================================================================
 # Fonction Synchrone et Atomique (à utiliser depuis des Vues ou Consumers)
@@ -24,6 +30,7 @@ def save_game_data_atomically(game_data: dict) -> bool:
             white_user = LocalUser.objects.get(id=game_data['player_white_id'])
             black_user = LocalUser.objects.get(id=game_data['player_black_id'])
             winner_user = None
+            game_result = game_data.get('game_result')
             if game_data.get('winner_id'):
                 winner_user = LocalUser.objects.get(id=game_data['winner_id'])
             
@@ -40,10 +47,39 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 player_black=black_user,
                 winner=winner_user,
                 duration_seconds=game_data.get('duration_seconds', 0),
-                time_control=game_data.get('time_control', 600),
-                increment=game_data.get('increment', 0),
+                time_control_seconds=game_data.get('time_control_seconds'),
+                increment_seconds=game_data.get('increment_seconds', 0),
+                time_category=game_data.get('time_category', 'rapid'),
+                is_competitive=bool(game_data.get('is_competitive', False)),
+                is_rated=bool(game_data.get('is_rated', False)),
+                game_mode=game_data.get('game_mode', 'standard'),
+                termination_reason=game_data.get('termination_reason', ''),
                 started_at=start_dt,
             )
+
+            game_category = normalize_time_category(game.time_category)
+            rating_field = get_rating_field(game_category)
+            white_score = get_game_score(game_result, white_user.id, white_user.id, black_user.id)
+            black_score = get_game_score(game_result, black_user.id, white_user.id, black_user.id)
+
+            white_user.games_played += 1
+            black_user.games_played += 1
+
+            if game_data.get('winner_id') == white_user.id:
+                white_user.games_won += 1
+            elif game_data.get('winner_id') == black_user.id:
+                black_user.games_won += 1
+
+            if game.is_competitive or game.is_rated:
+                white_rating = getattr(white_user, rating_field)
+                black_rating = getattr(black_user, rating_field)
+                white_delta = compute_elo_delta(white_rating, black_rating, white_score)
+                black_delta = compute_elo_delta(black_rating, white_rating, black_score)
+                setattr(white_user, rating_field, max(0, int(white_rating) + white_delta))
+                setattr(black_user, rating_field, max(0, int(black_rating) + black_delta))
+
+            white_user.save(update_fields=['games_played', 'games_won', rating_field])
+            black_user.save(update_fields=['games_played', 'games_won', rating_field])
             
             # Si nécessaire vous pourriez aussi overwrite started_at via game_data['started_at'] ici
             

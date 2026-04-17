@@ -1,9 +1,26 @@
 import { useState, useEffect, useRef } from 'react'
 
-function formatTime(seconds) {
-	const minutes = String(Math.floor(seconds / 60)).padStart(2, '0')
-	const secondsLeft = String(seconds % 60).padStart(2, '0')
-	return `${minutes}:${secondsLeft}`
+function formatDuration(totalSeconds) {
+	const safeSeconds = Math.max(0, Math.floor(Number(totalSeconds) || 0))
+	const days = Math.floor(safeSeconds / 86400)
+	const hours = Math.floor((safeSeconds % 86400) / 3600)
+	const minutes = Math.floor((safeSeconds % 3600) / 60)
+	const seconds = safeSeconds % 60
+
+	const paddedMinutes = String(minutes).padStart(2, '0')
+	const paddedSeconds = String(seconds).padStart(2, '0')
+
+	if (days > 0) {
+		const paddedHours = String(hours).padStart(2, '0')
+		return `${days}j ${paddedHours}:${paddedMinutes}:${paddedSeconds}`
+	}
+
+	if (hours > 0) {
+		const paddedHours = String(hours).padStart(2, '0')
+		return `${paddedHours}:${paddedMinutes}:${paddedSeconds}`
+	}
+
+	return `${paddedMinutes}:${paddedSeconds}`
 }
 
 /**
@@ -49,7 +66,7 @@ export function useChessTimer(initialSeconds, isActive, onTimeOut, resetVersion 
 		}
 	}, [timeLeft])
 
-	return formatTime(timeLeft)
+	return formatDuration(timeLeft)
 }
 
 function toNumber(value, fallback = 0) {
@@ -74,8 +91,9 @@ export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed =
 		return () => window.clearInterval(id)
 	}, [gameState?.status, gameState?.last_move_timestamp])
 
-	const whiteBase = toNumber(gameState?.white_time_left, 600)
-	const blackBase = toNumber(gameState?.black_time_left, 600)
+	const fallbackClock = toNumber(gameState?.time_control_seconds, 600)
+	const whiteBase = toNumber(gameState?.white_time_left, fallbackClock)
+	const blackBase = toNumber(gameState?.black_time_left, fallbackClock)
 	const lastMoveTs = toNumber(gameState?.last_move_timestamp, nowMs / 1000)
 	let elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
 	// Avant le premier coup des blancs, pas de décompte du temps blanc (le chrono « démarre » au 1er coup).
@@ -97,7 +115,7 @@ export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed =
 	return {
 		whiteSeconds,
 		blackSeconds,
-		whiteTime: formatTime(Math.floor(whiteSeconds)),
-		blackTime: formatTime(Math.floor(blackSeconds)),
+		whiteTime: formatDuration(whiteSeconds),
+		blackTime: formatDuration(blackSeconds),
 	}
 }

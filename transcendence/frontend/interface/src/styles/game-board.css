@@ -8,9 +8,25 @@ html, body, #root {
 	overflow-x: hidden;
 }
 
-@media (min-width: 769px) {
-	html, body, #root {
+/* Ne pas bloquer le scroll des pages hors jeu (ex. profil) : overflow caché seulement sur l’écran partie */
+@media (min-width: 771px) {
+	html:has(.game-container),
+	body:has(.game-container),
+	#root:has(.game-container) {
 		overflow: hidden;
+		height: 100%;
+	}
+}
+
+/* Jeu en colonne (≤1175px) : le contenu dépasse souvent la hauteur — autoriser le défilement */
+@media (min-width: 771px) and (max-width: 1175px) {
+	html:has(.game-container),
+	body:has(.game-container),
+	#root:has(.game-container) {
+		overflow-x: hidden;
+		overflow-y: auto;
+		height: auto;
+		min-height: 100%;
 	}
 }
 
@@ -30,8 +46,8 @@ html, body, #root {
   align-items: stretch;
   justify-content: flex-start;
   width: 100%;
-  min-height: calc(100vh - 1.5rem);
-  max-height: 100vh;
+  min-height: calc(100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom));
+  max-height: calc(100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom));
   margin-left: 0;
   padding-left: 0;
   padding-right: 0;
@@ -165,14 +181,20 @@ html[data-reduce-motion='true'] .board-move-ghost {
   --board-frame-pad-y: 8px;
   /* .game-board-col : 2 × gap entre barre / cadre / barre */
   --game-board-col-gap-total: 0.8rem;
+  /* Marge sous le jeu : footer fixe (souvent 2 lignes) — aligné avec .main-content:has(.game-container) */
+  --game-footer-overscan: 0.4rem;
+  --game-main-pad-top: 0.75rem;
+  --game-main-pad-bottom: calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan));
   /*
     Colonnes coords (haut+bas) ≈ 2 × max(0.65rem, cell×0.3) ≤ ~0.075×board-size.
-    (100vh − chrome − cadre) / 1.082 garantit barres + plateau + lettres dans la hauteur utile.
+    (100dvh − padding page − chrome barres/cadre) / 1.082 : le timer ne passe pas sous le footer.
   */
   --board-size: min(
     calc(
-      (100vh - (var(--player-bar-height) * 2) - var(--board-frame-pad-y) - var(--game-board-col-gap-total)) /
-        1.082
+      (
+          100dvh - var(--game-main-pad-top) - var(--game-main-pad-bottom) -
+            (var(--player-bar-height) * 2) - var(--board-frame-pad-y) - var(--game-board-col-gap-total)
+        ) / 1.082
     ),
     calc(100vw - var(--sidebar-width) - 8rem)
   );
@@ -191,8 +213,12 @@ html[data-reduce-motion='true'] .board-move-ghost {
     --bottom-nav-height: 60px;
     /* .player-bar mobile : 44px — aligné avec la réserve verticale */
     --player-bar-height: 44px;
-    /* Gouttière fixe (évite la boucle board-size → cell → gutter) pour que plateau + lettres tiennent en largeur */
-    --board-coord-gutter: 0.4rem;
+    /*
+      Gouttière coords (a–h / 1–8) : 0.4rem collait au bord des cases ; on aligne
+      l’espace visuel sur le rendu « tablette » (max(0.65rem, cell×0.3)) sans boucle
+      de calcul en fixant un plancher + plafond en vw.
+    */
+    --board-coord-gutter: clamp(0.78rem, 3.6vw, 1.05rem);
     /*
       Chrome vertical page jeu : padding main-content (bas = nav) + barres + gaps flex + cadre.
       Les bandes coords sont absorbées par le facteur 1.082 (comme en desktop).
@@ -204,7 +230,7 @@ html[data-reduce-motion='true'] .board-move-ghost {
     );
     --board-size: min(
       calc((100vh - var(--game-mobile-chrome-y)) / 1.082),
-      calc(100vw - 0.85rem - 2 * var(--board-coord-gutter))
+      calc(100vw - 1rem - 2 * var(--board-coord-gutter))
     );
     --cell: calc(var(--board-size) / 8);
     --board-outer-width: calc(var(--board-size) + 2 * var(--board-coord-gutter));

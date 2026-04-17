@@ -5,6 +5,7 @@ import chess
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_realtime_clock_enabled,
 	mark_timeout_if_needed,
 )
 
@@ -25,6 +26,8 @@ async def tick_game_clock(redis_client, game_id, channel_name, channel_layer, ro
 
 	game_state = json.loads(game_state_json)
 	if game_state.get('status') != 'active':
+		return False
+	if not is_realtime_clock_enabled(game_state):
 		return False
 
 	now_ts = time.time()

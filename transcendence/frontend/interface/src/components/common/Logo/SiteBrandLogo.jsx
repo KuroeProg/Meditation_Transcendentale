@@ -10,16 +10,24 @@ export default function SiteBrandLogo({
 	alt = 'Transcendance',
 	decoding = 'async',
 	draggable = false,
+	onClick,
 }) {
-	return (
-		<span className={`site-brand-logo-wrap ${className ?? ''}`.trim()}>
-			<img
-				src={SITE_LOGO_URL}
-				className="site-brand-logo-img"
-				alt={alt}
-				decoding={decoding}
-				draggable={draggable}
-			/>
-		</span>
+	const wrapClass = `site-brand-logo-wrap ${className ?? ''}`.trim()
+	const img = (
+		<img
+			src={SITE_LOGO_URL}
+			className="site-brand-logo-img"
+			alt={alt}
+			decoding={decoding}
+			draggable={draggable}
+		/>
 	)
+	if (onClick) {
+		return (
+			<button type="button" className={wrapClass} onClick={onClick} aria-label={alt || 'Transcendance'}>
+				{img}
+			</button>
+		)
+	}
+	return <span className={wrapClass}>{img}</span>
 }

@@ -1,12 +1,33 @@
 """Chess clock management: time tracking, elapsed time application, timeout detection."""
 
 
+def is_realtime_clock_enabled(game_state):
+	"""Return True when game should run a per-second clock loop."""
+	if game_state.get('time_category') == 'correspondence':
+		return False
+
+	try:
+		time_control = int(game_state.get('time_control_seconds', 0) or 0)
+	except (TypeError, ValueError):
+		time_control = 0
+
+	if time_control >= 86400:
+		return False
+
+	return True
+
+
 def ensure_clock_fields(game_state, now_ts):
 	"""Ensure clock fields (time_left, last_move_timestamp) exist with defaults."""
+	default_time = game_state.get('time_control_seconds', 600)
+	try:
+		default_time = int(default_time)
+	except (TypeError, ValueError):
+		default_time = 600
 	if 'white_time_left' not in game_state:
-		game_state['white_time_left'] = 600
+		game_state['white_time_left'] = default_time
 	if 'black_time_left' not in game_state:
-		game_state['black_time_left'] = 600
+		game_state['black_time_left'] = default_time
 	if 'last_move_timestamp' not in game_state:
 		game_state['last_move_timestamp'] = now_ts
 

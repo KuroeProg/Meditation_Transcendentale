@@ -61,10 +61,25 @@ export function sendMessageHttp(conversationId, content, messageType = 'text') {
 	})
 }
 
-export function sendGameInviteHttp(conversationId, timeControl, competitive = false) {
+/** @param {object} body — time_control, competitive, time_seconds?, increment? */
+export function sendGameInviteHttp(conversationId, body) {
 	return jsonFetch(`${BASE}/conversations/${conversationId}/invite`, {
 		method: 'POST',
-		body: JSON.stringify({ time_control: timeControl, competitive }),
+		body: JSON.stringify(body),
+	})
+}
+
+export function cancelGameInviteHttp(inviteId, reason = 'manual_cancel') {
+	return jsonFetch(`${BASE}/invites/${inviteId}/cancel`, {
+		method: 'POST',
+		body: JSON.stringify({ reason }),
+	})
+}
+
+export function respondGameInviteHttp(inviteId, action) {
+	return jsonFetch(`${BASE}/invites/${inviteId}/respond`, {
+		method: 'POST',
+		body: JSON.stringify({ action }),
 	})
 }
 

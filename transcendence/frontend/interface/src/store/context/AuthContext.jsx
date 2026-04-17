@@ -1,4 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import {
+	getMockSessionUser,
+	isDevMockAuthEnabled,
+	maybeClearSortingHatStorageForMock,
+} from '../../mock/mockSessionUser.js'
+import { disableDevGuestPreview, isDevGuestPreviewActive } from '../../utils/devGuestPreview.js'
+import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
@@ -10,7 +17,7 @@ function readCookie(name) {
 }
 
 async function ensureCsrfCookie() {
-  await fetch('/api/auth/csrf', {
+  await fetch(AUTH_PATHS.csrf, {
     method: 'GET',
     credentials: 'include',
     headers: { Accept: 'application/json' },
@@ -25,6 +32,20 @@ async function safeJson(response) {
   }
 }
 
+function getWebSocketOrigin() {
+  const explicitWsOrigin = import.meta.env.VITE_WS_ORIGIN
+  const explicitApiOrigin = import.meta.env.VITE_API_ORIGIN
+  const appOrigin = import.meta.env.VITE_APP_ORIGIN
+  const baseOrigin = explicitWsOrigin || explicitApiOrigin || appOrigin || window.location.origin
+
+  if (baseOrigin.startsWith('https://')) return baseOrigin.replace('https://', 'wss://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('http://')) return baseOrigin.replace('http://', 'ws://').replace(/\/$/, '')
+  if (baseOrigin.startsWith('wss://') || baseOrigin.startsWith('ws://')) return baseOrigin.replace(/\/$/, '')
+
+  const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws'
+  return `${protocol}://${window.location.host}`
+}
+
 const AuthContext = createContext()
 
 export function AuthProvider({ children }) {
@@ -32,6 +53,10 @@ export function AuthProvider({ children }) {
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState(null)
   const [twoFactorChallenge, setTwoFactorChallenge] = useState(null)
+  const [presenceByUserId, setPresenceByUserId] = useState({})
+  const [outgoingPendingInvite, setOutgoingPendingInvite] = useState(null)
+  const [priorityGameReady, setPriorityGameReady] = useState(null)
+  const [inviteById, setInviteById] = useState({})
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -40,7 +65,27 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     try {
-      const response = await fetch('/api/auth/me', {
+      /* Aperçu invité dev : pas de session (ignore cookies / mock) */
+      if (import.meta.env.DEV && isDevGuestPreviewActive()) {
+        setUser(null)
+        setTwoFactorChallenge(null)
+        return
+      }
+
+      /*
+       * Session fictive Vite / barre « Dev mock » : ne pas appeler /api/auth/me
+       * (sinon 401 après « Lancer l’animation choixpeau » : logout + refetch).
+       */
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return
+      }
+
+      const response = await fetch(AUTH_PATHS.me, {
         credentials: 'include',
       })
 
@@ -61,9 +106,117 @@ export function AuthProvider({ children }) {
     }
   }
 
+  useEffect(() => {
+    const userId = user?.id ?? user?.user_id ?? null
+    if (!userId || twoFactorChallenge) return undefined
+
+    const ws = new WebSocket(`${getWebSocketOrigin()}/ws/notifications/${userId}/`)
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data)
+        if (data?.action === 'friend_presence') {
+          const friendId = Number(data.user_id)
+          if (!Number.isFinite(friendId)) return
+
+          setPresenceByUserId((prev) => ({
+            ...prev,
+            [friendId]: Boolean(data.is_online),
+          }))
+          return
+        }
+
+        if (data?.action === 'invite_created' || data?.action === 'invite_updated') {
+          const invite = data?.invite
+          const currentUserId = Number(userId)
+          const inviteId = Number(invite?.id)
+          const senderId = Number(invite?.sender_id)
+          const receiverId = Number(invite?.receiver_id)
+          if (!invite || !Number.isFinite(currentUserId) || !Number.isFinite(senderId) || !Number.isFinite(inviteId)) return
+
+          if (currentUserId === senderId || currentUserId === receiverId) {
+            setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+          }
+
+          if (senderId !== currentUserId) return
+
+          if (String(invite.status) === 'pending') {
+            setOutgoingPendingInvite(invite)
+          } else {
+            setOutgoingPendingInvite((prev) => {
+              if (!prev) return null
+              return Number(prev.id) === Number(invite.id) ? null : prev
+            })
+          }
+          return
+        }
+
+        if (data?.action === 'game_ready') {
+          const currentUserId = Number(userId)
+          const senderId = Number(data.sender_id)
+          if (currentUserId === senderId) {
+            setPriorityGameReady({
+              gameId: data.game_id,
+              inviteId: data.invite_id,
+              senderId,
+              receiverId: Number(data.receiver_id),
+              receivedAt: Date.now(),
+            })
+          }
+        }
+      } catch {
+        // ignore malformed websocket payloads
+      }
+    }
+
+    return () => {
+      ws.close()
+    }
+  }, [user, twoFactorChallenge])
+
+  useEffect(() => {
+    const userId = user?.id ?? user?.user_id ?? null
+    if (!userId || twoFactorChallenge) {
+      setOutgoingPendingInvite(null)
+      return undefined
+    }
+
+    let cancelled = false
+    fetch('/api/chat/invites/pending-outgoing', {
+      method: 'GET',
+      credentials: 'include',
+    })
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (cancelled) return
+        const invite = data?.invite ?? null
+        setOutgoingPendingInvite(invite)
+      })
+      .catch(() => {
+        if (!cancelled) setOutgoingPendingInvite(null)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [user, twoFactorChallenge])
+
   async function loginLocal(email, password) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       await ensureCsrfCookie()
       const csrf = readCookie('csrftoken')
       const headers = { 'Content-Type': 'application/json' }
@@ -71,7 +224,7 @@ export function AuthProvider({ children }) {
         headers['X-CSRFToken'] = csrf
       }
 
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(AUTH_PATHS.loginDb, {
         method: 'POST',
         credentials: 'include',
         headers,
@@ -98,6 +251,7 @@ export function AuthProvider({ children }) {
         return { ok: false, ...challenge }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return {
@@ -114,6 +268,19 @@ export function AuthProvider({ children }) {
   async function registerLocal(username, password, email, firstName, lastName) {
     setError(null)
     try {
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return {
+          ok: true,
+          status: 'authenticated',
+          user: u,
+        }
+      }
+
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         credentials: 'include',
@@ -149,6 +316,7 @@ export function AuthProvider({ children }) {
       }
 
       if (data?.user) {
+        disableDevGuestPreview()
         setUser(data.user)
         setTwoFactorChallenge(null)
         return {
@@ -191,6 +359,7 @@ export function AuthProvider({ children }) {
         return { ok: false, status: 'error', error: data?.error || 'Verification failed' }
       }
 
+      disableDevGuestPreview()
       setUser(data.user)
       setTwoFactorChallenge(null)
       return { ok: true, status: 'authenticated', user: data.user }
@@ -206,29 +375,130 @@ export function AuthProvider({ children }) {
 
   async function logout() {
     try {
-      await ensureCsrfCookie()
-      const csrf = readCookie('csrftoken')
-      const headers = {}
-      if (csrf) {
-        headers['X-CSRFToken'] = csrf
-      }
+      if (!isDevMockAuthEnabled()) {
+        await ensureCsrfCookie()
+        const csrf = readCookie('csrftoken')
+        const headers = {}
+        if (csrf) {
+          headers['X-CSRFToken'] = csrf
+        }
 
-      await fetch('/api/auth/logout', {
-        method: 'POST',
-        credentials: 'include',
-        headers,
-      })
+        await fetch(AUTH_PATHS.logout, {
+          method: 'POST',
+          credentials: 'include',
+          headers,
+        })
+      }
     } catch (err) {
       console.error('Logout failed:', err)
     } finally {
       sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
       setUser(null)
       setTwoFactorChallenge(null)
+      setPresenceByUserId({})
+      setOutgoingPendingInvite(null)
+      setPriorityGameReady(null)
+      setInviteById({})
     }
+  }
+
+  function dismissPriorityGameReady() {
+    setPriorityGameReady(null)
+  }
+
+  function registerOutgoingPendingInvite(invite) {
+    if (!invite || String(invite.status) !== 'pending') return
+    const currentUserId = Number(user?.id ?? user?.user_id)
+    const senderId = Number(invite.sender_id)
+    if (!Number.isFinite(currentUserId) || !Number.isFinite(senderId)) return
+    if (currentUserId !== senderId) return
+    setOutgoingPendingInvite(invite)
+    const inviteId = Number(invite.id)
+    if (Number.isFinite(inviteId)) {
+      setInviteById((prev) => ({ ...prev, [inviteId]: invite }))
+    }
+  }
+
+  function resolveInviteState(inviteId) {
+    const id = Number(inviteId)
+    if (!Number.isFinite(id)) return null
+    return inviteById[id] || null
+  }
+
+  function resolveUserOnline(userLike) {
+    const id = Number(userLike?.id ?? userLike?.user_id)
+    if (Number.isFinite(id) && Object.prototype.hasOwnProperty.call(presenceByUserId, id)) {
+      return Boolean(presenceByUserId[id])
+    }
+    return Boolean(userLike?.is_online)
   }
 
   function loginWith42() {
     window.location.href = '/api/auth/42/login'
+  }
+
+  async function forgotPassword(email) {
+    setError(null)
+    try {
+      await ensureCsrfCookie()
+      const csrf = readCookie('csrftoken')
+      const headers = { 'Content-Type': 'application/json' }
+      if (csrf) headers['X-CSRFToken'] = csrf
+
+      const response = await fetch(AUTH_PATHS.forgotPassword, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ email }),
+      })
+
+      const data = await safeJson(response)
+      if (!response.ok) {
+        setError(data?.error || 'Password reset request failed')
+        return { ok: false, status: 'error', error: data?.error || 'Password reset request failed' }
+      }
+
+      return {
+        ok: true,
+        status: 'requested',
+        message: data?.message || 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.',
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+      return { ok: false, status: 'error', error: 'Network error. Please try again.' }
+    }
+  }
+
+  async function resetPassword(token, newPassword) {
+    setError(null)
+    try {
+      await ensureCsrfCookie()
+      const csrf = readCookie('csrftoken')
+      const headers = { 'Content-Type': 'application/json' }
+      if (csrf) headers['X-CSRFToken'] = csrf
+
+      const response = await fetch(AUTH_PATHS.resetPassword, {
+        method: 'POST',
+        credentials: 'include',
+        headers,
+        body: JSON.stringify({ token, new_password: newPassword }),
+      })
+
+      const data = await safeJson(response)
+      if (!response.ok) {
+        setError(data?.error || 'Password reset failed')
+        return { ok: false, status: 'error', error: data?.error || 'Password reset failed' }
+      }
+
+      return {
+        ok: true,
+        status: 'reset',
+        message: data?.message || 'Mot de passe mis a jour avec succes',
+      }
+    } catch (err) {
+      setError('Network error. Please try again.')
+      return { ok: false, status: 'error', error: 'Network error. Please try again.' }
+    }
   }
 
   async function loginWithDb({ email, password }) {
@@ -244,13 +514,23 @@ export function AuthProvider({ children }) {
     loginLocal,
     loginWithDb,
     loginWith42,
+    forgotPassword,
+    resetPassword,
     registerLocal,
     verify2FA,
     twoFactorChallenge,
     clearTwoFactorChallenge,
     logout,
     refetch: checkAuth,
-    isDevMockAuth: false,
+    isDevMockAuth: isDevMockAuthEnabled(),
+    presenceByUserId,
+    resolveUserOnline,
+    outgoingPendingInvite,
+    hasOutgoingPendingInvite: Boolean(outgoingPendingInvite),
+    registerOutgoingPendingInvite,
+    resolveInviteState,
+    priorityGameReady,
+    dismissPriorityGameReady,
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
   }

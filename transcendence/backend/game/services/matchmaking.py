@@ -13,14 +13,14 @@ def normalize_player_id(player_id):
 	return str(player_id)
 
 def normalize_time_control(value, default=600):
-    """Assure que le temps est un entier positif raisonnable (ex: entre 1min et 1h)."""
-    try:
-        seconds = int(value)
-        if 60 <= seconds <= 3600:
-            return seconds
-    except (ValueError, TypeError):
-        pass
-    return default
+	"""Assure que le temps est un entier positif raisonnable, y compris les cadences longues."""
+	try:
+		seconds = int(value)
+		if 60 <= seconds <= 604800:
+			return seconds
+	except (ValueError, TypeError):
+		pass
+	return default
 
 def normalize_increment(value, default=0):
     """Assure que l'incrément est un entier positif (max 60s)."""
@@ -31,6 +31,22 @@ def normalize_increment(value, default=0):
     except (ValueError, TypeError):
         pass
     return default
+
+
+def normalize_competitive(value, default=False):
+	"""Convertit le flag competitive en booléen stable."""
+	if isinstance(value, bool):
+		return value
+	if value is None:
+		return default
+	if isinstance(value, (int, float)):
+		return bool(value)
+	raw = str(value).strip().lower()
+	if raw in {'1', 'true', 'yes', 'on', 'competitive'}:
+		return True
+	if raw in {'0', 'false', 'no', 'off', 'friendly', 'casual'}:
+		return False
+	return default
 
 def decode_redis_player_id(raw_value):
 	"""Decode player ID from Redis bytes or string format."""
@@ -57,6 +73,7 @@ async def queue_player_for_matchmaking(
 	player_id,
 	time_control,
 	increment,
+	competitive,
 	fetch_user_coalition,
 	fetch_user_public_profile,
 ):
@@ -70,6 +87,7 @@ async def queue_player_for_matchmaking(
 		queue_key,
 		time_control,
 		increment,
+		competitive,
 	)
 	await attempt_matchmaking(
 		redis_client,
@@ -77,6 +95,7 @@ async def queue_player_for_matchmaking(
 		room_group_name,
 		time_control,
 		increment,
+		competitive,
 		queue_key,
 		fetch_user_coalition,
 		fetch_user_public_profile,
@@ -91,6 +110,7 @@ async def dequeue_player_from_matchmaking(
 	player_id,
 	time_control,
 	increment,
+	competitive,
 ):
 	"""Remove player from queue and broadcast updated queue status."""
 	await remove_from_queue(redis_client, queue_key, player_id)
@@ -101,10 +121,11 @@ async def dequeue_player_from_matchmaking(
 		queue_key,
 		time_control,
 		increment,
+		competitive,
 	)
 
 
-async def broadcast_matchmaking_queue_size(redis_client, channel_layer, room_group_name, queue_key, time_control, increment):
+async def broadcast_matchmaking_queue_size(redis_client, channel_layer, room_group_name, queue_key, time_control, increment, competitive):
 	"""Broadcast current queue size to all clients in matchmaking room."""
 	queue_size = await redis_client.llen(queue_key)
 	await channel_layer.group_send(
@@ -115,6 +136,7 @@ async def broadcast_matchmaking_queue_size(redis_client, channel_layer, room_gro
 			'queue_size': int(queue_size),
 			'time_control': time_control,
 			'increment': increment,
+			'competitive': competitive,
 		},
 	)
 
@@ -124,6 +146,7 @@ async def attempt_matchmaking(
 	room_group_name,
 	time_control,
 	increment,
+	competitive,
 	queue_key,
 	fetch_user_coalition,
 	fetch_user_public_profile,
@@ -145,7 +168,13 @@ async def attempt_matchmaking(
 		
 		# Build pristine state using the dedicated builder
 		new_game_id = f"match_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
-		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)		
+		new_game_state = await build_new_game_state(
+			white_id,
+			black_id,
+			time_control,
+			increment,
+			competitive,
+		)
 		await redis_client.set(new_game_id, json.dumps(new_game_state))
 
 		await channel_layer.group_send(
@@ -156,6 +185,9 @@ async def attempt_matchmaking(
 				'game_id': new_game_id,
 				'white_player_id': white_id,
 				'black_player_id': black_id,
+				'time_control': time_control,
+				'increment': increment,
+				'competitive': competitive,
 			},
 		)
 
@@ -166,4 +198,5 @@ async def attempt_matchmaking(
 			queue_key,
 			time_control,
 			increment,
+			competitive,
 		)

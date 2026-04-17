@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState, useCallback } from 'react'
+import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { loadGameAudioPrefs, saveGameAudioPrefs, effectiveBgmVolume } from '../../../config/gameAudioPrefs.js'
 import { useGameAudioPrefsLive } from '../hooks/useGameAudioPrefs.js'
@@ -7,7 +8,7 @@ import {
 	unregisterGameBgmElement,
 	tryPlayGameBgm,
 } from '../services/gameBgm.js'
-import { FADE_OUT_MS, cancelGameBgmFade, fadeGameBgmTo, resetGameBgmFadeController } from '../services/audioFade.js'
+import { cancelGameBgmFade, resetGameBgmFadeController } from '../services/audioFade.js'
 
 /** Musiques d’ambiance en partie : rotation à chaque montage du composant (session). */
 const GAME_BGM_FILES = [
@@ -54,31 +55,74 @@ export function GameAmbientBgm() {
 		return () => {
 			window.removeEventListener('transcendence-game-audio-changed', onPrefs)
 			cancelGameBgmFade()
-			const v = audio.volume
-			void fadeGameBgmTo(audio, 0, FADE_OUT_MS, v).finally(() => {
-				unregisterGameBgmElement(audio)
-				audio.pause()
-				audio.removeAttribute('src')
-				audio.load()
-				audioRef.current = null
-				resetGameBgmFadeController()
-			})
+			/* Pause immédiate : sinon le fondu chevauche la reprise du BGM accueil à la sortie de /game */
+			audio.pause()
+			audio.volume = 0
+			unregisterGameBgmElement(audio)
+			audio.removeAttribute('src')
+			audio.load()
+			audioRef.current = null
+			resetGameBgmFadeController()
 		}
 	}, [])
 
 	return null
 }
 
-/** Panneau musique : accessible pendant la partie (coin du plateau). */
+const POPOVER_EST_H = 300
+
+function computePopoverStyle(btnEl) {
+	if (!btnEl) return null
+	const r = btnEl.getBoundingClientRect()
+	const w = Math.min(240, window.innerWidth - 24)
+	let left = r.right - w
+	if (left < 12) left = 12
+	if (left + w > window.innerWidth - 12) left = Math.max(12, window.innerWidth - 12 - w)
+
+	let top = r.bottom + 6
+	if (top + POPOVER_EST_H > window.innerHeight - 12) {
+		top = Math.max(12, r.top - POPOVER_EST_H - 6)
+	}
+
+	return { position: 'fixed', top, left, width: w, zIndex: 11000 }
+}
+
+/** Contrôle musique intégré au panneau stats (plus de bouton flottant sur le plateau). */
 export function GameMusicPanel() {
 	const prefs = useGameAudioPrefsLive()
 	const [open, setOpen] = useState(false)
 	const wrapRef = useRef(null)
+	const btnRef = useRef(null)
+	const popoverRef = useRef(null)
+	const [popoverStyle, setPopoverStyle] = useState(null)
+
+	const updatePopoverPosition = useCallback(() => {
+		if (!open) return
+		setPopoverStyle(computePopoverStyle(btnRef.current))
+	}, [open])
+
+	useLayoutEffect(() => {
+		if (!open) {
+			setPopoverStyle(null)
+			return
+		}
+		updatePopoverPosition()
+		const onScroll = () => updatePopoverPosition()
+		const onResize = () => updatePopoverPosition()
+		window.addEventListener('scroll', onScroll, true)
+		window.addEventListener('resize', onResize)
+		return () => {
+			window.removeEventListener('scroll', onScroll, true)
+			window.removeEventListener('resize', onResize)
+		}
+	}, [open, updatePopoverPosition])
 
 	useEffect(() => {
 		if (!open) return
 		const close = (e) => {
-			if (wrapRef.current && !wrapRef.current.contains(e.target)) setOpen(false)
+			if (wrapRef.current?.contains(e.target)) return
+			if (popoverRef.current?.contains(e.target)) return
+			setOpen(false)
 		}
 		document.addEventListener('pointerdown', close, true)
 		return () => document.removeEventListener('pointerdown', close, true)
@@ -94,55 +138,66 @@ export function GameMusicPanel() {
 		saveGameAudioPrefs({ bgmMuted: m })
 	}, [])
 
-	return (
-		<div className="game-music-panel-wrap" ref={wrapRef}>
-			<button
-				type="button"
-				className={`game-music-fab${prefs.bgmMuted ? ' game-music-fab--muted' : ''}`}
-				aria-expanded={open}
-				aria-label={prefs.bgmMuted ? 'Musique coupée — ouvrir les réglages' : 'Musique d’ambiance — réglages'}
-				onPointerDown={() => {
-					void tryPlayGameBgm()
-				}}
-				onClick={() => setOpen((o) => !o)}
+	const popover = open ? (
+		<div
+			ref={popoverRef}
+			className="game-music-popover game-music-popover--portal"
+			style={popoverStyle ?? undefined}
+			role="dialog"
+			aria-label="Musique du jeu"
+		>
+			<p className="game-music-popover__title">Musique d’ambiance</p>
+			<p className="game-music-popover__hint">
+				Le thème se lance avec le chronomètre (après le premier coup des blancs). Ajustez le volume si besoin.
+			</p>
+			<label className="game-music-slider-label">
+				<span>Volume</span>
+				<span className="game-music-slider-value">{pct}%</span>
+			</label>
+			<input
+				type="range"
+				className="game-music-slider"
+				min={0}
+				max={100}
+				value={pct}
+				onChange={(e) => setVolume(Number(e.target.value) / 100)}
+			/>
+			<label className="game-music-mute-row">
+				<input
+					type="checkbox"
+					checked={prefs.bgmMuted}
+					onChange={(e) => setMuted(e.target.checked)}
+				/>
+				<span>Couper la musique</span>
+			</label>
+			<Link
+				to="/settings"
+				className="game-music-popover__settings-link"
+				onClick={() => setOpen(false)}
 			>
-				<i className={prefs.bgmMuted ? 'ri-volume-mute-line' : 'ri-volume-down-line'} aria-hidden />
-			</button>
-			{open ? (
-				<div className="game-music-popover" role="dialog" aria-label="Musique du jeu">
-					<p className="game-music-popover__title">Musique d’ambiance</p>
-					<p className="game-music-popover__hint">
-						Le thème se lance avec le chronomètre (après le premier coup des blancs). Ajustez le volume si besoin.
-					</p>
-					<label className="game-music-slider-label">
-						<span>Volume</span>
-						<span className="game-music-slider-value">{pct}%</span>
-					</label>
-					<input
-						type="range"
-						className="game-music-slider"
-						min={0}
-						max={100}
-						value={pct}
-						onChange={(e) => setVolume(Number(e.target.value) / 100)}
-					/>
-					<label className="game-music-mute-row">
-						<input
-							type="checkbox"
-							checked={prefs.bgmMuted}
-							onChange={(e) => setMuted(e.target.checked)}
-						/>
-						<span>Couper la musique</span>
-					</label>
-					<Link
-						to="/settings"
-						className="game-music-popover__settings-link"
-						onClick={() => setOpen(false)}
-					>
-						Paramètres complets
-					</Link>
-				</div>
-			) : null}
+				Paramètres complets
+			</Link>
 		</div>
+	) : null
+
+	return (
+		<>
+			<div className="game-music-panel-wrap game-music-panel-wrap--embedded" ref={wrapRef}>
+				<button
+					ref={btnRef}
+					type="button"
+					className={`game-music-fab game-music-fab--embedded${prefs.bgmMuted ? ' game-music-fab--muted' : ''}`}
+					aria-expanded={open}
+					aria-label={prefs.bgmMuted ? 'Musique coupée — ouvrir les réglages' : 'Musique d’ambiance — réglages'}
+					onPointerDown={() => {
+						void tryPlayGameBgm()
+					}}
+					onClick={() => setOpen((o) => !o)}
+				>
+					<i className={prefs.bgmMuted ? 'ri-volume-mute-line' : 'ri-volume-down-line'} aria-hidden />
+				</button>
+			</div>
+			{popover && createPortal(popover, document.body)}
+		</>
 	)
 }

@@ -15,6 +15,8 @@ urlpatterns = [
     # Traditional authentication
     *with_optional_trailing_slash('login', views.auth_login_db, name='auth_login_db'),
     *with_optional_trailing_slash('logout', views.auth_logout, name='auth_logout'),
+    *with_optional_trailing_slash('forgot-password', views.auth_forgot_password, name='auth_forgot_password'),
+    *with_optional_trailing_slash('reset-password', views.auth_reset_password, name='auth_reset_password'),
     *with_optional_trailing_slash('me', views.auth_me, name='auth_me'),
     *with_optional_trailing_slash('users/<int:user_id>', views.auth_user_by_id, name='auth_user_by_id'),
     *with_optional_trailing_slash('csrf', views.auth_csrf, name='auth_csrf'),

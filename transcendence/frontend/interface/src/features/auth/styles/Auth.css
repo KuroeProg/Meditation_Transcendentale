@@ -121,10 +121,22 @@ html[data-reduce-motion='true'] .auth-branding {
   z-index: 1;
 }
 
-.auth-branding .auth-site-logo {
+.auth-branding .auth-site-logo-link {
+  display: inline-block;
+  line-height: 0;
   width: min(140px, 28vw);
   margin-bottom: 0.5rem;
+  text-decoration: none;
+  color: inherit;
   animation: auth-logo-float 6s ease-in-out infinite;
+}
+
+.auth-branding .auth-site-logo-link .site-brand-logo-wrap {
+  width: 100%;
+}
+
+.auth-branding .auth-site-logo {
+  width: 100%;
 }
 
 @keyframes auth-logo-float {
@@ -132,7 +144,7 @@ html[data-reduce-motion='true'] .auth-branding {
   50% { transform: translateY(-6px); }
 }
 
-html[data-reduce-motion='true'] .auth-branding .auth-site-logo {
+html[data-reduce-motion='true'] .auth-branding .auth-site-logo-link {
   animation: none;
 }
 
@@ -668,6 +680,16 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   text-align: center;
 }
 
+.auth-success {
+  background: rgba(58, 163, 77, 0.12);
+  border: 1px solid rgba(58, 163, 77, 0.45);
+  color: #8de39a;
+  padding: 0.7rem 1rem;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
 .auth-switch-text {
   text-align: center;
   color: rgba(255, 255, 255, 0.45);
@@ -695,6 +717,17 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
 
 .auth-footer span {
   cursor: default;
+}
+
+.auth-footer-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition: color 0.2s ease;
+}
+
+.auth-footer-link:hover {
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .auth-footer-sep {

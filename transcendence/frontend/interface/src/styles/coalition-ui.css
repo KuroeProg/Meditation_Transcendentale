@@ -43,6 +43,15 @@ html[data-coalition='air'] {
 	--coalition-accent-muted: rgba(220, 200, 255, 0.65);
 }
 
+/* Visiteur : home / contact / about / auth — neutre, proche du split connexion */
+html[data-coalition='neutral'] {
+	--coalition-accent: #8ba4d9;
+	--coalition-accent-soft: rgba(110, 140, 200, 0.18);
+	--coalition-accent-border: rgba(120, 150, 210, 0.42);
+	--coalition-accent-glow: rgba(90, 120, 190, 0.28);
+	--coalition-accent-muted: rgba(170, 190, 235, 0.62);
+}
+
 /* —— Profil & Paramètres : cartes et titres —— */
 .page-shell .surface-card {
 	border-color: var(--coalition-accent-border);

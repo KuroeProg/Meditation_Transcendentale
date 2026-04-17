@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import '../styles/Home.css'
 import MenuHome from '../components/MenuHome'
 import { SiteBrandLogo } from '../../../components/common/index.js'
@@ -5,13 +6,21 @@ import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { CoalitionFire, CoalitionEarth, CoalitionWater, CoalitionWind } from '../../theme/index.js'
 import { motion as Motion } from 'framer-motion'
 import { useReduceMotionPref } from '../../theme/index.js'
+import { useAuth } from '../../auth/index.js'
+import { markWelcomeHomeSeen } from '../../../utils/postLoginRedirect.js'
 
 function Home() {
 	const reduceMotion = useReduceMotionPref()
+	const { user } = useAuth()
+	const userId = user?.id ?? user?.user_id ?? null
+
+	useEffect(() => {
+		if (userId != null) markWelcomeHomeSeen(userId)
+	}, [userId])
 
 	return (
 		<div
-			className="home"
+			className={`home${user ? ' home--chat-fab-room' : ''}`}
 			onPointerDown={() => {
 				void tryPlayHomeBgm()
 			}}

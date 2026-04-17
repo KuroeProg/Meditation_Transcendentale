@@ -1,8 +1,9 @@
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/index.js'
+import { useChatUi } from '../../../features/chat/index.js'
 
 const NAV_ITEMS = [
-	{ to: '/dashboard', icon: 'fa-house', label: 'Home' },
+	{ to: '/dashboard', icon: 'fa-table-columns', label: 'Dashboard' },
 	{ to: '/game', icon: 'fa-chess', label: 'Game' },
 	{ to: '/profile', icon: 'fa-user', label: 'Profile' },
 	{ to: '/statistics', icon: 'fa-chart-pie', label: 'Stats' },
@@ -10,13 +11,8 @@ const NAV_ITEMS = [
 ]
 
 function BottomNav() {
-	const navigate = useNavigate()
-	const { logout, isAuthenticated } = useAuth()
-
-	const handleLogout = async () => {
-		await logout()
-		navigate('/auth', { replace: true })
-	}
+	const { isAuthenticated } = useAuth()
+	const { openChat } = useChatUi()
 
 	return (
 		<nav className="bottom-nav" aria-label="Main navigation">
@@ -35,11 +31,12 @@ function BottomNav() {
 			{isAuthenticated && (
 				<button
 					type="button"
-					className="bottom-nav__item bottom-nav__logout"
-					onClick={handleLogout}
+					className="bottom-nav__item bottom-nav__chat"
+					onClick={() => openChat()}
+					aria-label="Ouvrir les messages"
 				>
-					<i className="fa-solid fa-right-from-bracket" />
-					<span>Logout</span>
+					<i className="ri-chat-3-line" />
+					<span>Msg</span>
 				</button>
 			)}
 		</nav>

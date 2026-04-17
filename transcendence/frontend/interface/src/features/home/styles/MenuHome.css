@@ -10,12 +10,35 @@
 	z-index: 5;
 }
 
-@media (max-width: 768px) {
+/* Visiteur sans sidebar : barre sur toute la largeur */
+.top-bar--full {
+	left: 0;
+	width: 100%;
+}
+
+@media (max-width: 770px) {
 	.top-bar {
 		left: 0;
 		width: 100%;
 		padding: 0 1rem;
 	}
+}
+
+.top-bar-link {
+	color: rgba(255, 255, 255, 0.78);
+	text-decoration: none;
+	font-size: 0.88rem;
+	font-weight: 500;
+	padding: 0.35rem 0.5rem;
+	border-radius: 6px;
+	transition:
+		color 0.2s,
+		background 0.2s;
+}
+
+.top-bar-link:hover {
+	color: #fff;
+	background: rgba(255, 255, 255, 0.06);
 }
 
 .top-bar-actions {
@@ -25,6 +48,9 @@
 }
 
 .button-signin {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	background: transparent;
 	border: none;
 	color: rgba(255, 255, 255, 0.85);
@@ -33,6 +59,7 @@
 	padding: 0.4rem 0.8rem;
 	border-radius: 6px;
 	transition: color 0.2s;
+	text-decoration: none;
 }
 
 .button-signin:hover {
@@ -40,6 +67,9 @@
 }
 
 .button-signup {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
 	background: transparent;
 	border: 1px solid rgba(255, 255, 255, 0.4);
 	color: #fff;
@@ -48,6 +78,7 @@
 	padding: 0.4rem 1rem;
 	border-radius: 6px;
 	transition: border-color 0.2s, background 0.2s;
+	text-decoration: none;
 }
 
 .button-signup:hover {

@@ -8,13 +8,29 @@ from game.services.player_profiles import (
 )
 
 
-async def build_new_game_state(white_id, black_id, time_control, increment):
+def infer_time_category(time_control):
+	"""Infer chess cadence category from initial clock seconds."""
+	seconds = int(time_control)
+	if seconds <= 120:
+		return 'bullet'
+	if seconds <= 300:
+		return 'blitz'
+	if seconds >= 86400:
+		return 'correspondence'
+	return 'rapid'
+
+
+async def build_new_game_state(white_id, black_id, time_control=600, increment=0, competitive=False):
 	"""Create fresh game state with player profiles, coalitions, and default clock."""
 	board = chess.Board()
 	white_coalition = await fetch_user_coalition(white_id)
 	black_coalition = await fetch_user_coalition(black_id)
 	white_profile = await fetch_user_public_profile(white_id)
 	black_profile = await fetch_user_public_profile(black_id)
+	time_control = int(time_control)
+	increment = int(increment)
+	time_category = infer_time_category(time_control)
+	is_competitive = bool(competitive)
 
 	return {
 		'fen': board.fen(),
@@ -27,8 +43,13 @@ async def build_new_game_state(white_id, black_id, time_control, increment):
 		'black_player_profile': black_profile,
 		'white_time_left': time_control,
 		'black_time_left': time_control,
-		'time_total': time_control,
+		'time_control_seconds': time_control,
 		'increment': increment,
+		'increment_seconds': increment,
+		'time_category': time_category,
+		'is_competitive': is_competitive,
+		'is_rated': is_competitive,
+		'game_mode': 'standard',
 		'last_move_timestamp': time.time(),
 		'start_timestamp': time.time(),
 		'draw_offer_from_player_id': None,

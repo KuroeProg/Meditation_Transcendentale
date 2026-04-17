@@ -6,10 +6,7 @@ import { useAuth } from "../../auth/index.js";
 import { useChessSocket } from "../hooks/useChessSocket.js";
 import { get42AvatarUrl, getDisplayTitle } from "../../../utils/sessionUser.js";
 import GameStatsPanel from "../../stats/components/GameStatsPanel.jsx";
-import {
-  GameAmbientBgm,
-  GameMusicPanel,
-} from "../../audio/components/GameAudio.jsx";
+import { GameAmbientBgm } from "../../audio/components/GameAudio.jsx";
 import {
   normalizeId,
 } from "../core/chessSelectors.js";
@@ -232,7 +229,6 @@ function App() {
 
       <div className="game-container">
         <GameAmbientBgm />
-        <GameMusicPanel />
         <div className="game-board-col">
           <div className="player-bar">
             <img className="player-avatar" src={topPlayer.avatar} alt="" />

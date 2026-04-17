@@ -11,6 +11,14 @@ class Game(models.Model):
     
     winner = models.ForeignKey(LocalUser, related_name='chess_games_won', on_delete=models.SET_NULL, null=True, blank=True)
     
+    time_control_seconds = models.PositiveIntegerField(null=True, blank=True)
+    increment_seconds = models.PositiveIntegerField(default=0)
+    time_category = models.CharField(max_length=32, default='rapid')
+    is_competitive = models.BooleanField(default=False)
+    is_rated = models.BooleanField(default=False)
+    game_mode = models.CharField(max_length=32, default='standard')
+    termination_reason = models.CharField(max_length=32, blank=True, default='')
+
     started_at = models.DateTimeField()
     time_control = models.PositiveIntegerField(null=True, blank=True, help_text="Initial time control in seconds")
     increment = models.PositiveIntegerField(null=True, blank=True, help_text="Increment per move in seconds")

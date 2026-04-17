@@ -18,6 +18,7 @@ import { DrawOfferBanners } from './DrawOfferBanners.jsx'
 import { ResignConfirmModal } from './ResignConfirmModal.jsx'
 import { DrawOfferModal } from './DrawOfferModal.jsx'
 import { StatsTabsNav } from './StatsTabsNav.jsx'
+import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 import '../styles/GameStatsPanel.css'
 
@@ -133,6 +134,7 @@ export default function GameStatsPanel({
             viewPlies={viewPlies}
             onViewPlies={onViewPlies ?? (() => {})}
             winner={winner}
+            tabBarEnd={<GameMusicPanel />}
           />
 
           {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
@@ -168,11 +170,21 @@ export default function GameStatsPanel({
       )}
 
       {activeTab === "history" && (
-        <HistoryView recentGames={mockStats.recentGames} />
+        <>
+          <div className="stats-tab-audio-bar">
+            <GameMusicPanel />
+          </div>
+          <HistoryView recentGames={mockStats.recentGames} />
+        </>
       )}
 
       {activeTab === "friends" && (
-        <FriendsView friends={friendsList} />
+        <>
+          <div className="stats-tab-audio-bar">
+            <GameMusicPanel />
+          </div>
+          <FriendsView friends={friendsList} />
+        </>
       )}
 
       <ResignConfirmModal

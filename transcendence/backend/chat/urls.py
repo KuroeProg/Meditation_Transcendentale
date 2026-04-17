@@ -13,6 +13,7 @@ def with_optional_trailing_slash(route, view_callable, name=None):
 
 urlpatterns = [
     *with_optional_trailing_slash('conversations', views.conversation_list, name='conversation_list'),
+    *with_optional_trailing_slash('invites/pending-outgoing', views.pending_outgoing_invite, name='pending_outgoing_invite'),
     *with_optional_trailing_slash('conversations/create', views.create_conversation, name='create_conversation'),
     *with_optional_trailing_slash(
         'conversations/<int:conversation_id>/messages',
@@ -28,5 +29,15 @@ urlpatterns = [
         'conversations/<int:conversation_id>/invite',
         views.send_game_invite,
         name='send_game_invite',
+    ),
+    *with_optional_trailing_slash(
+        'invites/<int:invite_id>/respond',
+        views.respond_game_invite,
+        name='respond_game_invite',
+    ),
+    *with_optional_trailing_slash(
+        'invites/<int:invite_id>/cancel',
+        views.cancel_game_invite,
+        name='cancel_game_invite',
     ),
 ]

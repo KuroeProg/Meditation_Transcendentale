@@ -18,13 +18,13 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   BOTTOM NAVIGATION — mobile only (<=768px)
+   BOTTOM NAVIGATION — mobile only (<=770px)
    ===================================================================== */
 .bottom-nav {
 	display: none;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.sidebar {
 		display: none;
 	}
@@ -74,20 +74,20 @@ html[data-reduce-motion='true'] .btn {
 		color: #fff;
 	}
 
-	.bottom-nav__logout {
-		color: #e57373;
+	.bottom-nav__chat {
+		color: color-mix(in srgb, var(--coalition-accent, #79c0ff) 88%, #fff);
 	}
 
 	.main-content {
 		margin-left: 0 !important;
-		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.5rem);
+		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.5rem + var(--site-footer-reserve));
 	}
 }
 
 /* =====================================================================
-   RESPONSIVE — tablette (769px — 1024px)
+   RESPONSIVE — tablette (771px — 1024px)
    ===================================================================== */
-@media (min-width: 769px) and (max-width: 1024px) {
+@media (min-width: 771px) and (max-width: 1024px) {
 	.sidebar {
 		width: 60px;
 	}
@@ -114,9 +114,9 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   RESPONSIVE — Profile / Settings (mobile <=768px)
+   RESPONSIVE — Profile / Settings (mobile <=770px)
    ===================================================================== */
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.page-shell {
 		padding: 0 0.25rem;
 	}
@@ -147,11 +147,12 @@ html[data-reduce-motion='true'] .btn {
 }
 
 /* =====================================================================
-   RESPONSIVE — Game / Chess : panneau stats sous le plateau (tablette & mobile)
+   RESPONSIVE — Game / Chess : panneau stats sous le plateau (jusqu’à ~1175px)
    ===================================================================== */
-@media (max-width: 1024px) {
+@media (max-width: 1175px) {
 	.main-content:has(.game-container) {
-		padding: 0.35rem 0.35rem 0.5rem;
+		padding: 0.35rem 0.35rem
+			calc(0.5rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem));
 		box-sizing: border-box;
 	}
 
@@ -193,32 +194,15 @@ html[data-reduce-motion='true'] .btn {
 		flex-direction: column;
 	}
 
-	.game-music-panel-wrap {
-		position: fixed;
-		top: auto;
-		left: auto;
-		right: max(12px, env(safe-area-inset-right, 0px));
-		bottom: max(12px, env(safe-area-inset-bottom, 0px));
-		z-index: 45;
-	}
-
-	.game-music-popover {
-		left: auto;
-		right: 0;
-		bottom: calc(100% + 8px);
-		top: auto;
-	}
 }
 
-@media (max-width: 768px) {
+@media (max-width: 770px) {
 	.main-content:has(.game-container) {
 		padding: 0.25rem;
-		padding-bottom: calc(var(--bottom-nav-height, 60px) + 0.35rem);
-	}
-
-	.game-music-panel-wrap {
-		bottom: calc(var(--bottom-nav-height, 60px) + 10px + env(safe-area-inset-bottom, 0px));
-		right: max(10px, env(safe-area-inset-right, 0px));
+		padding-bottom: calc(
+			var(--bottom-nav-height, 60px) + 0.35rem + var(--site-footer-reserve) +
+				var(--game-footer-overscan, 0.4rem)
+		);
 	}
 
 	.player-bar {
@@ -246,12 +230,6 @@ html[data-reduce-motion='true'] .btn {
 	.game-stats-panel-wrap {
 		min-height: 280px;
 		max-height: min(50vh, 520px);
-	}
-
-	.game-music-fab {
-		width: 40px;
-		height: 40px;
-		font-size: 1.05rem;
 	}
 
 	.game-debug-hud {

@@ -1,5 +1,5 @@
-import React, { useState } from 'react'
-import { Navigate } from 'react-router-dom'
+import React, { useEffect, useRef, useState } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
 import { TwoFactorVerify } from '../components/TwoFactorVerify.jsx'
 import SiteBrandLogo from '../../../components/common/Logo/SiteBrandLogo.jsx'
@@ -10,8 +10,10 @@ import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Win
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
 import '../styles/Auth.css'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
+import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
+import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
 
-function LoginForm({ on2FARequired, onSwitchToRegister }) {
+function LoginForm({ on2FARequired, onSwitchToRegister, onForgotPassword }) {
   const { loginLocal, error, setError } = useAuth()
   const [loading, setLoading] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
@@ -86,7 +88,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister }) {
           <input type="checkbox" name="remember" checked={formData.remember} onChange={handleChange} />
           <span>Se souvenir de moi</span>
         </label>
-        <button type="button" className="auth-link-btn" tabIndex={-1}>
+        <button type="button" className="auth-link-btn" tabIndex={-1} onClick={onForgotPassword}>
           Mot de passe oublie ?
         </button>
       </div>
@@ -204,15 +206,109 @@ function RegisterForm({ onRegistrationSuccess, onSwitchToLogin }) {
   )
 }
 
+function ForgotPasswordForm({ onBackToLogin }) {
+  const { forgotPassword, error, setError } = useAuth()
+  const [loading, setLoading] = useState(false)
+  const [email, setEmail] = useState('')
+  const [message, setMessage] = useState('')
+
+  const handleSubmit = async (e) => {
+    e.preventDefault()
+    setError(null)
+    setMessage('')
+    setLoading(true)
+    const result = await forgotPassword(email)
+    if (result?.ok) {
+      setMessage(result.message || 'Si un compte existe avec cet email, un lien de reinitialisation a ete envoye.')
+    }
+    setLoading(false)
+  }
+
+  return (
+    <form className="auth-form auth-form--login" onSubmit={handleSubmit} autoComplete="on" data-lpignore="true">
+      <p className="auth-switch-text">Entre ton email pour recevoir un lien de reinitialisation.</p>
+
+      <div className="auth-form-group">
+        <div className="auth-input-wrapper auth-input-wrapper--mono">
+          <i className="ri-mail-line auth-input-icon" />
+          <input
+            type="email"
+            name="email"
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Adresse email"
+            required
+            disabled={loading}
+          />
+        </div>
+      </div>
+
+      {error && <div className="auth-error">{error}</div>}
+      {message && <div className="auth-success">{message}</div>}
+
+      <button type="submit" className="auth-btn auth-btn-primary" disabled={loading}>
+        {loading ? 'Envoi...' : 'Envoyer le lien'}
+      </button>
+
+      <p className="auth-switch-text">
+        <button type="button" className="auth-link-btn auth-link-underline" onClick={onBackToLogin}>
+          Retour a la connexion
+        </button>
+      </p>
+    </form>
+  )
+}
+
 export default function AuthPage() {
-  const { isAuthenticated, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const { isAuthenticated, user, isLoading, twoFactorChallenge, clearTwoFactorChallenge } = useAuth()
   const [stage, setStage] = useState('login')
+  const postAuthRedirectRef = useRef(false)
   const userInfo = twoFactorChallenge
     ? { userId: twoFactorChallenge.user_id, email: twoFactorChallenge.email, preAuthToken: twoFactorChallenge.pre_auth_token }
     : null
 
-  if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+  /* Synchroniser ?mode=register|login avec l’onglet formulaire (sans toucher à la 2FA). */
+  useEffect(() => {
+    const mode = searchParams.get('mode')
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- lecture URL → étape auth
+    setStage((prev) => {
+      if (prev === '2fa') return prev
+      if (mode === 'register') return 'register'
+      if (mode === 'login') return 'login'
+      return prev
+    })
+  }, [searchParams])
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      postAuthRedirectRef.current = false
+      return
+    }
+    if (postAuthRedirectRef.current) return
+    postAuthRedirectRef.current = true
+    const dest = getPostAuthDestination(user.id)
+    navigate(dest, { replace: true })
+  }, [isAuthenticated, user?.id, navigate])
+
+  if (isLoading) {
+    return (
+      <div className="loading-screen">
+        <div className="spinner" />
+        <p>Chargement…</p>
+      </div>
+    )
+  }
+
+  if (isAuthenticated && user?.id) {
+    return (
+      <div className="loading-screen" aria-busy="true">
+        <div className="spinner" />
+        <p>Redirection…</p>
+      </div>
+    )
   }
 
   const handleRegistrationSuccess = ({ user_id }) => {
@@ -235,7 +331,9 @@ export default function AuthPage() {
             <div className="auth-coalition-symbol auth-coalition-wind"><CoalitionWind /></div>
             <div className="auth-coalition-symbol auth-coalition-earth"><CoalitionEarth /></div>
           </div>
-          <SiteBrandLogo className="auth-site-logo" />
+          <Link to="/" className="auth-site-logo-link" aria-label="Accueil Transcendance">
+            <SiteBrandLogo className="auth-site-logo" />
+          </Link>
           <h1 className="auth-brand-title">TRANSCENDANCE</h1>
           <p className="auth-brand-subtitle">L'Arene Echecs de 42 Perpignan</p>
           <p className="auth-brand-tagline">Affutez votre logique. Dominez le plateau.<br />Elevez votre coalition.</p>
@@ -249,7 +347,7 @@ export default function AuthPage() {
           <div className="auth-form-header">
             <Logo42 className="auth-header-42-logo" />
             <h2 className="auth-form-heading">
-              {stage === 'register' ? 'Rejoindre l\'Arene' : 'Connexion a l\'Arene'}
+              {stage === 'register' ? 'Rejoindre l\'Arene' : stage === 'forgot' ? 'Recuperer l\'acces' : 'Connexion a l\'Arene'}
             </h2>
           </div>
 
@@ -257,6 +355,7 @@ export default function AuthPage() {
             <LoginForm
               on2FARequired={handleLogin2FARequired}
               onSwitchToRegister={() => setStage('register')}
+              onForgotPassword={() => setStage('forgot')}
             />
           )}
 
@@ -267,22 +366,28 @@ export default function AuthPage() {
             />
           )}
 
+          {stage === 'forgot' && (
+            <ForgotPasswordForm onBackToLogin={() => setStage('login')} />
+          )}
+
           {stage === '2fa' && userInfo && (
             <TwoFactorVerify
               userId={userInfo.userId}
               email={userInfo.email}
               preAuthToken={userInfo.preAuthToken}
-              onVerificationSuccess={() => (window.location.href = '/dashboard')}
+              onVerificationSuccess={() => {}}
               onCancel={() => { clearTwoFactorChallenge(); setStage('login') }}
             />
           )}
         </div>
 
         <footer className="auth-footer">
-          <span>Mentions legales</span>
-          <span className="auth-footer-sep">|</span>
-          <span>Contact</span>
-          <span className="auth-footer-sep">|</span>
+          <Link to="/" className="auth-footer-link">
+            Accueil
+          </Link>
+          <span className="auth-footer-sep" aria-hidden="true">
+            |
+          </span>
           <span>Ecole 42 Perpignan</span>
         </footer>
       </div>

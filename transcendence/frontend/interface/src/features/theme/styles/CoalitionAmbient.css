@@ -78,6 +78,15 @@
 	pointer-events: none;
 }
 
+/* Conteneur = même translate/scale que le fond (évite dérive relative de la pluie). */
+.coalition-ambient__particles-parallax {
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	transform-origin: 50% 50%;
+	will-change: transform;
+}
+
 .coalition-ambient__particles {
 	position: absolute;
 	inset: 0;
@@ -120,6 +129,34 @@
 
 [data-coalition-scene='air'] .coalition-ambient__glow {
 	opacity: 0.78;
+}
+
+[data-coalition-scene='neutral'] .coalition-ambient__layer--deep {
+	filter: saturate(0.92) brightness(0.88) contrast(1.02);
+	opacity: 1;
+}
+
+[data-coalition-scene='neutral'] .coalition-ambient__veil {
+	background: linear-gradient(
+		168deg,
+		rgba(4, 8, 22, 0.55) 0%,
+		rgba(8, 14, 32, 0.2) 45%,
+		rgba(6, 10, 24, 0.48) 100%
+	);
+}
+
+[data-coalition-scene='neutral'] .coalition-ambient__punch {
+	opacity: 0.38;
+	background: radial-gradient(
+		ellipse 88% 82% at 50% 38%,
+		rgba(130, 160, 220, 0.12) 0%,
+		transparent 58%
+	);
+}
+
+[data-coalition-scene='neutral'] .coalition-ambient__glow {
+	opacity: 0.5;
+	animation-duration: 18s;
 }
 
 html[data-reduce-motion='true'] .coalition-ambient__glow {

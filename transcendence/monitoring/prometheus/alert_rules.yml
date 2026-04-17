@@ -1,0 +1,11 @@
+groups:
+  - name: transcendence_alerts
+    rules:
+      - alert: NginxIsDown
+        expr: nginx_up{job="nginx"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "The Nginx server is down !"
+          description: "Nginx is down since one minute or more."

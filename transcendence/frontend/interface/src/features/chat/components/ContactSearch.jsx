@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
+import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import {
 	fetchFriends,
 	friendAction,
@@ -10,11 +12,17 @@ import {
 
 function ContactItem({ contact, onAction, onStartChat }) {
 	const u = contact.user
+	const coalSlug = coalitionToSlug(u?.coalition)
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
 			<div className="chat-contact-info">
-				<span className="chat-contact-name">{u.username}</span>
+				<span className="chat-contact-name-row">
+					<span className="chat-contact-name">{u.username}</span>
+					<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
+						<ProfileCoalitionIcon slug={coalSlug} />
+					</span>
+				</span>
 				<span className={`chat-contact-status ${u.is_online ? 'online' : ''}`}>
 					{u.is_online ? 'En ligne' : 'Hors ligne'}
 				</span>
@@ -54,11 +62,17 @@ function ContactItem({ contact, onAction, onStartChat }) {
 }
 
 function SearchResultItem({ user, onAdd }) {
+	const coalSlug = coalitionToSlug(user?.coalition)
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={user.avatar} alt="" />
 			<div className="chat-contact-info">
-				<span className="chat-contact-name">{user.username}</span>
+				<span className="chat-contact-name-row">
+					<span className="chat-contact-name">{user.username}</span>
+					<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
+						<ProfileCoalitionIcon slug={coalSlug} />
+					</span>
+				</span>
 				<span className={`chat-contact-status ${user.is_online ? 'online' : ''}`}>
 					{user.is_online ? 'En ligne' : 'Hors ligne'}
 				</span>
