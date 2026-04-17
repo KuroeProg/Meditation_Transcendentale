@@ -49,6 +49,10 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 duration_seconds=game_data.get('duration_seconds', 0),
                 time_control_seconds=game_data.get('time_control_seconds'),
                 increment_seconds=game_data.get('increment_seconds', 0),
+                # Sync redundant fields for backward compatibility
+                time_control=game_data.get('time_control_seconds'),
+                increment=game_data.get('increment_seconds', 0),
+                
                 time_category=game_data.get('time_category', 'rapid'),
                 is_competitive=bool(game_data.get('is_competitive', False)),
                 is_rated=bool(game_data.get('is_rated', False)),
@@ -59,15 +63,19 @@ def save_game_data_atomically(game_data: dict) -> bool:
 
             game_category = normalize_time_category(game.time_category)
             rating_field = get_rating_field(game_category)
+            
+            # get_game_score uses integer comparison internally if we pass integers
             white_score = get_game_score(game_result, white_user.id, white_user.id, black_user.id)
             black_score = get_game_score(game_result, black_user.id, white_user.id, black_user.id)
 
             white_user.games_played += 1
             black_user.games_played += 1
 
-            if game_data.get('winner_id') == white_user.id:
+            # CRITICAL: IDs from game_data are often strings, while user.id is int. Normalizing to str for comparison.
+            winner_id_str = str(game_data.get('winner_id')) if game_data.get('winner_id') else None
+            if winner_id_str == str(white_user.id):
                 white_user.games_won += 1
-            elif game_data.get('winner_id') == black_user.id:
+            elif winner_id_str == str(black_user.id):
                 black_user.games_won += 1
 
             if game.is_competitive or game.is_rated:
@@ -81,15 +89,13 @@ def save_game_data_atomically(game_data: dict) -> bool:
             white_user.save(update_fields=['games_played', 'games_won', rating_field])
             black_user.save(update_fields=['games_played', 'games_won', rating_field])
             
-            # Si nécessaire vous pourriez aussi overwrite started_at via game_data['started_at'] ici
-            
             # 3. Préparation et Création en bloc de l'ensemble des Coups (Bulk Create)
             moves_to_create = []
             for move in game_data.get('moves', []):
-                # On associe le joueur (blanc ou noir) selon l'ID
-                move_player = white_user if move['player_id'] == white_user.id else black_user
+                # CRITICAL: Normalizing player_id for move attribution
+                move_player_id_str = str(move.get('player_id'))
+                move_player = white_user if move_player_id_str == str(white_user.id) else black_user
                 
-                # Nous instancions l'objet localement sans toucher à la database à chaque boucle
                 move_obj = Move(
                     game=game,
                     player=move_player,

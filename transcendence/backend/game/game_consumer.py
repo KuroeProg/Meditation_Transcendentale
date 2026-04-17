@@ -284,16 +284,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self._close_invite_joinability('game_finished')
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-	#		final_game_data = {
-	#			'player_white_id': game_state['white_player_id'],
-	#			'player_black_id': game_state['black_player_id'],
-	#			'winner_id': winner_id,
-	#			'start_timestamp': game_state['start_timestamp'],
-	#			'time_control': game_state.get('time_control', 0),
-	#			'increment': game_state.get('increment', 0),
-	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-	#			'moves': game_state.get('moves', [])
-	#		}
 			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
 	
 			success = await async_save_full_game(final_game_data)
@@ -389,16 +379,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 ##########################
 		winner_id = game_state.get('winner_player_id')
 
-	#	final_game_data = {
-	#		'player_white_id': game_state['white_player_id'],
-	#		'player_black_id': game_state['black_player_id'],
-	#		'winner_id': winner_id,
-	#		'start_timestamp': game_state['start_timestamp'],
-	#		'time_control': game_state.get('time_control', 0),
-	#		'increment': game_state.get('increment', 0),
-	#		'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-	#		'moves': game_state.get('moves', [])
-  # 		}
 		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
 
 		success = await async_save_full_game(final_game_data)
@@ -443,16 +423,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 ##########################
 		if game_state.get('status') == 'draw':
-	#		final_game_data = {
-	#			'player_white_id': game_state['white_player_id'],
-	#			'player_black_id': game_state['black_player_id'],
-	#			'winner_id': None,
-	#			'start_timestamp': game_state['start_timestamp'],
-	#			'time_control': game_state.get('time_control', 0),
-	#			'increment': game_state.get('increment', 0),
-	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-	#			'moves': game_state.get('moves', [])
-	#		}
 			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
 			success = await async_save_full_game(final_game_data)
 			await self._close_invite_joinability('game_finished')
