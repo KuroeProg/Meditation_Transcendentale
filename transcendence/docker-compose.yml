@@ -158,6 +158,8 @@ services:
         condition: service_started
       vault-init:
         condition: service_completed_successfully
+      elasticsearch:
+        condition: service_healthy
     networks:
       - backend_net
       - monitor_net
@@ -354,6 +356,12 @@ services:
     volumes:
       - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
       - elastic_data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -k -u elastic:${ELASTIC_PASSWORD} https://localhost:9200 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
     restart: always
     logging: *default-logging
     networks:
