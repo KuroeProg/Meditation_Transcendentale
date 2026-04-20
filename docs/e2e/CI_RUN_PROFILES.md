@@ -40,6 +40,38 @@ This document defines how E2E suites are executed in CI by risk level.
 4. run target suite (`make test-e2e-suite SUITE=<smoke|critical|extended>`)
 5. `make down` (always)
 
+## Retry and trace policy by suite
+
+Policy is controlled via Playwright env variables consumed by `playwright.config.js`:
+
+- `E2E_RETRIES`
+- `E2E_TRACE`
+
+Current CI profile values:
+
+1. Smoke
+- `E2E_RETRIES=0`
+- `E2E_TRACE=retain-on-failure`
+
+2. Critical
+- `E2E_RETRIES=1`
+- `E2E_TRACE=on-first-retry`
+
+3. Extended
+- `E2E_RETRIES=2`
+- `E2E_TRACE=on-first-retry`
+
+## Artifacts and triage inputs
+
+Each workflow uploads the following directories with `if: always()`:
+
+- `transcendence/frontend/interface/test-results`
+- `transcendence/frontend/interface/playwright-report`
+
+Use these artifacts as first-line evidence for flaky failures. The operational checklist is documented in:
+
+- [docs/e2e/FLAKE_TRIAGE_PLAYBOOK.md](docs/e2e/FLAKE_TRIAGE_PLAYBOOK.md)
+
 ## Required environment values
 
 Current workflows use deterministic default test users seeded by backend command:

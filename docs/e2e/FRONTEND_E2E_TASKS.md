@@ -152,7 +152,7 @@ Target folder for all C tasks:
   - Critical on risky PR labels and pre-release.
   - Extended on nightly schedule.
 
-- [ ] I5 - Reporting and flake triage
+- [x] I5 - Reporting and flake triage
   - Add retry/trace policy per suite.
   - Document triage playbook for flaky tests.
 
