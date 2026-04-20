@@ -101,16 +101,16 @@ Priority from report: 6, 7, 8, 11, 13, 14, 17, 18, 20
 - [x] B4 - Critical: cancel matchmaking (#11)
   - File: tests/e2e/critical/matchmaking-cancel.spec.js
 
-- [ ] B5 - Critical: resign reaches terminal state (#13)
+- [x] B5 - Critical: resign reaches terminal state (#13)
   - File: tests/e2e/critical/game-resign-terminal.spec.js
 
-- [ ] B6 - Critical: draw offer accept path (#14)
+- [x] B6 - Critical: draw offer accept path (#14)
   - File: tests/e2e/critical/game-draw-accept.spec.js
 
-- [ ] B7 - Critical: invite creation in chat thread (#17)
+- [x] B7 - Critical: invite creation in chat thread (#17)
   - File: tests/e2e/critical/chat-invite-create.spec.js
 
-- [ ] B8 - Critical: invite accept navigates to game (#18)
+- [x] B8 - Critical: invite accept navigates to game (#18)
   - File: tests/e2e/critical/chat-invite-accept.spec.js
 
 - [x] B9 - Critical: avatar upload success/failure boundary (#20)
@@ -160,7 +160,7 @@ Target folder for all C tasks:
 
 - [x] P1 - matchmaking redirect success (A3)
 - [x] P2 - matchmaking cancel (B4)
-- [ ] P3 - friend invite accept -> game (B8)
+- [x] P3 - friend invite accept -> game (B8)
 - [x] P4 - profile edit persistence (A6)
 - [x] P5 - avatar upload success/failure boundary (B9)
 

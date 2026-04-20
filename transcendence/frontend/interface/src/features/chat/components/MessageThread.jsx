@@ -135,6 +135,7 @@ export default function MessageThread({ conversation, userId, username }) {
 				<button
 					className="chat-thread-invite"
 					type="button"
+					data-testid="chat-thread-invite-button"
 					onClick={handleGameInvite}
 					title={hasOutgoingPendingInvite ? 'Invitation deja en attente' : 'Inviter a jouer'}
 					disabled={hasOutgoingPendingInvite}

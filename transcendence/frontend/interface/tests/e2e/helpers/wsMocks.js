@@ -97,6 +97,110 @@ export async function installMatchmakingWebSocketMock(page) {
 	})
 }
 
+export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') {
+	await page.addInitScript((targetGameId) => {
+		const NativeWebSocket = window.WebSocket
+
+		class MockWebSocket {
+			static CONNECTING = 0
+			static OPEN = 1
+			static CLOSING = 2
+			static CLOSED = 3
+
+			constructor(url) {
+				this.url = String(url)
+				this.readyState = MockWebSocket.CONNECTING
+				this.onopen = null
+				this.onmessage = null
+				this.onerror = null
+				this.onclose = null
+				this._mocked = this.url.includes(`/ws/chess/${targetGameId}/`)
+
+				if (this._mocked) {
+					setTimeout(() => {
+						this.readyState = MockWebSocket.OPEN
+						this.onopen?.({ type: 'open' })
+					}, 0)
+					return
+				}
+
+				this._native = new NativeWebSocket(url)
+				this._native.onopen = (event) => {
+					this.readyState = MockWebSocket.OPEN
+					this.onopen?.(event)
+				}
+				this._native.onmessage = (event) => this.onmessage?.(event)
+				this._native.onerror = (event) => this.onerror?.(event)
+				this._native.onclose = (event) => {
+					this.readyState = MockWebSocket.CLOSED
+					this.onclose?.(event)
+				}
+			}
+
+			send(raw) {
+				if (!this._mocked) {
+					this._native?.send(raw)
+					return
+				}
+
+				let data = null
+				try {
+					data = JSON.parse(raw)
+				} catch {
+					data = null
+				}
+				if (!data) return
+
+				if (data.action === 'reconnect') {
+					setTimeout(() => {
+						this.onmessage?.({
+							data: JSON.stringify({
+								action: 'game_state',
+								game_state: {
+									fen: 'rn1qkbnr/pppbpppp/8/3p4/8/3P4/PPP1PPPP/RNBQKBNR w KQkq - 0 2',
+									status: 'active',
+									white_player_id: 202,
+									black_player_id: 101,
+									draw_offer_from_player_id: 202,
+								},
+							}),
+						})
+					}, 10)
+					return
+				}
+
+				if (data.action === 'draw_response' && data.accept === true) {
+					setTimeout(() => {
+						this.onmessage?.({
+							data: JSON.stringify({
+								action: 'game_state',
+								game_state: {
+									fen: 'rn1qkbnr/pppbpppp/8/3p4/8/3P4/PPP1PPPP/RNBQKBNR w KQkq - 0 2',
+									status: 'draw',
+									white_player_id: 202,
+									black_player_id: 101,
+									draw_offer_from_player_id: null,
+								},
+							}),
+						})
+					}, 20)
+				}
+			}
+
+			close() {
+				if (!this._mocked) {
+					this._native?.close()
+					return
+				}
+				this.readyState = MockWebSocket.CLOSED
+				this.onclose?.({ type: 'close' })
+			}
+		}
+
+		window.WebSocket = MockWebSocket
+	}, gameId)
+}
+
 export async function installChatWebSocketMock(page, conversationId = 1) {
 	await page.addInitScript((targetConversationId) => {
 		const NativeWebSocket = window.WebSocket
