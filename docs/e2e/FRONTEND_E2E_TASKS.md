@@ -126,9 +126,9 @@ Priority from report: 21-30
 - [x] C4 - reduce motion persistence after reload (#24)
 - [x] C5 - statistics chart toggles no UI error (#25)
 - [x] C6 - typing indicator appears and clears (#26)
-- [ ] C7 - invite cancel status sync for sender (#27)
+- [x] C7 - invite cancel status sync for sender (#27)
 - [x] C8 - profile update transient API failure recovery (#28)
-- [ ] C9 - game websocket disconnect recoverable UI state (#29)
+- [x] C9 - game websocket disconnect recoverable UI state (#29)
 - [x] C10 - OAuth route behavior if enabled (#30)
 
 Target folder for all C tasks:
