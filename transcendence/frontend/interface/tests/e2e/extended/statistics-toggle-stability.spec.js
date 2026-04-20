@@ -19,10 +19,9 @@ test.describe('wave c - statistics chart toggles', () => {
 		await page.goto('/statistics')
 		await expect(page.locator('.pstats-page')).toBeVisible()
 
-		await page.getByRole('button', { name: /advantage/i }).click()
-		await page.getByRole('button', { name: /time/i }).click()
-		await page.getByRole('button', { name: /raw count/i }).click()
-		await page.getByRole('button', { name: /percentage/i }).click()
+			await page.getByRole('button', { name: /advantage/i }).click()
+			await page.getByRole('button', { name: /elo progression/i }).click()
+			await page.getByRole('button', { name: /move speed/i }).click()
 
 		await expect(page.locator('.pstats-chart-block')).toHaveCount(2)
 		expect(uncaughtErrors, `Unexpected errors: ${uncaughtErrors.join(' | ')}`).toEqual([])
