@@ -88,17 +88,17 @@ Priority from report: 1, 4, 5, 9, 10, 12, 15, 16, 19
 
 Priority from report: 6, 7, 8, 11, 13, 14, 17, 18, 20
 
-- [ ] B1 - Critical: invalid login shows error (#6)
+- [x] B1 - Critical: invalid login shows error (#6)
   - File: tests/e2e/critical/auth-login-error.spec.js
 
 - [ ] B2 - Critical: 2FA branch completion (#7)
   - File: tests/e2e/critical/auth-2fa.spec.js
   - Note: gated by backend 2FA fixture support.
 
-- [ ] B3 - Critical: logout clears session (#8)
+- [x] B3 - Critical: logout clears session (#8)
   - File: tests/e2e/critical/auth-logout.spec.js
 
-- [ ] B4 - Critical: cancel matchmaking (#11)
+- [x] B4 - Critical: cancel matchmaking (#11)
   - File: tests/e2e/critical/matchmaking-cancel.spec.js
 
 - [ ] B5 - Critical: resign reaches terminal state (#13)
@@ -113,7 +113,7 @@ Priority from report: 6, 7, 8, 11, 13, 14, 17, 18, 20
 - [ ] B8 - Critical: invite accept navigates to game (#18)
   - File: tests/e2e/critical/chat-invite-accept.spec.js
 
-- [ ] B9 - Critical: avatar upload success/failure boundary (#20)
+- [x] B9 - Critical: avatar upload success/failure boundary (#20)
   - File: tests/e2e/critical/profile-avatar-upload.spec.js
 
 ## 5) Wave C (extended resilience)
@@ -159,10 +159,10 @@ Target folder for all C tasks:
 ## 7) First implementation pack requested by report section 9
 
 - [x] P1 - matchmaking redirect success (A3)
-- [ ] P2 - matchmaking cancel (B4)
+- [x] P2 - matchmaking cancel (B4)
 - [ ] P3 - friend invite accept -> game (B8)
 - [x] P4 - profile edit persistence (A6)
-- [ ] P5 - avatar upload success/failure boundary (B9)
+- [x] P5 - avatar upload success/failure boundary (B9)
 
 ## 8) Suggested commit plan (one small step at a time)
 

@@ -21,6 +21,10 @@ test.describe('matchmaking redirect', () => {
 		await expect(page.getByTestId('matchmaking-modal')).toBeVisible()
 		await expect(page.getByTestId('matchmaking-queue-size')).toContainText('Joueurs en file : 1')
 
-		await expect(page).toHaveURL(/\/game\/e2e-game-123$/)
+			await page.evaluate(() => {
+				window.__e2eMatchmakingMock?.triggerMatchFound?.()
+			})
+
+			await page.waitForURL(/\/game\/e2e-game-123$/)
 	})
 })

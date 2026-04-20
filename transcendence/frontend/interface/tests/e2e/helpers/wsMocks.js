@@ -1,6 +1,7 @@
 export async function installMatchmakingWebSocketMock(page) {
 	await page.addInitScript(() => {
 		const NativeWebSocket = window.WebSocket
+		window.__e2eMatchmakingMock = { sockets: [] }
 
 		class MockWebSocket {
 			static CONNECTING = 0
@@ -18,6 +19,7 @@ export async function installMatchmakingWebSocketMock(page) {
 				this._mocked = this.url.includes('/ws/chess/')
 
 				if (this._mocked) {
+					window.__e2eMatchmakingMock.sockets.push(this)
 					setTimeout(() => {
 						this.readyState = MockWebSocket.OPEN
 						this.onopen?.({ type: 'open' })
@@ -55,10 +57,12 @@ export async function installMatchmakingWebSocketMock(page) {
 
 				if (data.action === 'join_queue') {
 					const playerId = String(data.player_id)
+					this._queueActive = true
 					setTimeout(() => {
 						this.onmessage?.({ data: JSON.stringify({ action: 'queue_status', queue_size: 1 }) })
 					}, 10)
-					setTimeout(() => {
+					window.__e2eMatchmakingMock.triggerMatchFound = () => {
+						if (!this._queueActive) return
 						this.onmessage?.({
 							data: JSON.stringify({
 								action: 'match_found',
@@ -67,10 +71,11 @@ export async function installMatchmakingWebSocketMock(page) {
 								black_player_id: '99999',
 							}),
 						})
-					}, 50)
+					}
 				}
 
 				if (data.action === 'leave_queue') {
+					this._queueActive = false
 					setTimeout(() => {
 						this.onmessage?.({ data: JSON.stringify({ action: 'queue_status', queue_size: 0 }) })
 					}, 10)
@@ -88,6 +93,7 @@ export async function installMatchmakingWebSocketMock(page) {
 		}
 
 		window.WebSocket = MockWebSocket
+		window.__e2eMatchmakingMock = window.__e2eMatchmakingMock
 	})
 }
 

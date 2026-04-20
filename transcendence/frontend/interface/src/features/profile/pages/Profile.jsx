@@ -225,8 +225,8 @@ function Profile() {
 			<div className="profile-layout">
 				{/* Hero Card */}
 				<section className="surface-card profile-hero">
-					<div className="profile-avatar-wrap" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
-						<img className="profile-avatar-lg" src={avatarSrc} alt="" />
+					<div className="profile-avatar-wrap" data-testid="profile-avatar-trigger" onClick={() => fileInputRef.current?.click()} style={{ cursor: 'pointer' }}>
+						<img className="profile-avatar-lg" src={avatarSrc} alt="" data-testid="profile-avatar-image" />
 						<div className="profile-avatar-overlay">
 							<i className="ri-camera-line" />
 						</div>
@@ -234,6 +234,7 @@ function Profile() {
 							ref={fileInputRef}
 							type="file"
 							accept="image/jpeg,image/png,image/gif,image/webp"
+							data-testid="profile-avatar-input"
 							onChange={handleAvatarUpload}
 							style={{ display: 'none' }}
 						/>
@@ -335,7 +336,7 @@ function Profile() {
 				</section>
 
 				<div className="profile-mobile-logout">
-					<button type="button" className="profile-mobile-logout__btn" onClick={handleLogout}>
+					<button type="button" className="profile-mobile-logout__btn" onClick={handleLogout} data-testid="profile-logout-button">
 						<i className="fa-solid fa-right-from-bracket" aria-hidden="true" />
 						Déconnexion
 					</button>
