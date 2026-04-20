@@ -136,7 +136,7 @@ Target folder for all C tasks:
 
 ## 6) Cross-cutting infra tasks (must be scheduled)
 
-- [ ] I1 - Seed strategy for deterministic data
+- [x] I1 - Seed strategy for deterministic data
   - Extend backend seed command to guarantee users, friendships, conversations, and match fixtures for E2E.
 
 - [ ] I2 - Multi-user orchestration helpers
@@ -155,6 +155,69 @@ Target folder for all C tasks:
 - [ ] I5 - Reporting and flake triage
   - Add retry/trace policy per suite.
   - Document triage playbook for flaky tests.
+
+### Execution plan to close I1-I5 (5 mini-steps, 1 commit each)
+
+1. I1 - Deterministic backend seed pack
+   - Goal:
+     - Seed not only users, but also accepted friendships, at least one conversation pair, and one reusable online game fixture.
+   - Deliverables:
+     - Extend backend E2E seed service to create relationship fixtures and game fixture ids used by tests.
+     - Add a single command entrypoint to seed all E2E fixtures in one shot.
+   - Definition of done:
+     - Running seed command twice is idempotent (same functional state).
+     - Critical invite/game tests can run without inline data fabrication for baseline entities.
+   - Proposed commit message:
+     - chore(e2e-backend): add deterministic friendships conversations and game fixtures seeding
+
+2. I2 - Multi-user orchestration helpers
+   - Goal:
+     - Standardize two-user and three-user test orchestration to remove duplicated setup logic.
+   - Deliverables:
+     - Add helper utilities for opening role contexts/pages and synchronizing actions between USER_A and USER_B.
+     - Add helper patterns for invite flow and game interaction flow.
+   - Definition of done:
+     - At least 2 existing tests migrated to orchestration helpers.
+     - No test logic regression and readability improves.
+   - Proposed commit message:
+     - chore(e2e): add multi-user orchestration helpers for synchronized role flows
+
+3. I3 - API and websocket control layer hardening
+   - Goal:
+     - Centralize deterministic wait and event trigger primitives and remove ad hoc timing behavior.
+   - Deliverables:
+     - Expand helper layer with reusable waitForVisibleState style utilities.
+     - Ensure websocket mocks expose explicit trigger methods for key transitions.
+     - Explicitly ban fixed sleeps in tests.
+   - Definition of done:
+     - Search check confirms no fixed sleeps in E2E specs.
+     - New helper API is used by both critical and extended suites.
+   - Proposed commit message:
+     - refactor(e2e): harden api websocket control layer and remove fixed timing waits
+
+4. I4 - CI run profiles by risk level
+   - Goal:
+     - Automate suite selection by lifecycle: smoke on PR, critical on gated events, extended nightly.
+   - Deliverables:
+     - Add CI workflows or jobs with suite-specific commands.
+     - Document triggering rules and required env vars/secrets.
+   - Definition of done:
+     - CI includes smoke required gate.
+     - Critical and extended jobs are runnable with clear conditions.
+   - Proposed commit message:
+     - ci(e2e): add suite-based smoke critical extended workflows
+
+5. I5 - Reporting and flake triage playbook
+   - Goal:
+     - Make failures diagnosable and reduce recurring flakes with a shared process.
+   - Deliverables:
+     - Add E2E triage doc (symptom, probable cause, first checks, rerun protocol, ownership).
+     - Define retry and trace policy per suite and align Playwright config/documentation.
+   - Definition of done:
+     - Team can follow one documented checklist to classify flaky vs real regression.
+     - CI artifacts needed for triage are explicitly referenced in docs.
+   - Proposed commit message:
+     - docs(e2e): add flake triage playbook and suite-level retry trace policy
 
 ## 7) First implementation pack requested by report section 9
 
