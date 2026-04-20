@@ -22,15 +22,15 @@ function MenuHome() {
 					À propos
 				</Link>
 				{user ? (
-					<Link to="/dashboard" className="button-signup">
+					<Link to="/dashboard" className="button-signup" data-testid="home-dashboard-link">
 						Tableau de bord
 					</Link>
 				) : (
 					<>
-						<Link to="/auth" className="button-signin">
+						<Link to="/auth" className="button-signin" data-testid="home-login-cta">
 							Connexion
 						</Link>
-						<Link to="/auth?mode=register" className="button-signup">
+						<Link to="/auth?mode=register" className="button-signup" data-testid="home-register-cta">
 							Créer un compte
 						</Link>
 					</>

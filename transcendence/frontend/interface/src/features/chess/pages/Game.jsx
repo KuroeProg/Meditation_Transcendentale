@@ -153,7 +153,7 @@ function App() {
   const bottomPlayer = getPlayerBarData(bottomPlayerColor);
 
   return (
-    <div>
+    <div data-testid="game-page">
       <div
         className="game-debug-hud"
         style={{
@@ -227,16 +227,16 @@ function App() {
       </div>
       <div className="header" />
 
-      <div className="game-container">
+      <div className="game-container" data-testid="game-shell">
         <GameAmbientBgm />
         <div className="game-board-col">
-          <div className="player-bar">
+          <div className="player-bar" data-testid="game-player-bar-top">
             <img className="player-avatar" src={topPlayer.avatar} alt="" />
             <span className={topPlayer.nameClass}>{topPlayer.name}</span>
             <span className={topPlayer.timerClass}>{topPlayer.timer}</span>
           </div>
 
-          <div className="board-frame">
+          <div className="board-frame" data-testid="game-board-frame">
             <Board
               game={displayedGame}
               winner={winner}
@@ -250,7 +250,7 @@ function App() {
             />
           </div>
 
-          <div className="player-bar">
+          <div className="player-bar" data-testid="game-player-bar-bottom">
             <img className="player-avatar" src={bottomPlayer.avatar} alt="" />
             <span className={bottomPlayer.nameClass}>{bottomPlayer.name}</span>
             <span className={bottomPlayer.timerClass}>

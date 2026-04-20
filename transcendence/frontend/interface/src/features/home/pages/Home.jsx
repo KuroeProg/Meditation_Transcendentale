@@ -21,6 +21,7 @@ function Home() {
 	return (
 		<div
 			className={`home${user ? ' home--chat-fab-room' : ''}`}
+			data-testid="home-page"
 			onPointerDown={() => {
 				void tryPlayHomeBgm()
 			}}

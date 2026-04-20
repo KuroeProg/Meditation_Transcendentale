@@ -20,9 +20,16 @@ __pycache__/
 node_modules/
 dist/
 .DS_Store
+playwright-report/
+test-results/
 
 # Cursor : règles personnelles locales (non partagées). Les commandes projet sont dans .cursor/commands/
 .cursor/rules/
 
 
 /transcendence/env/profiles/*.env
+/transcendence/env/e2e/.env.e2e
+/transcendence/env/e2e/.env.e2e.local
+/transcendence/frontend/interface/.env.e2e
+/transcendence/frontend/interface/.env.e2e.local
+/transcendence/frontend/interface/tests/e2e/.auth/

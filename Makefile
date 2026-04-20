@@ -7,6 +7,15 @@ _REPO_MAKEFILE := $(abspath $(lastword $(MAKEFILE_LIST)))
 REPO_ROOT      := $(dir $(_REPO_MAKEFILE))
 COMPOSE_DIR    := $(REPO_ROOT)transcendence
 COMPOSE        := cd $(COMPOSE_DIR) && docker compose
+INTERFACE_DIR  := $(COMPOSE_DIR)/frontend/interface
+
+# E2E test controls
+E2E_BASE_URL ?= https://localhost
+PROJECT ?= chromium
+WORKERS ?=
+FILE ?=
+GREP ?=
+SUITE ?=
 
 # Logs affichés par « make up » / « make logs » (hors ELK / monitoring / vault)
 LOGS_CORE := frontend backend nginx db redis worker
@@ -52,7 +61,7 @@ ifeq ($(strip $(PROFILE)),localhost)
 endif
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
-.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload
+.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean re env-list env-use env-reload seed-e2e-users test-e2e-list test-e2e test-e2e-headed test-e2e-file test-e2e-grep test-e2e-suite
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -226,3 +235,44 @@ env-reload: ## Recréer la stack pour recharger toutes les variables d'environne
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Recréation des services (reload des variables d'environnement)…"
 	@$(COMPOSE) up -d --force-recreate
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Variables d'environnement rechargées sur la stack."
+
+seed-e2e-users: ## Créer ou rafraîchir les comptes E2E en base
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Seeding des comptes E2E…"
+	@$(COMPOSE) exec -T backend python manage.py seed_e2e_users
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Comptes E2E prêts."
+
+test-e2e-list: ## Lister les tests E2E Playwright détectés
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Découverte des tests E2E…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npm run test:e2e:list
+
+test-e2e: ## Lancer toute la suite E2E (vars: PROJECT, WORKERS, E2E_BASE_URL)
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E (project=$(PROJECT), base_url=$(E2E_BASE_URL))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)
+
+test-e2e-headed: ## Lancer la suite E2E en mode headed (vars: PROJECT, E2E_BASE_URL)
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E headed (project=$(PROJECT), base_url=$(E2E_BASE_URL))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test --headed --project "$(PROJECT)"
+
+test-e2e-file: ## Lancer un fichier de test E2E (usage: make test-e2e-file FILE=tests/e2e/auth-flow.spec.js)
+	@if [ -z "$(FILE)" ]; then \
+		printf '%b\n' "$(C_RED)✗$(C_RESET) FILE est requis. Ex: make test-e2e-file FILE=tests/e2e/auth-flow.spec.js"; \
+		exit 1; \
+	fi
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E ciblée fichier=$(FILE) (project=$(PROJECT))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test "$(FILE)" --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)
+
+test-e2e-grep: ## Lancer des tests E2E filtrés par nom (usage: make test-e2e-grep GREP="auth flow")
+	@if [ -z "$(GREP)" ]; then \
+		printf '%b\n' "$(C_RED)✗$(C_RESET) GREP est requis. Ex: make test-e2e-grep GREP=\"auth flow\""; \
+		exit 1; \
+	fi
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E filtrée grep='$(GREP)' (project=$(PROJECT))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test --grep "$(GREP)" --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)
+
+test-e2e-suite: ## Lancer une suite par dossier (usage: make test-e2e-suite SUITE=smoke)
+	@if [ -z "$(SUITE)" ]; then \
+		printf '%b\n' "$(C_RED)✗$(C_RESET) SUITE est requis. Ex: make test-e2e-suite SUITE=smoke"; \
+		exit 1; \
+	fi
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Exécution E2E suite=$(SUITE) (project=$(PROJECT))…"
+	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npx playwright test "tests/e2e/$(SUITE)" --project "$(PROJECT)" $(if $(WORKERS),--workers $(WORKERS),)
