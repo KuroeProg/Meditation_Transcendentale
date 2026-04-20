@@ -221,15 +221,42 @@ env-list: ## Lister les profils d'environnement disponibles
 	@printf '%b\n' "$(C_BOLD)Profils .env disponibles :$(C_RESET)"
 	@ls -1 $(ENV_PROFILES_DIR)/*.env 2>/dev/null | sed 's#^.*/##; s#\.env$$##' | sed 's/^/  - /'
 
-env-use: ## Appliquer un profil .env (ex: make env-use PROFILE=lan)
+env-use: ## Appliquer un profil .env (PROFILE=lan : IP auto en0/en1 ou surcharger LAN_IP=…)
 	@if [ ! -f "$(ENV_SOURCE)" ]; then \
 		printf '%b\n' "$(C_RED)✗$(C_RESET) Profil introuvable: $(ENV_SOURCE)"; \
 		printf '%b\n' "$(C_DIM)Profils disponibles: make env-list$(C_RESET)"; \
 		exit 1; \
-	fi
-	@cp "$(ENV_SOURCE)" "$(ENV_TARGET)"
-	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) -> $(ENV_TARGET)"
-	@printf '%b\n' "$(C_DIM)Appliquer les nouvelles variables: make env-reload$(C_RESET)"
+	fi; \
+	_ip=""; \
+	if [ "$(PROFILE_FILE)" = "lan" ]; then \
+		_ip="$${LAN_IP:-}"; \
+		if [ -z "$$_ip" ]; then \
+			case "$$(uname -s)" in \
+				Darwin) \
+					_ip=$$(ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null || true);; \
+				Linux) \
+					_ip=$$(hostname -I 2>/dev/null | awk '{print $$1}'); \
+					if [ -z "$$_ip" ]; then \
+						_ip=$$(ip -4 route get 1.1.1.1 2>/dev/null | awk '{for(i=1;i<=NF;i++) if ($$i=="src") {print $$(i+1); exit}}'); \
+					fi;; \
+			esac; \
+		fi; \
+		if [ -z "$$_ip" ]; then \
+			printf '%b\n' "$(C_RED)✗$(C_RESET) Impossible de détecter l’IP LAN."; \
+			printf '%b\n' "$(C_DIM)  Indiquez-la : $(C_GREEN)LAN_IP=192.168.x.x make env-use PROFILE=lan$(C_RESET)"; \
+			printf '%b\n' "$(C_DIM)  Tu peux forcer l’IP : $(C_GREEN)LAN_IP=<résultat-de-iplocal> make env-use PROFILE=lan$(C_RESET)"; \
+			exit 1; \
+		fi; \
+	fi; \
+	cp "$(ENV_SOURCE)" "$(ENV_TARGET)"; \
+	if [ "$(PROFILE_FILE)" = "lan" ]; then \
+		_tmp="$$(mktemp)"; \
+		sed "s/@LAN_HOST@/$$_ip/g" "$(ENV_TARGET)" > "$$_tmp" && mv "$$_tmp" "$(ENV_TARGET)"; \
+		printf '%b\n' "$(C_DIM)  IP LAN utilisée : $$_ip$(C_RESET)"; \
+	fi; \
+	printf '%b\n' "$(C_GREEN)✓$(C_RESET) Profil appliqué: $(PROFILE) -> $(ENV_TARGET)"; \
+	printf '%b\n' "$(C_DIM)Recharger les variables d'environnement: make env-reload$(C_RESET)"; \
+	$(MAKE) env-reload
 
 env-reload: ## Recréer la stack pour recharger toutes les variables d'environnement
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Recréation des services (reload des variables d'environnement)…"
