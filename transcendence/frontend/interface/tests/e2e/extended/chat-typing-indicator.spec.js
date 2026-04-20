@@ -1,18 +1,16 @@
 import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
-import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { withRoleSessions } from '../helpers/multiUser.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
-
-test.use({
-	storageState: getRoleStateFilePath('SMOKE_USER'),
-})
 
 test.describe('wave c - typing indicator lifecycle', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
-	test('shows remote typing indicator then clears when typing stops', async ({ page }) => {
-		await installChatWebSocketMock(page, 1)
+	test('shows remote typing indicator then clears when typing stops', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await installChatWebSocketMock(page, 1)
 
 		await page.route('**/api/chat/conversations', async (route) => {
 			await route.fulfill({
@@ -55,6 +53,7 @@ test.describe('wave c - typing indicator lifecycle', () => {
 			window.__e2eChatMock.triggerTyping({ userId: 202, username: 'USER_B', isTyping: false })
 		})
 
-		await expect(page.locator('.chat-typing-indicator')).toHaveCount(0)
+			await expect(page.locator('.chat-typing-indicator')).toHaveCount(0)
+		})
 	})
 })

@@ -139,7 +139,7 @@ Target folder for all C tasks:
 - [x] I1 - Seed strategy for deterministic data
   - Extend backend seed command to guarantee users, friendships, conversations, and match fixtures for E2E.
 
-- [ ] I2 - Multi-user orchestration helpers
+- [x] I2 - Multi-user orchestration helpers
   - Add helpers for USER_A/USER_B synchronized actions.
   - Prefer explicit two-context flow for invite and game interaction specs.
 

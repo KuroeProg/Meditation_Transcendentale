@@ -1,16 +1,14 @@
 import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
-import { getRoleStateFilePath } from '../helpers/storageState.js'
-
-test.use({
-	storageState: getRoleStateFilePath('SMOKE_USER'),
-})
+import { withRoleSessions } from '../helpers/multiUser.js'
 
 test.describe('wave c - non-chat invite notification', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
-	test('invite unread badge and toast update on dashboard without opening chat', async ({ page }) => {
+	test('invite unread badge and toast update on dashboard without opening chat', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({
 				status: 200,
@@ -63,5 +61,6 @@ test.describe('wave c - non-chat invite notification', () => {
 
 		await expect(page.locator('.chat-fab-badge--invite')).toContainText('1')
 		await expect(page.getByTestId('chat-toast-button')).toBeVisible()
+		})
 	})
 })

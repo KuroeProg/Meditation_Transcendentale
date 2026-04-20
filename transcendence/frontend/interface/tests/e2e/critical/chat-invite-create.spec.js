@@ -1,13 +1,11 @@
 import { expect, test } from '@playwright/test'
 
-import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { withRoleSessions } from '../helpers/multiUser.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
-test.use({
-	storageState: getRoleStateFilePath('SMOKE_USER'),
-})
-
-test('send friend invite from thread creates an invite card', async ({ page }) => {
+test('send friend invite from thread creates an invite card', async ({ browser }) => {
+	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+		const { page } = SMOKE_USER
 	const sessionUser = {
 		id: 101,
 		username: 'SMOKE_USER',
@@ -104,4 +102,5 @@ test('send friend invite from thread creates an invite card', async ({ page }) =
 
 	await expect(page.getByTestId('chat-game-invite-card')).toBeVisible()
 	await expect(page.getByText('Invitation envoyee')).toBeVisible()
+	})
 })

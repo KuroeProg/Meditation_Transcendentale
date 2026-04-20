@@ -1,18 +1,16 @@
 import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
-import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { withRoleSessions } from '../helpers/multiUser.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
-
-test.use({
-	storageState: getRoleStateFilePath('SMOKE_USER'),
-})
 
 test.describe('chat send message', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
-	test('chat opens, loads conversation list, and sends a message', async ({ page }) => {
-		await installChatWebSocketMock(page, 1)
+	test('chat opens, loads conversation list, and sends a message', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await installChatWebSocketMock(page, 1)
 
 		await page.route('**/api/chat/conversations', async (route) => {
 			await route.fulfill({
@@ -54,6 +52,7 @@ test.describe('chat send message', () => {
 		await page.getByTestId('chat-message-input').fill(messageText)
 		await page.getByTestId('chat-send-button').click()
 
-		await expect(page.getByText(messageText)).toBeVisible()
+			await expect(page.getByText(messageText)).toBeVisible()
+		})
 	})
 })

@@ -1,19 +1,17 @@
 import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
-import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { withRoleSessions } from '../helpers/multiUser.js'
 import { installChatWebSocketMock, installNotificationsWebSocketMock } from '../helpers/wsMocks.js'
-
-test.use({
-	storageState: getRoleStateFilePath('SMOKE_USER'),
-})
 
 test.describe('wave c - sender invite cancel sync', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
-	test('sender card updates to cancelled when invite_updated websocket event arrives', async ({ page }) => {
-		await installChatWebSocketMock(page, 1)
-		await installNotificationsWebSocketMock(page, 101)
+	test('sender card updates to cancelled when invite_updated websocket event arrives', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await installChatWebSocketMock(page, 1)
+			await installNotificationsWebSocketMock(page, 101)
 
 		const invitePayload = {
 			invite_id: 77,
@@ -107,5 +105,6 @@ test.describe('wave c - sender invite cancel sync', () => {
 
 		await expect(page.getByText('Invitation annulee')).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toHaveCount(0)
+		})
 	})
 })
