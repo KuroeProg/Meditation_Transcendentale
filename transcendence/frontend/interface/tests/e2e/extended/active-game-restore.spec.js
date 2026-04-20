@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { waitForGameShellReady } from '../helpers/waits.js'
 
 test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
@@ -17,6 +18,6 @@ test.describe('wave c - active game restore', () => {
 
 		await page.goto('/dashboard')
 		await expect(page).toHaveURL(/\/game\/training/)
-		await expect(page.getByTestId('game-shell')).toBeVisible()
+		await waitForGameShellReady(page)
 	})
 })

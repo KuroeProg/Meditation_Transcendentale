@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { waitForDashboardReady } from '../helpers/waits.js'
 
 test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
@@ -19,6 +20,7 @@ test.describe('wave c - presence ping on visibility change', () => {
 		})
 
 		await page.goto('/dashboard')
+		await waitForDashboardReady(page)
 		await expect.poll(() => presenceCalls).toBeGreaterThanOrEqual(1)
 
 		await page.evaluate(() => {
