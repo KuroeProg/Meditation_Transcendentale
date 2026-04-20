@@ -204,6 +204,24 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 export async function installChatWebSocketMock(page, conversationId = 1) {
 	await page.addInitScript((targetConversationId) => {
 		const NativeWebSocket = window.WebSocket
+		window.__e2eChatMock = {
+			sockets: [],
+			triggerTyping(payload = {}) {
+				const userId = Number(payload.userId ?? 202)
+				const username = String(payload.username ?? 'USER_B')
+				const isTyping = Boolean(payload.isTyping)
+				for (const socket of window.__e2eChatMock.sockets) {
+					socket.onmessage?.({
+						data: JSON.stringify({
+							action: 'typing',
+							user_id: userId,
+							username,
+							is_typing: isTyping,
+						}),
+					})
+				}
+			},
+		}
 
 		class MockWebSocket {
 			static CONNECTING = 0
@@ -223,6 +241,7 @@ export async function installChatWebSocketMock(page, conversationId = 1) {
 				this._messageId = 3000
 
 				if (this._mocked) {
+					window.__e2eChatMock.sockets.push(this)
 					setTimeout(() => {
 						this.readyState = MockWebSocket.OPEN
 						this.onopen?.({ type: 'open' })
@@ -289,6 +308,7 @@ export async function installChatWebSocketMock(page, conversationId = 1) {
 					this._native?.close()
 					return
 				}
+				window.__e2eChatMock.sockets = window.__e2eChatMock.sockets.filter((socket) => socket !== this)
 				this.readyState = MockWebSocket.CLOSED
 				this.onclose?.({ type: 'close' })
 			}

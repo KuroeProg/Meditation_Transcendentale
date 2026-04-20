@@ -120,16 +120,16 @@ Priority from report: 6, 7, 8, 11, 13, 14, 17, 18, 20
 
 Priority from report: 21-30
 
-- [ ] C1 - Notification invite update on non-chat page (#21)
-- [ ] C2 - Presence ping after visibility change (#22)
-- [ ] C3 - activeGameId session restore redirect (#23)
-- [ ] C4 - reduce motion persistence after reload (#24)
-- [ ] C5 - statistics chart toggles no UI error (#25)
-- [ ] C6 - typing indicator appears and clears (#26)
+- [x] C1 - Notification invite update on non-chat page (#21)
+- [x] C2 - Presence ping after visibility change (#22)
+- [x] C3 - activeGameId session restore redirect (#23)
+- [x] C4 - reduce motion persistence after reload (#24)
+- [x] C5 - statistics chart toggles no UI error (#25)
+- [x] C6 - typing indicator appears and clears (#26)
 - [ ] C7 - invite cancel status sync for sender (#27)
-- [ ] C8 - profile update transient API failure recovery (#28)
+- [x] C8 - profile update transient API failure recovery (#28)
 - [ ] C9 - game websocket disconnect recoverable UI state (#29)
-- [ ] C10 - OAuth route behavior if enabled (#30)
+- [x] C10 - OAuth route behavior if enabled (#30)
 
 Target folder for all C tasks:
 - tests/e2e/extended/
