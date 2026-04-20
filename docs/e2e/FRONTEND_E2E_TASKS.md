@@ -91,7 +91,7 @@ Priority from report: 6, 7, 8, 11, 13, 14, 17, 18, 20
 - [x] B1 - Critical: invalid login shows error (#6)
   - File: tests/e2e/critical/auth-login-error.spec.js
 
-- [ ] B2 - Critical: 2FA branch completion (#7)
+- [x] B2 - Critical: 2FA branch completion (#7)
   - File: tests/e2e/critical/auth-2fa.spec.js
   - Note: gated by backend 2FA fixture support.
 
