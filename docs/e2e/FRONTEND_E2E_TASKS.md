@@ -147,7 +147,7 @@ Target folder for all C tasks:
   - Introduce stable helper utilities for waiting on user-visible state transitions.
   - Ban fixed sleeps in specs.
 
-- [ ] I4 - E2E run profiles in CI
+- [x] I4 - E2E run profiles in CI
   - Smoke on each PR.
   - Critical on risky PR labels and pre-release.
   - Extended on nightly schedule.

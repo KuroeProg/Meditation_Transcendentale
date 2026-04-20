@@ -1,0 +1,38 @@
+name: E2E Smoke
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    env:
+      E2E_SMOKE_USER_EMAIL: smoke@e2e.local
+      E2E_SMOKE_USER_PASSWORD: Smoke1234!
+      E2E_USER_A_EMAIL: user-a@e2e.local
+      E2E_USER_A_PASSWORD: MatchA1234!
+      E2E_USER_B_EMAIL: user-b@e2e.local
+      E2E_USER_B_PASSWORD: MatchB1234!
+      E2E_USER_C_EMAIL: user-c@e2e.local
+      E2E_USER_C_PASSWORD: MatchC1234!
+      E2E_BASE_URL: https://localhost
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Start stack
+        run: make up-bg
+
+      - name: Seed deterministic E2E fixtures
+        run: make seed-e2e-users
+
+      - name: Run smoke suite
+        run: make test-e2e-suite SUITE=smoke
+
+      - name: Stop stack
+        if: always()
+        run: make down
