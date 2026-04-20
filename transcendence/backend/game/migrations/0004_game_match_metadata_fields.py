@@ -4,7 +4,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('game', '0002_remove_game_ended_at_alter_game_started_at'),
+        ('game', '0003_game_increment_game_time_control'),
     ]
 
     operations = [

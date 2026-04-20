@@ -57,6 +57,7 @@ export default function FriendGameInviteModal({
 		<div className="friend-invite-overlay" role="presentation" onClick={onClose}>
 			<div
 				className="friend-invite-dialog dashboard-v2"
+				data-testid="friend-invite-modal"
 				role="dialog"
 				aria-modal="true"
 				aria-labelledby="friend-invite-title"
@@ -103,7 +104,7 @@ export default function FriendGameInviteModal({
 					<button type="button" className="friend-invite-btn friend-invite-btn--ghost" onClick={onClose} disabled={sending}>
 						Annuler
 					</button>
-					<button type="button" className="friend-invite-btn friend-invite-btn--primary" onClick={handleSubmit} disabled={sending}>
+					<button type="button" className="friend-invite-btn friend-invite-btn--primary" data-testid="friend-invite-send" onClick={handleSubmit} disabled={sending}>
 						{sending ? 'Envoi…' : 'Envoyer l’invitation'}
 					</button>
 				</footer>

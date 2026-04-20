@@ -20,6 +20,8 @@ class Game(models.Model):
     termination_reason = models.CharField(max_length=32, blank=True, default='')
 
     started_at = models.DateTimeField()
+    time_control = models.PositiveIntegerField(null=True, blank=True, help_text="Initial time control in seconds")
+    increment = models.PositiveIntegerField(null=True, blank=True, help_text="Increment per move in seconds")
     duration_seconds = models.PositiveIntegerField(null=True, blank=True, help_text="Total duration of the game in seconds")
     
     class Meta:

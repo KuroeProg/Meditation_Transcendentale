@@ -4,7 +4,7 @@ import {
 	isDevMockAuthEnabled,
 	maybeClearSortingHatStorageForMock,
 } from '../../mock/mockSessionUser.js'
-import { disableDevGuestPreview } from '../../utils/devGuestPreview.js'
+import { disableDevGuestPreview, isDevGuestPreviewActive } from '../../utils/devGuestPreview.js'
 import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
@@ -65,6 +65,26 @@ export function AuthProvider({ children }) {
 
   async function checkAuth() {
     try {
+      /* Aperçu invité dev : pas de session (ignore cookies / mock) */
+      if (import.meta.env.DEV && isDevGuestPreviewActive()) {
+        setUser(null)
+        setTwoFactorChallenge(null)
+        return
+      }
+
+      /*
+       * Session fictive Vite / barre « Dev mock » : ne pas appeler /api/auth/me
+       * (sinon 401 après « Lancer l’animation choixpeau » : logout + refetch).
+       */
+      if (isDevMockAuthEnabled()) {
+        const u = getMockSessionUser()
+        maybeClearSortingHatStorageForMock(u.id)
+        disableDevGuestPreview()
+        setUser(u)
+        setTwoFactorChallenge(null)
+        return
+      }
+
       const response = await fetch(AUTH_PATHS.me, {
         credentials: 'include',
       })

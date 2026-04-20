@@ -87,6 +87,20 @@
 	color: var(--coalition-accent, #a8d4ff);
 }
 
+/*
+ * Non connecté : Contact / À propos lisibles (home, auth, etc.) — voir App.jsx .app-layout--guest-session
+ */
+.app-layout--guest-session .site-footer__link--app {
+	color: #fff;
+}
+
+.app-layout--guest-session .site-footer__link--app:hover {
+	color: rgba(255, 255, 255, 0.95);
+	text-shadow:
+		0 0 14px rgba(255, 255, 255, 0.12),
+		0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
 .site-footer__sep {
 	color: rgba(245, 248, 255, 0.28);
 	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.45);

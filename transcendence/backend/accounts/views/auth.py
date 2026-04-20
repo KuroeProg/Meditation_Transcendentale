@@ -17,6 +17,7 @@ from django.utils.decorators import method_decorator
 
 from accounts.models import Friendship, LocalUser
 from utils.presence import mark_user_presence_logged_out
+from accounts.services.e2e_users import seed_e2e_users
 from utils.two_factor import (
     generate_2fa_code,
     is_user_blocked,
@@ -277,47 +278,8 @@ def _broadcast_friend_presence_update(user_id: int, is_online: bool):
 
 @require_POST
 def auth_seed_users(request):
-    seeds = [
-        {
-            'username': 'white_player',
-            'password': 'white1234',
-            'first_name': 'White',
-            'last_name': 'Player',
-            'email': 'white@transcendence.local',
-            'coalition': 'feu',
-        },
-        {
-            'username': 'black_player',
-            'password': 'black1234',
-            'first_name': 'Black',
-            'last_name': 'Player',
-            'email': 'black@transcendence.local',
-            'coalition': 'eau',
-        },
-    ]
-
-    created = []
-    for item in seeds:
-        user, was_created = LocalUser.objects.get_or_create(
-            username=item['username'],
-            defaults={
-                'first_name': item['first_name'],
-                'last_name': item['last_name'],
-                'email': item['email'],
-                'coalition': item['coalition'],
-                'password_hash': '',
-            },
-        )
-        user.first_name = item['first_name']
-        user.last_name = item['last_name']
-        user.email = item['email']
-        user.coalition = item['coalition']
-        user.set_password(item['password'])
-        user.save()
-        if was_created:
-            created.append(user.username)
-
-    return JsonResponse({'ok': True, 'created': created})
+    result = seed_e2e_users()
+    return JsonResponse({'ok': True, **result})
 
 
 @require_POST

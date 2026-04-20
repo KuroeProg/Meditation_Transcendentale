@@ -47,7 +47,7 @@ export default function GameInviteCard({ msg, isOwn }) {
 
 	return (
 		<div className={`chat-msg ${isOwn ? 'chat-msg--own' : 'chat-msg--other'}`}>
-			<div className="chat-invite-card">
+			<div className="chat-invite-card" data-testid="chat-game-invite-card">
 				<div className="chat-invite-icon"><i className="ri-sword-line" /></div>
 				<div className="chat-invite-info">
 					<span className="chat-invite-title">
@@ -59,7 +59,7 @@ export default function GameInviteCard({ msg, isOwn }) {
 				</div>
 				{canAct && !isOwn && (
 					<div className="chat-invite-actions">
-						<button className="chat-invite-accept" type="button" onClick={() => runAction('accept')} disabled={Boolean(busyAction)}>
+						<button className="chat-invite-accept" type="button" data-testid="chat-invite-accept" onClick={() => runAction('accept')} disabled={Boolean(busyAction)}>
 							{busyAction === 'accept' ? '...' : 'Accepter'}
 						</button>
 						<button className="chat-invite-accept" type="button" onClick={() => runAction('decline')} disabled={Boolean(busyAction)}>

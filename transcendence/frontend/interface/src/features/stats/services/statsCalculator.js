@@ -35,6 +35,31 @@ export function buildPieceUsageRows(pieceUsage, pieceMode) {
   }))
 }
 
+export function formatPieceUsageData(mine = {}, all = {}, mode = 'raw') {
+  const pieces = [
+    { key: 'pawn', label: 'Pawn' },
+    { key: 'knight', label: 'Knight' },
+    { key: 'bishop', label: 'Bishop' },
+    { key: 'rook', label: 'Rook' },
+    { key: 'queen', label: 'Queen' },
+    { key: 'king', label: 'King' },
+  ]
+
+  const myTotal = Object.values(mine).reduce((a, b) => a + b, 0) || 1
+  const allTotal = Object.values(all).reduce((a, b) => a + b, 0) || 1
+
+  return pieces.map(p => {
+    const myCount = mine[p.key] || 0
+    const allCount = all[p.key] || 0
+
+    return {
+      label: p.label,
+      barPlayer: mode === 'percentage' ? +((myCount / myTotal) * 100).toFixed(1) : myCount,
+      barAll: mode === 'percentage' ? +((allCount / allTotal) * 100).toFixed(1) : allCount,
+    }
+  })
+}
+
 export function buildStatsPageStyle(theme) {
   return {
     '--pstats-accent': theme.accent,

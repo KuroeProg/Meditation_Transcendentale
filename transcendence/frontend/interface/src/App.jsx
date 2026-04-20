@@ -88,7 +88,7 @@ function AppContent() {
 	return (
 		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
 		<ChatUiProvider openChat={() => setChatOpen(true)}>
-		<div className="app-layout">
+		<div className={`app-layout${!isAuthenticated ? ' app-layout--guest-session' : ''}`}>
 			<ThemeSync />
 			<SortingHatGate />
 			<CoalitionHtmlSync />
@@ -106,9 +106,7 @@ function AppContent() {
 					<Route
 						path="/"
 						element={
-							<ProtectedRoute>
-								<HomePage />
-							</ProtectedRoute>
+							<HomePage />
 						}
 					/>
 					<Route

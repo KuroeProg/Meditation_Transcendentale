@@ -30,11 +30,11 @@ export default function ConversationList({ onSelect, activeId }) {
 		return () => clearInterval(interval)
 	}, [])
 
-	if (loading) return <div className="chat-loading">Chargement...</div>
-	if (!conversations.length) return <div className="chat-empty">Aucune conversation</div>
+	if (loading) return <div className="chat-loading" data-testid="chat-conversations-loading">Chargement...</div>
+	if (!conversations.length) return <div className="chat-empty" data-testid="chat-conversations-empty">Aucune conversation</div>
 
 	return (
-		<ul className="chat-conv-list">
+		<ul className="chat-conv-list" data-testid="chat-conversation-list">
 			{conversations.map((c) => {
 				const other = c.participants?.[0]
 				const otherOnline = resolveUserOnline(other)
@@ -44,6 +44,7 @@ export default function ConversationList({ onSelect, activeId }) {
 					<li
 						key={c.id}
 						className={`chat-conv-item ${isActive ? 'chat-conv-item--active' : ''}`}
+						data-testid={`chat-conversation-item-${c.id}`}
 						onClick={() => onSelect(c)}
 					>
 						<img className="chat-conv-avatar" src={other?.avatar || ''} alt="" />

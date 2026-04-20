@@ -12,6 +12,8 @@ export const COALITION_ACCENTS = {
 	eau: '#38bdf8',
 	terre: '#98ab1b',
 	air: '#c084fc',
+	/** Visiteur public : bleu minuit (proche DA auth) */
+	neutral: '#8ba4d9',
 }
 
 export const COALITION_LIGHTNING_FLASH_EDGE = {
