@@ -9,6 +9,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:list": "playwright test --list",
     "preview": "vite preview",
     "generate:tiles-manifest": "node scripts/generate-board-tiles-manifest.mjs"
   },
@@ -23,6 +26,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.39.1",
+    "@playwright/test": "^1.59.1",
     "@types/react": "^19.2.7",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.1.1",

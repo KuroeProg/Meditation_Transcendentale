@@ -12,11 +12,12 @@ export default function ChatFabCluster({
 	const showInv = inviteUnread > 0
 
 	return (
-		<div className={`chat-fab-cluster${toast ? ' chat-fab-cluster--toast' : ''}`}>
+		<div className={`chat-fab-cluster${toast ? ' chat-fab-cluster--toast' : ''}`} data-testid="chat-fab-cluster">
 			<div className="chat-fab-cluster__rail">
 				<button
 					className="chat-fab"
 					type="button"
+					data-testid="chat-open-button"
 					onClick={() => {
 						if (toast) onToastDismiss?.()
 						onOpenChat?.()
@@ -42,6 +43,7 @@ export default function ChatFabCluster({
 					<button
 						type="button"
 						className="chat-fab-toast"
+						data-testid="chat-toast-button"
 						onClick={() => onToastClick?.(toast)}
 					>
 						<span className="chat-fab-toast-title">{toast.title}</span>
