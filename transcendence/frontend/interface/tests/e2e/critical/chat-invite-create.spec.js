@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
 test('send friend invite from thread creates an invite card', async ({ browser }) => {
@@ -88,9 +89,9 @@ test('send friend invite from thread creates an invite card', async ({ browser }
 	})
 
 	await page.goto('/dashboard')
+	await waitForDashboardReady(page)
 	await page.getByTestId('chat-open-button').click()
-	await page.getByTestId('chat-conversation-item-1').click()
-	await expect(page.getByTestId('chat-thread')).toBeVisible()
+	await openConversationThread(page, 1)
 
 	await page.getByTestId('chat-thread-invite-button').click()
 	await expect(page.getByTestId('friend-invite-modal')).toBeVisible()
@@ -98,7 +99,7 @@ test('send friend invite from thread creates an invite card', async ({ browser }
 	await expect(page.getByTestId('friend-invite-modal')).toBeHidden()
 
 	await page.locator('.chat-drawer-back').click()
-	await page.getByTestId('chat-conversation-item-1').click()
+	await openConversationThread(page, 1)
 
 	await expect(page.getByTestId('chat-game-invite-card')).toBeVisible()
 	await expect(page.getByText('Invitation envoyee')).toBeVisible()

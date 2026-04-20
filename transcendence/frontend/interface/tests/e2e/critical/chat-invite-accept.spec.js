@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
 test('accept invite in thread navigates to game route', async ({ browser }) => {
@@ -80,8 +81,9 @@ test('accept invite in thread navigates to game route', async ({ browser }) => {
 	})
 
 	await page.goto('/dashboard')
+	await waitForDashboardReady(page)
 	await page.getByTestId('chat-open-button').click()
-	await page.getByTestId('chat-conversation-item-1').click()
+	await openConversationThread(page, 1)
 	await expect(page.getByTestId('chat-game-invite-card')).toBeVisible()
 
 	await page.getByTestId('chat-invite-accept').click()

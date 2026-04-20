@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { waitForGameShellReady } from '../helpers/waits.js'
 import { installUnstableOnlineGameWebSocketMock } from '../helpers/wsMocks.js'
 
 test.use({
@@ -29,8 +30,7 @@ test.describe('wave c - game websocket disconnect recoverability', () => {
 		})
 
 		await page.goto('/game/unstable-1')
-		await expect(page.getByTestId('game-shell')).toBeVisible()
-		await expect(page.getByTestId('game-board-frame')).toBeVisible()
+		await waitForGameShellReady(page)
 
 		await page.evaluate(() => {
 			document.querySelector('.game-debug-hud')?.click()
@@ -47,7 +47,7 @@ test.describe('wave c - game websocket disconnect recoverability', () => {
 		await expect(page.getByTestId('game-board-frame')).toBeVisible()
 
 		await page.reload()
-		await expect(page.getByTestId('game-shell')).toBeVisible()
+		await waitForGameShellReady(page)
 		await page.evaluate(() => {
 			document.querySelector('.game-debug-hud')?.click()
 		})

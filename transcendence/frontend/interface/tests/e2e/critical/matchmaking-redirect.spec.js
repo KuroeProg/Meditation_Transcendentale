@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { waitForDashboardReady, waitForGameShellReady } from '../helpers/waits.js'
 import { installMatchmakingWebSocketMock } from '../helpers/wsMocks.js'
 
 test.use({
@@ -15,7 +16,7 @@ test.describe('matchmaking redirect', () => {
 		await installMatchmakingWebSocketMock(page)
 
 		await page.goto('/dashboard')
-		await expect(page.getByTestId('dashboard-start-matchmaking')).toBeVisible()
+		await waitForDashboardReady(page)
 
 		await page.getByTestId('dashboard-start-matchmaking').click()
 		await expect(page.getByTestId('matchmaking-modal')).toBeVisible()
@@ -26,5 +27,6 @@ test.describe('matchmaking redirect', () => {
 			})
 
 			await page.waitForURL(/\/game\/e2e-game-123$/)
+			await waitForGameShellReady(page)
 	})
 })

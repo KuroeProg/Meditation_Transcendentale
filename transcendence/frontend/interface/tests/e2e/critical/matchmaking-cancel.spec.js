@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 import { getRoleStateFilePath } from '../helpers/storageState.js'
+import { waitForDashboardReady } from '../helpers/waits.js'
 import { installMatchmakingWebSocketMock } from '../helpers/wsMocks.js'
 
 test.use({
@@ -47,7 +48,7 @@ test('cancel matchmaking closes modal and blocks later match_found', async ({ pa
 	await installMatchmakingWebSocketMock(page)
 
 	await page.goto('/dashboard')
-	await expect(page.getByRole('button', { name: /commencer la partie/i })).toBeVisible()
+	await waitForDashboardReady(page)
 
 	await page.getByRole('button', { name: /commencer la partie/i }).click()
 	await expect(page.getByRole('dialog', { name: /recherche de partie/i })).toBeVisible()

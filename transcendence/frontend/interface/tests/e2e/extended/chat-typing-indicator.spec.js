@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
 test.describe('wave c - typing indicator lifecycle', () => {
@@ -40,8 +41,9 @@ test.describe('wave c - typing indicator lifecycle', () => {
 		})
 
 		await page.goto('/dashboard')
+		await waitForDashboardReady(page)
 		await page.getByTestId('chat-open-button').click()
-		await page.getByTestId('chat-conversation-item-1').click()
+		await openConversationThread(page, 1)
 
 		await page.evaluate(() => {
 			window.__e2eChatMock.triggerTyping({ userId: 202, username: 'USER_B', isTyping: true })

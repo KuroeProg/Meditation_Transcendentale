@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { openConversationThread, waitForChatDrawerReady, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
 test.describe('chat send message', () => {
@@ -40,13 +41,11 @@ test.describe('chat send message', () => {
 		})
 
 		await page.goto('/dashboard')
+		await waitForDashboardReady(page)
 		await page.getByTestId('chat-open-button').click()
 
-		await expect(page.getByTestId('chat-drawer')).toBeVisible()
-		await expect(page.getByTestId('chat-conversation-list')).toBeVisible()
-
-		await page.getByTestId('chat-conversation-item-1').click()
-		await expect(page.getByTestId('chat-thread')).toBeVisible()
+		await waitForChatDrawerReady(page)
+		await openConversationThread(page, 1)
 
 		const messageText = `Salut e2e ${Date.now()}`
 		await page.getByTestId('chat-message-input').fill(messageText)

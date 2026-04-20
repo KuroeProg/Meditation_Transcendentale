@@ -143,7 +143,7 @@ Target folder for all C tasks:
   - Add helpers for USER_A/USER_B synchronized actions.
   - Prefer explicit two-context flow for invite and game interaction specs.
 
-- [ ] I3 - API/websocket test control layer
+- [x] I3 - API/websocket test control layer
   - Introduce stable helper utilities for waiting on user-visible state transitions.
   - Ban fixed sleeps in specs.
 

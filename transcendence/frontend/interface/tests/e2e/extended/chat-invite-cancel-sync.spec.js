@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock, installNotificationsWebSocketMock } from '../helpers/wsMocks.js'
 
 test.describe('wave c - sender invite cancel sync', () => {
@@ -84,8 +85,9 @@ test.describe('wave c - sender invite cancel sync', () => {
 		})
 
 		await page.goto('/dashboard')
+		await waitForDashboardReady(page)
 		await page.getByTestId('chat-open-button').click()
-		await page.getByTestId('chat-conversation-item-1').click()
+		await openConversationThread(page, 1)
 		await expect(page.getByTestId('chat-game-invite-card')).toBeVisible()
 		await expect(page.getByRole('button', { name: 'Annuler', exact: true })).toBeVisible()
 

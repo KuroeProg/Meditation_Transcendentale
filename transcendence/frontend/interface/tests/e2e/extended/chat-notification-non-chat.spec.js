@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
+import { waitForDashboardReady } from '../helpers/waits.js'
 
 test.describe('wave c - non-chat invite notification', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
@@ -52,6 +53,7 @@ test.describe('wave c - non-chat invite notification', () => {
 		})
 
 		await page.goto('/dashboard')
+		await waitForDashboardReady(page)
 		await expect(page.getByTestId('chat-fab-cluster')).toBeVisible()
 		await expect(page.locator('.chat-fab-badge--invite')).toHaveCount(0)
 
