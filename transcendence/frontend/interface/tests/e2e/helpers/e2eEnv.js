@@ -27,11 +27,19 @@ function loadEnvFile(envFilePath) {
 	}, {})
 }
 
-const baseEnvFilePath = path.resolve(process.cwd(), '.env.e2e')
-const localEnvFilePath = path.resolve(process.cwd(), '.env.e2e.local')
+// Preferred location shared at compose level.
+const sharedBaseEnvFilePath = path.resolve(process.cwd(), '../../env/e2e/.env.e2e')
+const sharedLocalEnvFilePath = path.resolve(process.cwd(), '../../env/e2e/.env.e2e.local')
+
+// Backward-compatible location kept for local transition.
+const legacyBaseEnvFilePath = path.resolve(process.cwd(), '.env.e2e')
+const legacyLocalEnvFilePath = path.resolve(process.cwd(), '.env.e2e.local')
+
 const fileEnv = {
-	...loadEnvFile(baseEnvFilePath),
-	...loadEnvFile(localEnvFilePath),
+	...loadEnvFile(legacyBaseEnvFilePath),
+	...loadEnvFile(legacyLocalEnvFilePath),
+	...loadEnvFile(sharedBaseEnvFilePath),
+	...loadEnvFile(sharedLocalEnvFilePath),
 }
 
 export function getE2EEnv(name, fallback = '') {
