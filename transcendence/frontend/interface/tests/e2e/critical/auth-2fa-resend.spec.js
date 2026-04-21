@@ -83,4 +83,44 @@ test.describe('auth 2fa resend code', () => {
 		await page.getByRole('button', { name: 'Resend Code', exact: true }).click()
 		await expect(page.getByText('Invalid or expired pre-auth token')).toBeVisible()
 	})
+
+	test('resend code shows rate-limit error when blocked', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
+		})
+
+		await page.route('**/api/auth/csrf', async (route) => {
+			await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+		})
+
+		await page.route('**/api/auth/login', async (route) => {
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					status: '2fa_required',
+					user_id: 101,
+					pre_auth_token: 'rate-limited-token',
+					email: 'smoke@example.test',
+				}),
+			})
+		})
+
+		await page.route('**/api/auth/resend-code', async (route) => {
+			await route.fulfill({
+				status: 429,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Too many failed attempts. Please try again later.' }),
+			})
+		})
+
+		await page.goto('/auth')
+		await page.locator('#login-email').fill('smoke@example.test')
+		await page.locator('#login-password').fill('smoke-password')
+		await page.getByRole('button', { name: 'Se Connecter', exact: true }).click()
+		await expect(page.getByRole('heading', { name: 'Verify Your Email' })).toBeVisible()
+
+		await page.getByRole('button', { name: 'Resend Code', exact: true }).click()
+		await expect(page.getByText('Too many failed attempts. Please try again later.')).toBeVisible()
+	})
 })

@@ -164,4 +164,47 @@ test.describe('wave c - contacts routes', () => {
 			expect(actions.some((entry) => entry.method === 'DELETE')).toBeTruthy()
 		})
 	})
+
+	test('friend request conflict does not crash contact search flow', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await mockDashboardShell(page)
+
+			await page.route('**/api/auth/friends', async (route) => {
+				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ friends: [] }) })
+			})
+			await page.route('**/api/auth/search?q=US**', async (route) => {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						users: [{ id: 202, username: 'USER_B', avatar: '', coalition: 'water', is_online: true }],
+					}),
+				})
+			})
+
+			let requestCalled = false
+			await page.route('**/api/auth/friends/request', async (route) => {
+				requestCalled = true
+				await route.fulfill({
+					status: 409,
+					contentType: 'application/json',
+					body: JSON.stringify({ error: 'Demande deja envoyee' }),
+				})
+			})
+
+			await page.goto('/dashboard')
+			await waitForDashboardReady(page)
+			await page.getByTestId('chat-open-button').click()
+			await waitForChatDrawerReady(page)
+			await page.getByTitle('Contacts').click()
+
+			await page.locator('.chat-contacts-tabs .chat-tab').last().click()
+			await page.getByPlaceholder('Rechercher un joueur...').fill('USER')
+			await page.locator('.chat-contact-list .chat-contact-item').first().getByTitle('Ajouter en ami').click()
+
+			await expect.poll(() => requestCalled).toBeTruthy()
+			await expect(page.locator('.chat-contact-list .chat-contact-item').first().locator('.chat-contact-name').first()).toHaveText('USER_B')
+		})
+	})
 })

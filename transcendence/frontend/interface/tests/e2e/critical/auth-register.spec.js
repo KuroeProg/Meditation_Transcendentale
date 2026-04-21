@@ -59,4 +59,30 @@ test.describe('auth register', () => {
 
 		await expect(page.getByText('Username already taken')).toBeVisible()
 	})
+
+	test('duplicate email surfaces backend error', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 409,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Email already registered' }),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#reg-username').fill('ANOTHER_USER')
+		await page.locator('#reg-email').fill('smoke@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByText('Email already registered')).toBeVisible()
+	})
 })
