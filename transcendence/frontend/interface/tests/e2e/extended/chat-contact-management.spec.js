@@ -207,4 +207,33 @@ test.describe('wave c - contacts routes', () => {
 			await expect(page.locator('.chat-contact-list .chat-contact-item').first().locator('.chat-contact-name').first()).toHaveText('USER_B')
 		})
 	})
+
+	test('short search query does not trigger search endpoint', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await mockDashboardShell(page)
+
+			await page.route('**/api/auth/friends', async (route) => {
+				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ friends: [] }) })
+			})
+
+			let searchCalls = 0
+			await page.route('**/api/auth/search**', async (route) => {
+				searchCalls += 1
+				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ users: [] }) })
+			})
+
+			await page.goto('/dashboard')
+			await waitForDashboardReady(page)
+			await page.getByTestId('chat-open-button').click()
+			await waitForChatDrawerReady(page)
+			await page.getByTitle('Contacts').click()
+
+			await page.locator('.chat-contacts-tabs .chat-tab').last().click()
+			await page.getByPlaceholder('Rechercher un joueur...').fill('U')
+
+			await page.waitForTimeout(400)
+			expect(searchCalls).toBe(0)
+		})
+	})
 })
