@@ -50,4 +50,28 @@ test.describe('auth reset password', () => {
 
 		await expect(page.getByText('Lien invalide ou expire')).toBeVisible()
 	})
+
+	test('reset password validates missing token before backend call', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
+		})
+
+		let resetCalled = false
+		await page.route('**/api/auth/reset-password', async (route) => {
+			resetCalled = true
+			await route.fulfill({
+				status: 400,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Lien invalide ou expire' }),
+			})
+		})
+
+		await page.goto('/auth/reset-password')
+		await page.getByPlaceholder('Nouveau mot de passe').fill('new-password-1234')
+		await page.getByPlaceholder('Confirme le mot de passe').fill('new-password-1234')
+		await page.getByRole('button', { name: 'Changer le mot de passe', exact: true }).click()
+
+		await expect(page.getByText('Lien de reinitialisation invalide.')).toBeVisible()
+		expect(resetCalled).toBeFalsy()
+	})
 })

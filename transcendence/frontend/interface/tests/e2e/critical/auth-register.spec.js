@@ -85,4 +85,30 @@ test.describe('auth register', () => {
 
 		await expect(page.getByText('Email already registered')).toBeVisible()
 	})
+
+	test('register shows generic backend failure message', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Registration failed. Please try again.' }),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#reg-username').fill('BROKEN_REGISTER_USER')
+		await page.locator('#reg-email').fill('broken-register@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByText('Registration failed. Please try again.')).toBeVisible()
+	})
 })
