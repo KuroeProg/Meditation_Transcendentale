@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-test.describe('wave c - seed users route', () => {
+test.describe('endpoint de seed des utilisateurs e2e', () => {
+	// Vérifie que l'endpoint de seed renvoie un payload de succès exploitable par l'environnement e2e.
 	test('seed users endpoint returns success payload', async ({ page }) => {
 		await page.route('**/api/auth/csrf', async (route) => {
 			await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+// Vérifie que le branchement 2FA demande le code puis termine la connexion.
 test('2FA required branch verifies code and completes login', async ({ page }) => {
 	await page.route('**/api/auth/me', async (route) => {
 		await route.fulfill({

@@ -5,9 +5,10 @@ import { withRoleSessions } from '../helpers/multiUser.js'
 import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
-test.describe('wave c - sender invite cancel http route', () => {
+test.describe("annulation HTTP d'une invitation de jeu", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que l'émetteur peut annuler une invitation et voir l'état mis à jour.
 	test('clicking cancel on invite card calls cancel endpoint and updates status', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -114,6 +115,7 @@ test.describe('wave c - sender invite cancel http route', () => {
 		})
 	})
 
+	// Vérifie qu'une réponse déjà traitée garde l'UI cohérente.
 	test('cancel invite handles already processed response', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

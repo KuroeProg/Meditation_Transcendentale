@@ -4,9 +4,10 @@ import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
 import { waitForChatDrawerReady, waitForDashboardReady } from '../helpers/waits.js'
 
-test.describe('wave c - create conversation route', () => {
+test.describe('création de conversation depuis les contacts', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'un clic depuis les contacts crée bien une conversation privée.
 	test('starting a chat from contacts calls create conversation endpoint', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -85,6 +86,7 @@ test.describe('wave c - create conversation route', () => {
 		})
 	})
 
+	// Vérifie qu'un conflit de conversation laisse l'écran cohérent sans ouvrir de thread cassé.
 	test('contact chat start gracefully handles conflict response', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

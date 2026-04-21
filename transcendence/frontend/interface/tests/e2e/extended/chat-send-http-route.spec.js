@@ -7,9 +7,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - chat send http route', () => {
+test.describe("route HTTP d'envoi de message chat", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que l'endpoint HTTP accepte un message chat valide.
 	test('http send endpoint accepts message payload', async ({ page }) => {
 		await page.route('**/api/auth/csrf', async (route) => {
 			await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
@@ -53,6 +54,7 @@ test.describe('wave c - chat send http route', () => {
 		expect(result.payload.content).toBe('message via http')
 	})
 
+	// Vérifie qu'un payload vide renvoie une erreur de validation claire.
 	test('http send endpoint returns validation error for empty payload', async ({ page }) => {
 		await page.route('**/api/auth/csrf', async (route) => {
 			await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })

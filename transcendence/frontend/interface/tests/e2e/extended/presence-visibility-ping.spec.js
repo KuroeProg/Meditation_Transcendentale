@@ -8,9 +8,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - presence ping on visibility change', () => {
+test.describe('heartbeat de présence au chargement et au retour visible', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que la présence est pingée au montage puis quand l'onglet redevient visible.
 	test('sends heartbeat on mount and when tab becomes visible', async ({ page }) => {
 		let presenceCalls = 0
 

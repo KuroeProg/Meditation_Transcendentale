@@ -27,9 +27,10 @@ async function mockBaseShell(page) {
 	})
 }
 
-test.describe('wave c - invite permission errors', () => {
+test.describe('permissions sur les invitations de jeu', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'un cancel refusé laisse la carte d'invitation visible et inchangée.
 	test('cancel invite keeps pending card when backend returns 403', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -105,6 +106,7 @@ test.describe('wave c - invite permission errors', () => {
 		})
 	})
 
+	// Vérifie qu'un accept refusé laisse l'invitation dans l'état en attente.
 	test('accept invite stays pending when backend returns 403', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

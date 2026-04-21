@@ -9,9 +9,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - game websocket disconnect recoverability', () => {
+test.describe('récupération après déconnexion websocket en partie', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que l'écran de jeu reste exploitable après déconnexion puis recharge la session WebSocket.
 	test('game shell stays usable after disconnect and recovers websocket state after reload', async ({ page }) => {
 		await installUnstableOnlineGameWebSocketMock(page, 'unstable-1')
 

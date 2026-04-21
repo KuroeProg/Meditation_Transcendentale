@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
-test.describe('wave c - oauth entry route', () => {
+test.describe('entrée du flux OAuth 42', () => {
+	// Vérifie que le bouton OAuth pointe bien vers la route backend d'entrée du flux 42.
 	test('oauth login button targets the oauth backend entry route', async ({ page }) => {
 		await page.route('**/api/auth/42/login/', async (route) => {
 			await route.fulfill({

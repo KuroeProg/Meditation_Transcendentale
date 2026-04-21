@@ -2,7 +2,8 @@ import { expect, test } from '@playwright/test'
 
 import { waitForDashboardReady } from '../helpers/waits.js'
 
-test.describe('wave c - oauth callback route', () => {
+test.describe('callback OAuth 42', () => {
+	// Vérifie qu'un callback valide ramène l'utilisateur sur le dashboard.
 	test('oauth callback redirects to dashboard on success', async ({ page }) => {
 		await page.route('**/api/auth/42/callback**', async (route) => {
 			await route.fulfill({
@@ -39,6 +40,7 @@ test.describe('wave c - oauth callback route', () => {
 		await waitForDashboardReady(page)
 	})
 
+	// Vérifie que l'état invalide est rejeté avec une erreur HTTP 400.
 	test('oauth callback returns 400 on invalid state', async ({ page }) => {
 		await page.route('**/api/auth/42/callback**', async (route) => {
 			await route.fulfill({

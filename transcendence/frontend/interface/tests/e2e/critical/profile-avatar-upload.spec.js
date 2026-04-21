@@ -7,6 +7,7 @@ test.use({
 })
 
 test.describe('profile avatar upload', () => {
+	// Vérifie qu'un upload d'avatar réussi met immédiatement à jour l'image affichée.
 	test('successful upload refreshes the avatar image', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 })
 
@@ -69,6 +70,7 @@ test.describe('profile avatar upload', () => {
 		await expect(page.locator('.profile-avatar-lg')).toHaveAttribute('src', uploadedAvatarUrl)
 	})
 
+	// Vérifie qu'un upload trop volumineux affiche une erreur récupérable.
 	test('failed upload shows a recoverable size error', async ({ page }) => {
 		await page.setViewportSize({ width: 390, height: 844 })
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('auth reset password', () => {
+	// Vérifie qu'un token valide permet la mise à jour du mot de passe.
 	test('reset password succeeds with valid token', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
@@ -26,6 +27,7 @@ test.describe('auth reset password', () => {
 		await expect(page.getByText('Mot de passe mis a jour avec succes')).toBeVisible()
 	})
 
+	// Vérifie qu'un token invalide/expiré remonte l'erreur backend.
 	test('reset password shows backend token error', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
@@ -51,6 +53,7 @@ test.describe('auth reset password', () => {
 		await expect(page.getByText('Lien invalide ou expire')).toBeVisible()
 	})
 
+	// Vérifie que l'absence de token est bloquée localement sans appel API.
 	test('reset password validates missing token before backend call', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })

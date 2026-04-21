@@ -26,9 +26,10 @@ async function mockDashboardShell(page) {
 	})
 }
 
-test.describe('wave c - contacts routes', () => {
+test.describe("gestion des contacts et demandes d'amis", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'une recherche utilisateur permet d'envoyer une demande d'ami.
 	test('search users and send friend request from contacts', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -76,6 +77,7 @@ test.describe('wave c - contacts routes', () => {
 		})
 	})
 
+	// Vérifie que les actions de relation utilisent bien la route d'action friends.
 	test('accept, block, unblock and delete use friends action endpoint', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -165,6 +167,7 @@ test.describe('wave c - contacts routes', () => {
 		})
 	})
 
+	// Vérifie qu'un conflit de demande d'ami n'interrompt pas le parcours de recherche.
 	test('friend request conflict does not crash contact search flow', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER
@@ -208,6 +211,7 @@ test.describe('wave c - contacts routes', () => {
 		})
 	})
 
+	// Vérifie qu'une requête trop courte n'appelle pas l'endpoint de recherche.
 	test('short search query does not trigger search endpoint', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

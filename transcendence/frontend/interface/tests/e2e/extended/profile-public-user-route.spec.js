@@ -7,7 +7,8 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - public user route', () => {
+	test.describe('consultation du profil public par identifiant', () => {
+		// Vérifie qu'un profil public existant est renvoyé correctement par identifiant.
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
 	test('fetch public user by id', async ({ page }) => {
@@ -33,6 +34,7 @@ test.describe('wave c - public user route', () => {
 		expect(result.payload.username).toBe('USER_B')
 	})
 
+		// Vérifie qu'un identifiant absent renvoie bien une erreur 404.
 	test('public user route returns 404 for missing user', async ({ page }) => {
 		await page.route('**/api/auth/users/999999', async (route) => {
 			await route.fulfill({

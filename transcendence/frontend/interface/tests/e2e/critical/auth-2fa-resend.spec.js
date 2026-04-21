@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('auth 2fa resend code', () => {
+	// Vérifie qu'un renvoi 2FA valide déclenche le cooldown côté UI.
 	test('resend code starts countdown after successful request', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
@@ -44,6 +45,7 @@ test.describe('auth 2fa resend code', () => {
 		expect(resendCalled).toBeTruthy()
 	})
 
+	// Vérifie que le renvoi échoue proprement quand le token pré-auth est invalide.
 	test('resend code shows error on invalid pre-auth token', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
@@ -84,6 +86,7 @@ test.describe('auth 2fa resend code', () => {
 		await expect(page.getByText('Invalid or expired pre-auth token')).toBeVisible()
 	})
 
+	// Vérifie que la limitation de débit est bien remontée à l'utilisateur.
 	test('resend code shows rate-limit error when blocked', async ({ page }) => {
 		await page.route('**/api/auth/me', async (route) => {
 			await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })
