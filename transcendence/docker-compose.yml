@@ -94,7 +94,7 @@ services:
     command: >
       sh -c "
       sleep 5;
-      vault kv put secret/database db_user=\"$${POSTGRES_USER}\" db_password=\"$${POSTGRES_PASSWORD}\" db_name=\"$${POSTGRES_DB}\" redis_pass=\"$${REDIS_PASSWORD}\" ft_client=\"$${FORTYTWO_CLIENT_ID}\" ft_secret=\"$${FORTYTWO_CLIENT_SECRET}\" email_pass=\"$${EMAIL_HOST_PASSWORD}\" > /dev/null 2>&1;
+      vault kv put secret/database db_user=\"$${POSTGRES_USER}\" db_password=\"$${POSTGRES_PASSWORD}\" db_name=\"$${POSTGRES_DB}\" redis_pass=\"$${REDIS_PASSWORD}\" ft_client=\"$${FORTYTWO_CLIENT_ID}\" ft_secret=\"$${FORTYTWO_CLIENT_SECRET}\" email_pass=\"$${EMAIL_HOST_PASSWORD}\" grafana_pass=\"$${GRAFANA_ADMIN_PASSWORD}\" elastic_pass=\"$${ELASTIC_PASSWORD}\" kibana_pass=\"$${KIBANA_PASSWORD}\" > /dev/null 2>&1;
       echo 'Secrets are now in vault !';
       "
     networks:
