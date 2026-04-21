@@ -1,0 +1,55 @@
+import { expect, test } from '@playwright/test'
+
+import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
+import { getRoleStateFilePath } from '../helpers/storageState.js'
+
+test.use({
+	storageState: getRoleStateFilePath('SMOKE_USER'),
+})
+
+test.describe('wave c - chat send http route', () => {
+	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
+
+	test('http send endpoint accepts message payload', async ({ page }) => {
+		await page.route('**/api/auth/csrf', async (route) => {
+			await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+		})
+
+		let receivedBody = null
+		await page.route('**/api/chat/conversations/55/send', async (route) => {
+			receivedBody = route.request().postDataJSON()
+			await route.fulfill({
+				status: 201,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					id: 5002,
+					content: receivedBody?.content || '',
+					message_type: receivedBody?.message_type || 'text',
+				}),
+			})
+		})
+
+		await page.goto('/dashboard')
+		const result = await page.evaluate(async () => {
+			await fetch('/api/auth/csrf', {
+				method: 'GET',
+				credentials: 'include',
+				headers: { Accept: 'application/json' },
+			})
+
+			const response = await fetch('/api/chat/conversations/55/send', {
+				method: 'POST',
+				credentials: 'include',
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({ content: 'message via http', message_type: 'text' }),
+			})
+			const payload = await response.json().catch(() => ({}))
+			return { ok: response.ok, status: response.status, payload }
+		})
+
+		expect(receivedBody).toEqual({ content: 'message via http', message_type: 'text' })
+		expect(result.ok).toBeTruthy()
+		expect(result.status).toBe(201)
+		expect(result.payload.content).toBe('message via http')
+	})
+})

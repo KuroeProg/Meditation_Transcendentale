@@ -5,11 +5,17 @@ import { fetchConversations } from '../services/chatApi.js'
 import { useAuth } from '../../auth/index.js'
 
 export default function ConversationList({ onSelect, activeId }) {
-	const { resolveUserOnline } = useAuth()
+	const { resolveUserOnline, isAuthenticated, isLoading } = useAuth()
 	const [conversations, setConversations] = useState([])
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
+		if (!isAuthenticated) {
+			setConversations([])
+			setLoading(false)
+			return undefined
+		}
+		if (isLoading) return undefined
 		let cancelled = false
 		setLoading(true)
 		fetchConversations()
@@ -17,24 +23,28 @@ export default function ConversationList({ onSelect, activeId }) {
 			.catch(() => {})
 			.finally(() => { if (!cancelled) setLoading(false) })
 		return () => { cancelled = true }
-	}, [])
+	}, [isAuthenticated, isLoading])
 
 	const refresh = () => {
+		if (!isAuthenticated) return
 		fetchConversations()
 			.then((data) => setConversations(data.conversations || []))
 			.catch(() => {})
 	}
 
 	useEffect(() => {
+		if (!isAuthenticated) return undefined
 		const interval = setInterval(refresh, 8000)
 		return () => clearInterval(interval)
-	}, [])
+	}, [isAuthenticated])
 
 	if (loading) return <div className="chat-loading" data-testid="chat-conversations-loading">Chargement...</div>
-	if (!conversations.length) return <div className="chat-empty" data-testid="chat-conversations-empty">Aucune conversation</div>
 
 	return (
 		<ul className="chat-conv-list" data-testid="chat-conversation-list">
+			{!conversations.length && (
+				<li className="chat-empty" data-testid="chat-conversations-empty">Aucune conversation</li>
+			)}
 			{conversations.map((c) => {
 				const other = c.participants?.[0]
 				const otherOnline = resolveUserOnline(other)

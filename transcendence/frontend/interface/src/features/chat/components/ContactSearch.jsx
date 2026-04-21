@@ -90,7 +90,7 @@ function SearchResultItem({ user, onAdd }) {
 }
 
 export default function ContactSearch({ onOpenConversation }) {
-	const { resolveUserOnline } = useAuth()
+	const { resolveUserOnline, isAuthenticated, isLoading } = useAuth()
 	const [tab, setTab] = useState('friends')
 	const [contacts, setContacts] = useState([])
 	const [searchQuery, setSearchQuery] = useState('')
@@ -98,13 +98,22 @@ export default function ContactSearch({ onOpenConversation }) {
 	const [searchLoading, setSearchLoading] = useState(false)
 
 	const loadContacts = useCallback(async () => {
+		if (!isAuthenticated) return
 		try {
 			const data = await fetchFriends()
 			setContacts(data.friends || [])
 		} catch {}
-	}, [])
+	}, [isAuthenticated])
 
-	useEffect(() => { loadContacts() }, [loadContacts])
+	useEffect(() => {
+		if (!isAuthenticated || isLoading) {
+			setContacts([])
+			setSearchResults([])
+			setSearchLoading(false)
+			return
+		}
+		loadContacts()
+	}, [isAuthenticated, isLoading, loadContacts])
 
 	useEffect(() => {
 		if (searchQuery.length < 2) { setSearchResults([]); return }
