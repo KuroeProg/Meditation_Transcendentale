@@ -958,6 +958,13 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 	font-style: italic;
 }
 
+.chat-contact-block-note {
+	display: block;
+	margin-top: 0.15rem;
+	font-size: 0.72rem;
+	color: rgba(255, 145, 145, 0.78);
+}
+
 /* Bottom nav (≤770px) : remonter le FAB au-dessus de la barre */
 @media (max-width: 770px) {
 	.chat-fab-cluster {

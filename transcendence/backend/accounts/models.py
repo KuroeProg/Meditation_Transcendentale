@@ -86,6 +86,13 @@ class Friendship(models.Model):
     to_user = models.ForeignKey(
         LocalUser, on_delete=models.CASCADE, related_name='friendships_received'
     )
+    blocked_by = models.ForeignKey(
+        LocalUser,
+        on_delete=models.SET_NULL,
+        related_name='friendships_blocked',
+        null=True,
+        blank=True,
+    )
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -100,5 +107,6 @@ class Friendship(models.Model):
             'from_user': self.from_user.to_public_dict(),
             'to_user': self.to_user.to_public_dict(),
             'status': self.status,
+            'blocked_by_id': self.blocked_by_id,
             'created_at': self.created_at.isoformat(),
         }

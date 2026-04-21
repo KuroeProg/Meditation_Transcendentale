@@ -15,13 +15,17 @@ function ContactItem({ contact, onAction, onStartChat }) {
 	const u = contact.user
 	const online = Boolean(u.is_online)
 	const coalSlug = coalitionToSlug(u?.coalition)
+	const isBlockedByMe = Boolean(contact.blocked_by_me)
+	const isBlockedByOther = contact.status === 'blocked' && !isBlockedByMe
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
 			<div className="chat-contact-info">
 				<span className="chat-contact-name">{u.username}</span>
 				<span className={`chat-contact-status ${online ? 'online' : ''}`}>
-					{online ? 'En ligne' : 'Hors ligne'}
+					{contact.status === 'blocked'
+						? (isBlockedByMe ? 'Bloqué par vous' : 'Bloqué par cet utilisateur')
+						: (online ? 'En ligne' : 'Hors ligne')}
 					<span className="chat-contact-name-row">
 						<span className="chat-contact-name">{u.username}</span>
 						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
@@ -29,6 +33,9 @@ function ContactItem({ contact, onAction, onStartChat }) {
 						</span>
 					</span>
 				</span>
+				{contact.status === 'blocked' && isBlockedByOther && (
+					<span className="chat-contact-block-note">Tu es bloque par cet utilisateur</span>
+				)}
 			</div>
 			<div className="chat-contact-actions">
 				{contact.status === 'pending' && !contact.is_sender && (
@@ -54,8 +61,8 @@ function ContactItem({ contact, onAction, onStartChat }) {
 						</button>
 					</>
 				)}
-				{contact.status === 'blocked' && contact.is_sender && (
-					<button type="button" className="chat-ca-btn" onClick={() => onAction(contact.friendship_id, 'unblock')} title="Debloquer">
+				{contact.status === 'blocked' && isBlockedByMe && (
+					<button type="button" className="chat-ca-btn" onClick={() => onAction(contact.friendship_id, 'unblock')} title="Débloquer">
 						<i className="ri-lock-unlock-line" />
 					</button>
 				)}

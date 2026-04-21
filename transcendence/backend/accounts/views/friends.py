@@ -32,6 +32,8 @@ def _friendship_to_contact(friendship, current_user):
         },
         'status': friendship.status,
         'is_sender': friendship.from_user_id == current_user.id,
+        'blocked_by_id': friendship.blocked_by_id,
+        'blocked_by_me': friendship.blocked_by_id == current_user.id,
         'created_at': friendship.created_at.isoformat(),
     }
 
@@ -135,15 +137,11 @@ def friend_action(request, friendship_id):
 
         elif action == 'block':
             friendship.status = 'blocked'
-            friendship.from_user = user
-            friendship.to_user = (
-                friendship.to_user if friendship.from_user_id == user.id
-                else friendship.from_user
-            )
-            friendship.save(update_fields=['status', 'from_user_id', 'to_user_id', 'updated_at'])
+            friendship.blocked_by = user
+            friendship.save(update_fields=['status', 'blocked_by_id', 'updated_at'])
 
         elif action == 'unblock':
-            if friendship.from_user_id != user.id or friendship.status != 'blocked':
+            if friendship.status != 'blocked' or friendship.blocked_by_id != user.id:
                 return JsonResponse({'error': 'Impossible de debloquer'}, status=400)
             friendship.delete()
             return JsonResponse({'ok': True})
