@@ -224,4 +224,42 @@ Le flux **déjà câblé** passe par le **chat** : après `POST /api/chat/conver
 
 ---
 
-*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles).*
+## 8. Page Paramètres — préférences locales et actions compte
+
+Toute nouvelle donnée mock ou flux encore simulé côté SPA doit être recoupée avec une entrée dans les tableaux de routes ci-dessus (règle projet : documenter la route backend cible dans ce fichier dès que le mock est introduit ou modifié).
+
+### 8.1 Préférences stockées dans le navigateur (frontend uniquement)
+
+Ces données vivent dans `localStorage` côté client et ne requièrent **aucune route backend**.
+
+| Clé localStorage | Géré par | Contenu |
+|-----------------|----------|---------|
+| `transcendence_ui_prefs` | `src/config/uiPrefs.js` | `reduceMotion`, `lightMode`, `showScrollbars`, `hideInviteToasts` |
+| `transcendence_game_audio_v2` | `src/config/gameAudioPrefs.js` | `gameBgmVolume`, `gameBgmMuted`, `homeBgmVolume`, `homeBgmMuted`, `sfxVolume`, `sfxMuted`, `gameBgmTrackMode`, `gameBgmFixedTrack` |
+
+Les flags `uiPrefs` sont appliqués sur `<html>` comme attributs `data-*` :
+- `data-reduce-motion="true"` — accessibilité stricte, toutes animations désactivées
+- `data-light-mode="true"` — mode léger, particules/aurora/glows supprimés, fond coalition conservé
+- `data-show-scrollbars="true"` — barres de défilement visibles (`scrollbar-width: thin`)
+
+### 8.2 Actions compte — routes frontend utilisées
+
+| Action | Méthode | Route | Fichier appelant |
+|--------|---------|-------|-----------------|
+| Déconnexion | `POST` | `/api/auth/logout` | `AuthContext.jsx` → `logout()` |
+| Voir profil | — | Route SPA `/profile` | `Link` React Router |
+
+La page Paramètres appelle `logout({ redirectTo: '/auth' })` de `AuthContext`, qui gère CSRF + nettoyage session + redirection.
+
+### 8.3 Purge données locales (frontend uniquement)
+
+La page propose deux actions :
+
+- **Réinitialiser les préférences** : efface `transcendence_ui_prefs` et `transcendence_game_audio_v2`, réapplique les défauts.
+- **Effacer les données locales** : même périmètre + confirmation préalable. Ne touche ni les cookies de session ni les données serveur.
+
+> Ces actions ne constituent pas une suppression de compte RGPD. Pour une demande de suppression serveur, un endpoint dédié est à prévoir côté backend (non implémenté dans ce lot).
+
+---
+
+*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles + page Paramètres étendue).*

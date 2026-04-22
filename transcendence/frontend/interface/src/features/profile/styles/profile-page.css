@@ -295,6 +295,118 @@
 	margin-bottom: 1rem;
 }
 
+/* ── Settings : sections audio ── */
+.settings-audio-section-label {
+	font-family: system-ui, sans-serif;
+	font-size: 0.82rem;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: rgba(232, 234, 239, 0.55);
+	margin: 0 0 0.6rem;
+}
+
+.settings-audio-divider {
+	border: none;
+	border-top: 1px solid rgba(255, 255, 255, 0.07);
+	margin: 1.1rem 0;
+}
+
+.settings-audio-track-wrap {
+	margin-top: 0.85rem;
+}
+
+.settings-audio-track-label {
+	display: block;
+	font-family: system-ui, sans-serif;
+	font-size: 0.82rem;
+	color: rgba(232, 234, 239, 0.65);
+	margin-bottom: 0.45rem;
+}
+
+.settings-audio-track-options {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem 1rem;
+	margin-bottom: 0.65rem;
+}
+
+.settings-audio-track-option {
+	margin-top: 0;
+}
+
+.settings-audio-track-select {
+	width: 100%;
+	max-width: 260px;
+	padding: 0.4rem 0.65rem;
+	border-radius: 8px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.06);
+	color: #e8eaef;
+	font-size: 0.88rem;
+	font-family: system-ui, sans-serif;
+	cursor: pointer;
+}
+
+.settings-audio-track-select:focus {
+	outline: 2px solid rgba(125, 211, 252, 0.45);
+	outline-offset: 2px;
+}
+
+/* ── Settings : ligne compte ── */
+.settings-account-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	padding: 0.55rem 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.settings-account-row:last-of-type {
+	border-bottom: none;
+}
+
+.settings-account-label {
+	font-family: system-ui, sans-serif;
+	font-size: 0.9rem;
+	color: rgba(232, 234, 239, 0.85);
+}
+
+.settings-account-btn {
+	font-family: system-ui, sans-serif;
+	font-size: 0.82rem;
+	padding: 0.4rem 0.85rem;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	text-decoration: none;
+}
+
+/* ── Settings : données locales ── */
+.settings-local-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.65rem;
+	margin-top: 0.25rem;
+}
+
+.btn-danger {
+	background: rgba(239, 68, 68, 0.18);
+	color: #fca5a5;
+	border: 1px solid rgba(239, 68, 68, 0.38);
+}
+
+.btn-danger:hover {
+	background: rgba(239, 68, 68, 0.28);
+	color: #fecaca;
+	border-color: rgba(239, 68, 68, 0.55);
+}
+
+.settings-feedback {
+	margin-top: 0.65rem;
+}
+
 .profile-avatar-overlay {
 	position: absolute;
 	inset: 0;

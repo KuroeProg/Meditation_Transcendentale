@@ -9,7 +9,7 @@
 @import './styles/layout-main.css';
 @import './styles/responsive.css';
 
-/* Défilement inchangé, barres de scroll masquées (Firefox / WebKit) */
+/* Défilement inchangé, barres de scroll masquées par défaut (Firefox / WebKit) */
 * {
 	margin: 0;
 	padding: 0;
@@ -20,6 +20,16 @@
 *::-webkit-scrollbar {
 	width: 0;
 	height: 0;
+}
+
+/* Préférence « Afficher les barres de défilement » (data-show-scrollbars défini par uiPrefs). */
+html[data-show-scrollbars='true'] * {
+	scrollbar-width: thin;
+}
+
+html[data-show-scrollbars='true'] *::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
 }
 
 h1 {

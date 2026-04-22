@@ -1,15 +1,35 @@
 /**
  * SFX procéduraux Transcendance (Web Audio API).
- * Remplace les .wav tant qu’ils ne sont pas fournis ; timings proches du brief Foley.
+ * Toutes les chaînes audio terminent sur `sfxMasterGain` plutôt que directement sur
+ * `audioCtx.destination`, ce qui permet d'appliquer le volume et le mute des effets
+ * en temps réel depuis les préférences utilisateur.
  */
+import { loadGameAudioPrefs, effectiveSfxGain } from '../../../config/gameAudioPrefs.js'
 
 let audioCtx = null
+let sfxMasterGain = null
+
+function applyMasterGain() {
+	if (!sfxMasterGain) return
+	try {
+		const p = loadGameAudioPrefs()
+		sfxMasterGain.gain.setTargetAtTime(effectiveSfxGain(p), audioCtx.currentTime, 0.01)
+	} catch {
+		/* ignore */
+	}
+}
 
 export function unlockGameAudio() {
 	try {
 		const AC = window.AudioContext || window.webkitAudioContext
 		if (!AC) return
-		if (!audioCtx) audioCtx = new AC()
+		if (!audioCtx) {
+			audioCtx = new AC()
+			sfxMasterGain = audioCtx.createGain()
+			sfxMasterGain.connect(audioCtx.destination)
+			applyMasterGain()
+			window.addEventListener('transcendence-game-audio-changed', applyMasterGain)
+		}
 		if (audioCtx.state === 'suspended') {
 			void audioCtx.resume().catch(() => {})
 		}
@@ -21,6 +41,11 @@ export function unlockGameAudio() {
 function getCtx() {
 	if (!audioCtx) unlockGameAudio()
 	return audioCtx
+}
+
+function getDest() {
+	if (!sfxMasterGain) unlockGameAudio()
+	return sfxMasterGain ?? audioCtx?.destination ?? null
 }
 
 function now() {
@@ -40,6 +65,8 @@ function gainEnvelope(c, t0, peak, attack, decay, duration) {
 export function playMoveLegal() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 0.15
 	const bufferSize = c.sampleRate * dur
@@ -57,7 +84,7 @@ export function playMoveLegal() {
 	const g = gainEnvelope(c, t0, 0.22, 0.008, 0.12, dur)
 	src.connect(bp)
 	bp.connect(g)
-	g.connect(c.destination)
+	g.connect(dest)
 	src.start(t0)
 	src.stop(t0 + dur + 0.02)
 }
@@ -66,6 +93,8 @@ export function playMoveLegal() {
 export function playMoveCapture() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 0.25
 	const bufferSize = c.sampleRate * 0.08
@@ -82,7 +111,7 @@ export function playMoveCapture() {
 	const ng = gainEnvelope(c, t0, 0.18, 0.006, 0.07, 0.08)
 	ns.connect(bp)
 	bp.connect(ng)
-	ng.connect(c.destination)
+	ng.connect(dest)
 	ns.start(t0)
 	ns.stop(t0 + 0.09)
 	const osc = c.createOscillator()
@@ -95,7 +124,7 @@ export function playMoveCapture() {
 	const g = gainEnvelope(c, t0 + 0.02, 0.32, 0.01, 0.2, dur)
 	osc.connect(bell)
 	bell.connect(g)
-	g.connect(c.destination)
+	g.connect(dest)
 	osc.start(t0 + 0.02)
 	osc.stop(t0 + dur)
 }
@@ -104,6 +133,8 @@ export function playMoveCapture() {
 export function playMoveCastling() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const mkThud = (offset, freq) => {
 		const osc = c.createOscillator()
@@ -114,7 +145,7 @@ export function playMoveCastling() {
 		g.gain.exponentialRampToValueAtTime(0.2, t0 + offset + 0.012)
 		g.gain.exponentialRampToValueAtTime(0.0001, t0 + offset + 0.1)
 		osc.connect(g)
-		g.connect(c.destination)
+		g.connect(dest)
 		osc.start(t0 + offset)
 		osc.stop(t0 + offset + 0.12)
 	}
@@ -131,7 +162,7 @@ export function playMoveCastling() {
 	const ng = gainEnvelope(c, t0, 0.06, 0.02, 0.06, 0.08)
 	ns.connect(lp)
 	lp.connect(ng)
-	ng.connect(c.destination)
+	ng.connect(dest)
 	ns.start(t0)
 	ns.stop(t0 + 0.09)
 }
@@ -140,6 +171,8 @@ export function playMoveCastling() {
 export function playMoveCheck() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 0.4
 	const osc = c.createOscillator()
@@ -153,8 +186,8 @@ export function playMoveCheck() {
 	const g2 = gainEnvelope(c, t0, 0.05, 0.003, 0.3, dur)
 	osc.connect(g1)
 	osc2.connect(g2)
-	g1.connect(c.destination)
-	g2.connect(c.destination)
+	g1.connect(dest)
+	g2.connect(dest)
 	osc.start(t0)
 	osc2.start(t0)
 	osc.stop(t0 + dur)
@@ -165,6 +198,8 @@ export function playMoveCheck() {
 export function playGameWin() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 2.5
 	const freqs = [392, 494, 587, 784]
@@ -179,7 +214,7 @@ export function playGameWin() {
 		g.gain.exponentialRampToValueAtTime(0.06 / (i + 1), t0 + delay + 0.15)
 		g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
 		osc.connect(g)
-		g.connect(c.destination)
+		g.connect(dest)
 		osc.start(t0 + delay)
 		osc.stop(t0 + dur)
 	})
@@ -189,6 +224,8 @@ export function playGameWin() {
 export function playGameDraw() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 2
 	const osc = c.createOscillator()
@@ -204,7 +241,7 @@ export function playGameDraw() {
 	g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
 	osc.connect(lp)
 	lp.connect(g)
-	g.connect(c.destination)
+	g.connect(dest)
 	osc.start(t0)
 	osc.stop(t0 + dur + 0.05)
 }
@@ -213,6 +250,8 @@ export function playGameDraw() {
 export function playGameResign() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const dur = 1.5
 	const osc = c.createOscillator()
@@ -224,7 +263,7 @@ export function playGameResign() {
 	g.gain.exponentialRampToValueAtTime(0.2, t0 + 0.04)
 	g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur)
 	osc.connect(g)
-	g.connect(c.destination)
+	g.connect(dest)
 	osc.start(t0)
 	osc.stop(t0 + dur)
 }
@@ -233,6 +272,8 @@ export function playGameResign() {
 export function playClockTimeout() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	for (let i = 0; i < 3; i++) {
 		const osc = c.createOscillator()
@@ -244,7 +285,7 @@ export function playClockTimeout() {
 		g.gain.exponentialRampToValueAtTime(0.18, s + 0.01)
 		g.gain.exponentialRampToValueAtTime(0.0001, s + 0.08)
 		osc.connect(g)
-		g.connect(c.destination)
+		g.connect(dest)
 		osc.start(s)
 		osc.stop(s + 0.09)
 	}
@@ -254,13 +295,15 @@ export function playClockTimeout() {
 export function playUiErrorDeny() {
 	const c = getCtx()
 	if (!c) return
+	const dest = getDest()
+	if (!dest) return
 	const t0 = now()
 	const osc = c.createOscillator()
 	osc.type = 'sine'
 	osc.frequency.value = 72
 	const g = gainEnvelope(c, t0, 0.35, 0.005, 0.09, 0.1)
 	osc.connect(g)
-	g.connect(c.destination)
+	g.connect(dest)
 	osc.start(t0)
 	osc.stop(t0 + 0.11)
 }

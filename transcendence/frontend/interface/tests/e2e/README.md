@@ -46,6 +46,23 @@ Current stable selectors:
   - friend-invite-modal
   - friend-invite-send
   - chat-conversation-item-${conversationId} (dynamic)
+- Settings (`/settings`):
+  - settings-page
+  - settings-audio-form
+  - settings-home-bgm-muted
+  - settings-game-bgm-muted
+  - settings-sfx-muted
+  - settings-bgm-track-rotate | settings-bgm-track-random | settings-bgm-track-fixed
+  - settings-bgm-fixed-track
+  - settings-reduce-motion
+  - settings-light-mode
+  - settings-show-scrollbars
+  - settings-hide-invite-toasts
+  - settings-reset-prefs
+  - settings-erase-local
+  - settings-erase-cancel
+  - settings-erase-feedback
+  - settings-logout
 - Profile:
   - profile-page
   - profile-username-display

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { fetchConversations } from '../services/chatApi.js'
+import { loadUiPrefs } from '../../../config/uiPrefs.js'
 
 const TOAST_MS = 7200
 
@@ -23,6 +24,7 @@ function formatGameInviteSubtitle(raw) {
 
 /**
  * Compteurs non lus (texte vs invitations de partie) + toast quand une nouvelle invite arrive.
+ * Le toast est supprimé si la préférence `hideInviteToasts` est activée dans uiPrefs.
  */
 export function useChatInbox(enabled) {
 	const [textUnread, setTextUnread] = useState(0)
@@ -79,21 +81,24 @@ export function useChatInbox(enabled) {
 				lm?.message_type === 'game_invite' && lm.id !== prevId && unreadInv > 0
 
 			if (newInviteAsLastMessage || inviteCountWentUp) {
-				const from = c.participants?.[0]?.username || 'Joueur'
-				if (lm?.message_type === 'game_invite' && lm.id !== prevId) {
-					setToast({
-						conversation: c,
-						messageId: lm.id,
-						title: `${from} te défie`,
-						subtitle: formatGameInviteSubtitle(lm.content),
-					})
-				} else {
-					setToast({
-						conversation: c,
-						messageId: lm?.id ?? null,
-						title: `${from} t’a invité`,
-						subtitle: 'Invitation en attente — ouvre le chat pour accepter ou refuser.',
-					})
+				/* Badge conservé ; seul le toast pop-up est conditionnel à la préférence. */
+				if (!loadUiPrefs().hideInviteToasts) {
+					const from = c.participants?.[0]?.username || 'Joueur'
+					if (lm?.message_type === 'game_invite' && lm.id !== prevId) {
+						setToast({
+							conversation: c,
+							messageId: lm.id,
+							title: `${from} te défie`,
+							subtitle: formatGameInviteSubtitle(lm.content),
+						})
+					} else {
+						setToast({
+							conversation: c,
+							messageId: lm?.id ?? null,
+							title: `${from} t’a invité`,
+							subtitle: 'Invitation en attente — ouvre le chat pour accepter ou refuser.',
+						})
+					}
 				}
 				break
 			}

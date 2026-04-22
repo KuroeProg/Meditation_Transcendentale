@@ -6,6 +6,13 @@ html[data-reduce-motion='true'] .aurora-bg::after {
 	animation: none !important;
 }
 
+/* Mode léger : aurora et transitions supprimées (performance), animations non liées à l'accessibilité. */
+html[data-light-mode='true'] .aurora-bg::before,
+html[data-light-mode='true'] .aurora-bg::after {
+	animation: none !important;
+	opacity: 0 !important;
+}
+
 html[data-reduce-motion='true'] .king-check {
 	animation: none !important;
 }

@@ -1,5 +1,5 @@
 /**
- * URLs d’auth / session — à brancher côté Django quand ce sera prêt.
+ * URLs d'auth / session — à brancher côté Django quand ce sera prêt.
  * Le front gère 401/404 gracieusement (utilisateur considéré comme déconnecté).
  *
  * Attendu côté backend (contrat suggéré) :
@@ -11,6 +11,13 @@
  *   ou champs équivalents aplatis (image_url, etc.) — voir src/utils/sessionUser.js
  * - GET  /api/auth/42/login → redirection OAuth 42
  * - POST /api/auth/logout → 204 / 200, CSRF si activé
+ *   (appelé depuis Profile.jsx et Settings.jsx via AuthContext.logout())
+ * - PUT  /api/auth/me/update → mise à jour profil (username, bio…)
+ * - POST /api/auth/me/avatar → upload avatar (multipart/form-data)
+ *
+ * Note : les préférences audio/interface (son, animations, scrollbars, toasts) sont
+ * stockées localement dans localStorage et ne nécessitent aucun endpoint backend.
+ * Voir src/config/uiPrefs.js et src/config/gameAudioPrefs.js.
  */
 
 /** Origine pour les redirections OAuth (doit être celle qui sert Django / les cookies). */
@@ -19,7 +26,7 @@ export function getOAuthOrigin() {
 	if (appOrigin) return String(appOrigin).replace(/\/$/, '')
 	const explicit = import.meta.env.VITE_API_ORIGIN
 	if (explicit) return String(explicit).replace(/\/$/, '')
-	// Dev : préférer l’origine HTTPS réelle (LAN, localhost derrière nginx) ; sinon fallback machine locale
+	// Dev : préférer l'origine HTTPS réelle (LAN, localhost derrière nginx) ; sinon fallback machine locale
 	if (import.meta.env.DEV) {
 		if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
 			return window.location.origin

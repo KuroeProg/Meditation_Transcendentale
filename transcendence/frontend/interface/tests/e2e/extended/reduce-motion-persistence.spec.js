@@ -13,7 +13,7 @@ test.describe('persistance du mode animation réduite', () => {
 	// Vérifie que le réglage d'animations réduites reste actif après rechargement.
 	test('persists reduced motion toggle after reload', async ({ page }) => {
 		await page.goto('/settings')
-		const reduceMotionToggle = page.locator('.toggle-row input[type="checkbox"]')
+		const reduceMotionToggle = page.getByTestId('settings-reduce-motion')
 
 		await expect(reduceMotionToggle).toBeVisible()
 		await reduceMotionToggle.check()

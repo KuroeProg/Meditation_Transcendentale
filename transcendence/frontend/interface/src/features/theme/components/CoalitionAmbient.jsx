@@ -18,21 +18,32 @@ export default function CoalitionAmbient() {
 	const [reducedMotion, setReducedMotion] = useState(
 		() => document.documentElement.getAttribute('data-reduce-motion') === 'true',
 	)
+	const [lightMode, setLightMode] = useState(
+		() => document.documentElement.getAttribute('data-light-mode') === 'true',
+	)
 	const [bgReady, setBgReady] = useState(false)
 	const deepRef = useRef(null)
 	const particlesRef = useRef(null)
 	const mouseRef = useRef({ x: 0, y: 0 })
 	const reducedMotionRef = useRef(reducedMotion)
+	const lightModeRef = useRef(lightMode)
 
 	useEffect(() => {
 		reducedMotionRef.current = reducedMotion
 	}, [reducedMotion])
 
 	useEffect(() => {
+		lightModeRef.current = lightMode
+	}, [lightMode])
+
+	useEffect(() => {
 		const sync = () => {
-			const v = document.documentElement.getAttribute('data-reduce-motion') === 'true'
-			setReducedMotion(v)
-			reducedMotionRef.current = v
+			const rm = document.documentElement.getAttribute('data-reduce-motion') === 'true'
+			setReducedMotion(rm)
+			reducedMotionRef.current = rm
+			const lm = document.documentElement.getAttribute('data-light-mode') === 'true'
+			setLightMode(lm)
+			lightModeRef.current = lm
 		}
 		sync()
 		window.addEventListener('transcendence-prefs-changed', sync)
@@ -78,7 +89,8 @@ export default function CoalitionAmbient() {
 	}, [slug, onAppRoute, loading])
 
 	useEffect(() => {
-		if (!onAppRoute || loading) return
+		/* Mode léger ou animations réduites : pas de suivi souris. */
+		if (!onAppRoute || loading || lightMode) return
 		const onMove = (e) => {
 			mouseRef.current = {
 				x: (e.clientX / window.innerWidth - 0.5) * 2,
@@ -87,10 +99,10 @@ export default function CoalitionAmbient() {
 		}
 		window.addEventListener('mousemove', onMove, { passive: true })
 		return () => window.removeEventListener('mousemove', onMove)
-	}, [onAppRoute, loading])
+	}, [onAppRoute, loading, lightMode])
 
 	function applyParallax(now, t0) {
-		const rm = reducedMotionRef.current
+		const rm = reducedMotionRef.current || lightModeRef.current
 		const t = (now - t0) * 0.00035
 		const driftX = rm ? 0 : Math.sin(t * 0.7) * 0.55 + Math.sin(t * 1.3) * 0.2
 		const driftY = rm ? 0 : Math.cos(t * 0.5) * 0.4 + Math.cos(t * 1.1) * 0.15
@@ -115,11 +127,11 @@ export default function CoalitionAmbient() {
 	useLayoutEffect(() => {
 		if (!onAppRoute || loading || !bgReady) return
 		applyParallax(performance.now(), performance.now())
-	}, [onAppRoute, loading, bgReady, slug])
+	}, [onAppRoute, loading, bgReady, slug, lightMode])
 
 	useEffect(() => {
 		if (!onAppRoute || loading || !bgReady) return
-		if (reducedMotion) {
+		if (reducedMotion || lightMode) {
 			applyParallax(performance.now(), performance.now())
 			return undefined
 		}
@@ -131,7 +143,7 @@ export default function CoalitionAmbient() {
 		}
 		id = requestAnimationFrame(tick)
 		return () => cancelAnimationFrame(id)
-	}, [onAppRoute, loading, bgReady, reducedMotion, slug])
+	}, [onAppRoute, loading, bgReady, reducedMotion, lightMode, slug])
 
 	if (!onAppRoute) return null
 	if (loading) return null
@@ -139,10 +151,12 @@ export default function CoalitionAmbient() {
 	const isNeutral = slug === 'neutral'
 	const bg = isNeutral ? null : COALITION_BACKGROUNDS[slug] ?? COALITION_BACKGROUNDS.feu
 	const accent = COALITION_ACCENTS[slug] ?? COALITION_ACCENTS.feu
-	const showParticles = !reducedMotion && bgReady && !isNeutral
+	/* Mode léger : pas de particules, pas d'animation ; fond coalition gardé (DA coalitions préservée). */
+	const showParticles = !reducedMotion && !lightMode && bgReady && !isNeutral
 
-	const deepTfNeutral = reducedMotion ? 'scale(1.06)' : 'scale(1.08)'
-	const deepTfCoalition = reducedMotion ? 'scale(1.14)' : 'scale(1.18)'
+	const staticLayout = reducedMotion || lightMode
+	const deepTfNeutral = staticLayout ? 'scale(1.06)' : 'scale(1.08)'
+	const deepTfCoalition = staticLayout ? 'scale(1.14)' : 'scale(1.18)'
 	const deepStyle = isNeutral
 		? {
 				backgroundImage: 'none',

@@ -167,3 +167,17 @@ html[data-reduce-motion='true'] .coalition-ambient__glow {
 html[data-reduce-motion='true'] .coalition-ambient--ready {
 	opacity: 1;
 }
+
+/* Mode léger : glows et punches désactivés, fond coalition conservé. */
+html[data-light-mode='true'] .coalition-ambient__glow {
+	animation: none;
+	opacity: 0;
+}
+
+html[data-light-mode='true'] .coalition-ambient__punch {
+	display: none;
+}
+
+html[data-light-mode='true'] .coalition-ambient--ready {
+	opacity: 1;
+}

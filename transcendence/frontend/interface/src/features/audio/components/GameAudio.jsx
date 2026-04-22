@@ -1,7 +1,12 @@
 import { useEffect, useRef, useState, useCallback, useLayoutEffect } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
-import { loadGameAudioPrefs, saveGameAudioPrefs, effectiveBgmVolume } from '../../../config/gameAudioPrefs.js'
+import {
+	loadGameAudioPrefs,
+	saveGameAudioPrefs,
+	effectiveBgmVolume,
+	GAME_BGM_FILES,
+} from '../../../config/gameAudioPrefs.js'
 import { useGameAudioPrefsLive } from '../hooks/useGameAudioPrefs.js'
 import {
 	registerGameBgmElement,
@@ -10,20 +15,23 @@ import {
 } from '../services/gameBgm.js'
 import { cancelGameBgmFade, resetGameBgmFadeController } from '../services/audioFade.js'
 
-/** Musiques d’ambiance en partie : rotation à chaque montage du composant (session). */
-const GAME_BGM_FILES = [
-	'Theme_of_game.wav',
-	'Playing Beltik.m4a',
-	'Playing Girev I.m4a',
-	'Main Title.m4a',
-]
-
 const BGM_ROT_KEY = 'transcendence-game-bgm-rot'
 
 function nextGameBgmSrc() {
-	const i = Number(sessionStorage.getItem(BGM_ROT_KEY)) || 0
-	const file = GAME_BGM_FILES[i % GAME_BGM_FILES.length]
-	sessionStorage.setItem(BGM_ROT_KEY, String(i + 1))
+	const p = loadGameAudioPrefs()
+	let file
+
+	if (p.gameBgmTrackMode === 'fixed' && GAME_BGM_FILES.includes(p.gameBgmFixedTrack)) {
+		file = p.gameBgmFixedTrack
+	} else if (p.gameBgmTrackMode === 'random') {
+		file = GAME_BGM_FILES[Math.floor(Math.random() * GAME_BGM_FILES.length)]
+	} else {
+		/* rotate (défaut) */
+		const i = Number(sessionStorage.getItem(BGM_ROT_KEY)) || 0
+		file = GAME_BGM_FILES[i % GAME_BGM_FILES.length]
+		sessionStorage.setItem(BGM_ROT_KEY, String(i + 1))
+	}
+
 	return `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(file)}`.replace(/([^:]\/)\/+/g, '$1')
 }
 
@@ -43,7 +51,7 @@ export function GameAmbientBgm() {
 		const applyPrefs = () => {
 			const p = loadGameAudioPrefs()
 			audio.volume = effectiveBgmVolume(p)
-			audio.muted = p.bgmMuted
+			audio.muted = p.gameBgmMuted ?? p.bgmMuted
 		}
 		applyPrefs()
 
@@ -55,7 +63,6 @@ export function GameAmbientBgm() {
 		return () => {
 			window.removeEventListener('transcendence-game-audio-changed', onPrefs)
 			cancelGameBgmFade()
-			/* Pause immédiate : sinon le fondu chevauche la reprise du BGM accueil à la sortie de /game */
 			audio.pause()
 			audio.volume = 0
 			unregisterGameBgmElement(audio)
@@ -128,14 +135,15 @@ export function GameMusicPanel() {
 		return () => document.removeEventListener('pointerdown', close, true)
 	}, [open])
 
-	const pct = Math.round(prefs.bgmVolume * 100)
+	const pct = Math.round((prefs.gameBgmVolume ?? prefs.bgmVolume ?? 0.78) * 100)
+	const muted = prefs.gameBgmMuted ?? prefs.bgmMuted ?? false
 
 	const setVolume = useCallback((v) => {
-		saveGameAudioPrefs({ bgmVolume: v })
+		saveGameAudioPrefs({ gameBgmVolume: v })
 	}, [])
 
 	const setMuted = useCallback((m) => {
-		saveGameAudioPrefs({ bgmMuted: m })
+		saveGameAudioPrefs({ gameBgmMuted: m })
 	}, [])
 
 	const popover = open ? (
@@ -146,7 +154,7 @@ export function GameMusicPanel() {
 			role="dialog"
 			aria-label="Musique du jeu"
 		>
-			<p className="game-music-popover__title">Musique d’ambiance</p>
+			<p className="game-music-popover__title">Musique d'ambiance</p>
 			<p className="game-music-popover__hint">
 				Le thème se lance avec le chronomètre (après le premier coup des blancs). Ajustez le volume si besoin.
 			</p>
@@ -165,7 +173,7 @@ export function GameMusicPanel() {
 			<label className="game-music-mute-row">
 				<input
 					type="checkbox"
-					checked={prefs.bgmMuted}
+					checked={muted}
 					onChange={(e) => setMuted(e.target.checked)}
 				/>
 				<span>Couper la musique</span>
@@ -186,16 +194,16 @@ export function GameMusicPanel() {
 				<button
 					ref={btnRef}
 					type="button"
-					className={`game-music-fab game-music-fab--embedded${prefs.bgmMuted ? ' game-music-fab--muted' : ''}`}
+					className={`game-music-fab game-music-fab--embedded${muted ? ' game-music-fab--muted' : ''}`}
 					data-testid="ingame-bgm-fab"
 					aria-expanded={open}
-					aria-label={prefs.bgmMuted ? 'Musique coupée — ouvrir les réglages' : 'Musique d’ambiance — réglages'}
+					aria-label={muted ? 'Musique coupée — ouvrir les réglages' : 'Musique d’ambiance — réglages'}
 					onPointerDown={() => {
 						void tryPlayGameBgm()
 					}}
 					onClick={() => setOpen((o) => !o)}
 				>
-					<i className={prefs.bgmMuted ? 'ri-volume-mute-line' : 'ri-volume-down-line'} aria-hidden />
+					<i className={muted ? 'ri-volume-mute-line' : 'ri-volume-down-line'} aria-hidden />
 				</button>
 			</div>
 			{popover && createPortal(popover, document.body)}

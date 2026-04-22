@@ -104,6 +104,47 @@ html[data-coalition='neutral'] {
 	color: var(--coalition-accent);
 }
 
+/* Profil : bloc identité = même fond que .phistory-header (Annales de l'Arène) + dash-hero */
+.page-shell .surface-card.profile-hero {
+	position: relative;
+	overflow: hidden;
+	border-radius: 12px;
+	border: 1px solid var(--coalition-accent-border);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--coalition-accent) 18%, rgba(8, 12, 22, 0.95)),
+		rgba(6, 8, 14, 0.92)
+	);
+	box-shadow:
+		0 8px 32px rgba(0, 0, 0, 0.22),
+		0 0 0 1px var(--coalition-accent-soft);
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+.page-shell .surface-card.profile-hero::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	border-radius: inherit;
+	background-image:
+		linear-gradient(45deg, rgba(255, 255, 255, 0.028) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, 0.028) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.028) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.028) 75%);
+	background-size: 48px 48px;
+	background-position: 0 0, 0 24px, 24px -24px, -24px 0px;
+	-webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+	pointer-events: none;
+	z-index: 0;
+}
+
+.page-shell .surface-card.profile-hero > * {
+	position: relative;
+	z-index: 1;
+}
+
 .settings-audio-card.surface-card {
 	border-color: var(--coalition-accent-border);
 }
@@ -113,40 +154,42 @@ html[data-coalition='neutral'] {
 	background: transparent;
 }
 
+/* Fond = même recette que .phistory-header (page Annales de l'Arène) */
 .dashboard-v2 .dash-hero {
 	border: 1px solid var(--coalition-accent-border);
+	border-radius: 12px;
 	box-shadow:
 		0 8px 32px rgba(0, 0, 0, 0.22),
 		0 0 0 1px var(--coalition-accent-soft);
-	background: rgba(6, 8, 14, 0.25);
-}
-
-.dashboard-v2 .dash-hero-bg {
-	opacity: 0.5;
 	background: linear-gradient(
 		135deg,
-		color-mix(in srgb, var(--coalition-accent) 32%, #090b10),
-		color-mix(in srgb, var(--coalition-accent) 12%, #070910) 50%,
-		rgba(5, 7, 12, 0.2)
-	) !important;
+		color-mix(in srgb, var(--coalition-accent) 18%, rgba(8, 12, 22, 0.95)),
+		rgba(6, 8, 14, 0.92)
+	);
 }
 
-/* Damier discret sur le dégradé du hero — carreaux larges, masqué en bord bas */
-.dashboard-v2 .dash-hero-bg::after {
+/* Filigrane carreaux = copie de .phistory-header::before (History.css) */
+.dashboard-v2 .dash-hero::before {
 	content: '';
 	position: absolute;
 	inset: 0;
-	pointer-events: none;
+	border-radius: inherit;
 	background-image:
-		linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
-		linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
-		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%),
-		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%);
-	background-size: 40px 40px;
-	background-position: 0 0, 0 20px, 20px -20px, -20px 0;
-	-webkit-mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
-	mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
-	opacity: 0.7;
+		linear-gradient(45deg, rgba(255, 255, 255, 0.028) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, 0.028) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.028) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.028) 75%);
+	background-size: 48px 48px;
+	background-position: 0 0, 0 24px, 24px -24px, -24px 0px;
+	-webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+	pointer-events: none;
+	z-index: 0;
+}
+
+/* Ancien calque interne : inutile une fois le fond aligné sur Annales */
+.dashboard-v2 .dash-hero-bg {
+	display: none;
 }
 
 .dashboard-v2 .dash-panel {
