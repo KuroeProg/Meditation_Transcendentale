@@ -118,7 +118,7 @@ export function CapturedPiecesBar({ game, playerColor, position, serverAdvantage
 		const topCaptured = topColor === 'w' ? capturedByWhite : capturedByBlack
 		const topAdv = topColor === 'w' ? Math.max(advantage, 0) : Math.max(-advantage, 0)
 		return (
-			<div className="cp-bar cp-bar--top" aria-label="Pièces capturées par l'adversaire">
+			<div className="cp-bar cp-bar--top" aria-label="Pièces capturées par l'adversaire" data-testid="captured-bar-top">
 				<PiecesRow
 					captured={topCaptured}
 					pieceColor={topColor === 'w' ? 'b' : 'w'}
@@ -134,7 +134,7 @@ export function CapturedPiecesBar({ game, playerColor, position, serverAdvantage
 	const bottomAdv = playerColor === 'w' ? Math.max(advantage, 0) : Math.max(-advantage, 0)
 
 	return (
-		<div className="cp-bar cp-bar--bottom" aria-label="Tes pièces capturées">
+		<div className="cp-bar cp-bar--bottom" aria-label="Tes pièces capturées" data-testid="captured-bar-bottom">
 			<PiecesRow
 				captured={bottomCaptured}
 				pieceColor={playerColor === 'w' ? 'b' : 'w'}

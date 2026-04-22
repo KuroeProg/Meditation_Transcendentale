@@ -37,15 +37,16 @@ function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
 			<div className="chat-contact-actions">
 				{isPending && (
 					<>
-						<button
-							type="button"
-							className="chat-ca-btn chat-ca-accept"
-							onClick={() => onAction(contact.friendship_id, 'accept')}
-							disabled={isBusy}
-							aria-busy={isBusy}
-							aria-label="Accepter la demande d'ami"
-							title="Accepter"
-						>
+					<button
+						type="button"
+						className="chat-ca-btn chat-ca-accept"
+						onClick={() => onAction(contact.friendship_id, 'accept')}
+						disabled={isBusy}
+						aria-busy={isBusy}
+						aria-label="Accepter la demande d'ami"
+						title="Accepter"
+						data-testid={`friend-accept-${contact.friendship_id}`}
+					>
 							{isBusy
 								? <i className="ri-loader-4-line" aria-hidden="true" />
 								: <i className="ri-check-line" aria-hidden="true" />

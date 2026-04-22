@@ -529,7 +529,7 @@ export default function Statistics() {
 	const pageStyle = useMemo(() => buildStatsPageStyle(theme), [theme])
 
 	return (
-		<div className="pstats-page" style={pageStyle} data-pstats-coalition={slug}>
+		<div className="pstats-page chess-grid-pattern" style={pageStyle} data-pstats-coalition={slug}>
 			<div className="pstats-left">
 				<div className="pstats-winrates">
 					<WinrateGroup

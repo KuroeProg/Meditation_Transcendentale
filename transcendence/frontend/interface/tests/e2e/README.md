@@ -57,6 +57,30 @@ Current stable selectors:
   - profile-avatar-image
   - profile-logout-button
 
+- Stats / History panel (in-game):
+  - ingame-history-panel
+  - ingame-history-list
+  - ingame-history-row-${gameId} (dynamic)
+- History page (/history):
+  - history-page
+  - history-filters
+  - history-game-list
+  - history-row-${gameId} (dynamic)
+  - history-row-detail-${gameId} (dynamic)
+- In-game chat:
+  - ingame-chat
+  - ingame-chat-messages
+  - ingame-chat-input
+  - ingame-chat-send
+- Captured pieces HUD:
+  - captured-bar-top
+  - captured-bar-bottom
+- Sorting Hat ceremony:
+  - sorting-hat-overlay
+  - sorting-hat-dismiss
+- Friend requests:
+  - friend-accept-${friendshipId} (dynamic)
+
 Notes:
 - Some tests still rely on non-testid selectors for legacy areas (example: auth form ids, typing indicator classes).
 - When touching these areas, prefer adding a stable `data-testid` and update this file.

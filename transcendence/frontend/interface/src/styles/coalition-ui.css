@@ -220,30 +220,54 @@ html[data-reduce-motion='true'] .page-shell .surface-card {
 
 /* ══════════════════════════════════════════════════
    Motif grille d'échecs — overlay CSS discret
-   Appliquer la classe .chess-grid-pattern sur un conteneur
-   positionné (position: relative / absolute / fixed).
-   Le motif s'adapte à la palette coalition via l'accent.
+   ──────────────────────────────────────────────────
+   Appliquer la classe .chess-grid-pattern sur n'importe
+   quel wrapper principal (position: relative ou statique ;
+   le pseudo-élément utilise position:fixed pour couvrir
+   la page entière quelle que soit la hauteur du contenu).
+
+   Variables de personnalisation disponibles :
+     --chess-grid-size   : taille d'une case (défaut 22px)
+     --chess-grid-opacity: opacité de chaque carreau (défaut 0.022)
+     --chess-grid-fade   : hauteur avant début de l'atténuation
+                           verticale (défaut 30%).
+                           0% = atténuation immédiate depuis le haut
+                           50% = visible sur la moitié haute seulement
+
+   Le motif s'arrête progressivement vers le bas grâce à
+   un mask-image dégradé vertical, réglable via la variable.
    ══════════════════════════════════════════════════ */
+
+:root {
+	--chess-grid-size: 22px;
+	--chess-grid-opacity: 0.022;
+	--chess-grid-fade: 30%;
+}
 
 .chess-grid-pattern {
 	position: relative;
-	overflow: hidden;
 }
 
 .chess-grid-pattern::before {
 	content: '';
-	position: absolute;
+	position: fixed;
 	inset: 0;
 	background-image:
-		linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%),
-		linear-gradient(-45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%),
-		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.022) 75%),
-		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.022) 75%);
-	background-size: 22px 22px;
-	background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+		linear-gradient(45deg, rgba(255, 255, 255, var(--chess-grid-opacity)) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, var(--chess-grid-opacity)) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, var(--chess-grid-opacity)) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, var(--chess-grid-opacity)) 75%);
+	background-size: var(--chess-grid-size) var(--chess-grid-size);
+	background-position:
+		0 0,
+		0 calc(var(--chess-grid-size) / 2),
+		calc(var(--chess-grid-size) / 2) calc(-1 * var(--chess-grid-size) / 2),
+		calc(-1 * var(--chess-grid-size) / 2) 0px;
+	/* Atténuation verticale : visible en haut, disparaît vers le bas */
+	-webkit-mask-image: linear-gradient(to bottom, black var(--chess-grid-fade), transparent 100%);
+	mask-image: linear-gradient(to bottom, black var(--chess-grid-fade), transparent 100%);
 	pointer-events: none;
 	z-index: 0;
-	border-radius: inherit;
 }
 
 .chess-grid-pattern > * {
@@ -251,8 +275,10 @@ html[data-reduce-motion='true'] .page-shell .surface-card {
 	z-index: 1;
 }
 
-/* Variante plus prononcée — panneaux historique in-game */
+/* Variante pour les panneaux compacts (historique in-game, cartes) :
+   position absolute au lieu de fixed pour rester dans le conteneur */
 .chess-grid-pattern--md::before {
+	position: absolute;
 	background-image:
 		linear-gradient(45deg, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 25%, transparent 25%),
 		linear-gradient(-45deg, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 25%, transparent 25%),
@@ -260,6 +286,15 @@ html[data-reduce-motion='true'] .page-shell .surface-card {
 		linear-gradient(-45deg, transparent 75%, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 75%);
 	background-size: 28px 28px;
 	background-position: 0 0, 0 14px, 14px -14px, -14px 0px;
+	-webkit-mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 40%, transparent 100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.chess-grid-pattern::before,
+	.chess-grid-pattern--md::before {
+		display: none;
+	}
 }
 
 /* ── Sidebar active state via coalition ── */

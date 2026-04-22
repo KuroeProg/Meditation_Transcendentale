@@ -78,7 +78,7 @@ function GameRow({ game, isOpen, onToggle }) {
 	const stopAndGo = (fn) => (e) => { e.stopPropagation(); fn() }
 
 	return (
-		<div className={`ghv-row${isOpen ? ' ghv-row--open' : ''}`}>
+		<div className={`ghv-row${isOpen ? ' ghv-row--open' : ''}`} data-testid={`ingame-history-row-${game.id}`}>
 			{/* Ligne principale */}
 			<div
 				className="ghv-row-main"
@@ -229,7 +229,7 @@ export function HistoryView({ recentGames = [], coalitionSlug }) {
 	const handleToggle = (id) => setOpenId((prev) => (prev === id ? null : id))
 
 	return (
-		<div className="ghv-root chess-grid-pattern--md">
+		<div className="ghv-root chess-grid-pattern--md" data-testid="ingame-history-panel">
 			{/* ── En-tête avec bannière coalition ── */}
 			<header className={`ghv-header${coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''}`}>
 				<div className="ghv-header-inner">
@@ -285,6 +285,7 @@ export function HistoryView({ recentGames = [], coalitionSlug }) {
 				role="table"
 				aria-label="Parties récentes"
 				aria-rowcount={filtered.length}
+				data-testid="ingame-history-list"
 			>
 				{filtered.length === 0 ? (
 					<div className="ghv-empty" role="status">

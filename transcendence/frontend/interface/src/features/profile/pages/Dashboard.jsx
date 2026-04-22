@@ -169,7 +169,7 @@ export default function Dashboard() {
 	const catMeta = CATEGORY_META[selectedCategory]
 
 	return (
-		<div className={`dashboard-v2 dashboard-coalition-${coalitionSlug}`} data-testid="dashboard-page">
+		<div className={`dashboard-v2 dashboard-coalition-${coalitionSlug} chess-grid-pattern`} data-testid="dashboard-page">
 			{/* Hero Banner */}
 			<section className="dash-hero">
 				<div className="dash-hero-bg" />

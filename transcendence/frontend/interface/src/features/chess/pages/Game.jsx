@@ -228,7 +228,7 @@ function App() {
       </div>
       <div className="header" />
 
-      <div className="game-container" data-testid="game-shell">
+      <div className="game-container chess-grid-pattern" data-testid="game-shell">
         <GameAmbientBgm />
         <div className="game-board-col">
           <div className="player-bar" data-testid="game-player-bar-top">

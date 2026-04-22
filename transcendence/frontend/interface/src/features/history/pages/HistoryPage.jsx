@@ -105,6 +105,7 @@ function HistoryRow({ game, isSelected, onSelect }) {
 				aria-expanded={isSelected}
 				onClick={onSelect}
 				onKeyDown={handleKeyDown}
+				data-testid={`history-row-${game.id}`}
 			>
 				{/* Résultat */}
 				<span
@@ -189,7 +190,7 @@ function HistoryRow({ game, isSelected, onSelect }) {
 
 			{/* Preview accordéon */}
 			{isSelected && (
-				<div className="phistory-row-preview" role="region" aria-label="Détails de la partie">
+				<div className="phistory-row-preview" role="region" aria-label="Détails de la partie" data-testid={`history-row-detail-${game.id}`}>
 					{/* Courbe eval */}
 					<div className="phistory-preview-block">
 						<p className="phistory-preview-title">
@@ -458,6 +459,7 @@ export default function HistoryPage() {
 			className="phistory-page chess-grid-pattern"
 			data-phistory-coalition={coalition}
 			aria-label="Annales de l'Arène — Historique des parties"
+			data-testid="history-page"
 		>
 			{/* ── En-tête ── */}
 			<header className="phistory-header">
@@ -486,7 +488,7 @@ export default function HistoryPage() {
 				</div>
 
 				{/* Filtres */}
-				<nav className="phistory-filters" aria-label="Filtres de l'historique">
+				<nav className="phistory-filters" aria-label="Filtres de l'historique" data-testid="history-filters">
 					{/* Résultat */}
 					<div className="phistory-filter-group" role="group" aria-label="Filtrer par résultat">
 						{mockData.filters.results.map((f) => (
@@ -561,6 +563,7 @@ export default function HistoryPage() {
 							role="table"
 							aria-label="Parties jouées"
 							aria-rowcount={filteredGames.length}
+							data-testid="history-game-list"
 						>
 							{filteredGames.length === 0 ? (
 								<div className="phistory-empty" role="status">

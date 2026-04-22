@@ -183,7 +183,7 @@ function Profile() {
 
 	if (!user) {
 		return (
-			<div className="page-shell">
+			<div className="page-shell chess-grid-pattern">
 				<div className="page-header">
 					<h1 className="page-title">Profil</h1>
 				</div>
@@ -207,7 +207,7 @@ function Profile() {
 	}))
 
 	return (
-		<div className="page-shell" data-testid="profile-page">
+		<div className="page-shell chess-grid-pattern" data-testid="profile-page">
 			<div className="page-header">
 				<h1 className="page-title">Profil</h1>
 			</div>

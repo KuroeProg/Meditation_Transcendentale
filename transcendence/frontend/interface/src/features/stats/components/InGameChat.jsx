@@ -65,7 +65,7 @@ export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
 	}
 
 	return (
-		<div className="igc-root" aria-label={`Chat avec ${opponentUsername}`}>
+		<div className="igc-root" aria-label={`Chat avec ${opponentUsername}`} data-testid="ingame-chat">
 			{/* En-tête */}
 			<div className="igc-header">
 				<i className="ri-chat-3-line igc-header-icon" aria-hidden="true" />
@@ -83,6 +83,7 @@ export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
 				role="log"
 				aria-live="polite"
 				aria-label="Messages du chat"
+				data-testid="ingame-chat-messages"
 			>
 				{messages.map((msg) => (
 					<div
@@ -125,6 +126,7 @@ export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
 					onKeyDown={handleKeyDown}
 					maxLength={200}
 					autoComplete="off"
+					data-testid="ingame-chat-input"
 				/>
 				<button
 					type="button"
@@ -132,6 +134,7 @@ export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
 					onClick={sendMessage}
 					disabled={!input.trim()}
 					aria-label="Envoyer le message"
+					data-testid="ingame-chat-send"
 				>
 					<i className="ri-send-plane-fill" aria-hidden="true" />
 				</button>

@@ -20,7 +20,7 @@ function Settings() {
 	}, [prefs])
 
 	return (
-		<div className="page-shell">
+		<div className="page-shell chess-grid-pattern">
 			<div className="page-header">
 				<h1 className="page-title">Paramètres</h1>
 				<p className="page-subtitle">Audio de partie et préférences d’affichage — l’avatar reste celui de ton compte 42.</p>

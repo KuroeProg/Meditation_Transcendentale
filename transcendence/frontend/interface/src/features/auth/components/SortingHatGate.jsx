@@ -300,6 +300,7 @@ export default function SortingHatGate() {
 					aria-modal="true"
 					aria-live="polite"
 					aria-label={title}
+					data-testid="sorting-hat-overlay"
 					initial={{ opacity: 0 }}
 					animate={{ opacity: 1 }}
 					exit={{ opacity: 0 }}
@@ -310,6 +311,7 @@ export default function SortingHatGate() {
 						className="sorting-hat-dismiss"
 						onClick={handleDismiss}
 						aria-label="Fermer la cérémonie"
+						data-testid="sorting-hat-dismiss"
 					>
 						<i className="ri-close-line" aria-hidden="true" />
 					</button>
