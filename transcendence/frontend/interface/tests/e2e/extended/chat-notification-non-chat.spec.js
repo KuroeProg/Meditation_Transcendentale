@@ -4,9 +4,10 @@ import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'
 import { waitForDashboardReady } from '../helpers/waits.js'
 
-test.describe('wave c - non-chat invite notification', () => {
+test.describe("notification d'invitation visible depuis le dashboard", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'une invitation met à jour le badge et le toast sans ouvrir le chat.
 	test('invite unread badge and toast update on dashboard without opening chat', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

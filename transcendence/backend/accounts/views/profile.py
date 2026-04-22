@@ -1,12 +1,12 @@
 import json
 
 from django.http import JsonResponse
-from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
 from game.services.rating import get_rating_field, normalize_time_category
+from utils.presence import mark_user_presence_heartbeat
 
 
 def _get_authenticated_user(request):
@@ -182,5 +182,5 @@ def presence_ping(request):
     if err:
         return err
 
-    LocalUser.objects.filter(id=user.id).update(is_online=True, last_seen=timezone.now())
+    mark_user_presence_heartbeat(user.id)
     return JsonResponse({'ok': True})

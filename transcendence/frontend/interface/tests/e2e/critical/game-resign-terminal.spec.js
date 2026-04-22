@@ -6,6 +6,7 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
+// Vérifie qu'un abandon mène bien à l'état terminal de la partie.
 test('resign action reaches terminal game state', async ({ page }) => {
 	const sessionUser = {
 		id: 101,

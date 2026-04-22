@@ -11,6 +11,7 @@ test.use({
 test.describe('game shell load', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que l'écran de jeu affiche bien les éléments principaux pour un utilisateur authentifié.
 	test('authenticated user sees board and player bars on game route', async ({ page }) => {
 		await page.goto('/game/training')
 		await expect(page.getByTestId('game-page')).toBeVisible()

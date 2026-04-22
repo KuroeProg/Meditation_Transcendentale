@@ -6,6 +6,7 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
+// Vérifie qu'une déconnexion remet l'UI publique et renvoie vers l'auth.
 test('logout clears authenticated UI and returns to auth', async ({ page }) => {
 	/* Bureau : déconnexion via la sidebar (même code logout + navigate) ; en ≤770px la bottom-nav fixe peut gêner le bouton profil. */
 	await page.setViewportSize({ width: 1280, height: 900 })

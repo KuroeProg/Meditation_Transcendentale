@@ -8,6 +8,7 @@ import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 test.describe('chat send message', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que l'ouverture du chat charge les conversations puis envoie un message.
 	test('chat opens, loads conversation list, and sends a message', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

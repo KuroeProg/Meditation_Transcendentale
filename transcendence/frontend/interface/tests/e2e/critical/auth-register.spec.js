@@ -1,0 +1,118 @@
+import { expect, test } from '@playwright/test'
+
+test.describe('auth register', () => {
+	// Vérifie qu'une inscription valide enchaîne vers l'étape de vérification 2FA.
+	test('register flow enters 2fa verification stage', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 201,
+				contentType: 'application/json',
+				body: JSON.stringify({
+					status: '2fa_pending',
+					user_id: 101,
+					email: 'new-user@example.test',
+					message: 'Verification code sent to email',
+				}),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#firstName').fill('New')
+		await page.locator('#lastName').fill('User')
+		await page.locator('#reg-username').fill('NEW_USER_01')
+		await page.locator('#reg-email').fill('new-user@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByRole('heading', { name: 'Verify Your Email' })).toBeVisible()
+	})
+
+	// Vérifie qu'un username déjà pris est remonté clairement depuis le backend.
+	test('duplicate username surfaces backend error', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 409,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Username already taken' }),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#reg-username').fill('SMOKE_USER')
+		await page.locator('#reg-email').fill('already-used@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByText('Username already taken')).toBeVisible()
+	})
+
+	// Vérifie qu'un email déjà enregistré affiche une erreur explicite.
+	test('duplicate email surfaces backend error', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 409,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Email already registered' }),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#reg-username').fill('ANOTHER_USER')
+		await page.locator('#reg-email').fill('smoke@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByText('Email already registered')).toBeVisible()
+	})
+
+	// Vérifie qu'une erreur serveur générique est présentée sans casser le formulaire.
+	test('register shows generic backend failure message', async ({ page }) => {
+		await page.route('**/api/auth/me', async (route) => {
+			await route.fulfill({
+				status: 401,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Unauthenticated' }),
+			})
+		})
+
+		await page.route('**/api/auth/register', async (route) => {
+			await route.fulfill({
+				status: 500,
+				contentType: 'application/json',
+				body: JSON.stringify({ error: 'Registration failed. Please try again.' }),
+			})
+		})
+
+		await page.goto('/auth?mode=register')
+		await page.locator('#reg-username').fill('BROKEN_REGISTER_USER')
+		await page.locator('#reg-email').fill('broken-register@example.test')
+		await page.locator('#reg-password').fill('strong-password-123')
+		await page.getByRole('button', { name: 'Creer mon compte', exact: true }).click()
+
+		await expect(page.getByText('Registration failed. Please try again.')).toBeVisible()
+	})
+})

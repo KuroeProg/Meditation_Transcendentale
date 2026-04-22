@@ -4,6 +4,7 @@ import { withRoleSessions } from '../helpers/multiUser.js'
 import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
+// Vérifie qu'une invitation envoyée depuis un thread crée bien une carte d'invitation visible.
 test('send friend invite from thread creates an invite card', async ({ browser }) => {
 	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 		const { page } = SMOKE_USER

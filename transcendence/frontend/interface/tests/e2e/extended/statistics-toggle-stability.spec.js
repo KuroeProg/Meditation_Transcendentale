@@ -7,9 +7,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - statistics chart toggles', () => {
+test.describe('bascule des graphiques de statistiques', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que les contrôles de statistiques changent de vue sans casser l'interface.
 	test('toggle controls switch chart modes without UI break', async ({ page }) => {
 		const uncaughtErrors = []
 		page.on('pageerror', (error) => {

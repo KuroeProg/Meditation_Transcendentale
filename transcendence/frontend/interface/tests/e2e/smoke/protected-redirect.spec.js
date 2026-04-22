@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+// Vérifie qu'un visiteur non connecté est redirigé vers l'écran d'authentification.
 test('guest is redirected to auth when opening protected dashboard route', async ({ page }) => {
 	await page.route('**/api/auth/me', async (route) => {
 		await route.fulfill({ status: 401, contentType: 'application/json', body: JSON.stringify({ error: 'Unauthenticated' }) })

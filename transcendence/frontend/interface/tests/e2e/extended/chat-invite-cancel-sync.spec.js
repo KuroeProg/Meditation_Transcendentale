@@ -5,9 +5,10 @@ import { withRoleSessions } from '../helpers/multiUser.js'
 import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock, installNotificationsWebSocketMock } from '../helpers/wsMocks.js'
 
-test.describe('wave c - sender invite cancel sync', () => {
+test.describe("synchronisation de l'annulation d'invitation côté émetteur", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que la carte d'invitation passe à l'état annulé après l'événement WebSocket.
 	test('sender card updates to cancelled when invite_updated websocket event arrives', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 			const { page } = SMOKE_USER

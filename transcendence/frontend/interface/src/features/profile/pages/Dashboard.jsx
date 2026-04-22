@@ -18,12 +18,12 @@ function normalizeWirePlayerId(value) {
 	return legacyBytesMatch ? legacyBytesMatch[1] : raw
 }
 
-function FriendChip({ friend, onChallenge }) {
+function FriendChip({ friend, isOnline, onChallenge }) {
 	return (
 		<div className="dash-friend-chip">
-			<span className={`dash-friend-dot ${friend.user?.is_online ? 'online' : ''}`} />
+			<span className={`dash-friend-dot ${isOnline ? 'online' : ''}`} />
 			<span className="dash-friend-name">{friend.user?.username}</span>
-			{friend.user?.is_online && (
+			{isOnline && (
 				<button className="dash-friend-action" type="button" onClick={() => onChallenge(friend.user)}>
 					<i className="ri-sword-line" />
 				</button>
@@ -50,7 +50,7 @@ function LeaderboardRow({ entry, isCurrentUser }) {
 export default function Dashboard() {
 	const navigate = useNavigate()
 	const { openFriendInvite } = useFriendInvite()
-	const { user, isAuthenticated } = useAuth()
+	const { user, isAuthenticated, resolveUserOnline } = useAuth()
 	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID)
 	const [queueSize, setQueueSize] = useState(0)
 	const [searching, setSearching] = useState(false)
@@ -112,6 +112,21 @@ export default function Dashboard() {
 	}, [user, fetchFriends, fetchLeaderboard, selectedCategory])
 
 	useEffect(() => {
+		if (!user) return undefined
+		const intervalId = setInterval(() => {
+			void fetchFriends()
+		}, 10000)
+		const onFocus = () => {
+			void fetchFriends()
+		}
+		window.addEventListener('focus', onFocus)
+		return () => {
+			clearInterval(intervalId)
+			window.removeEventListener('focus', onFocus)
+		}
+	}, [user, fetchFriends])
+
+	useEffect(() => {
 		if (!searching || !isConnected || !userId || hasJoinedQueueRef.current) return
 		sendMove({
 			action: 'join_queue',
@@ -167,6 +182,19 @@ export default function Dashboard() {
 	}
 
 	const catMeta = CATEGORY_META[selectedCategory]
+	const friendsWithLivePresence = useMemo(() => {
+		return friends.map((friend) => ({
+			...friend,
+			user: {
+				...friend.user,
+				is_online: resolveUserOnline(friend.user),
+			},
+		}))
+	}, [friends, resolveUserOnline])
+	const onlineFriends = useMemo(
+		() => friendsWithLivePresence.filter((friend) => Boolean(friend.user?.is_online)),
+		[friendsWithLivePresence]
+	)
 
 	return (
 		<div className={`dashboard-v2 dashboard-coalition-${coalitionSlug} chess-grid-pattern`} data-testid="dashboard-page">
@@ -249,12 +277,13 @@ export default function Dashboard() {
 					{/* Friends Online */}
 					<section className="dash-panel dash-panel-friends">
 						<h2><i className="ri-group-line" /> Amis en ligne</h2>
-						{friends.length > 0 ? (
+						{onlineFriends.length > 0 ? (
 							<div className="dash-friends-chips">
-								{friends.map((f) => (
+								{onlineFriends.map((f) => (
 									<FriendChip
 										key={f.friendship_id}
 										friend={f}
+										isOnline={Boolean(f.user?.is_online)}
 										onChallenge={(u) =>
 											openFriendInvite({
 												friendUserId: u.id,
