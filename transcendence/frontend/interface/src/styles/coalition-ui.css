@@ -258,7 +258,7 @@ html[data-reduce-motion='true'] .page-shell .surface-card {
 
 :root {
 	--chess-grid-size: 200px;
-	--chess-grid-opacity: 0.052;
+	--chess-grid-opacity: 0.022;
 	--chess-grid-fade: 10%;
 }
 

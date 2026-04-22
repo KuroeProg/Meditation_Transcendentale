@@ -77,6 +77,15 @@ body:has(.auth-page),
 	box-sizing: border-box;
 }
 
+@media (max-width: 770px) {
+	/* Gouttière serrée : moins d’inset = bords/angles de la page visibles (le hack 100vw
+	   sur la seule table créait un décalage bord / viewport) */
+	.main-content:has(.phistory-page) {
+		padding-left: max(0.5rem, env(safe-area-inset-left, 0px));
+		padding-right: max(0.5rem, env(safe-area-inset-right, 0px));
+	}
+}
+
 /* Home : pleine largeur utile (pas de bande grise latérale) */
 .main-content:has(.home) {
 	overflow-x: hidden;
