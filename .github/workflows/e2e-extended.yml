@@ -31,6 +31,9 @@ jobs:
       - name: Start stack
         run: make up-bg
 
+      - name: Apply database migrations
+        run: make migrations
+
       - name: Seed deterministic E2E fixtures
         run: make seed-e2e-users
 
