@@ -37,6 +37,12 @@ jobs:
       - name: Seed deterministic E2E fixtures
         run: make seed-e2e-users
 
+      - name: Install frontend E2E dependencies
+        run: |
+          cd transcendence/frontend/interface
+          npm ci
+          npx playwright install --with-deps chromium
+
       - name: Run extended suite
         run: make test-e2e-suite SUITE=extended
 
