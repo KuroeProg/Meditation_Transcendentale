@@ -37,6 +37,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare CI env file
+        run: cp transcendence/.env.example transcendence/.env
+
       - name: Start stack
         run: make up-bg
 
