@@ -58,6 +58,12 @@ Current stable selectors:
   - profile-logout-button
 
 - Stats / History panel (in-game):
+  - ingame-bgm-fab (musique — un seul par onglet, dans l’en-tête type Annales)
+  - ingame-moves-ghv-header
+  - ingame-history-ghv-header
+  - ingame-chat-ghv-header
+  - ingame-friends-ghv-header
+  - ingame-friends-wrap
   - ingame-history-panel
   - ingame-history-list
   - ingame-history-row-${gameId} (dynamic)

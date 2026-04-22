@@ -1,7 +1,17 @@
 import { useRef, useLayoutEffect } from 'react'
 import { resultShortNotation } from '../services/statsCalculator.js'
+import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
 
-export function MoveListView({ moveLog, viewPlies, onViewPlies, winner, tabBarEnd = null }) {
+export function MoveListView({
+	moveLog,
+	viewPlies,
+	onViewPlies,
+	winner,
+	/** @type {string} coalition du joueur courant (thème ghv) */
+	coalitionSlug = null,
+	whiteLabel = 'Joueur blancs',
+	blackLabel = 'Joueur noirs',
+}) {
   const listScrollRef = useRef(null)
   const selectedHalfIdx =
     viewPlies === null
@@ -31,14 +41,42 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner, tabBarEn
     })
   }
   const resultStr = resultShortNotation(winner)
+	const gMod = coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''
+	const moveHeader = (
+		<header
+			className={`ghv-header gsp-moves-ghv${gMod}`}
+			data-testid="ingame-moves-ghv-header"
+		>
+			<div className="ghv-header-inner">
+				<div className="ghv-header-lead">
+					<h2 className="ghv-title">
+						<i className="ri-file-list-3-line" aria-hidden="true" />
+						Coups
+					</h2>
+					<p className="ghv-header-subtitle">
+						Blancs : {whiteLabel} · Noirs : {blackLabel}
+					</p>
+				</div>
+				<div className="ghv-header-actions">
+					{viewPlies != null ? (
+						<button
+							type="button"
+							className="stats-moves-pgn__live"
+							onClick={() => onViewPlies(null)}
+						>
+							Partie en cours
+						</button>
+					) : null}
+					<GameMusicPanel />
+				</div>
+			</div>
+		</header>
+	)
 
   if (!moveLog.length) {
     return (
       <div className="stats-moves-block stats-moves-block--pgn">
-        <div className="stats-moves-pgn__tabbar">
-          <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">Coups</span>
-          {tabBarEnd ? <div className="stats-moves-pgn__tabbar-end">{tabBarEnd}</div> : null}
-        </div>
+        {moveHeader}
         <p className="stats-empty-moves">Aucun coup pour l’instant.</p>
       </div>
     )
@@ -46,19 +84,7 @@ export function MoveListView({ moveLog, viewPlies, onViewPlies, winner, tabBarEn
 
   return (
     <div className="stats-moves-block stats-moves-block--pgn">
-      <div className="stats-moves-pgn__tabbar">
-        <span className="stats-moves-pgn__tab stats-moves-pgn__tab--active">Coups</span>
-        {(viewPlies != null || tabBarEnd) ? (
-          <div className="stats-moves-pgn__tabbar-end">
-            {viewPlies != null ? (
-              <button type="button" className="stats-moves-pgn__live" onClick={() => onViewPlies(null)}>
-                Partie en cours
-              </button>
-            ) : null}
-            {tabBarEnd}
-          </div>
-        ) : null}
-      </div>
+			{moveHeader}
       <div
         ref={listScrollRef}
         className="stats-move-list stats-move-list--pgn"

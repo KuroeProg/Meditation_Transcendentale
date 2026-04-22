@@ -211,7 +211,7 @@ function GameRow({ game, isOpen, onToggle }) {
      recentGames   — tableau de parties (shape: mockPersonalStats.gamePanel.recentGames)
      coalitionSlug — slug coalition du joueur courant pour la bannière
    ══════════════════════════════════════════════════ */
-export function HistoryView({ recentGames = [], coalitionSlug }) {
+export function HistoryView({ recentGames = [], coalitionSlug, headerAudio = null }) {
 	const [filterResult, setFilterResult] = useState('all')
 	const [filterFormat,  setFilterFormat]  = useState('all')
 	const [openId, setOpenId] = useState(null)
@@ -231,20 +231,28 @@ export function HistoryView({ recentGames = [], coalitionSlug }) {
 	return (
 		<div className="ghv-root chess-grid-pattern--md" data-testid="ingame-history-panel">
 			{/* ── En-tête avec bannière coalition ── */}
-			<header className={`ghv-header${coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''}`}>
+			<header
+				className={`ghv-header${coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''}`}
+				data-testid="ingame-history-ghv-header"
+			>
 				<div className="ghv-header-inner">
-					<h2 className="ghv-title">
-						<i className="ri-book-3-line" aria-hidden="true" />
-						Annales de l'Arène
-					</h2>
-					<button
-						type="button"
-						className="ghv-see-all"
-						onClick={() => navigate('/history')}
-						aria-label="Voir tout l'historique"
-					>
-						Tout voir <i className="ri-arrow-right-line" aria-hidden="true" />
-					</button>
+					<div className="ghv-header-lead">
+						<h2 className="ghv-title">
+							<i className="ri-book-3-line" aria-hidden="true" />
+							Annales de l'Arène
+						</h2>
+					</div>
+					<div className="ghv-header-actions">
+						<button
+							type="button"
+							className="ghv-see-all"
+							onClick={() => navigate('/history')}
+							aria-label="Voir tout l'historique"
+						>
+							Tout voir <i className="ri-arrow-right-line" aria-hidden="true" />
+						</button>
+						{headerAudio}
+					</div>
 				</div>
 
 				{/* Filtres rapides */}

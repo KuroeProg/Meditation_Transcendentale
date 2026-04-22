@@ -131,6 +131,24 @@ html[data-coalition='neutral'] {
 	) !important;
 }
 
+/* Damier discret sur le dégradé du hero — carreaux larges, masqué en bord bas */
+.dashboard-v2 .dash-hero-bg::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	background-image:
+		linear-gradient(45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, 0.04) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.04) 75%);
+	background-size: 40px 40px;
+	background-position: 0 0, 0 20px, 20px -20px, -20px 0;
+	-webkit-mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 45%, transparent 100%);
+	opacity: 0.7;
+}
+
 .dashboard-v2 .dash-panel {
 	border: 1px solid var(--coalition-accent-border);
 	background: linear-gradient(
@@ -239,9 +257,9 @@ html[data-reduce-motion='true'] .page-shell .surface-card {
    ══════════════════════════════════════════════════ */
 
 :root {
-	--chess-grid-size: 22px;
-	--chess-grid-opacity: 0.022;
-	--chess-grid-fade: 30%;
+	--chess-grid-size: 200px;
+	--chess-grid-opacity: 0.052;
+	--chess-grid-fade: 10%;
 }
 
 .chess-grid-pattern {

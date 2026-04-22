@@ -5,7 +5,8 @@
 	top: auto;
 	right: auto;
 	left: auto;
-	z-index: 2;
+	/* Sous l’en-tête Annales (in-game) : ne pas recouvrir le contenu au-dessous de 1175px */
+	z-index: 0;
 	display: inline-flex;
 	align-items: center;
 	flex-shrink: 0;

@@ -98,6 +98,54 @@
       { "id": 3, "name": "Cloé", "online": true, "elo": 1410 },
       { "id": 4, "name": "Mileum", "online": false, "elo": 1890 },
       { "id": 5, "name": "Magnus42", "online": true, "elo": 2100 }
+    ],
+    "friendsRoster": [
+      {
+        "user": { "id": 801, "username": "Even", "avatar": "", "coalition": "eau" },
+        "friendship_id": 501,
+        "statusKey": "available",
+        "elo_rapid": 1688,
+        "title": "Maître de l'Eau",
+        "streak": { "kind": "wins", "count": 4 },
+        "trend": "up",
+        "rivalry": { "wins": 2, "losses": 1, "isOpponentCoalition": true },
+        "lastActivity": { "kind": "seen", "label": "Vu il y a 10 min" },
+        "inGame": null
+      },
+      {
+        "user": { "id": 802, "username": "Cloé", "avatar": "", "coalition": "feu" },
+        "friendship_id": 502,
+        "statusKey": "in_game",
+        "elo_rapid": 1455,
+        "title": "Candidate au titre",
+        "streak": { "kind": "neutral", "count": 0 },
+        "trend": "flat",
+        "rivalry": { "wins": 0, "losses": 1, "isOpponentCoalition": true },
+        "lastActivity": { "kind": "lastGame", "label": "Dernière : victoire vs nbourdal" },
+        "inGame": { "id": "gp-demo-1", "label": "Rapide — tour 18" }
+      },
+      {
+        "user": { "id": 803, "username": "Fey", "avatar": "", "coalition": "terre" },
+        "friendship_id": 503,
+        "statusKey": "offline",
+        "elo_rapid": 1520,
+        "title": "FIDE Arena Master",
+        "streak": { "kind": "losses", "count": 2 },
+        "trend": "down",
+        "rivalry": { "wins": 0, "losses": 0, "isOpponentCoalition": false },
+        "lastActivity": { "kind": "seen", "label": "Absent — vu hier" }
+      },
+      {
+        "user": { "id": 804, "username": "Magnus42", "avatar": "", "coalition": "air" },
+        "friendship_id": 504,
+        "statusKey": "available",
+        "elo_rapid": 2104,
+        "title": "Grand Maître de l'Air",
+        "streak": { "kind": "wins", "count": 2 },
+        "trend": "up",
+        "rivalry": { "wins": 3, "losses": 1, "isOpponentCoalition": true },
+        "lastActivity": { "kind": "lastGame", "label": "Dernière : nulle vs bot" }
+      }
     ]
   },
   "winrates": {

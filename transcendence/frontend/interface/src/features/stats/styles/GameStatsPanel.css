@@ -354,6 +354,13 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	box-shadow: none;
 }
 
+/* En-tête type Annales (Coups) : premier enfant = ghv, puis liste */
+.stats-moves-block--pgn > .ghv-header {
+	margin: 0;
+	border-radius: 10px 10px 0 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
 .stats-moves-pgn__tabbar {
 	display: flex;
 	align-items: flex-end;
@@ -362,6 +369,31 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	padding: 0.35rem 0.65rem 0;
 	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
 	background: rgba(255, 255, 255, 0.02);
+	position: relative;
+	overflow: hidden;
+}
+
+/* Damier discret, carreaux larges, comme le hero dashboard */
+.stats-moves-pgn__tabbar::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	pointer-events: none;
+	z-index: 0;
+	background-image:
+		linear-gradient(45deg, rgba(255, 255, 255, 0.035) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, 0.035) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.035) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.035) 75%);
+	background-size: 36px 36px;
+	background-position: 0 0, 0 18px, 18px -18px, -18px 0;
+	-webkit-mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+	mask-image: linear-gradient(to bottom, black 60%, transparent 100%);
+}
+
+.stats-moves-pgn__tabbar > * {
+	position: relative;
+	z-index: 1;
 }
 
 .stats-moves-pgn__tabbar-end {
@@ -380,6 +412,37 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	align-items: center;
 	margin: 0 0 0.5rem;
 	min-height: 0;
+	position: relative;
+	z-index: 0;
+	flex-shrink: 0;
+}
+
+/* Sous 1175px : le panneau est sous l’échiquier — éviter le chevauchement audio / en-tête Annales */
+@media (max-width: 1175px) {
+	.stats-tab-audio-bar {
+		width: 100%;
+		box-sizing: border-box;
+		padding-bottom: 0.2rem;
+		margin-bottom: 0.4rem;
+		border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+		z-index: 0;
+	}
+	.ghv-root {
+		position: relative;
+		z-index: 1;
+		isolation: isolate;
+	}
+	.ghv-header {
+		position: relative;
+		z-index: 0;
+	}
+	.ghv-header::before {
+		z-index: 0;
+	}
+	.ghv-header-inner {
+		position: relative;
+		z-index: 1;
+	}
 }
 
 .stats-moves-pgn__live {
@@ -805,9 +868,33 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	position: relative;
 	z-index: 1;
 	display: flex;
-	align-items: center;
+	align-items: flex-start;
 	justify-content: space-between;
+	gap: 0.5rem;
 	margin-bottom: 0.5rem;
+}
+
+.ghv-header-lead {
+	min-width: 0;
+	flex: 1 1 auto;
+}
+
+.ghv-header-subtitle {
+	margin: 0.2rem 0 0;
+	font-size: 0.58rem;
+	font-weight: 500;
+	letter-spacing: 0.03em;
+	color: rgba(255, 255, 255, 0.48);
+	line-height: 1.35;
+}
+
+.ghv-header-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.4rem;
+	flex: 0 0 auto;
+	flex-wrap: wrap;
 }
 
 .ghv-title {
@@ -1223,6 +1310,309 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 }
 
 /* ══════════════════════════════════════════════════
+   Friends tab (in-game) — gfv-*
+   ══════════════════════════════════════════════════ */
+
+.gfv-shell {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	min-width: 0;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.gfv-shell .gfv-ghv-header {
+	border-radius: 8px 8px 0 0;
+}
+
+.gfv-shell .gfv-empty {
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.gfv-root {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	width: 100%;
+	min-width: 0;
+	min-height: 0;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	background: rgba(0, 0, 0, 0.12);
+	padding: 0.4rem 0.45rem 0.5rem;
+}
+
+.gfv-card__grid {
+	display: grid;
+	grid-template-columns: 52px minmax(0, 1fr) minmax(7.5rem, 9.5rem);
+	gap: 0.4rem 0.55rem;
+	align-items: start;
+}
+
+.gfv-card__col--right {
+	justify-self: stretch;
+}
+
+.gfv-right-stack {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 0.3rem;
+	text-align: right;
+}
+
+@media (max-width: 480px) {
+	.gfv-card__grid {
+		grid-template-columns: minmax(0, 1fr);
+	}
+	.gfv-card__col--left {
+		justify-self: start;
+	}
+	.gfv-right-stack {
+		align-items: flex-start;
+		text-align: left;
+		width: 100%;
+	}
+	.gfv-actions {
+		justify-content: flex-start;
+	}
+}
+
+.gfv-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	text-align: center;
+	padding: 1.25rem 0.5rem;
+	color: rgba(255, 255, 255, 0.4);
+	font-size: 0.8rem;
+}
+
+.gfv-empty i {
+	font-size: 1.75rem;
+	opacity: 0.45;
+}
+
+.gfv-card {
+	background: rgba(255, 255, 255, 0.04);
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 10px;
+	padding: 0.5rem 0.45rem 0.5rem 0.4rem;
+}
+
+.gfv-row-a {
+	display: flex;
+	gap: 0.5rem;
+	align-items: flex-start;
+	min-width: 0;
+}
+
+.gfv-avatar-wrap {
+	position: relative;
+	width: 44px;
+	height: 44px;
+	flex-shrink: 0;
+}
+
+.gfv-avatar {
+	width: 44px;
+	height: 44px;
+	border-radius: 10px;
+	object-fit: cover;
+	background: rgba(0, 0, 0, 0.35);
+}
+
+.gfv-avatar--placeholder {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-weight: 800;
+	color: #fff;
+	font-size: 1.1rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.gfv-avatar-coal {
+	position: absolute;
+	right: -4px;
+	bottom: -4px;
+	width: 24px;
+	height: 24px;
+	border-radius: 6px;
+	/* Icône coalition lisible sans “carton” opaque */
+	background: transparent;
+	border: none;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: visible;
+	filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.55));
+}
+
+.gfv-avatar-coal svg,
+.gfv-avatar-coal > * {
+	width: 16px;
+	height: 16px;
+}
+
+.gfv-identity {
+	min-width: 0;
+	flex: 1;
+}
+
+.gfv-name-line {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.3rem 0.45rem;
+}
+
+.gfv-username {
+	font-weight: 800;
+	color: #fff;
+	font-size: 0.82rem;
+	letter-spacing: 0.02em;
+}
+
+.gfv-title-noble {
+	margin: 0;
+	font-size: 0.62rem;
+	color: var(--coalition-accent, #7dd3fc);
+	font-weight: 600;
+	letter-spacing: 0.04em;
+}
+
+.gfv-streak {
+	font-size: 0.6rem;
+	font-weight: 700;
+	color: #fbbf24;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.15rem;
+}
+.gfv-streak--loss { color: rgba(248, 113, 113, 0.9); }
+.gfv-trend { font-size: 0.9rem; vertical-align: -0.1em; }
+.gfv-trend--up { color: #4ade80; }
+.gfv-trend--down { color: #f87171; }
+
+.gfv-status {
+	margin: 0;
+	font-size: 0.64rem;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	color: rgba(255, 255, 255, 0.6);
+}
+.gfv-status--available { color: #4ade80; }
+.gfv-status--in_game { color: #facc15; }
+.gfv-status--offline { color: rgba(255, 255, 255, 0.38); }
+
+.gfv-status-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+}
+.gfv-status--available .gfv-status-dot { background: #4ade80; }
+.gfv-status--in_game .gfv-status-dot { background: #facc15; }
+.gfv-status--offline .gfv-status-dot { background: rgba(255, 255, 255, 0.25); }
+
+.gfv-metrics {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 0.4rem 0.65rem;
+}
+
+.gfv-elo {
+	font-variant-numeric: tabular-nums;
+	font-size: 0.7rem;
+	font-weight: 700;
+	color: rgba(255, 255, 255, 0.9);
+}
+.gfv-elo-label {
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.35);
+	margin-right: 0.25rem;
+	letter-spacing: 0.06em;
+}
+
+.gfv-rivalry {
+	font-size: 0.58rem;
+	color: color-mix(in srgb, var(--coalition-accent) 75%, #fff 25%);
+	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.1));
+	border: 1px solid var(--coalition-accent-border, rgba(125, 211, 252, 0.2));
+	border-radius: 4px;
+	padding: 0.1rem 0.35rem;
+}
+
+.gfv-activity,
+.gfv-ingame-hint {
+	margin: 0;
+	font-size: 0.6rem;
+	color: rgba(255, 255, 255, 0.4);
+}
+.gfv-ingame-hint {
+	color: #fde68a;
+	display: flex;
+	align-items: center;
+	gap: 0.2rem;
+}
+
+.gfv-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	justify-content: flex-end;
+	gap: 0.4rem;
+	margin-top: 0.15rem;
+}
+.gfv-btn {
+	border-radius: 6px;
+	font-size: 0.62rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	text-transform: uppercase;
+	padding: 0.3rem 0.55rem;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	background: rgba(0, 0, 0, 0.25);
+	color: #fff;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+.gfv-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+.gfv-btn--watch {
+	border-color: rgba(250, 204, 21, 0.45);
+	color: #fef08a;
+}
+.gfv-btn--watch:hover:not(:disabled) { background: rgba(250, 204, 21, 0.1); }
+.gfv-btn--challenge {
+	border-color: var(--coalition-accent-border, rgba(125, 211, 252, 0.4));
+	color: #e0f2fe;
+	background: color-mix(in srgb, var(--coalition-accent) 18%, rgba(0,0,0,0.2));
+}
+.gfv-btn--challenge:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--coalition-accent) 32%, rgba(0,0,0,0.2));
+}
+.gfv-btn:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* ══════════════════════════════════════════════════
    In-Game Chat
    ══════════════════════════════════════════════════ */
 
@@ -1232,6 +1622,20 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	height: 100%;
 	min-height: 0;
 	flex: 1;
+}
+
+.igc-ghv-header.ghv-header {
+	border-radius: 8px 8px 0 0;
+	flex-shrink: 0;
+}
+
+.igc-header-subline {
+	margin: 0.2rem 0 0;
+}
+
+.igc-ghv-header .ghv-header-lead .igc-mock-badge {
+	margin-top: 0.3rem;
+	align-self: flex-start;
 }
 
 .igc-header {
@@ -1282,6 +1686,10 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	flex-direction: column;
 	gap: 0.35rem;
 	min-height: 100px;
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	border-top: none;
+	border-radius: 0 0 8px 8px;
+	background: rgba(0, 0, 0, 0.1);
 	max-height: min(320px, 40vh);
 	scrollbar-width: thin;
 	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;

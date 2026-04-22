@@ -8,6 +8,7 @@
  *   POST /api/chat/conversations/<id>/messages/            → envoyer un message
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
+import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
 
 /* ── Mock messages initiaux ── */
 const MOCK_MESSAGES = [
@@ -24,7 +25,12 @@ const QUICK_REPLIES = [
 	'Rematch ?',
 ]
 
-export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
+export function InGameChat({
+	opponentUsername = 'Adversaire',
+	gameId,
+	/** @type {string} slug coalition thème (feu, eau, terre, air) */
+	coalitionSlug = null,
+}) {
 	const [messages, setMessages] = useState(MOCK_MESSAGES)
 	const [input, setInput] = useState('')
 	const [isConnected] = useState(false) // false = mock / pas encore branché backend
@@ -64,18 +70,32 @@ export function InGameChat({ opponentUsername = 'Adversaire', gameId }) {
 		// TODO: envoyer via backend
 	}
 
+	const gMod = coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''
 	return (
 		<div className="igc-root" aria-label={`Chat avec ${opponentUsername}`} data-testid="ingame-chat">
-			{/* En-tête */}
-			<div className="igc-header">
-				<i className="ri-chat-3-line igc-header-icon" aria-hidden="true" />
-				<span className="igc-header-title">{opponentUsername}</span>
-				{!isConnected && (
-					<span className="igc-mock-badge" title="Mode aperçu — le chat sera actif en partie réelle">
-						<i className="ri-information-line" aria-hidden="true" /> Aperçu
-					</span>
-				)}
-			</div>
+			<header className={`ghv-header igc-ghv-header${gMod}`} data-testid="ingame-chat-ghv-header">
+				<div className="ghv-header-inner">
+					<div className="ghv-header-lead">
+						<h2 className="ghv-title">
+							<i className="ri-chat-3-line" aria-hidden="true" />
+							{opponentUsername}
+						</h2>
+						<p className="ghv-header-subtitle igc-header-subline">
+							{!isConnected
+								? 'Aperçu — le chat retranscrit sera branché côté serveur.'
+								: 'Connecté en temps réel à la salle de partie.'}
+						</p>
+						{!isConnected ? (
+							<span className="igc-mock-badge" title="Mode aperçu — le chat sera actif en partie réelle">
+								<i className="ri-information-line" aria-hidden="true" /> Aperçu
+							</span>
+						) : null}
+					</div>
+					<div className="ghv-header-actions">
+						<GameMusicPanel />
+					</div>
+				</div>
+			</header>
 
 			{/* Messages */}
 			<div

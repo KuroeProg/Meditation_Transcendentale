@@ -45,6 +45,9 @@ export default function GameStatsPanel({
   onReplayLast,
   opponentUsername,
   gameId,
+  /** libellés barres joueurs — affichés sous « Coups » (même style Annales) */
+  whiteLabel = "Joueur blancs",
+  blackLabel = "Joueur noirs",
 }) {
   const { user } = useAuth()
   const coalitionSlug = coalitionToSlug(user?.coalition)
@@ -141,7 +144,9 @@ export default function GameStatsPanel({
             viewPlies={viewPlies}
             onViewPlies={onViewPlies ?? (() => {})}
             winner={winner}
-            tabBarEnd={<GameMusicPanel />}
+            coalitionSlug={coalitionSlug}
+            whiteLabel={whiteLabel}
+            blackLabel={blackLabel}
           />
 
           {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
@@ -177,30 +182,29 @@ export default function GameStatsPanel({
       )}
 
       {activeTab === "history" && (
-        <>
-          <div className="stats-tab-audio-bar">
-            <GameMusicPanel />
-          </div>
-          <HistoryView recentGames={mockStats.recentGames} coalitionSlug={coalitionSlug} />
-        </>
+        <HistoryView
+          recentGames={mockStats.recentGames}
+          coalitionSlug={coalitionSlug}
+          headerAudio={<GameMusicPanel />}
+        />
       )}
 
       {activeTab === "chat" && (
-        <>
-          <div className="stats-tab-audio-bar">
-            <GameMusicPanel />
-          </div>
-          <InGameChat opponentUsername={opponentUsername} gameId={gameId} />
-        </>
+        <InGameChat
+          opponentUsername={opponentUsername}
+          gameId={gameId}
+          coalitionSlug={coalitionSlug}
+        />
       )}
 
       {activeTab === "friends" && (
-        <>
-          <div className="stats-tab-audio-bar">
-            <GameMusicPanel />
-          </div>
-          <FriendsView friends={friendsList} />
-        </>
+        <FriendsView
+          friends={friendsList}
+          friendsRoster={mockStats.friendsRoster}
+          myCoalition={user?.coalition}
+          coalitionSlug={coalitionSlug}
+          headerAudio={<GameMusicPanel />}
+        />
       )}
 
       <ResignConfirmModal

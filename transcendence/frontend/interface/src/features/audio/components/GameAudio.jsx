@@ -187,6 +187,7 @@ export function GameMusicPanel() {
 					ref={btnRef}
 					type="button"
 					className={`game-music-fab game-music-fab--embedded${prefs.bgmMuted ? ' game-music-fab--muted' : ''}`}
+					data-testid="ingame-bgm-fab"
 					aria-expanded={open}
 					aria-label={prefs.bgmMuted ? 'Musique coupée — ouvrir les réglages' : 'Musique d’ambiance — réglages'}
 					onPointerDown={() => {

@@ -293,6 +293,8 @@ function App() {
               playerColor === 'w' ? blackLabel : whiteLabel
             }
             gameId={gameId}
+            whiteLabel={whiteLabel}
+            blackLabel={blackLabel}
           />
         </div>
       </div>
