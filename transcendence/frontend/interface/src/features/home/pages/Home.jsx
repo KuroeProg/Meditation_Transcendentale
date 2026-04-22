@@ -77,7 +77,7 @@ function Home() {
 				</div>
 			</div>
 
-			<div className="third-section" />
+			{/* <div className="third-section" /> */}
 		</div>
 	)
 }
