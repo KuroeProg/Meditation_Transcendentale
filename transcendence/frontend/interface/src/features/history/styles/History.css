@@ -1,0 +1,1061 @@
+/* ══════════════════════════════════════════════════
+   Page Historique des Parties — "Les Annales de l'Arène"
+   DA similaire à Statistics.css, thème coalition via --phistory-*
+   ══════════════════════════════════════════════════ */
+
+.phistory-page {
+	--phistory-accent: var(--coalition-accent, #7dd3fc);
+	--phistory-accent-soft: var(--coalition-accent-soft, rgba(125, 211, 252, 0.15));
+	--phistory-accent-border: var(--coalition-accent-border, rgba(125, 211, 252, 0.38));
+	--phistory-win: #4ade80;
+	--phistory-win-soft: rgba(74, 222, 128, 0.12);
+	--phistory-loss: #f87171;
+	--phistory-loss-soft: rgba(248, 113, 113, 0.12);
+	--phistory-draw: rgba(255, 255, 255, 0.55);
+	--phistory-draw-soft: rgba(255, 255, 255, 0.06);
+
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	width: 100%;
+	min-height: calc(100vh - 4.25rem);
+	box-sizing: border-box;
+}
+
+/* ── En-tête ── */
+.phistory-header {
+	position: relative;
+	overflow: hidden;
+	border-radius: 12px;
+	border: 1px solid var(--phistory-accent-border);
+	background: linear-gradient(
+		135deg,
+		color-mix(in srgb, var(--phistory-accent) 18%, rgba(8, 12, 22, 0.95)),
+		rgba(6, 8, 14, 0.92)
+	);
+	padding: 1.25rem 1.5rem 1rem;
+	margin-bottom: 1rem;
+	flex-shrink: 0;
+}
+
+.phistory-header::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(45deg, rgba(255,255,255,0.018) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255,255,255,0.018) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.018) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.018) 75%);
+	background-size: 22px 22px;
+	background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+	pointer-events: none;
+	z-index: 0;
+}
+
+.phistory-header-top {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+	margin-bottom: 0.85rem;
+}
+
+.phistory-header-title {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
+.phistory-title {
+	font-size: clamp(1.1rem, 3vw, 1.5rem);
+	font-weight: 800;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: #fff;
+	margin: 0;
+	text-shadow: 0 0 30px var(--phistory-accent-soft);
+}
+
+.phistory-subtitle {
+	font-size: 0.72rem;
+	color: rgba(255, 255, 255, 0.5);
+	font-weight: 500;
+	letter-spacing: 0.04em;
+	text-transform: uppercase;
+	margin: 0;
+}
+
+.phistory-header-stats {
+	display: flex;
+	gap: 0.65rem;
+	flex-wrap: wrap;
+}
+
+.phistory-stat-pill {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.3rem 0.7rem;
+	border-radius: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.05);
+	font-size: 0.68rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.75);
+}
+
+.phistory-stat-pill i {
+	font-size: 0.8rem;
+	color: var(--phistory-accent);
+}
+
+.phistory-stat-pill strong {
+	color: #fff;
+}
+
+/* ── Filtres ── */
+.phistory-filters {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.5rem;
+	align-items: center;
+}
+
+.phistory-filter-group {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	flex-wrap: wrap;
+}
+
+.phistory-filter-label {
+	font-size: 0.58rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: rgba(255, 255, 255, 0.4);
+	margin-right: 0.1rem;
+}
+
+.phistory-filter-btn {
+	padding: 0.25rem 0.6rem;
+	border-radius: 20px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgba(255, 255, 255, 0.55);
+	font-size: 0.62rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s, border-color 0.15s;
+	white-space: nowrap;
+	font-family: inherit;
+}
+
+.phistory-filter-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: rgba(255, 255, 255, 0.85);
+}
+
+.phistory-filter-btn--active {
+	background: var(--phistory-accent-soft);
+	border-color: var(--phistory-accent-border);
+	color: var(--phistory-accent);
+}
+
+.phistory-filter-btn:focus-visible {
+	outline: 2px solid var(--phistory-accent);
+	outline-offset: 2px;
+}
+
+.phistory-filters-sep {
+	width: 1px;
+	height: 20px;
+	background: rgba(255, 255, 255, 0.1);
+	flex-shrink: 0;
+}
+
+/* ── Corps de page : 2 colonnes ── */
+.phistory-body {
+	display: flex;
+	flex-direction: row;
+	gap: 1rem;
+	align-items: flex-start;
+	flex: 1;
+}
+
+/* ── Colonne principale (table des parties) ── */
+.phistory-main {
+	flex: 1 1 0;
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+/* ── Section table ── */
+.phistory-table-section {
+	background: rgba(255, 255, 255, 0.025);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.phistory-table-header {
+	display: grid;
+	grid-template-columns: 70px 48px 110px 1fr 0.8fr 80px 90px;
+	gap: 0.5rem;
+	padding: 0.55rem 0.85rem;
+	background: rgba(255, 255, 255, 0.03);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.phistory-table-col {
+	font-size: 0.56rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: rgba(255, 255, 255, 0.4);
+	white-space: nowrap;
+}
+
+.phistory-table-col--right {
+	text-align: right;
+}
+
+.phistory-table-body {
+	display: flex;
+	flex-direction: column;
+}
+
+/* ── Ligne de partie ── */
+.phistory-row {
+	display: grid;
+	grid-template-columns: 70px 48px 110px 1fr 0.8fr 80px 90px;
+	gap: 0.5rem;
+	align-items: center;
+	padding: 0.65rem 0.85rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+	cursor: pointer;
+	transition: background 0.15s ease;
+	position: relative;
+}
+
+.phistory-row:last-child {
+	border-bottom: none;
+}
+
+.phistory-row:hover {
+	background: rgba(255, 255, 255, 0.04);
+}
+
+.phistory-row--selected {
+	background: var(--phistory-accent-soft) !important;
+	border-left: 3px solid var(--phistory-accent);
+}
+
+.phistory-row:focus-visible {
+	outline: 2px solid var(--phistory-accent);
+	outline-offset: -2px;
+}
+
+/* ── Badge résultat ── */
+.phistory-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.2rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	font-size: 0.65rem;
+	font-weight: 700;
+	letter-spacing: 0.04em;
+	min-width: 52px;
+	text-align: center;
+}
+
+.phistory-badge--win {
+	background: var(--phistory-win-soft);
+	color: var(--phistory-win);
+	border: 1px solid rgba(74, 222, 128, 0.25);
+}
+
+.phistory-badge--loss {
+	background: var(--phistory-loss-soft);
+	color: var(--phistory-loss);
+	border: 1px solid rgba(248, 113, 113, 0.25);
+}
+
+.phistory-badge--draw {
+	background: var(--phistory-draw-soft);
+	color: var(--phistory-draw);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* ── Format icône ── */
+.phistory-format {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.6rem;
+	color: rgba(255, 255, 255, 0.5);
+	white-space: nowrap;
+}
+
+.phistory-format i {
+	font-size: 0.8rem;
+}
+
+/* ── Date ── */
+.phistory-date {
+	font-size: 0.65rem;
+	color: rgba(255, 255, 255, 0.45);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* ── Joueur / Adversaire ── */
+.phistory-player {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	min-width: 0;
+}
+
+.phistory-player-avatar {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	object-fit: cover;
+	flex-shrink: 0;
+}
+
+.phistory-player-info {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+	gap: 0.05rem;
+}
+
+.phistory-player-name {
+	font-size: 0.72rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.9);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.phistory-player-elo {
+	font-size: 0.58rem;
+	color: rgba(255, 255, 255, 0.4);
+	font-variant-numeric: tabular-nums;
+}
+
+/* ── Coalition badge ── */
+.phistory-coalition-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.18rem 0.45rem;
+	border-radius: 10px;
+	font-size: 0.58rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	white-space: nowrap;
+	text-transform: uppercase;
+}
+
+.phistory-coalition-badge--feu   { background: rgba(255, 100, 70, 0.15); color: #ff6b4a; border: 1px solid rgba(255,100,70,0.3); }
+.phistory-coalition-badge--eau   { background: rgba(80, 200, 255, 0.15); color: #5ecfff; border: 1px solid rgba(80,200,255,0.3); }
+.phistory-coalition-badge--terre { background: rgba(160, 200, 80, 0.15); color: #a3d636; border: 1px solid rgba(160,200,80,0.3); }
+.phistory-coalition-badge--air   { background: rgba(192,132,252,0.15);  color: #d8b4fe; border: 1px solid rgba(192,132,252,0.3); }
+.phistory-coalition-badge--bot   { background: rgba(255,255,255,0.06);  color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.12); }
+
+/* ── Précision accuracy ── */
+.phistory-accuracy {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	justify-content: flex-end;
+	font-size: 0.65rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.phistory-accuracy-val {
+	color: #fff;
+}
+
+.phistory-accuracy-label {
+	font-size: 0.52rem;
+	color: rgba(255, 255, 255, 0.35);
+	font-weight: 500;
+}
+
+/* ── Actions ligne ── */
+.phistory-row-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+	justify-content: flex-end;
+}
+
+.phistory-action-btn {
+	width: 28px;
+	height: 28px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.85rem;
+	cursor: pointer;
+	transition: background 0.15s, color 0.15s;
+	flex-shrink: 0;
+}
+
+.phistory-action-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.phistory-action-btn--accent:hover {
+	background: var(--phistory-accent-soft);
+	color: var(--phistory-accent);
+	border-color: var(--phistory-accent-border);
+}
+
+.phistory-action-btn:focus-visible {
+	outline: 2px solid var(--phistory-accent);
+	outline-offset: 2px;
+}
+
+/* ── Preview survol (inline, accordéon sous la ligne) ── */
+.phistory-row-preview {
+	grid-column: 1 / -1;
+	display: grid;
+	grid-template-columns: 1fr 1fr 1fr;
+	gap: 0.75rem;
+	padding: 0.75rem 0 0.25rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	margin-top: 0.35rem;
+	animation: historyPreviewIn 0.2s ease-out both;
+}
+
+@keyframes historyPreviewIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+html[data-reduce-motion='true'] .phistory-row-preview {
+	animation: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.phistory-row-preview {
+		animation: none !important;
+	}
+}
+
+.phistory-preview-block {
+	background: rgba(255, 255, 255, 0.03);
+	border: 1px solid rgba(255, 255, 255, 0.07);
+	border-radius: 8px;
+	padding: 0.5rem 0.65rem;
+}
+
+.phistory-preview-title {
+	font-size: 0.56rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: rgba(255, 255, 255, 0.4);
+	margin-bottom: 0.4rem;
+}
+
+/* Courbe d'évaluation mini */
+.phistory-eval-chart {
+	height: 48px;
+	display: flex;
+	align-items: flex-end;
+	gap: 1px;
+	overflow: hidden;
+}
+
+.phistory-eval-bar {
+	flex: 1;
+	min-width: 3px;
+	border-radius: 2px 2px 0 0;
+	transition: height 0.3s ease;
+}
+
+.phistory-eval-bar--pos {
+	background: var(--phistory-win);
+	opacity: 0.75;
+}
+
+.phistory-eval-bar--neg {
+	background: var(--phistory-loss);
+	opacity: 0.75;
+	align-self: flex-start;
+	border-radius: 0 0 2px 2px;
+}
+
+/* PGN preview */
+.phistory-pgn-preview {
+	font-family: ui-monospace, monospace;
+	font-size: 0.62rem;
+	color: rgba(255, 255, 255, 0.65);
+	line-height: 1.6;
+	word-break: break-all;
+}
+
+/* Captures preview */
+.phistory-captures-preview {
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.phistory-captures-row {
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+}
+
+.phistory-captures-label {
+	font-size: 0.58rem;
+	color: rgba(255, 255, 255, 0.4);
+	min-width: 1.8rem;
+}
+
+.phistory-piece-icon {
+	font-size: 0.92rem;
+	line-height: 1;
+}
+
+/* ── Actions en pied de preview ── */
+.phistory-preview-actions {
+	display: flex;
+	gap: 0.4rem;
+	flex-wrap: wrap;
+	grid-column: 1 / -1;
+	padding-top: 0.25rem;
+}
+
+.phistory-cta-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.3rem;
+	padding: 0.3rem 0.7rem;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	background: rgba(255, 255, 255, 0.05);
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 0.65rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s, border-color 0.15s;
+	font-family: inherit;
+}
+
+.phistory-cta-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.25);
+}
+
+.phistory-cta-btn--primary {
+	background: var(--phistory-accent-soft);
+	border-color: var(--phistory-accent-border);
+	color: var(--phistory-accent);
+}
+
+.phistory-cta-btn--primary:hover {
+	background: color-mix(in srgb, var(--phistory-accent) 25%, transparent);
+}
+
+.phistory-cta-btn:focus-visible {
+	outline: 2px solid var(--phistory-accent);
+	outline-offset: 2px;
+}
+
+/* ── Colonne latérale droite ── */
+.phistory-sidebar {
+	flex: 0 0 clamp(240px, 20vw, 300px);
+	min-width: 220px;
+	max-width: 300px;
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+}
+
+/* ── Panneau latéral générique ── */
+.phistory-panel {
+	background: rgba(255, 255, 255, 0.025);
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	border-radius: 12px;
+	overflow: hidden;
+}
+
+.phistory-panel-header {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.6rem 0.85rem;
+	background: rgba(255, 255, 255, 0.03);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.phistory-panel-title {
+	font-size: 0.6rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.06em;
+	color: rgba(255, 255, 255, 0.6);
+	margin: 0;
+	flex: 1;
+}
+
+.phistory-panel-icon {
+	font-size: 0.9rem;
+	color: var(--phistory-accent);
+	opacity: 0.85;
+}
+
+.phistory-panel-body {
+	padding: 0.65rem 0.85rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+/* ── Panneau analyse ── */
+.phistory-analysis-empty {
+	text-align: center;
+	padding: 1rem 0.5rem;
+	color: rgba(255, 255, 255, 0.3);
+	font-size: 0.72rem;
+	line-height: 1.5;
+}
+
+.phistory-analysis-empty i {
+	display: block;
+	font-size: 1.8rem;
+	margin-bottom: 0.4rem;
+	opacity: 0.4;
+}
+
+/* Accuracy bars */
+.phistory-accuracy-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+}
+
+.phistory-accuracy-row {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.phistory-accuracy-rowlabel {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.6rem;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.phistory-accuracy-rowlabel strong {
+	color: #fff;
+}
+
+.phistory-accuracy-bar-bg {
+	height: 5px;
+	border-radius: 3px;
+	background: rgba(255, 255, 255, 0.08);
+	overflow: hidden;
+}
+
+.phistory-accuracy-bar-fill {
+	height: 100%;
+	border-radius: 3px;
+	background: var(--phistory-accent);
+	transition: width 0.5s ease;
+}
+
+/* Analyse — liste de coups */
+.phistory-move-list {
+	max-height: 160px;
+	overflow-y: auto;
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255,255,255,0.1) transparent;
+}
+
+.phistory-move-row {
+	display: flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.2rem 0;
+	border-bottom: 1px solid rgba(255,255,255,0.04);
+	font-size: 0.65rem;
+}
+
+.phistory-move-num {
+	color: rgba(255,255,255,0.35);
+	font-variant-numeric: tabular-nums;
+	min-width: 1.4rem;
+}
+
+.phistory-move-san {
+	flex: 1;
+	color: rgba(255,255,255,0.85);
+	font-family: ui-monospace, monospace;
+}
+
+.phistory-move-quality {
+	font-size: 0.58rem;
+	font-weight: 700;
+	padding: 0.1rem 0.3rem;
+	border-radius: 3px;
+}
+
+.phistory-move-quality--best     { background: rgba(74,222,128,0.15);  color: #4ade80; }
+.phistory-move-quality--ok       { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.5); }
+.phistory-move-quality--mistake  { background: rgba(251,191,36,0.15);  color: #fbbf24; }
+.phistory-move-quality--blunder  { background: rgba(248,113,113,0.15); color: #f87171; }
+
+/* ── Panneau communauté ── */
+.phistory-rank-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 0.4rem;
+}
+
+.phistory-rank-card {
+	background: rgba(255,255,255,0.03);
+	border: 1px solid rgba(255,255,255,0.06);
+	border-radius: 8px;
+	padding: 0.5rem;
+	text-align: center;
+}
+
+.phistory-rank-num {
+	font-size: 1.4rem;
+	font-weight: 800;
+	color: var(--phistory-accent);
+	line-height: 1;
+}
+
+.phistory-rank-label {
+	font-size: 0.55rem;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgba(255,255,255,0.4);
+	margin-top: 0.15rem;
+}
+
+/* Trophées */
+.phistory-trophies {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.3rem;
+}
+
+.phistory-trophy {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.5rem;
+	border-radius: 6px;
+	border: 1px solid rgba(255,255,255,0.08);
+	background: rgba(255,255,255,0.03);
+	font-size: 0.6rem;
+	color: rgba(255,255,255,0.5);
+	transition: background 0.15s;
+}
+
+.phistory-trophy--earned {
+	background: var(--phistory-accent-soft);
+	border-color: var(--phistory-accent-border);
+	color: var(--phistory-accent);
+}
+
+.phistory-trophy i {
+	font-size: 0.78rem;
+}
+
+/* Flux activité */
+.phistory-feed {
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+}
+
+.phistory-feed-item {
+	display: flex;
+	gap: 0.4rem;
+	align-items: flex-start;
+	font-size: 0.62rem;
+	color: rgba(255,255,255,0.65);
+	line-height: 1.45;
+}
+
+.phistory-feed-icon {
+	flex-shrink: 0;
+	width: 22px;
+	height: 22px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 0.7rem;
+	background: rgba(255,255,255,0.05);
+	color: var(--phistory-accent);
+}
+
+.phistory-feed-text {
+	flex: 1;
+	min-width: 0;
+}
+
+.phistory-feed-username {
+	font-weight: 700;
+	color: rgba(255,255,255,0.85);
+}
+
+.phistory-feed-time {
+	display: block;
+	font-size: 0.56rem;
+	color: rgba(255,255,255,0.3);
+	margin-top: 0.1rem;
+}
+
+/* Rivalité */
+.phistory-rivalry {
+	background: rgba(255,255,255,0.03);
+	border: 1px solid rgba(255,255,255,0.06);
+	border-radius: 8px;
+	padding: 0.55rem 0.65rem;
+}
+
+.phistory-rivalry-title {
+	font-size: 0.6rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgba(255,255,255,0.5);
+	margin-bottom: 0.35rem;
+}
+
+.phistory-rivalry-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 0.68rem;
+}
+
+.phistory-rivalry-score {
+	display: flex;
+	gap: 0.25rem;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+}
+
+.phistory-rivalry-w { color: var(--phistory-win); }
+.phistory-rivalry-d { color: rgba(255,255,255,0.45); }
+.phistory-rivalry-l { color: var(--phistory-loss); }
+
+/* ── Pagination / chargement ── */
+.phistory-footer {
+	display: flex;
+	justify-content: center;
+	padding: 0.75rem 0;
+}
+
+.phistory-load-more {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.45rem 1.2rem;
+	border-radius: 8px;
+	border: 1px solid var(--phistory-accent-border);
+	background: var(--phistory-accent-soft);
+	color: var(--phistory-accent);
+	font-size: 0.72rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.15s;
+	font-family: inherit;
+}
+
+.phistory-load-more:hover {
+	background: color-mix(in srgb, var(--phistory-accent) 22%, transparent);
+}
+
+/* ── État vide ── */
+.phistory-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 2.5rem 1rem;
+	text-align: center;
+	color: rgba(255,255,255,0.35);
+	gap: 0.5rem;
+}
+
+.phistory-empty i {
+	font-size: 2.5rem;
+	opacity: 0.3;
+}
+
+.phistory-empty-title {
+	font-size: 0.88rem;
+	font-weight: 600;
+	color: rgba(255,255,255,0.5);
+}
+
+.phistory-empty-sub {
+	font-size: 0.72rem;
+}
+
+/* ── Analyse statuts ── */
+.phistory-analysis-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	font-size: 0.58rem;
+	font-weight: 600;
+}
+
+.phistory-analysis-status--analyzed { color: var(--phistory-win); }
+.phistory-analysis-status--pending  { color: rgba(255,199,48,0.85); }
+
+/* ══════════════════════════════════════════════════
+   Responsive — tablette (771px — 1175px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 1175px) {
+	.phistory-body {
+		flex-direction: column;
+	}
+
+	.phistory-sidebar {
+		flex: none;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: 0.75rem;
+	}
+
+	.phistory-table-header,
+	.phistory-row {
+		grid-template-columns: 65px 44px 1fr 1fr 70px;
+	}
+
+	/* Masquer colonne coalition + accuracy sur tablette */
+	.phistory-table-col:nth-child(5),
+	.phistory-table-col:nth-child(6),
+	.phistory-row > *:nth-child(5),
+	.phistory-row > *:nth-child(6) {
+		display: none;
+	}
+}
+
+/* ══════════════════════════════════════════════════
+   Responsive — mobile (<=770px)
+   ══════════════════════════════════════════════════ */
+@media (max-width: 770px) {
+	.phistory-header {
+		padding: 0.85rem 1rem 0.75rem;
+	}
+
+	.phistory-title {
+		font-size: 1rem;
+	}
+
+	.phistory-header-stats {
+		display: none;
+	}
+
+	.phistory-filters {
+		gap: 0.35rem;
+	}
+
+	.phistory-filters-sep {
+		display: none;
+	}
+
+	.phistory-filter-btn {
+		padding: 0.2rem 0.45rem;
+		font-size: 0.58rem;
+	}
+
+	.phistory-table-section {
+		border-radius: 8px;
+	}
+
+	.phistory-table-header {
+		display: none;
+	}
+
+	/* Liste cards mobile */
+	.phistory-table-body {
+		gap: 0;
+	}
+
+	.phistory-row {
+		grid-template-columns: 1fr;
+		padding: 0.6rem 0.75rem;
+	}
+
+	/* Affichage carte mobile : flex au lieu de grid */
+	.phistory-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.4rem;
+		align-items: center;
+	}
+
+	.phistory-row-preview {
+		grid-template-columns: 1fr;
+	}
+
+	.phistory-sidebar {
+		grid-template-columns: 1fr;
+	}
+
+	.phistory-action-btn {
+		width: 36px;
+		height: 36px;
+	}
+
+	.phistory-rank-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+/* ══════════════════════════════════════════════════
+   Responsive — grands écrans (>=1920px)
+   ══════════════════════════════════════════════════ */
+@media (min-width: 1920px) {
+	.phistory-body {
+		gap: 1.5rem;
+	}
+
+	.phistory-sidebar {
+		flex: 0 0 340px;
+		max-width: 340px;
+	}
+}

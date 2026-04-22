@@ -716,6 +716,29 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 	box-shadow: 0 2px 14px color-mix(in srgb, var(--coalition-accent-glow) 70%, rgba(76, 187, 95, 0.35));
 }
 
+.chat-invite-actions {
+	display: flex;
+	gap: 0.35rem;
+	flex-wrap: wrap;
+}
+
+.chat-invite-error {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+	font-size: 0.62rem;
+	color: #f87171;
+	margin-top: 0.25rem;
+	width: 100%;
+}
+
+.chat-ca-error {
+	display: block;
+	font-size: 0.58rem;
+	color: #f87171;
+	margin-top: 0.15rem;
+}
+
 /* --- Input Bar --- */
 .chat-thread-input {
 	display: flex;

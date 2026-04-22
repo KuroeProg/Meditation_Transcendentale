@@ -1,4 +1,4 @@
-/* Barre latérale — extrait de index.css */
+/* Barre latérale */
 
 .sidebar {
 	position: fixed;
@@ -10,13 +10,12 @@
 	background: #2f2b2b;
 	overflow-x: hidden;
 	padding-top: 10px;
-	transition: 0.6s ease;
+	transition: width 0.6s ease;
 	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
 }
 
 .sidebar:hover {
 	width: 250px;
-	transition: 0.6s ease;
 }
 
 .sidebar ul {
@@ -30,8 +29,42 @@
 }
 
 .sidebar ul li:hover {
-	background-color: #165da8;
-	transition: 0.3s ease;
+	background-color: color-mix(in srgb, var(--coalition-accent, #165da8) 28%, #165da8);
+	transition: background-color 0.3s ease;
+}
+
+/* État actif (NavLink) */
+.sidebar ul li:has(.sidebar-navlink--active) {
+	background-color: color-mix(in srgb, var(--coalition-accent, #165da8) 45%, #0e3870);
+}
+
+.sidebar-navlink {
+	position: relative;
+	display: flex;
+	white-space: nowrap;
+	color: #fff;
+	text-decoration: none;
+}
+
+.sidebar-navlink--active {
+	color: var(--coalition-accent, #7dd3fc);
+}
+
+.sidebar-navlink--active .icon {
+	color: var(--coalition-accent, #7dd3fc);
+}
+
+/* Barre verticale accent pour l'élément actif */
+.sidebar-navlink--active::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 3px;
+	height: 60%;
+	background: var(--coalition-accent, #7dd3fc);
+	border-radius: 0 3px 3px 0;
 }
 
 .sidebar ul li .sidebar-btn--logout,
@@ -50,6 +83,12 @@
 	white-space: nowrap;
 	color: #fff;
 	text-decoration: none;
+}
+
+.sidebar ul li a:focus-visible,
+.sidebar-navlink:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: -2px;
 }
 
 .sidebar ul li .logo {

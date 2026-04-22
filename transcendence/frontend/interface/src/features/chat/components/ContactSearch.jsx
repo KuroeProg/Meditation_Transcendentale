@@ -10,9 +10,11 @@ import {
 	createConversation,
 } from '../services/chatApi.js'
 
-function ContactItem({ contact, onAction, onStartChat }) {
+function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
 	const u = contact.user
 	const coalSlug = coalitionToSlug(u?.coalition)
+	const isPending = contact.status === 'pending' && !contact.is_sender
+
 	return (
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
@@ -26,15 +28,38 @@ function ContactItem({ contact, onAction, onStartChat }) {
 				<span className={`chat-contact-status ${u.is_online ? 'online' : ''}`}>
 					{u.is_online ? 'En ligne' : 'Hors ligne'}
 				</span>
+				{error && (
+					<span className="chat-ca-error" role="alert">
+						<i className="ri-error-warning-line" aria-hidden="true" /> {error}
+					</span>
+				)}
 			</div>
 			<div className="chat-contact-actions">
-				{contact.status === 'pending' && !contact.is_sender && (
+				{isPending && (
 					<>
-						<button type="button" className="chat-ca-btn chat-ca-accept" onClick={() => onAction(contact.friendship_id, 'accept')} title="Accepter">
-							<i className="ri-check-line" />
+						<button
+							type="button"
+							className="chat-ca-btn chat-ca-accept"
+							onClick={() => onAction(contact.friendship_id, 'accept')}
+							disabled={isBusy}
+							aria-busy={isBusy}
+							aria-label="Accepter la demande d'ami"
+							title="Accepter"
+						>
+							{isBusy
+								? <i className="ri-loader-4-line" aria-hidden="true" />
+								: <i className="ri-check-line" aria-hidden="true" />
+							}
 						</button>
-						<button type="button" className="chat-ca-btn chat-ca-reject" onClick={() => onAction(contact.friendship_id, 'delete')} title="Refuser">
-							<i className="ri-close-line" />
+						<button
+							type="button"
+							className="chat-ca-btn chat-ca-reject"
+							onClick={() => onAction(contact.friendship_id, 'delete')}
+							disabled={isBusy}
+							aria-label="Refuser la demande d'ami"
+							title="Refuser"
+						>
+							<i className="ri-close-line" aria-hidden="true" />
 						</button>
 					</>
 				)}
@@ -43,17 +68,37 @@ function ContactItem({ contact, onAction, onStartChat }) {
 				)}
 				{contact.status === 'accepted' && (
 					<>
-						<button type="button" className="chat-ca-btn chat-ca-chat" onClick={() => onStartChat(u.id)} title="Envoyer un message">
-							<i className="ri-chat-1-line" />
+						<button
+							type="button"
+							className="chat-ca-btn chat-ca-chat"
+							onClick={() => onStartChat(u.id)}
+							aria-label="Envoyer un message"
+							title="Envoyer un message"
+						>
+							<i className="ri-chat-1-line" aria-hidden="true" />
 						</button>
-						<button type="button" className="chat-ca-btn chat-ca-block" onClick={() => onAction(contact.friendship_id, 'block')} title="Bloquer">
-							<i className="ri-forbid-line" />
+						<button
+							type="button"
+							className="chat-ca-btn chat-ca-block"
+							onClick={() => onAction(contact.friendship_id, 'block')}
+							disabled={isBusy}
+							aria-label="Bloquer"
+							title="Bloquer"
+						>
+							<i className="ri-forbid-line" aria-hidden="true" />
 						</button>
 					</>
 				)}
 				{contact.status === 'blocked' && contact.is_sender && (
-					<button type="button" className="chat-ca-btn" onClick={() => onAction(contact.friendship_id, 'unblock')} title="Debloquer">
-						<i className="ri-lock-unlock-line" />
+					<button
+						type="button"
+						className="chat-ca-btn"
+						onClick={() => onAction(contact.friendship_id, 'unblock')}
+						disabled={isBusy}
+						aria-label="Débloquer"
+						title="Débloquer"
+					>
+						<i className="ri-lock-unlock-line" aria-hidden="true" />
 					</button>
 				)}
 			</div>
@@ -90,12 +135,16 @@ export default function ContactSearch({ onOpenConversation }) {
 	const [searchQuery, setSearchQuery] = useState('')
 	const [searchResults, setSearchResults] = useState([])
 	const [searchLoading, setSearchLoading] = useState(false)
+	const [actionBusy, setActionBusy] = useState(null) // friendshipId en cours
+	const [actionError, setActionError] = useState(null)
 
 	const loadContacts = useCallback(async () => {
 		try {
 			const data = await fetchFriends()
 			setContacts(data.friends || [])
-		} catch {}
+		} catch {
+			/* silencieux si hors ligne */
+		}
 	}, [])
 
 	useEffect(() => { loadContacts() }, [loadContacts])
@@ -107,37 +156,52 @@ export default function ContactSearch({ onOpenConversation }) {
 			try {
 				const data = await searchUsers(searchQuery)
 				setSearchResults(data.users || [])
-			} catch {}
+			} catch {
+				setSearchResults([])
+			}
 			setSearchLoading(false)
 		}, 300)
 		return () => clearTimeout(timer)
 	}, [searchQuery])
 
 	const handleAction = async (friendshipId, action) => {
+		if (actionBusy === friendshipId) return
+		setActionBusy(friendshipId)
+		setActionError(null)
 		try {
 			if (action === 'delete') {
 				await removeFriend(friendshipId)
 			} else {
 				await friendAction(friendshipId, action)
 			}
-			loadContacts()
-		} catch {}
+			await loadContacts()
+		} catch (err) {
+			const msg = err?.message || 'Action impossible — réessaie'
+			setActionError({ id: friendshipId, msg })
+		} finally {
+			setActionBusy(null)
+		}
 	}
 
 	const handleAdd = async (userId) => {
 		try {
 			await sendFriendRequest(userId)
-			loadContacts()
+			await loadContacts()
 			setSearchQuery('')
 			setSearchResults([])
-		} catch {}
+		} catch (err) {
+			const msg = err?.message || 'Impossible d\'envoyer la demande'
+			setActionError({ id: `add-${userId}`, msg })
+		}
 	}
 
 	const handleStartChat = async (userId) => {
 		try {
 			const conv = await createConversation(userId)
 			onOpenConversation(conv)
-		} catch {}
+		} catch {
+			/* silencieux */
+		}
 	}
 
 	const accepted = contacts.filter((c) => c.status === 'accepted')
@@ -175,13 +239,34 @@ export default function ContactSearch({ onOpenConversation }) {
 
 			<ul className="chat-contact-list">
 				{tab === 'friends' && accepted.map((c) => (
-					<ContactItem key={c.friendship_id} contact={c} onAction={handleAction} onStartChat={handleStartChat} />
+					<ContactItem
+						key={c.friendship_id}
+						contact={c}
+						onAction={handleAction}
+						onStartChat={handleStartChat}
+						isBusy={actionBusy === c.friendship_id}
+						error={actionError?.id === c.friendship_id ? actionError.msg : null}
+					/>
 				))}
 				{tab === 'pending' && pending.map((c) => (
-					<ContactItem key={c.friendship_id} contact={c} onAction={handleAction} onStartChat={handleStartChat} />
+					<ContactItem
+						key={c.friendship_id}
+						contact={c}
+						onAction={handleAction}
+						onStartChat={handleStartChat}
+						isBusy={actionBusy === c.friendship_id}
+						error={actionError?.id === c.friendship_id ? actionError.msg : null}
+					/>
 				))}
 				{tab === 'blocked' && blocked.map((c) => (
-					<ContactItem key={c.friendship_id} contact={c} onAction={handleAction} onStartChat={handleStartChat} />
+					<ContactItem
+						key={c.friendship_id}
+						contact={c}
+						onAction={handleAction}
+						onStartChat={handleStartChat}
+						isBusy={actionBusy === c.friendship_id}
+						error={actionError?.id === c.friendship_id ? actionError.msg : null}
+					/>
 				))}
 				{tab === 'search' && searchLoading && <li className="chat-loading">Recherche...</li>}
 				{tab === 'search' && !searchLoading && searchResults.map((u) => (

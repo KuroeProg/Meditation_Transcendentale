@@ -69,6 +69,14 @@ body:has(.auth-page),
 	box-sizing: border-box;
 }
 
+/* Historique des parties */
+.main-content:has(.phistory-page) {
+	max-width: none;
+	width: 100%;
+	padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
+	box-sizing: border-box;
+}
+
 /* Home : pleine largeur utile (pas de bande grise latérale) */
 .main-content:has(.home) {
 	overflow-x: hidden;

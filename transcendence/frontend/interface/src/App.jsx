@@ -13,6 +13,7 @@ import {
 	AuthPage,
 	ResetPasswordPage,
 	StatisticsPage,
+	HistoryPage,
 	ThemeSync,
 	CoalitionHtmlSync,
 	CoalitionAmbient,
@@ -157,9 +158,17 @@ function AppContent() {
 							</ProtectedRoute>
 						}
 					/>
-					<Route path="/contact" element={<ContactPage />} />
-					<Route path="/about" element={<AboutPage />} />
-					<Route path="*" element={<Navigate to="/" replace />} />
+				<Route
+					path="/history"
+					element={
+						<ProtectedRoute>
+							<HistoryPage />
+						</ProtectedRoute>
+					}
+				/>
+				<Route path="/contact" element={<ContactPage />} />
+				<Route path="/about" element={<AboutPage />} />
+				<Route path="*" element={<Navigate to="/" replace />} />
 				</Routes>
 			</div>
 

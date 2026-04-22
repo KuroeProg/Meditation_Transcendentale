@@ -1,4 +1,5 @@
 import Board from "../components/Board.jsx";
+import { CapturedPiecesBar } from "../components/CapturedPieces.jsx";
 import { useEffect, useCallback, useMemo } from "react";
 import { useSynchronizedChessTimers } from "../components/Chrono.jsx";
 import { useParams } from "react-router-dom";
@@ -236,6 +237,12 @@ function App() {
             <span className={topPlayer.timerClass}>{topPlayer.timer}</span>
           </div>
 
+          <CapturedPiecesBar
+            game={displayedGame}
+            playerColor={playerColor || 'w'}
+            position="top"
+          />
+
           <div className="board-frame" data-testid="game-board-frame">
             <Board
               game={displayedGame}
@@ -249,6 +256,12 @@ function App() {
               isViewOnly={viewPlies !== null}
             />
           </div>
+
+          <CapturedPiecesBar
+            game={displayedGame}
+            playerColor={playerColor || 'w'}
+            position="bottom"
+          />
 
           <div className="player-bar" data-testid="game-player-bar-bottom">
             <img className="player-avatar" src={bottomPlayer.avatar} alt="" />
@@ -276,6 +289,10 @@ function App() {
             onReplayPrev={goReplayPrev}
             onReplayNext={goReplayNext}
             onReplayLast={goReplayLast}
+            opponentUsername={
+              playerColor === 'w' ? blackLabel : whiteLabel
+            }
+            gameId={gameId}
           />
         </div>
       </div>

@@ -51,11 +51,11 @@ html[data-reduce-motion='true'] .btn {
 		justify-content: center;
 		gap: 2px;
 		flex: 1;
-		min-width: 44px;
+		min-width: 36px;
 		min-height: 44px;
 		color: #aaa;
 		text-decoration: none;
-		font-size: 10px;
+		font-size: 9px;
 		font-weight: 500;
 		background: none;
 		border: none;
@@ -65,13 +65,19 @@ html[data-reduce-motion='true'] .btn {
 		-webkit-tap-highlight-color: transparent;
 	}
 
+	.bottom-nav__item:focus-visible {
+		outline: 2px solid var(--coalition-accent, #7dd3fc);
+		outline-offset: -2px;
+		border-radius: 4px;
+	}
+
 	.bottom-nav__item i {
-		font-size: 18px;
+		font-size: 17px;
 	}
 
 	.bottom-nav__item--active,
 	.bottom-nav__item--active i {
-		color: #fff;
+		color: var(--coalition-accent, #7dd3fc) !important;
 	}
 
 	.bottom-nav__chat {

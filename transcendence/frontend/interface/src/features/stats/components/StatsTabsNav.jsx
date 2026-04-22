@@ -1,7 +1,8 @@
 const VIEW_TABS = [
-	{ id: 'moves', icon: 'ri-file-list-3-line', label: 'Coups' },
-	{ id: 'history', icon: 'ri-history-line', label: 'Parties' },
-	{ id: 'friends', icon: 'ri-group-line', label: 'Amis' },
+	{ id: 'moves',   icon: 'ri-file-list-3-line', label: 'Coups'   },
+	{ id: 'history', icon: 'ri-history-line',      label: 'Parties' },
+	{ id: 'chat',    icon: 'ri-chat-3-line',       label: 'Chat'    },
+	{ id: 'friends', icon: 'ri-group-line',        label: 'Amis'    },
 ]
 
 export function StatsTabsNav({ activeTab, setActiveTab, onPlayAgain, gameEnded }) {

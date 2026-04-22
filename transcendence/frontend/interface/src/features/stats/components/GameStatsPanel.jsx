@@ -18,7 +18,10 @@ import { DrawOfferBanners } from './DrawOfferBanners.jsx'
 import { ResignConfirmModal } from './ResignConfirmModal.jsx'
 import { DrawOfferModal } from './DrawOfferModal.jsx'
 import { StatsTabsNav } from './StatsTabsNav.jsx'
+import { InGameChat } from './InGameChat.jsx'
 import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
+import { useAuth } from '../../auth/index.js'
+import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
 import '../styles/GameStatsPanel.css'
 
@@ -40,7 +43,11 @@ export default function GameStatsPanel({
   onReplayPrev,
   onReplayNext,
   onReplayLast,
+  opponentUsername,
+  gameId,
 }) {
+  const { user } = useAuth()
+  const coalitionSlug = coalitionToSlug(user?.coalition)
   const [activeTab, setActiveTab] = useState("moves");
   const [perfFilter, setPerfFilter] = useState("time");
   const [resignOpen, setResignOpen] = useState(false);
@@ -174,7 +181,16 @@ export default function GameStatsPanel({
           <div className="stats-tab-audio-bar">
             <GameMusicPanel />
           </div>
-          <HistoryView recentGames={mockStats.recentGames} />
+          <HistoryView recentGames={mockStats.recentGames} coalitionSlug={coalitionSlug} />
+        </>
+      )}
+
+      {activeTab === "chat" && (
+        <>
+          <div className="stats-tab-audio-bar">
+            <GameMusicPanel />
+          </div>
+          <InGameChat opponentUsername={opponentUsername} gameId={gameId} />
         </>
       )}
 

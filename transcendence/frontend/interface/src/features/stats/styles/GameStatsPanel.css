@@ -756,6 +756,681 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	background: rgba(125, 211, 252, 0.26);
 }
 
+/* ══════════════════════════════════════════════════
+   Game History View — Annales de l'Arène (in-game panel)
+   ══════════════════════════════════════════════════ */
+
+.ghv-root {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	position: relative;
+	overflow: hidden;
+	border-radius: 8px;
+}
+
+/* ── En-tête ── */
+.ghv-header {
+	position: relative;
+	overflow: hidden;
+	padding: 0.65rem 0.75rem 0.55rem;
+	background: linear-gradient(
+		135deg,
+		rgba(255, 90, 60, 0.12),
+		rgba(10, 12, 20, 0.6)
+	);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.ghv-header--feu   { background: linear-gradient(135deg, rgba(255,90,60,0.15),   rgba(8,12,20,0.7)); }
+.ghv-header--eau   { background: linear-gradient(135deg, rgba(80,200,255,0.15),  rgba(6,14,22,0.7)); }
+.ghv-header--terre { background: linear-gradient(135deg, rgba(163,214,54,0.15),  rgba(10,14,6,0.7)); }
+.ghv-header--air   { background: linear-gradient(135deg, rgba(192,132,252,0.15), rgba(20,15,30,0.7)); }
+
+.ghv-header::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(45deg, rgba(255,255,255,0.015) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255,255,255,0.015) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.015) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.015) 75%);
+	background-size: 20px 20px;
+	background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+	pointer-events: none;
+}
+
+.ghv-header-inner {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.5rem;
+}
+
+.ghv-title {
+	font-size: 0.65rem;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.08em;
+	color: rgba(255, 255, 255, 0.85);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.3rem;
+}
+
+.ghv-title i {
+	font-size: 0.85rem;
+	color: var(--coalition-accent, #7dd3fc);
+	opacity: 0.9;
+}
+
+.ghv-see-all {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	font-size: 0.58rem;
+	font-weight: 600;
+	color: var(--coalition-accent, #7dd3fc);
+	background: none;
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	font-family: inherit;
+	opacity: 0.85;
+	transition: opacity 0.15s;
+}
+
+.ghv-see-all:hover { opacity: 1; }
+.ghv-see-all:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+	border-radius: 3px;
+}
+
+/* ── Filtres ── */
+.ghv-filters {
+	position: relative;
+	z-index: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 0.3rem;
+}
+
+.ghv-filter-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+}
+
+.ghv-filter-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	padding: 0.15rem 0.45rem;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.56rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+	font-family: inherit;
+	white-space: nowrap;
+}
+
+.ghv-filter-chip:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.ghv-filter-chip--active {
+	background: var(--coalition-accent-soft, rgba(125,211,252,0.12));
+	border-color: var(--coalition-accent-border, rgba(125,211,252,0.3));
+	color: var(--coalition-accent, #7dd3fc);
+}
+
+.ghv-filter-chip:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* ── Liste ── */
+.ghv-list {
+	display: flex;
+	flex-direction: column;
+}
+
+.ghv-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	padding: 1.5rem 0.5rem;
+	font-size: 0.72rem;
+	color: rgba(255, 255, 255, 0.3);
+	text-align: center;
+}
+
+.ghv-empty i { font-size: 1.5rem; opacity: 0.3; }
+
+/* ── Ligne de partie ── */
+.ghv-row {
+	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.ghv-row:last-child { border-bottom: none; }
+
+.ghv-row--open { background: rgba(255, 255, 255, 0.03); }
+
+.ghv-row-main {
+	display: grid;
+	grid-template-columns: 44px 18px 1fr auto 16px;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.45rem 0.65rem;
+	cursor: pointer;
+	transition: background 0.12s;
+}
+
+.ghv-row-main:hover { background: rgba(255, 255, 255, 0.04); }
+
+.ghv-row-main:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: -2px;
+}
+
+/* Badge résultat */
+.ghv-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0.2rem 0.35rem;
+	border-radius: 5px;
+	font-size: 0.6rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	min-width: 32px;
+	text-align: center;
+}
+
+.ghv-badge--win  { background: rgba(74,222,128,0.12); color: #4ade80; border: 1px solid rgba(74,222,128,0.2); }
+.ghv-badge--loss { background: rgba(248,113,113,0.12); color: #f87171; border: 1px solid rgba(248,113,113,0.2); }
+.ghv-badge--draw { background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+
+.ghv-format-icon {
+	font-size: 0.82rem;
+	color: rgba(255, 255, 255, 0.35);
+}
+
+.ghv-opponent {
+	display: flex;
+	flex-direction: column;
+	gap: 0.08rem;
+	min-width: 0;
+}
+
+.ghv-opponent-name {
+	font-size: 0.7rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.85);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+	display: flex;
+	align-items: center;
+	gap: 0.2rem;
+}
+
+.ghv-coalition {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.18rem;
+	font-size: 0.52rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.ghv-coalition--feu   { color: #ff6b4a; }
+.ghv-coalition--eau   { color: #5ecfff; }
+.ghv-coalition--terre { color: #a3d636; }
+.ghv-coalition--air   { color: #d8b4fe; }
+.ghv-coalition--bot   { color: rgba(255,255,255,0.4); }
+
+.ghv-date {
+	font-size: 0.56rem;
+	color: rgba(255, 255, 255, 0.35);
+	white-space: nowrap;
+}
+
+.ghv-chevron {
+	font-size: 0.9rem;
+	color: rgba(255, 255, 255, 0.3);
+	transition: transform 0.2s ease;
+}
+
+.ghv-chevron--open { transform: rotate(180deg); }
+
+html[data-reduce-motion='true'] .ghv-chevron { transition: none; }
+
+/* ── Détail accordéon ── */
+.ghv-detail {
+	padding: 0.5rem 0.65rem 0.65rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+	display: flex;
+	flex-direction: column;
+	gap: 0.45rem;
+	animation: ghvDetailIn 0.18s ease-out both;
+}
+
+@keyframes ghvDetailIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
+html[data-reduce-motion='true'] .ghv-detail { animation: none; }
+
+.ghv-detail-stats {
+	display: flex;
+	gap: 0.75rem;
+}
+
+.ghv-detail-col {
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+}
+
+.ghv-detail-label {
+	font-size: 0.52rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgba(255, 255, 255, 0.35);
+}
+
+.ghv-detail-val {
+	font-size: 0.78rem;
+	font-weight: 700;
+	color: rgba(255, 255, 255, 0.85);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Courbe eval mini */
+.ghv-eval-section {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.ghv-eval-chart {
+	height: 32px;
+	display: flex;
+	align-items: flex-end;
+	gap: 1px;
+}
+
+.ghv-eval-bar {
+	flex: 1;
+	min-width: 2px;
+	border-radius: 1px 1px 0 0;
+}
+
+.ghv-eval-bar--pos { background: #4ade80; opacity: 0.65; }
+.ghv-eval-bar--neg { background: #f87171; opacity: 0.65; align-self: flex-start; border-radius: 0 0 1px 1px; }
+
+/* Prises */
+.ghv-captures {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+}
+
+.ghv-captures-row {
+	display: flex;
+	align-items: center;
+	gap: 0.25rem;
+}
+
+.ghv-captures-label {
+	font-size: 0.52rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: rgba(255, 255, 255, 0.35);
+	min-width: 1.6rem;
+}
+
+.ghv-piece {
+	font-size: 0.85rem;
+	line-height: 1;
+}
+
+.ghv-no-capture {
+	font-size: 0.6rem;
+	color: rgba(255, 255, 255, 0.2);
+}
+
+/* Statut analyse */
+.ghv-analysis-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	font-size: 0.58rem;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.4);
+}
+
+.ghv-status-ok      { color: #4ade80; }
+.ghv-status-pending { color: #fbbf24; }
+
+/* CTA */
+.ghv-actions {
+	display: flex;
+	gap: 0.3rem;
+	flex-wrap: wrap;
+}
+
+.ghv-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.25rem;
+	padding: 0.25rem 0.55rem;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.05);
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.58rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.12s, border-color 0.12s;
+	font-family: inherit;
+	min-height: 28px;
+}
+
+.ghv-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: #fff;
+}
+
+.ghv-btn--primary {
+	background: var(--coalition-accent-soft, rgba(125,211,252,0.1));
+	border-color: var(--coalition-accent-border, rgba(125,211,252,0.3));
+	color: var(--coalition-accent, #7dd3fc);
+}
+
+.ghv-btn--primary:hover {
+	background: color-mix(in srgb, var(--coalition-accent, #7dd3fc) 22%, transparent);
+}
+
+.ghv-btn:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* ── Footer ── */
+.ghv-footer {
+	padding: 0.45rem 0.65rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.ghv-footer-btn {
+	width: 100%;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	padding: 0.4rem;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgba(255, 255, 255, 0.55);
+	font-size: 0.62rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+	font-family: inherit;
+}
+
+.ghv-footer-btn:hover {
+	background: rgba(255, 255, 255, 0.08);
+	color: #fff;
+}
+
+.ghv-footer-btn:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+	.ghv-row-main {
+		grid-template-columns: 40px 16px 1fr auto 14px;
+		gap: 0.3rem;
+		padding: 0.4rem 0.5rem;
+	}
+
+	.ghv-btn {
+		min-height: 36px;
+		padding: 0.3rem 0.6rem;
+	}
+}
+
+/* ══════════════════════════════════════════════════
+   In-Game Chat
+   ══════════════════════════════════════════════════ */
+
+.igc-root {
+	display: flex;
+	flex-direction: column;
+	height: 100%;
+	min-height: 0;
+	flex: 1;
+}
+
+.igc-header {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	padding: 0.45rem 0.65rem;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	background: rgba(255, 255, 255, 0.025);
+	flex-shrink: 0;
+}
+
+.igc-header-icon {
+	font-size: 0.9rem;
+	color: var(--coalition-accent, #7dd3fc);
+}
+
+.igc-header-title {
+	flex: 1;
+	font-size: 0.7rem;
+	font-weight: 700;
+	color: rgba(255, 255, 255, 0.85);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.igc-mock-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.2rem;
+	font-size: 0.52rem;
+	font-weight: 600;
+	color: rgba(251, 191, 36, 0.8);
+	background: rgba(251, 191, 36, 0.1);
+	border: 1px solid rgba(251, 191, 36, 0.25);
+	border-radius: 8px;
+	padding: 0.1rem 0.35rem;
+}
+
+/* Zone messages */
+.igc-messages {
+	flex: 1;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 0.55rem 0.65rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.35rem;
+	min-height: 100px;
+	max-height: min(320px, 40vh);
+	scrollbar-width: thin;
+	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+
+.igc-msg {
+	display: flex;
+	flex-direction: column;
+	max-width: 78%;
+	gap: 0.1rem;
+}
+
+.igc-msg--me {
+	align-self: flex-end;
+	align-items: flex-end;
+}
+
+.igc-msg--opponent {
+	align-self: flex-start;
+	align-items: flex-start;
+}
+
+.igc-msg-text {
+	padding: 0.35rem 0.6rem;
+	border-radius: 10px;
+	font-size: 0.72rem;
+	line-height: 1.4;
+	word-break: break-word;
+}
+
+.igc-msg--me .igc-msg-text {
+	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.18));
+	border: 1px solid var(--coalition-accent-border, rgba(125, 211, 252, 0.3));
+	color: #fff;
+	border-radius: 10px 10px 2px 10px;
+}
+
+.igc-msg--opponent .igc-msg-text {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	color: rgba(255, 255, 255, 0.88);
+	border-radius: 10px 10px 10px 2px;
+}
+
+.igc-msg-time {
+	font-size: 0.52rem;
+	color: rgba(255, 255, 255, 0.28);
+	font-variant-numeric: tabular-nums;
+}
+
+/* Réponses rapides */
+.igc-quick {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.25rem;
+	padding: 0.35rem 0.65rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.05);
+	flex-shrink: 0;
+}
+
+.igc-quick-btn {
+	padding: 0.2rem 0.5rem;
+	border-radius: 12px;
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.04);
+	color: rgba(255, 255, 255, 0.6);
+	font-size: 0.58rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: background 0.12s, color 0.12s;
+	font-family: inherit;
+	white-space: nowrap;
+}
+
+.igc-quick-btn:hover {
+	background: rgba(255, 255, 255, 0.1);
+	color: rgba(255, 255, 255, 0.9);
+}
+
+.igc-quick-btn:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* Zone de saisie */
+.igc-compose {
+	display: flex;
+	gap: 0.35rem;
+	padding: 0.45rem 0.65rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	flex-shrink: 0;
+}
+
+.igc-input {
+	flex: 1;
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	border-radius: 8px;
+	padding: 0.35rem 0.65rem;
+	font-size: 0.72rem;
+	color: #fff;
+	font-family: inherit;
+	outline: none;
+	transition: border-color 0.15s;
+	min-height: 36px;
+}
+
+.igc-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+
+.igc-input:focus {
+	border-color: var(--coalition-accent-border, rgba(125, 211, 252, 0.4));
+	box-shadow: 0 0 0 2px var(--coalition-accent-soft, rgba(125, 211, 252, 0.1));
+}
+
+.igc-send-btn {
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 8px;
+	border: none;
+	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.18));
+	color: var(--coalition-accent, #7dd3fc);
+	font-size: 1rem;
+	cursor: pointer;
+	transition: background 0.15s;
+	flex-shrink: 0;
+}
+
+.igc-send-btn:hover:not(:disabled) {
+	background: color-mix(in srgb, var(--coalition-accent, #7dd3fc) 30%, transparent);
+}
+
+.igc-send-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.igc-send-btn:focus-visible {
+	outline: 2px solid var(--coalition-accent, #7dd3fc);
+	outline-offset: 2px;
+}
+
+/* Mobile */
+@media (max-width: 768px) {
+	.igc-messages { max-height: min(220px, 30vh); }
+}
+
 /* Tablette & étroit : panneau sous le plateau */
 @media (max-width: 1175px) {
 	.game-stats-panel {

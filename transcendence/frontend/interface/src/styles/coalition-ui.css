@@ -217,3 +217,65 @@ html[data-coalition='neutral'] {
 html[data-reduce-motion='true'] .page-shell .surface-card {
 	transition: none;
 }
+
+/* ══════════════════════════════════════════════════
+   Motif grille d'échecs — overlay CSS discret
+   Appliquer la classe .chess-grid-pattern sur un conteneur
+   positionné (position: relative / absolute / fixed).
+   Le motif s'adapte à la palette coalition via l'accent.
+   ══════════════════════════════════════════════════ */
+
+.chess-grid-pattern {
+	position: relative;
+	overflow: hidden;
+}
+
+.chess-grid-pattern::before {
+	content: '';
+	position: absolute;
+	inset: 0;
+	background-image:
+		linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%),
+		linear-gradient(-45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, rgba(255, 255, 255, 0.022) 75%),
+		linear-gradient(-45deg, transparent 75%, rgba(255, 255, 255, 0.022) 75%);
+	background-size: 22px 22px;
+	background-position: 0 0, 0 11px, 11px -11px, -11px 0px;
+	pointer-events: none;
+	z-index: 0;
+	border-radius: inherit;
+}
+
+.chess-grid-pattern > * {
+	position: relative;
+	z-index: 1;
+}
+
+/* Variante plus prononcée — panneaux historique in-game */
+.chess-grid-pattern--md::before {
+	background-image:
+		linear-gradient(45deg, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 25%, transparent 25%),
+		linear-gradient(-45deg, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 25%, transparent 25%),
+		linear-gradient(45deg, transparent 75%, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 75%),
+		linear-gradient(-45deg, transparent 75%, var(--coalition-accent-soft, rgba(255,255,255,0.03)) 75%);
+	background-size: 28px 28px;
+	background-position: 0 0, 0 14px, 14px -14px, -14px 0px;
+}
+
+/* ── Sidebar active state via coalition ── */
+.sidebar ul li:has(.sidebar-navlink--active) {
+	background-color: color-mix(in srgb, var(--coalition-accent) 22%, #0e1824);
+}
+
+/* ── BottomNav active item ── */
+.bottom-nav__item--active i,
+.bottom-nav__item--active span {
+	color: var(--coalition-accent, #7dd3fc) !important;
+}
+
+/* ── Pstats page : panneau historique (réutilisable) ── */
+.phistory-page {
+	--phistory-accent: var(--coalition-accent, #7dd3fc);
+	--phistory-accent-soft: var(--coalition-accent-soft, rgba(125, 211, 252, 0.15));
+	--phistory-accent-border: var(--coalition-accent-border, rgba(125, 211, 252, 0.38));
+}

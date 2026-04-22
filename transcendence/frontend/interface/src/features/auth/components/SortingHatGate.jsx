@@ -95,10 +95,23 @@ export default function SortingHatGate() {
 	const handleDismiss = useCallback(() => {
 		cancelledRef.current = true
 		clearPendingOnly(user?.id)
+
+		/*
+		 * Fix one-shot : si la coalition est déjà persistée côté serveur
+		 * (user.coalition renseignée), on marque la cérémonie comme terminée
+		 * même si l'utilisateur ferme manuellement.
+		 * Evite la boucle de réapparition après dismiss + refresh.
+		 */
+		if (user?.id && user?.coalition) {
+			try {
+				window.localStorage.setItem(`${STORAGE_PREFIX}${user.id}`, '1')
+			} catch { /* ignore */ }
+		}
+
 		setOpen(false)
 		setPhase('idle')
 		setCountdownN(null)
-	}, [user?.id])
+	}, [user?.id, user?.coalition])
 
 	useEffect(() => {
 		if (!SORTING_HAT_COALITION_ENABLED || !isAuthenticated || !user?.id) return
@@ -109,6 +122,22 @@ export default function SortingHatGate() {
 		const devForcedReplay = import.meta.env.DEV === true && replayTick > 0
 		if (authProv !== 'local' && !devForcedReplay) return
 		if (typeof window === 'undefined') return
+
+		/*
+		 * Fix principal — one-shot garanti :
+		 * Si l'utilisateur a DÉJÀ une coalition côté serveur, on synchronise le
+		 * localStorage et on ne déclenche plus jamais la cérémonie.
+		 * Couvre : refresh de page, multi-onglets, connexion OAuth sur compte local.
+		 */
+		if (user?.coalition && !devForcedReplay) {
+			const syncKey = `${STORAGE_PREFIX}${user.id}`
+			try {
+				if (!window.localStorage.getItem(syncKey)) {
+					window.localStorage.setItem(syncKey, '1')
+				}
+			} catch { /* ignore */ }
+			return
+		}
 
 		const key = `${STORAGE_PREFIX}${user.id}`
 		const pendingKey = `${key}_pending`
