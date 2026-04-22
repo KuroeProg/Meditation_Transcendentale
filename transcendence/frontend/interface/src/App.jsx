@@ -113,7 +113,7 @@ function AppContent() {
 						path="/game"
 						element={
 							<ProtectedRoute>
-								<Navigate to="/game/default_room" replace />
+								<Navigate to="/game/training" replace />
 							</ProtectedRoute>
 						}
 					/>

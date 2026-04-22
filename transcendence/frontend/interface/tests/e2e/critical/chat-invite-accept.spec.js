@@ -4,6 +4,7 @@ import { withRoleSessions } from '../helpers/multiUser.js'
 import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
+// Vérifie qu'une invitation acceptée depuis le thread ouvre bien la route de jeu.
 test('accept invite in thread navigates to game route', async ({ browser }) => {
 	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 		const { page } = SMOKE_USER

@@ -54,6 +54,10 @@ export function chessReducer(state, action) {
         ...state,
         gameState: action.payload.gameState,
         game: action.payload.game ?? state.game,
+        moveLog:
+          Array.isArray(action.payload.moveLog)
+            ? action.payload.moveLog
+            : state.moveLog,
         winner:
           action.payload.winner !== undefined
             ? action.payload.winner

@@ -10,6 +10,7 @@ const hasCredentials = hasE2ERoleCredentials('SMOKE_USER')
 test.describe('auth login success', () => {
 	test.skip(!hasCredentials, 'Set E2E_SMOKE_USER_EMAIL and E2E_SMOKE_USER_PASSWORD to run this suite.')
 
+	// Vérifie qu'une connexion réussie ouvre le shell applicatif et survit au refresh.
 	test('successful login opens app shell and survives refresh', async ({ page }) => {
 		await loginAndOpenDashboard(page, email, password)
 		await waitForDashboardReady(page)

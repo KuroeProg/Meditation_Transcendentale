@@ -6,6 +6,7 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
+// Vérifie qu'une déconnexion remet l'UI publique et renvoie vers l'auth.
 test('logout clears authenticated UI and returns to auth', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 })
 

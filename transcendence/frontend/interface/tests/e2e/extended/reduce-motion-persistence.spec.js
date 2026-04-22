@@ -7,9 +7,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - reduce motion persistence', () => {
+test.describe('persistance du mode animation réduite', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie que le réglage d'animations réduites reste actif après rechargement.
 	test('persists reduced motion toggle after reload', async ({ page }) => {
 		await page.goto('/settings')
 		const reduceMotionToggle = page.locator('.toggle-row input[type="checkbox"]')

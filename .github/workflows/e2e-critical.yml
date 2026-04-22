@@ -22,6 +22,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 45
     env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
       E2E_SMOKE_USER_EMAIL: smoke@e2e.local
       E2E_SMOKE_USER_PASSWORD: Smoke1234!
       E2E_USER_A_EMAIL: user-a@e2e.local
@@ -37,11 +38,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Prepare CI env file
+        run: cp transcendence/.env.example transcendence/.env
+
       - name: Start stack
         run: make up-bg
 
+      - name: Apply database migrations
+        run: make migrations
+
       - name: Seed deterministic E2E fixtures
         run: make seed-e2e-users
+
+      - name: Install frontend E2E dependencies
+        run: |
+          cd transcendence/frontend/interface
+          sudo chown -R "$USER":"$USER" .
+          rm -rf node_modules
+          npm ci
+          npx playwright install --with-deps chromium
 
       - name: Run critical suite
         run: make test-e2e-suite SUITE=critical

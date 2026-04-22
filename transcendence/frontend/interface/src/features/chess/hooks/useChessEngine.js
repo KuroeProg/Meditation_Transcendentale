@@ -43,6 +43,42 @@ function buildPseudoTrainingState(game, userId) {
   };
 }
 
+function buildMoveLogFromServerState(incomingState) {
+  const rawMoves = Array.isArray(incomingState?.moves) ? incomingState.moves : null;
+  if (!rawMoves) return null;
+
+  const replayBoard = new Chess();
+  const hydrated = [];
+
+  for (let i = 0; i < rawMoves.length; i += 1) {
+    const moveFromServer = rawMoves[i] ?? {};
+    const uci =
+      typeof moveFromServer.san_notation === "string"
+        ? moveFromServer.san_notation.trim().toLowerCase()
+        : "";
+    const parsedMove = uciToMoveObject(uci);
+    if (!parsedMove) continue;
+
+    const madeMove = replayBoard.move(parsedMove);
+    if (!madeMove) continue;
+
+    hydrated.push({
+      moveNumber: Math.floor(i / 2) + 1,
+      color: madeMove.color,
+      piece: madeMove.piece,
+      from: madeMove.from,
+      to: madeMove.to,
+      san: madeMove.san,
+      timeSpentMs:
+        Number.isFinite(moveFromServer.time_taken_ms)
+          ? moveFromServer.time_taken_ms
+          : 0,
+    });
+  }
+
+  return hydrated;
+}
+
 export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
   const [state, dispatch] = useReducer(
     chessReducer,
@@ -169,14 +205,18 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
 
     if (lastMessage.action === "game_state" && lastMessage.game_state) {
       const incomingState = lastMessage.game_state;
+      const hydratedMoveLog = buildMoveLogFromServerState(incomingState);
 
-      logMoveFromServerState(incomingState);
+      if (hydratedMoveLog === null) {
+        logMoveFromServerState(incomingState);
+      }
 
       const winnerFromServer = getWinnerFromGameState(incomingState);
       let gameFromServer = null;
       try {
         gameFromServer = new Chess(incomingState.fen);
         lastLoggedFenRef.current = gameFromServer.fen();
+        lastLoggedUciRef.current = incomingState.last_move_uci ?? null;
       } catch (err) {
         console.error(
           "[chess] Invalid FEN from server:",
@@ -191,6 +231,7 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
           gameState: incomingState,
           winner: winnerFromServer,
           game: gameFromServer,
+          moveLog: hydratedMoveLog,
         },
       });
     }

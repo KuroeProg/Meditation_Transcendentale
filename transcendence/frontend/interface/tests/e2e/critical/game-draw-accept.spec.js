@@ -7,6 +7,7 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
+// Vérifie qu'une offre de nulle acceptée met bien la partie à jour.
 test('draw offer accept path updates game state', async ({ page }) => {
 	const sessionUser = {
 		id: 101,

@@ -8,6 +8,7 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
+// Vérifie que l'annulation du matchmaking ferme la modal et ignore les événements tardifs.
 test('cancel matchmaking closes modal and blocks later match_found', async ({ page }) => {
 	await page.setViewportSize({ width: 390, height: 844 })
 

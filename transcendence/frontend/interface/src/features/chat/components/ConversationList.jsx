@@ -2,12 +2,20 @@ import { useEffect, useState } from 'react'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchConversations } from '../services/chatApi.js'
+import { useAuth } from '../../auth/index.js'
 
 export default function ConversationList({ onSelect, activeId }) {
+	const { resolveUserOnline, isAuthenticated, isLoading } = useAuth()
 	const [conversations, setConversations] = useState([])
 	const [loading, setLoading] = useState(true)
 
 	useEffect(() => {
+		if (!isAuthenticated) {
+			setConversations([])
+			setLoading(false)
+			return undefined
+		}
+		if (isLoading) return undefined
 		let cancelled = false
 		setLoading(true)
 		fetchConversations()
@@ -15,26 +23,31 @@ export default function ConversationList({ onSelect, activeId }) {
 			.catch(() => {})
 			.finally(() => { if (!cancelled) setLoading(false) })
 		return () => { cancelled = true }
-	}, [])
+	}, [isAuthenticated, isLoading])
 
 	const refresh = () => {
+		if (!isAuthenticated) return
 		fetchConversations()
 			.then((data) => setConversations(data.conversations || []))
 			.catch(() => {})
 	}
 
 	useEffect(() => {
+		if (!isAuthenticated) return undefined
 		const interval = setInterval(refresh, 8000)
 		return () => clearInterval(interval)
-	}, [])
+	}, [isAuthenticated])
 
 	if (loading) return <div className="chat-loading" data-testid="chat-conversations-loading">Chargement...</div>
-	if (!conversations.length) return <div className="chat-empty" data-testid="chat-conversations-empty">Aucune conversation</div>
 
 	return (
 		<ul className="chat-conv-list" data-testid="chat-conversation-list">
+			{!conversations.length && (
+				<li className="chat-empty" data-testid="chat-conversations-empty">Aucune conversation</li>
+			)}
 			{conversations.map((c) => {
 				const other = c.participants?.[0]
+				const otherOnline = resolveUserOnline(other)
 				const isActive = c.id === activeId
 				const coalSlug = coalitionToSlug(other?.coalition)
 				return (
@@ -61,7 +74,7 @@ export default function ConversationList({ onSelect, activeId }) {
 									: c.last_message?.content?.slice(0, 40) || 'Pas de message'}
 							</p>
 						</div>
-						<span className={`chat-conv-dot ${other?.is_online ? 'online' : ''}`} />
+						<span className={`chat-conv-dot ${otherOnline ? 'online' : ''}`} />
 					</li>
 				)
 			})}

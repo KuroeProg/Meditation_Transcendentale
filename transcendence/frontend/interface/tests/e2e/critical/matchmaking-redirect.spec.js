@@ -12,6 +12,7 @@ test.use({
 test.describe('matchmaking redirect', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'un match trouvé redirige bien vers la partie correspondante.
 	test('start matchmaking then redirect to game on match_found', async ({ page }) => {
 		await installMatchmakingWebSocketMock(page)
 

@@ -1,6 +1,7 @@
 import { expect, test } from '@playwright/test'
 
 test.describe('profile edit persistence', () => {
+	// Vérifie que le nom d'utilisateur et la bio persistent après recharge.
 	test('username and bio edits persist after reload', async ({ page }) => {
 		const profileState = {
 			id: 101,

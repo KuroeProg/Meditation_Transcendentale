@@ -7,9 +7,10 @@ test.use({
 	storageState: getRoleStateFilePath('SMOKE_USER'),
 })
 
-test.describe('wave c - profile transient failure recovery', () => {
+test.describe('récupération après échec temporaire de mise à jour du profil', () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
+	// Vérifie qu'un échec transitoire de mise à jour finit par persister la valeur de profil.
 	test('retry after transient update failure eventually persists profile value', async ({ page }) => {
 		const profileState = {
 			id: 101,

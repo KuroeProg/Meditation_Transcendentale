@@ -1,6 +1,35 @@
 export async function installMatchmakingWebSocketMock(page) {
 	await page.addInitScript(() => {
 		const NativeWebSocket = window.WebSocket
+
+		function createListenerStore() {
+			return {
+				open: new Set(),
+				message: new Set(),
+				error: new Set(),
+				close: new Set(),
+			}
+		}
+
+		function emitMockEvent(socket, type, event) {
+			const listeners = socket._listeners?.[type]
+			if (!listeners) return
+			for (const listener of listeners) {
+				try {
+					listener.call(socket, event)
+				} catch {
+					// Listener errors should not break test mocks.
+				}
+			}
+		}
+
+		function wireEvent(socket, type, event) {
+			if (type === 'open') socket.onopen?.(event)
+			if (type === 'message') socket.onmessage?.(event)
+			if (type === 'error') socket.onerror?.(event)
+			if (type === 'close') socket.onclose?.(event)
+			emitMockEvent(socket, type, event)
+		}
 		window.__e2eMatchmakingMock = { sockets: [] }
 
 		class MockWebSocket {
@@ -16,13 +45,14 @@ export async function installMatchmakingWebSocketMock(page) {
 				this.onmessage = null
 				this.onerror = null
 				this.onclose = null
+				this._listeners = createListenerStore()
 				this._mocked = this.url.includes('/ws/chess/')
 
 				if (this._mocked) {
 					window.__e2eMatchmakingMock.sockets.push(this)
 					setTimeout(() => {
 						this.readyState = MockWebSocket.OPEN
-						this.onopen?.({ type: 'open' })
+						wireEvent(this, 'open', { type: 'open' })
 					}, 0)
 					return
 				}
@@ -30,14 +60,30 @@ export async function installMatchmakingWebSocketMock(page) {
 				this._native = new NativeWebSocket(url)
 				this._native.onopen = (event) => {
 					this.readyState = MockWebSocket.OPEN
-					this.onopen?.(event)
+					wireEvent(this, 'open', event)
 				}
-				this._native.onmessage = (event) => this.onmessage?.(event)
-				this._native.onerror = (event) => this.onerror?.(event)
+				this._native.onmessage = (event) => wireEvent(this, 'message', event)
+				this._native.onerror = (event) => wireEvent(this, 'error', event)
 				this._native.onclose = (event) => {
 					this.readyState = MockWebSocket.CLOSED
-					this.onclose?.(event)
+					wireEvent(this, 'close', event)
 				}
+			}
+
+			addEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.addEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.add(listener)
+			}
+
+			removeEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.removeEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.delete(listener)
 			}
 
 			send(raw) {
@@ -59,11 +105,11 @@ export async function installMatchmakingWebSocketMock(page) {
 					const playerId = String(data.player_id)
 					this._queueActive = true
 					setTimeout(() => {
-						this.onmessage?.({ data: JSON.stringify({ action: 'queue_status', queue_size: 1 }) })
+						wireEvent(this, 'message', { data: JSON.stringify({ action: 'queue_status', queue_size: 1 }) })
 					}, 10)
 					window.__e2eMatchmakingMock.triggerMatchFound = () => {
 						if (!this._queueActive) return
-						this.onmessage?.({
+						wireEvent(this, 'message', {
 							data: JSON.stringify({
 								action: 'match_found',
 								game_id: 'e2e-game-123',
@@ -77,7 +123,7 @@ export async function installMatchmakingWebSocketMock(page) {
 				if (data.action === 'leave_queue') {
 					this._queueActive = false
 					setTimeout(() => {
-						this.onmessage?.({ data: JSON.stringify({ action: 'queue_status', queue_size: 0 }) })
+						wireEvent(this, 'message', { data: JSON.stringify({ action: 'queue_status', queue_size: 0 }) })
 					}, 10)
 				}
 			}
@@ -88,7 +134,7 @@ export async function installMatchmakingWebSocketMock(page) {
 					return
 				}
 				this.readyState = MockWebSocket.CLOSED
-				this.onclose?.({ type: 'close' })
+				wireEvent(this, 'close', { type: 'close' })
 			}
 		}
 
@@ -100,6 +146,33 @@ export async function installMatchmakingWebSocketMock(page) {
 export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') {
 	await page.addInitScript((targetGameId) => {
 		const NativeWebSocket = window.WebSocket
+
+		function createListenerStore() {
+			return {
+				open: new Set(),
+				message: new Set(),
+				error: new Set(),
+				close: new Set(),
+			}
+		}
+
+		function emitMockEvent(socket, type, event) {
+			const listeners = socket._listeners?.[type]
+			if (!listeners) return
+			for (const listener of listeners) {
+				try {
+					listener.call(socket, event)
+				} catch {}
+			}
+		}
+
+		function wireEvent(socket, type, event) {
+			if (type === 'open') socket.onopen?.(event)
+			if (type === 'message') socket.onmessage?.(event)
+			if (type === 'error') socket.onerror?.(event)
+			if (type === 'close') socket.onclose?.(event)
+			emitMockEvent(socket, type, event)
+		}
 
 		class MockWebSocket {
 			static CONNECTING = 0
@@ -114,12 +187,13 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 				this.onmessage = null
 				this.onerror = null
 				this.onclose = null
+				this._listeners = createListenerStore()
 				this._mocked = this.url.includes(`/ws/chess/${targetGameId}/`)
 
 				if (this._mocked) {
 					setTimeout(() => {
 						this.readyState = MockWebSocket.OPEN
-						this.onopen?.({ type: 'open' })
+						wireEvent(this, 'open', { type: 'open' })
 					}, 0)
 					return
 				}
@@ -127,14 +201,30 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 				this._native = new NativeWebSocket(url)
 				this._native.onopen = (event) => {
 					this.readyState = MockWebSocket.OPEN
-					this.onopen?.(event)
+					wireEvent(this, 'open', event)
 				}
-				this._native.onmessage = (event) => this.onmessage?.(event)
-				this._native.onerror = (event) => this.onerror?.(event)
+				this._native.onmessage = (event) => wireEvent(this, 'message', event)
+				this._native.onerror = (event) => wireEvent(this, 'error', event)
 				this._native.onclose = (event) => {
 					this.readyState = MockWebSocket.CLOSED
-					this.onclose?.(event)
+					wireEvent(this, 'close', event)
 				}
+			}
+
+			addEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.addEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.add(listener)
+			}
+
+			removeEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.removeEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.delete(listener)
 			}
 
 			send(raw) {
@@ -153,7 +243,7 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 
 				if (data.action === 'reconnect') {
 					setTimeout(() => {
-						this.onmessage?.({
+						wireEvent(this, 'message', {
 							data: JSON.stringify({
 								action: 'game_state',
 								game_state: {
@@ -171,7 +261,7 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 
 				if (data.action === 'draw_response' && data.accept === true) {
 					setTimeout(() => {
-						this.onmessage?.({
+						wireEvent(this, 'message', {
 							data: JSON.stringify({
 								action: 'game_state',
 								game_state: {
@@ -193,7 +283,7 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 					return
 				}
 				this.readyState = MockWebSocket.CLOSED
-				this.onclose?.({ type: 'close' })
+				wireEvent(this, 'close', { type: 'close' })
 			}
 		}
 
@@ -391,12 +481,39 @@ export async function installNotificationsWebSocketMock(page, userId = 101) {
 export async function installUnstableOnlineGameWebSocketMock(page, gameId = 'e2e-flaky') {
 	await page.addInitScript((targetGameId) => {
 		const NativeWebSocket = window.WebSocket
+
+		function createListenerStore() {
+			return {
+				open: new Set(),
+				message: new Set(),
+				error: new Set(),
+				close: new Set(),
+			}
+		}
+
+		function emitMockEvent(socket, type, event) {
+			const listeners = socket._listeners?.[type]
+			if (!listeners) return
+			for (const listener of listeners) {
+				try {
+					listener.call(socket, event)
+				} catch {}
+			}
+		}
+
+		function wireEvent(socket, type, event) {
+			if (type === 'open') socket.onopen?.(event)
+			if (type === 'message') socket.onmessage?.(event)
+			if (type === 'error') socket.onerror?.(event)
+			if (type === 'close') socket.onclose?.(event)
+			emitMockEvent(socket, type, event)
+		}
 		window.__e2eOnlineGameMock = {
 			sockets: [],
 			triggerDisconnect() {
 				for (const socket of window.__e2eOnlineGameMock.sockets) {
 					socket.readyState = MockWebSocket.CLOSED
-					socket.onclose?.({ type: 'close', code: 1006 })
+					wireEvent(socket, 'close', { type: 'close', code: 1006 })
 				}
 				window.__e2eOnlineGameMock.sockets = []
 			},
@@ -415,13 +532,14 @@ export async function installUnstableOnlineGameWebSocketMock(page, gameId = 'e2e
 				this.onmessage = null
 				this.onerror = null
 				this.onclose = null
+				this._listeners = createListenerStore()
 				this._mocked = this.url.includes(`/ws/chess/${targetGameId}/`)
 
 				if (this._mocked) {
 					window.__e2eOnlineGameMock.sockets.push(this)
 					setTimeout(() => {
 						this.readyState = MockWebSocket.OPEN
-						this.onopen?.({ type: 'open' })
+						wireEvent(this, 'open', { type: 'open' })
 					}, 0)
 					return
 				}
@@ -429,14 +547,30 @@ export async function installUnstableOnlineGameWebSocketMock(page, gameId = 'e2e
 				this._native = new NativeWebSocket(url)
 				this._native.onopen = (event) => {
 					this.readyState = MockWebSocket.OPEN
-					this.onopen?.(event)
+					wireEvent(this, 'open', event)
 				}
-				this._native.onmessage = (event) => this.onmessage?.(event)
-				this._native.onerror = (event) => this.onerror?.(event)
+				this._native.onmessage = (event) => wireEvent(this, 'message', event)
+				this._native.onerror = (event) => wireEvent(this, 'error', event)
 				this._native.onclose = (event) => {
 					this.readyState = MockWebSocket.CLOSED
-					this.onclose?.(event)
+					wireEvent(this, 'close', event)
 				}
+			}
+
+			addEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.addEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.add(listener)
+			}
+
+			removeEventListener(type, listener) {
+				if (!this._mocked) {
+					this._native?.removeEventListener?.(type, listener)
+					return
+				}
+				this._listeners?.[type]?.delete(listener)
 			}
 
 			send(raw) {
@@ -455,7 +589,7 @@ export async function installUnstableOnlineGameWebSocketMock(page, gameId = 'e2e
 
 				if (data.action === 'reconnect') {
 					setTimeout(() => {
-						this.onmessage?.({
+						wireEvent(this, 'message', {
 							data: JSON.stringify({
 								action: 'game_state',
 								game_state: {
@@ -478,7 +612,7 @@ export async function installUnstableOnlineGameWebSocketMock(page, gameId = 'e2e
 				}
 				window.__e2eOnlineGameMock.sockets = window.__e2eOnlineGameMock.sockets.filter((socket) => socket !== this)
 				this.readyState = MockWebSocket.CLOSED
-				this.onclose?.({ type: 'close' })
+				wireEvent(this, 'close', { type: 'close' })
 			}
 		}
 

@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test'
 
+// Vérifie qu'un login invalide reste sur la page auth avec un message d'erreur.
 test('invalid login shows an error message', async ({ page }) => {
 	await page.route('**/api/auth/me', async (route) => {
 		await route.fulfill({
