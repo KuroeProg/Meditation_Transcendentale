@@ -113,7 +113,9 @@ certs: ## Générer les certificats TLS nginx / elasticsearch si absents
 	else \
 		printf '%b\n' "$(C_DIM)  elasticsearch : déjà présent$(C_RESET)"; \
 	fi
-	@chmod 644 $(CERT_NGINX_FILE) $(CERT_ELASTIC_FILE) 2>/dev/null || true
+	# Les clés sont bind-mountées dans des conteneurs avec des UID différents en CI.
+	# On force des droits lisibles pour éviter des erreurs de lecture TLS au démarrage.
+	@chmod 644 $(CERT_NGINX_FILE) $(KEY_NGINX_FILE) $(CERT_ELASTIC_FILE) $(KEY_ELASTIC_FILE) 2>/dev/null || true
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Certificats OK."
 
 build: ## docker compose build
