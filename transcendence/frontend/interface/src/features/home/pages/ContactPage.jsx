@@ -7,7 +7,7 @@ import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIco
 import '../styles/ContactPage.css'
 
 const GITHUB_PROJECT = 'https://github.com/KuroeProg/Meditation_Transcendentale'
-const DISCORD_42 = 'https://discord.com/invite/42network'
+const DISCORD_42 = '/'
 
 const SUBJECT_OPTIONS = [
 	{

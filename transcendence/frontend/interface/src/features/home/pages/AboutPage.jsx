@@ -4,12 +4,29 @@ import PantheonConstellation from '../components/PantheonConstellation.jsx'
 import AboutAmbientParticles from '../components/AboutAmbientParticles.jsx'
 import '../styles/AboutPage.css'
 
-const GITHUB_PROJECT = 'https://github.com/KuroeProg/Meditation_Transcendentale'
+const GITHUB_URL_VINCENT = 'https://github.com/Corgidev42'
+const GITHUB_URL_ALEXIE = 'https://github.com/FeyNey'
+const GITHUB_URL_EVEN = 'https://github.com/EvenZeppa'
+const GITHUB_URL_CLOE = 'https://github.com/KuroeProg'
+const GITHUB_URL_THEO = 'https://github.com/Mileumm'
+
+/**
+ * Portraits : placer les fichiers dans `public/team/` puis exposer `/team/<fichier>`.
+ * Pour ajouter un membre : copier l’image → constante `PHOTO_SRC_*` → `photoSrc` dans `TEAM` (ou `null` + Intra).
+ */
+const PHOTO_SRC_VINCENT = '/team/vincent.png'
+const PHOTO_SRC_ALEXIE = null // ex. '/team/alexie.png'
+const PHOTO_SRC_EVEN = null
+const PHOTO_SRC_CLOE = null
+const PHOTO_SRC_THEO = null
+
+/** Si la constante photo est `null`, on retombe sur l’avatar Intra (à retirer quand tout est local). */
+const intraAvatar = (login) => `https://cdn.intra.42.fr/users/${login}/medium_avatar.jpg`
 
 /** Cinq membres — rôles et périmètres alignés sur `Todo.md` (ft_transcendence). Les logins 42 sont à ajuster si besoin. */
 const TEAM = [
 	{
-		displayName: 'Vyke',
+		displayName: 'Vincent',
 		login42: 'vbonnard',
 		role: 'Frontend — React, UI jeu, design system, WebSocket client',
 		roleEmoji: '🎨',
@@ -17,11 +34,11 @@ const TEAM = [
 		coalitionSlug: 'feu',
 		statLine: 'Modules front revendiqués : jeu distant + UI, interaction users, customisation (quasi)',
 		quote: '« Si le plateau respire, le joueur reste. »',
-		githubUrl: GITHUB_PROJECT,
-		photoSrc: null,
+		githubUrl: GITHUB_URL_VINCENT,
+		photoSrc: PHOTO_SRC_VINCENT ?? intraAvatar('vbonnard'),
 	},
 	{
-		displayName: 'Alexie (Fey)',
+		displayName: 'Alexie',
 		login42: 'acoste',
 		role: 'Frontend — React, UI jeu, design system, WebSocket client',
 		roleEmoji: '💻',
@@ -29,8 +46,8 @@ const TEAM = [
 		coalitionSlug: 'feu',
 		statLine: 'WebSockets (client) + interaction users : co-owner avec Vyke & Even',
 		quote: '« Le composant est prêt quand l’évaluateur ne voit pas la couture. »',
-		githubUrl: GITHUB_PROJECT,
-		photoSrc: null,
+		githubUrl: GITHUB_URL_ALEXIE,
+		photoSrc: PHOTO_SRC_ALEXIE ?? intraAvatar('acoste'),
 	},
 	{
 		displayName: 'Even',
@@ -41,8 +58,8 @@ const TEAM = [
 		coalitionSlug: 'eau',
 		statLine: 'ORM + jeu complet + remote : co-owner ; schéma DB / health : en cours avec l’équipe',
 		quote: '« Un endpoint clair vaut trois specs floues. »',
-		githubUrl: GITHUB_PROJECT,
-		photoSrc: null,
+		githubUrl: GITHUB_URL_EVEN,
+		photoSrc: PHOTO_SRC_EVEN ?? intraAvatar('ezeppa'),
 	},
 	{
 		displayName: 'Cloé',
@@ -53,11 +70,11 @@ const TEAM = [
 		coalitionSlug: 'eau',
 		statLine: 'Major cyber (WAF + Vault) : en cours de démo complète',
 		quote: '« Les secrets ne voyagent pas en clair. »',
-		githubUrl: GITHUB_PROJECT,
-		photoSrc: null,
+		githubUrl: GITHUB_URL_CLOE,
+		photoSrc: PHOTO_SRC_CLOE ?? intraAvatar('cfiachet'),
 	},
 	{
-		displayName: 'Théo (Mileum)',
+		displayName: 'Théo',
 		login42: 'tbahin',
 		role: 'Statistiques & data — IV.3 / IV.8, appui backend & DevOps',
 		roleEmoji: '📊',
@@ -65,8 +82,8 @@ const TEAM = [
 		coalitionSlug: 'eau',
 		statLine: 'Stats perso + panneaux : front prêt ; persistance parties : en lien avec Even',
 		quote: '« Un graphique honnête vaut mieux qu’un KPI inventé. »',
-		githubUrl: GITHUB_PROJECT,
-		photoSrc: null,
+		githubUrl: GITHUB_URL_THEO,
+		photoSrc: PHOTO_SRC_THEO ?? intraAvatar('tbahin'),
 	},
 ]
 
