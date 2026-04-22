@@ -170,28 +170,33 @@ function PieceTooltip({ active, payload, label }) {
 	)
 }
 
-function PerfChart({ theme, chartAnim, moveSpeedHistory = [], gameAdvantageHistory = [], eloHistory = [] }) {
+function PerfChart({ theme, chartAnim, moveSpeedHistory = [], gameAdvantageHistory = [], eloHistory = [], isMock = false }) {
 	const [perfMode, setPerfMode] = useState('speed') // On met speed par défaut puisque c'est le focus réel
 	const chartData = useMemo(() => {
 		if (perfMode === 'speed') {
-			return moveSpeedHistory.map(m => ({
+			const history = moveSpeedHistory || [];
+			return history.map(m => ({
 				...m,
 				player: m.speed,
 				allPlayers: m.allPlayersSpeed
 			}))
 		}
 		if (perfMode === 'advantage') {
-			return gameAdvantageHistory.map(m => ({
+			const history = gameAdvantageHistory || [];
+			return history.map(m => ({
 				...m,
 				player: m.advantage,
 				allPlayers: 0 // Une ligne neutre pour la comparaison
 			}))
 		}
 		if (perfMode === 'time') {
-			return eloHistory.length > 0 ? eloHistory : data.perfOverTime
+			if (!isMock) {
+				return eloHistory || [];
+			}
+			return data.perfOverTime
 		}
-		return data.perfOverTime
-	}, [perfMode, moveSpeedHistory, gameAdvantageHistory, eloHistory])
+		return []
+	}, [perfMode, moveSpeedHistory, gameAdvantageHistory, eloHistory, isMock])
 
 	const isAdv = perfMode === 'advantage'
 	const isSpeed = perfMode === 'speed'
@@ -374,33 +379,38 @@ function MetricsTable({ realStats }) {
 	// Nouvelles statistiques avancées extraites du backend
 	const advanced = realStats?.performance_history?.advanced || {};
 
+	const formatS = (val) => val !== undefined && val !== null ? `${val}s` : '0s';
+	const formatPct = (val) => val !== undefined && val !== null ? `${val}%` : '0%';
+	const formatNum = (val) => val !== undefined && val !== null ? val : '0';
+	const formatSq = (val) => val !== undefined && val !== null && val !== "None" ? val : 'N/A';
+
 	// Mapping intelligent entre les clés d'affichage et les données réelles
-	const statsMapping = {
-		"Global Wins (Total)": realStats?.wins,
-		"Global Losses (Total)": realStats?.losses,
-		"Global Draws (Total)": realStats?.draws,
-		"Wins as White": realStats?.wins_white,
-		"Wins as Black": realStats?.wins_black,
-		"Global Games (Total Wins+Losses+Draws)": realStats?.total_games,
-		"Draw Percentage": realStats ? `${realStats.drawrate_global}%` : null,
-		"Mean Time Spent (Seconds)": (realStats?.avg_duration !== undefined) ? `${realStats.avg_duration}s` : null,
-		"Mean Time Spent Turn (Seconds)": (realStats?.avg_thinking_time !== undefined) ? `${realStats.avg_thinking_time}s` : null,
-		"Last Game Time Spent (Seconds)": (advanced.last_game_duration !== undefined) ? `${advanced.last_game_duration}s` : null,
-		"Opening Speed (Initial Moves)": (advanced.opening_speed !== undefined) ? `${advanced.opening_speed}s` : null,
-		"Average Response Speed (Initial Moves)": (advanced.opening_speed !== undefined) ? `${advanced.opening_speed}s` : null,
-		"Average Response Speed (Last 5 Moves)": (advanced.endgame_speed !== undefined) ? `${advanced.endgame_speed}s` : null,
-		"Comeback Rate (After -3 Adv)": (advanced.comeback_rate !== undefined) ? `${advanced.comeback_rate}%` : null,
-		"Tactical Volatility": (advanced.volatility !== undefined) ? advanced.volatility : null,
-		"Favorite Killing Square": advanced.killing_zone !== "None" ? advanced.killing_zone : null,
-		"Favorite Final Square (Coordinate)": advanced.killing_zone !== "None" ? advanced.killing_zone : null,
-		"Avg Moves per Victory": advanced.win_len,
-		"Avg Moves per Defeat": advanced.loss_len,
-		"Peak ELO Achieved": advanced.peak_elo,
-		"Highest ELO Defeated": (advanced.peak_elo !== undefined) ? advanced.peak_elo : null,
-		"Performance at Tilt (Winrate)": (advanced.tilt_winrate !== undefined) ? `${advanced.tilt_winrate}%` : null,
-		"Blunder Ratio": (advanced.blunder_ratio !== undefined) ? `${advanced.blunder_ratio}%` : null,
-		"Aggressive vs. Defensive Score": advanced.aggression_defensive,
-	};
+	const statsMapping = realStats ? {
+		"Global Wins (Total)": formatNum(realStats?.wins),
+		"Global Losses (Total)": formatNum(realStats?.losses),
+		"Global Draws (Total)": formatNum(realStats?.draws),
+		"Wins as White": formatNum(realStats?.wins_white),
+		"Wins as Black": formatNum(realStats?.wins_black),
+		"Global Games (Total Wins+Losses+Draws)": formatNum(realStats?.total_games),
+		"Draw Percentage": formatPct(realStats?.drawrate_global),
+		"Mean Time Spent (Seconds)": formatS(realStats?.avg_duration),
+		"Mean Time Spent Turn (Seconds)": formatS(realStats?.avg_thinking_time),
+		"Last Game Time Spent (Seconds)": formatS(advanced.last_game_duration),
+		"Opening Speed (Initial Moves)": formatS(advanced.opening_speed),
+		"Average Response Speed (Initial Moves)": formatS(advanced.opening_speed),
+		"Average Response Speed (Last 5 Moves)": formatS(advanced.endgame_speed),
+		"Comeback Rate (After -3 Adv)": formatPct(advanced.comeback_rate),
+		"Tactical Volatility": formatNum(advanced.volatility),
+		"Favorite Killing Square": formatSq(advanced.killing_zone),
+		"Favorite Final Square (Coordinate)": formatSq(advanced.killing_zone),
+		"Avg Moves per Victory": formatNum(advanced.win_len),
+		"Avg Moves per Defeat": formatNum(advanced.loss_len),
+		"Peak ELO Achieved": advanced.peak_elo !== undefined && advanced.peak_elo !== null ? advanced.peak_elo : '1500',
+		"Highest ELO Defeated": advanced.highest_elo_defeated !== undefined && advanced.highest_elo_defeated !== null ? advanced.highest_elo_defeated : 'N/A',
+		"Performance at Tilt (Winrate)": formatPct(advanced.tilt_winrate),
+		"Blunder Ratio": formatPct(advanced.blunder_ratio),
+		"Aggressive vs. Defensive Score": advanced.aggression_defensive !== undefined && advanced.aggression_defensive !== null ? advanced.aggression_defensive : '0',
+	} : {};
 
 	// Explications pour les bulles d'aide (Tooltip English)
 	const metricHelp = {
@@ -427,12 +437,12 @@ function MetricsTable({ realStats }) {
 
 	const dynamicMetrics = data.metrics.map(m => {
 		const realValue = statsMapping[m.key];
-		const isMock = realValue === undefined || realValue === null;
+		const isMock = !realStats;
 
 		return {
 			key: m.key,
 			displayKey: m.key,
-			value: isMock ? m.value : realValue.toLocaleString(),
+			value: isMock ? m.value : (typeof realValue === 'number' ? realValue.toLocaleString() : (realValue !== undefined ? realValue : 'N/A')),
 			isMock,
 			help: metricHelp[m.key] || "Analytics data for this metric."
 		};
@@ -476,22 +486,22 @@ export default function Statistics() {
 	const theme = getPstatsTheme(slug)
 	const wr = esStats ? {
 		global: {
-			player: esStats.winrate_global,
-			playerDraw: esStats.drawrate_global,
-			allPlayers: esStats.all_players_winrate_global,
-			allDraw: esStats.all_players_drawrate_global
+			player: esStats.winrate_global ?? 0,
+			playerDraw: esStats.drawrate_global ?? 0,
+			allPlayers: esStats.all_players_winrate_global ?? 0,
+			allDraw: esStats.all_players_drawrate_global ?? 0
 		},
 		white: {
-			player: esStats.winrate_white,
-			playerDraw: esStats.drawrate_white,
-			allPlayers: esStats.all_players_winrate_white,
-			allDraw: esStats.all_players_drawrate_white
+			player: esStats.winrate_white ?? 0,
+			playerDraw: esStats.drawrate_white ?? 0,
+			allPlayers: esStats.all_players_winrate_white ?? 0,
+			allDraw: esStats.all_players_drawrate_white ?? 0
 		},
 		black: {
-			player: esStats.winrate_black,
-			playerDraw: esStats.drawrate_black,
-			allPlayers: esStats.all_players_winrate_black,
-			allDraw: esStats.all_players_drawrate_black
+			player: esStats.winrate_black ?? 0,
+			playerDraw: esStats.drawrate_black ?? 0,
+			allPlayers: esStats.all_players_winrate_black ?? 0,
+			allDraw: esStats.all_players_drawrate_black ?? 0
 		},
 	} : {
 		global: { player: data.winrates.global.player, playerDraw: 0, allPlayers: data.winrates.global.allPlayers, allDraw: 0 },
@@ -565,6 +575,7 @@ export default function Statistics() {
 					moveSpeedHistory={esStats?.performance_history?.move_speed_history} 
 					gameAdvantageHistory={esStats?.performance_history?.game_advantage_history}
 					eloHistory={esStats?.performance_history?.elo_history}
+					isMock={!esStats}
 				/>
 				<PieceUsageChart 
 					theme={theme} 
