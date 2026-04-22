@@ -1,6 +1,8 @@
 import { expect, test } from '@playwright/test'
 
 test('invalid login shows an error message', async ({ page }) => {
+	await page.context().clearCookies()
+
 	await page.route('**/api/auth/me', async (route) => {
 		await route.fulfill({
 			status: 401,
@@ -17,12 +19,16 @@ test('invalid login shows an error message', async ({ page }) => {
 		})
 	})
 
+	const login401 = {
+		status: 401,
+		contentType: 'application/json',
+		body: JSON.stringify({ error: 'Identifiants invalides' }),
+	}
 	await page.route('**/api/auth/login', async (route) => {
-		await route.fulfill({
-			status: 401,
-			contentType: 'application/json',
-			body: JSON.stringify({ error: 'Identifiants invalides' }),
-		})
+		await route.fulfill(login401)
+	})
+	await page.route('**/api/auth/login/', async (route) => {
+		await route.fulfill(login401)
 	})
 
 	await page.goto('/auth')

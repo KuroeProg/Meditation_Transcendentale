@@ -5,11 +5,14 @@
  *  - état loading (aria-busy) pendant l'appel API
  *  - disparition du bouton après acceptation réussie
  *  - affichage d'un message d'erreur en cas d'échec API
+ *
+ * Contrat API réel : PUT /api/auth/friends/:friendshipId + body { action: 'accept' }
+ * (pas de suffixe /accept sur l’URL).
  */
 import { expect, test } from '@playwright/test'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
-import { waitForDashboardReady } from '../helpers/waits.js'
+import { openChatContactsPending, waitForDashboardReady } from '../helpers/waits.js'
 import { installChatWebSocketMock } from '../helpers/wsMocks.js'
 
 const SESSION_USER = {
@@ -35,64 +38,76 @@ const PENDING_FRIEND = {
 	},
 }
 
-async function setupPageWithPendingFriend(page, respondOverride) {
+async function setupPageWithPendingFriend(page, putHandler) {
 	await installChatWebSocketMock(page, 1)
 
+	const friendsState = { list: [PENDING_FRIEND] }
+
 	await page.route('**/api/auth/me', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SESSION_USER) })
-	)
-	await page.route('**/api/auth/friends?status=accepted', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ friends: [] }) })
+		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SESSION_USER) }),
 	)
 	await page.route('**/api/auth/leaderboard**', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ leaderboard: [], current_user_rank: null }) })
+		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ leaderboard: [], current_user_rank: null }) }),
 	)
 	await page.route('**/api/chat/invites/pending-outgoing', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ invite: null }) })
+		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ invite: null }) }),
 	)
 	await page.route('**/api/chat/conversations', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ conversations: [] }) })
+		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ conversations: [] }) }),
 	)
 	await page.route('**/api/auth/csrf', (r) =>
-		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
-	)
-	// Friends list with pending request
-	await page.route('**/api/auth/friends', (r) =>
-		r.fulfill({
-			status: 200,
-			contentType: 'application/json',
-			body: JSON.stringify({ friends: [PENDING_FRIEND] }),
-		})
+		r.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
 	)
 
-	if (respondOverride) {
-		await respondOverride(page)
+	// PUT /friends/:id — enregistré avant le GET /friends pour ne pas être mangé par le glob large
+	if (putHandler) {
+		await putHandler(page, friendsState)
 	} else {
-		await page.route('**/api/auth/friends/42/accept', (r) =>
-			r.fulfill({
+		await page.route('**/api/auth/friends/42', async (route) => {
+			if (route.request().method() !== 'PUT') return route.fallback()
+			await route.fulfill({
 				status: 200,
 				contentType: 'application/json',
 				body: JSON.stringify({ friendship_id: 42, status: 'accepted' }),
 			})
-		)
+		})
 	}
+
+	await page.route('**/api/auth/friends', async (route) => {
+		if (route.request().method() !== 'GET') return route.fallback()
+		const u = new URL(route.request().url())
+		if (u.pathname !== '/api/auth/friends') return route.fallback()
+
+		const status = u.searchParams.get('status')
+		if (status === 'accepted') {
+			const acceptedOnly = friendsState.list.filter((f) => f.status === 'accepted')
+			await route.fulfill({
+				status: 200,
+				contentType: 'application/json',
+				body: JSON.stringify({ friends: acceptedOnly }),
+			})
+			return
+		}
+
+		await route.fulfill({
+			status: 200,
+			contentType: 'application/json',
+			body: JSON.stringify({ friends: friendsState.list }),
+		})
+	})
 
 	await page.goto('/dashboard')
 	await waitForDashboardReady(page)
 	await page.getByTestId('chat-open-button').click()
 
-	// Navigate to contacts/friends tab
 	await expect(page.getByTestId('chat-drawer')).toBeVisible()
+	await openChatContactsPending(page)
 }
 
 test('accept button is visible for a pending friend request', async ({ browser }) => {
 	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 		const { page } = SMOKE_USER
 		await setupPageWithPendingFriend(page)
-
-		// Open contacts view
-		const contactsTab = page.locator('.chat-tab-btn', { hasText: /contacts|amis/i })
-		if (await contactsTab.isVisible()) await contactsTab.click()
 
 		const acceptBtn = page.getByTestId('friend-accept-42')
 		await expect(acceptBtn).toBeVisible()
@@ -105,17 +120,21 @@ test('accept button shows loading state while API call is in-flight', async ({ b
 		const { page } = SMOKE_USER
 
 		let resolveAccept
-		const acceptPromise = new Promise((r) => { resolveAccept = r })
-
-		await setupPageWithPendingFriend(page, async (p) => {
-			await p.route('**/api/auth/friends/42/accept', async (route) => {
-				await acceptPromise
-				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ friendship_id: 42, status: 'accepted' }) })
-			})
+		const acceptPromise = new Promise((r) => {
+			resolveAccept = r
 		})
 
-		const contactsTab = page.locator('.chat-tab-btn', { hasText: /contacts|amis/i })
-		if (await contactsTab.isVisible()) await contactsTab.click()
+		await setupPageWithPendingFriend(page, async (p) => {
+			await p.route('**/api/auth/friends/42', async (route) => {
+				if (route.request().method() !== 'PUT') return route.fallback()
+				await acceptPromise
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({ friendship_id: 42, status: 'accepted' }),
+				})
+			})
+		})
 
 		const acceptBtn = page.getByTestId('friend-accept-42')
 		await acceptBtn.click()
@@ -131,24 +150,19 @@ test('accept button disappears after successful accept', async ({ browser }) => 
 	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 		const { page } = SMOKE_USER
 
-		let acceptedFriend = { ...PENDING_FRIEND, status: 'accepted' }
+		const acceptedFriend = { ...PENDING_FRIEND, status: 'accepted' }
 
-		await setupPageWithPendingFriend(page, async (p) => {
-			await p.route('**/api/auth/friends/42/accept', async (route) => {
-				// After accept, update friends list to return accepted status
-				await p.route('**/api/auth/friends', (r) =>
-					r.fulfill({
-						status: 200,
-						contentType: 'application/json',
-						body: JSON.stringify({ friends: [acceptedFriend] }),
-					})
-				)
-				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ friendship_id: 42, status: 'accepted' }) })
+		await setupPageWithPendingFriend(page, async (p, friendsState) => {
+			await p.route('**/api/auth/friends/42', async (route) => {
+				if (route.request().method() !== 'PUT') return route.fallback()
+				friendsState.list = [acceptedFriend]
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({ friendship_id: 42, status: 'accepted' }),
+				})
 			})
 		})
-
-		const contactsTab = page.locator('.chat-tab-btn', { hasText: /contacts|amis/i })
-		if (await contactsTab.isVisible()) await contactsTab.click()
 
 		const acceptBtn = page.getByTestId('friend-accept-42')
 		await acceptBtn.click()
@@ -160,13 +174,15 @@ test('accept button shows error message on API failure', async ({ browser }) => 
 	await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
 		const { page } = SMOKE_USER
 		await setupPageWithPendingFriend(page, async (p) => {
-			await p.route('**/api/auth/friends/42/accept', (r) =>
-				r.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'Server error' }) })
-			)
+			await p.route('**/api/auth/friends/42', async (route) => {
+				if (route.request().method() !== 'PUT') return route.fallback()
+				await route.fulfill({
+					status: 500,
+					contentType: 'application/json',
+					body: JSON.stringify({ error: 'Server error' }),
+				})
+			})
 		})
-
-		const contactsTab = page.locator('.chat-tab-btn', { hasText: /contacts|amis/i })
-		if (await contactsTab.isVisible()) await contactsTab.click()
 
 		await page.getByTestId('friend-accept-42').click()
 		await expect(page.locator('.chat-ca-error').first()).toBeVisible({ timeout: 3000 })

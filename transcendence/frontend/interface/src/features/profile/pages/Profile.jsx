@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { useFriendInvite } from '../../chat/index.js'
 import Logo42 from '../../../components/common/Logo/Logo42.jsx'
@@ -95,7 +94,6 @@ function FriendItem({ friend, onChallenge, challengeDisabled }) {
 }
 
 function Profile() {
-	const navigate = useNavigate()
 	const { openFriendInvite } = useFriendInvite()
 	const { user, loading, error, refetch, isDevMockAuth, logout, resolveUserOnline, hasOutgoingPendingInvite } = useAuth()
 	const [friends, setFriends] = useState([])
@@ -141,8 +139,7 @@ function Profile() {
 	}
 
 	const handleLogout = async () => {
-		await logout()
-		navigate('/auth', { replace: true })
+		await logout({ redirectTo: '/auth' })
 	}
 
 	const handleAvatarUpload = async (e) => {

@@ -4,17 +4,35 @@ import { cancelGameInviteHttp, respondGameInviteHttp } from '../services/chatApi
 import { useAuth } from '../../auth/index.js'
 
 /**
+ * Convertit une cadence canonique "minutes+incrément" (ex. "15+10", "1+0") en libellé lisible.
+ * Autres formats de `time_control` restent inchangés (affichage brut).
+ */
+function humanizeCanonicalTimeControl(tc) {
+	if (tc == null || tc === 'N/A' || typeof tc !== 'string') return null
+	const m = String(tc).trim().match(/^(\d+)\+(\d+)$/)
+	if (!m) return null
+	const mins = Number(m[1])
+	const increment = Number(m[2])
+	if (!Number.isFinite(mins) || !Number.isFinite(increment)) return null
+	const base = `${mins} min`
+	return increment > 0 ? `${base} +${increment}` : base
+}
+
+/**
  * Construit un libellé de cadence homogène à partir des champs disponibles.
  *
  * Priorité (du plus précis au moins précis) :
- *   1. `time_control`             — libellé canonique fourni par le serveur (ex. "3+2")
- *   2. `time_control_label`       — alias parfois présent côté `GameInvite.to_dict()`
- *   3. Calcul depuis `time_seconds` + `increment_seconds`
- *   4. Fallback si aucun champ disponible
+ *   1. `time_control` format M+I   — ex. "15+10" → "15 min +10"
+ *   2. `time_control` autre        — libellé serveur tel quel
+ *   3. `time_control_label`       — alias parfois présent côté `GameInvite.to_dict()`
+ *   4. Calcul depuis `time_seconds` + `increment_seconds`
+ *   5. Fallback si aucun champ disponible
  */
 function buildTimeLabel(data) {
+	const humanized = humanizeCanonicalTimeControl(data.time_control)
+	if (humanized) return humanized
 	if (data.time_control && data.time_control !== 'N/A') return data.time_control
-	if (data.time_control_label)                          return data.time_control_label
+	if (data.time_control_label) return data.time_control_label
 
 	const seconds   = Number(data.time_seconds   ?? data.time_control_seconds   ?? 0)
 	const increment = Number(data.increment      ?? data.increment_seconds      ?? 0)

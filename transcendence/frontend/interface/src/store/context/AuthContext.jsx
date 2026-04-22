@@ -87,6 +87,7 @@ export function AuthProvider({ children }) {
 
       const response = await fetch(AUTH_PATHS.me, {
         credentials: 'include',
+        cache: 'no-store',
       })
 
       if (response.ok) {
@@ -373,7 +374,16 @@ export function AuthProvider({ children }) {
     setTwoFactorChallenge(null)
   }
 
-  async function logout() {
+  /**
+   * @param {{ redirectTo?: string }} [options]
+   * Si `redirectTo` est défini (ex. `/auth`), navigation pleine page après nettoyage — plus fiable que
+   * `navigate()` seul quand la route protégée ou la sidebar mobile jouent des courses avec l’état auth.
+   */
+  async function logout(options = {}) {
+    const redirectTo =
+      typeof options?.redirectTo === 'string' && options.redirectTo.trim() !== ''
+        ? options.redirectTo.trim()
+        : null
     try {
       if (!isDevMockAuthEnabled()) {
         await ensureCsrfCookie()
@@ -399,6 +409,9 @@ export function AuthProvider({ children }) {
       setOutgoingPendingInvite(null)
       setPriorityGameReady(null)
       setInviteById({})
+    }
+    if (redirectTo && typeof window !== 'undefined') {
+      window.location.replace(redirectTo)
     }
   }
 

@@ -142,7 +142,8 @@ export default function ContactSearch({ onOpenConversation }) {
 	const loadContacts = useCallback(async () => {
 		try {
 			const data = await fetchFriends()
-			setContacts(data.friends || [])
+			const list = data.friends || []
+			setContacts(list)
 		} catch {
 			/* silencieux si hors ligne */
 		}
@@ -215,7 +216,12 @@ export default function ContactSearch({ onOpenConversation }) {
 				<button type="button" className={`chat-tab ${tab === 'friends' ? 'active' : ''}`} onClick={() => setTab('friends')}>
 					Amis ({accepted.length})
 				</button>
-				<button type="button" className={`chat-tab ${tab === 'pending' ? 'active' : ''}`} onClick={() => setTab('pending')}>
+				<button
+					type="button"
+					className={`chat-tab ${tab === 'pending' ? 'active' : ''}`}
+					data-testid="chat-tab-pending"
+					onClick={() => setTab('pending')}
+				>
 					En attente ({pending.length})
 				</button>
 				<button type="button" className={`chat-tab ${tab === 'blocked' ? 'active' : ''}`} onClick={() => setTab('blocked')}>

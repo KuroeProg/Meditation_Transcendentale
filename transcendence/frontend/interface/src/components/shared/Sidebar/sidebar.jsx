@@ -1,15 +1,13 @@
-import { Link, NavLink, useNavigate } from 'react-router-dom'
+import { Link, NavLink } from 'react-router-dom'
 import { useAuth } from '../../../features/auth/index.js'
 import SiteBrandLogo from '../../common/Logo/SiteBrandLogo.jsx'
 import { NAV_ITEMS } from '../../../config/navItems.js'
 
 function Sidebar() {
-	const navigate = useNavigate()
 	const { logout, isAuthenticated } = useAuth()
 
 	const handleLogout = async () => {
-		await logout()
-		navigate('/auth', { replace: true })
+		await logout({ redirectTo: '/auth' })
 	}
 
 	return (
@@ -45,6 +43,7 @@ function Sidebar() {
 						<button
 							type="button"
 							className="sidebar-btn sidebar-btn--logout"
+							data-testid="sidebar-logout-button"
 							onClick={handleLogout}
 							aria-label="Se déconnecter"
 						>

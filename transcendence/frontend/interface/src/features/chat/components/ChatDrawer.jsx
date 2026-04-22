@@ -60,6 +60,7 @@ export default function ChatDrawer({ isOpen, onClose, initialConversation = null
 							<button
 								className="chat-drawer-action-btn"
 								type="button"
+								data-testid="chat-drawer-contacts"
 								onClick={() => setView('contacts')}
 								title="Contacts"
 							>
