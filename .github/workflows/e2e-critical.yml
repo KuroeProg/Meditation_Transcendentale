@@ -52,6 +52,8 @@ jobs:
       - name: Install frontend E2E dependencies
         run: |
           cd transcendence/frontend/interface
+          sudo chown -R "$USER":"$USER" .
+          rm -rf node_modules
           npm ci
           npx playwright install --with-deps chromium
 
