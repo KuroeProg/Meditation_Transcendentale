@@ -1,89 +1,133 @@
 import { Link } from 'react-router-dom'
 import TeamMemberSection from '../components/TeamMemberSection.jsx'
+import PantheonConstellation from '../components/PantheonConstellation.jsx'
+import AboutAmbientParticles from '../components/AboutAmbientParticles.jsx'
 import '../styles/AboutPage.css'
 
+const GITHUB_PROJECT = 'https://github.com/KuroeProg/Meditation_Transcendentale'
+
+/** Cinq membres — rôles et périmètres alignés sur `Todo.md` (ft_transcendence). Les logins 42 sont à ajuster si besoin. */
 const TEAM = [
 	{
-		name: 'Membre 1',
-		role: 'Backend & infra',
-		bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer nec odio. Praesent libero. Sed cursus ante dapibus diam.',
+		displayName: 'Vyke',
+		login42: 'vbonnard',
+		role: 'Frontend — React, UI jeu, design system, WebSocket client',
+		roleEmoji: '🎨',
+		bio: 'Shell responsive, dashboard v2, auth & coalitions, chat côté interface, CSS découpé (layout, jeu, profil). Bonus audio (BGM accueil / partie, prefs), logo & favicon, accessibilité « réduire les animations » branchée sur le thème.',
 		coalitionSlug: 'feu',
+		statLine: 'Modules front revendiqués : jeu distant + UI, interaction users, customisation (quasi)',
+		quote: '« Si le plateau respire, le joueur reste. »',
+		githubUrl: GITHUB_PROJECT,
 		photoSrc: null,
 	},
 	{
-		name: 'Membre 2',
-		role: 'Frontend & UX',
-		bio: 'Sed nisi. Nulla quis sem at nibh elementum imperdiet. Duis sagittis ipsum. Praesent mauris. Fusce nec tellus sed augue semper porta.',
+		displayName: 'Alexie (Fey)',
+		login42: 'acoste',
+		role: 'Frontend — React, UI jeu, design system, WebSocket client',
+		roleEmoji: '💻',
+		bio: 'Même colonne front que Vyke sur le sujet : drawer chat & FAB, profil & amis, WebSockets côté client, polish UI/UX. Livraisons 2026-04 : chat Django + intégration React, refonte profil, navigation mobile (bottom nav).',
+		coalitionSlug: 'feu',
+		statLine: 'WebSockets (client) + interaction users : co-owner avec Vyke & Even',
+		quote: '« Le composant est prêt quand l’évaluateur ne voit pas la couture. »',
+		githubUrl: GITHUB_PROJECT,
+		photoSrc: null,
+	},
+	{
+		displayName: 'Even',
+		login42: 'ezeppa',
+		role: 'Backend — Django, APIs, auth, WebSockets serveur, jeu à distance',
+		roleEmoji: '🛡️',
+		bio: 'Cœur Django : OAuth 42, 2FA, friendships, app chat (REST + consumer ASGI), persistance, nginx & orchestration avec l’équipe. Remote players et sync temps réel côté serveur ; pairage avec le front pour profil, stats et matchmaking.',
 		coalitionSlug: 'eau',
+		statLine: 'ORM + jeu complet + remote : co-owner ; schéma DB / health : en cours avec l’équipe',
+		quote: '« Un endpoint clair vaut trois specs floues. »',
+		githubUrl: GITHUB_PROJECT,
 		photoSrc: null,
 	},
 	{
-		name: 'Membre 3',
-		role: 'Full-stack / jeu',
-		bio: 'Mauris massa. Vestibulum lacinia arcu eget nulla. Class aptent taciti sociosqu ad litora torquent per conubia nostra.',
-		coalitionSlug: 'terre',
+		displayName: 'Cloé',
+		login42: 'cfiachet',
+		role: 'Cybersécurité — WAF, Vault, durcissement, monitoring',
+		roleEmoji: '🔐',
+		bio: 'ModSecurity + HashiCorp Vault, TLS/nginx avec Even, accès logs & durcissement. Prometheus + Grafana (Major IV.7 — alerting à finaliser) ; ELK en cours avec Théo (Elasticsearch, rétention, accès).',
+		coalitionSlug: 'eau',
+		statLine: 'Major cyber (WAF + Vault) : en cours de démo complète',
+		quote: '« Les secrets ne voyagent pas en clair. »',
+		githubUrl: GITHUB_PROJECT,
 		photoSrc: null,
 	},
 	{
-		name: 'Membre 4',
-		role: 'Chat & social',
-		bio: 'Per inceptos himenaeos. Curabitur sodales ligula in libero. Sed dignissim lacinia nunc. Curabitur tortor.',
-		coalitionSlug: 'air',
+		displayName: 'Théo (Mileum)',
+		login42: 'tbahin',
+		role: 'Statistiques & data — IV.3 / IV.8, appui backend & DevOps',
+		roleEmoji: '📊',
+		bio: 'Stats & historique (page /statistics, Recharts, thème coalition, mocks alignés profil / fin de partie). Appui ORM, données, ELK avec Cloé. Feuille de suivi des points modules dans Todo.md.',
+		coalitionSlug: 'eau',
+		statLine: 'Stats perso + panneaux : front prêt ; persistance parties : en lien avec Even',
+		quote: '« Un graphique honnête vaut mieux qu’un KPI inventé. »',
+		githubUrl: GITHUB_PROJECT,
 		photoSrc: null,
 	},
 ]
 
-const TEAM_INTRO_LOREM =
-	'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ante ipsum primis in faucibus orci luctus et ultrices posuere cubilia curae; Donec velit neque, auctor sit amet aliquam vel, ullamcorper sit amet ligula. Cras ultricies ligula sed magna dictum porta. Mauris blandit aliquet elit, eget tincidunt nibh pulvinar a. Curabitur arcu erat, accumsan id imperdiet et, porttitor at sem. Vivamus magna justo, lacinia eget consectetur sed, convallis at tellus.'
+const PANTHEON_INTRO =
+	'Transcendance est une arène d’échecs en ligne pour le sujet ft_transcendence : cinq bâtisseurs — deux sur le front (Vyke, Fey), un back (Even), la cybersécurité (Cloé), les stats & data avec appui back (Mileum). Coalitions, OAuth, jeu distant, chat, monitoring : le détail des modules et des owners est suivi dans Todo.md. Fais défiler : les cartes flottent à des profondeurs différentes, et le cosmos réagit à ta souris et au scroll.'
 
 export default function AboutPage() {
 	const backHref = '/'
 
 	return (
-		<div className="about-page page-shell">
-			<div className="about-hero">
+		<div className="about-page page-shell about-page--pantheon">
+			<div className="about-page__cosmic-bg" aria-hidden="true">
+				<span className="about-page__orb about-page__orb--terre" />
+				<span className="about-page__orb about-page__orb--feu" />
+				<span className="about-page__orb about-page__orb--eau" />
+				<span className="about-page__orb about-page__orb--air" />
+				<span className="about-page__orb about-page__orb--core" />
+			</div>
+			<AboutAmbientParticles />
+
+			<header className="about-hero about-hero--pantheon">
 				<Link to={backHref} className="about-back">
 					<i className="ri-arrow-left-line" aria-hidden="true" />
 					Retour
 				</Link>
-				<h1 className="page-title">À propos de nous</h1>
-				<p className="about-intro">
-					Transcendance est un projet étudiant autour des échecs en ligne et des coalitions 42.
-					Fais défiler pour découvrir l’équipe — chaque section joue un léger effet de profondeur.
+				<p className="about-kicker">Le Panthéon des Bâtisseurs</p>
+				<h1 className="page-title about-page-title">Les architectes de l&apos;Arène</h1>
+				<p className="about-intro about-intro--runic">
+					Cinq architectes · front ×2 · back · cyber · data — même arène, même sujet : le fil conducteur est
+					dans Todo.md.
 				</p>
-			</div>
+			</header>
 
-			<section className="about-team-intro surface-card" aria-labelledby="about-team-heading">
-				<div className="about-team-intro-inner">
-					<div className="about-team-intro-visual">
-						<div
-							className="about-team-intro-photo-placeholder"
-							role="img"
-							aria-label="Photo de groupe de l’équipe (placeholder)"
-						>
-							<i className="ri-team-line" aria-hidden="true" />
-							<span className="about-team-intro-photo-caption">Photo d’équipe à venir</span>
-						</div>
-					</div>
-					<div className="about-team-intro-copy">
-						<h2 id="about-team-heading" className="about-team-intro-title">
-							L’équipe
-						</h2>
-						<p className="about-team-intro-text">{TEAM_INTRO_LOREM}</p>
-					</div>
+			<section className="about-pantheon-intro" aria-labelledby="about-pantheon-heading">
+				<div className="about-pantheon-intro__visual">
+					<PantheonConstellation />
+				</div>
+				<div className="about-pantheon-intro__copy">
+					<h2 id="about-pantheon-heading" className="about-pantheon-intro__title">
+						Constellation du projet
+					</h2>
+					<p className="about-pantheon-intro__text">{PANTHEON_INTRO}</p>
 				</div>
 			</section>
 
-			<div className="about-members">
-				{TEAM.map((m) => (
+			<div className="about-members about-members--pantheon">
+				{TEAM.map((m, i) => (
 					<TeamMemberSection
-						key={m.name}
-						name={m.name}
+						key={m.login42}
+						displayName={m.displayName}
+						login42={m.login42}
 						role={m.role}
+						roleEmoji={m.roleEmoji}
 						bio={m.bio}
 						coalitionSlug={m.coalitionSlug}
 						photoSrc={m.photoSrc}
-						photoAlt={m.name}
+						photoAlt={m.displayName}
+						statLine={m.statLine}
+						quote={m.quote}
+						githubUrl={m.githubUrl}
+						depthIndex={i}
 					/>
 				))}
 			</div>
