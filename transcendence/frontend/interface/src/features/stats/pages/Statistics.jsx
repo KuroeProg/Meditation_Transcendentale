@@ -478,6 +478,7 @@ export default function Statistics() {
 	const { user } = useAuth()
 	const { isConnected, lastMessage, sendMove } = useChessSocket('matchmaking')
 	const [esStats, setEsStats] = useState(null)
+	const [category, setCategory] = useState('rapid')
 
 	// On s'assure de récupérer le bon format d'ID (selon votre backend)
 	const userId = user?.id ?? user?.user_id ?? user?.pk ?? user?.sub ?? null
@@ -515,10 +516,11 @@ export default function Statistics() {
 		if (isConnected && userId != null) {
 			sendMove({
 				action: 'get_stats',
-				player_id: userId
+				player_id: userId,
+				category: category
 			})
 		}
-	}, [isConnected, userId, sendMove])
+	}, [isConnected, userId, category, sendMove])
 
 	useEffect(() => {
 		if (lastMessage?.action === 'player_stats') {
@@ -531,6 +533,29 @@ export default function Statistics() {
 	return (
 		<div className="pstats-page chess-grid-pattern" style={pageStyle} data-pstats-coalition={slug}>
 			<div className="pstats-left">
+				<div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', width: '100%', justifyContent: 'center' }}>
+					{['bullet', 'blitz', 'rapid'].map(cat => (
+						<button
+							key={cat}
+							onClick={() => setCategory(cat)}
+							style={{
+								padding: '0.4rem 1.2rem',
+								border: `1px solid ${category === cat ? theme.accent : 'rgba(255,255,255,0.1)'}`,
+								borderRadius: '6px',
+								background: category === cat ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
+								color: category === cat ? theme.accent : 'rgba(255,255,255,0.5)',
+								fontSize: '0.65rem',
+								fontWeight: 'bold',
+								textTransform: 'uppercase',
+								letterSpacing: '0.05em',
+								cursor: 'pointer',
+								transition: 'all 0.2s'
+							}}
+						>
+							{cat}
+						</button>
+					))}
+				</div>
 				<div className="pstats-winrates">
 					<WinrateGroup
 						title="Global Winrate — player vs. all players"
