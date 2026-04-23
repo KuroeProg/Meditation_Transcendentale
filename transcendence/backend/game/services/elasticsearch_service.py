@@ -43,6 +43,7 @@ def index_game_result(game_data):
             "duration_seconds": game_data.get('duration_seconds'),
             "time_control": game_data.get('time_control'),
             "increment": game_data.get('increment'),
+            "time_category": game_data.get('time_category', 'rapid'),
             "timestamp": game_data.get('start_timestamp'),
             "total_moves": len(game_data.get('moves', [])),
             "moves": game_data.get('moves', [])
@@ -56,7 +57,7 @@ def index_game_result(game_data):
         print(f"Erreur d'indexation Elasticsearch : {e}")
         return False
 
-def get_player_stats(player_id):
+def get_player_stats(player_id, category='rapid'):
     """
     Récupère les statistiques agrégées pour un joueur depuis Elasticsearch.
     C'est le côté 'Read' (Query) de notre architecture CQRS.
@@ -68,10 +69,14 @@ def get_player_stats(player_id):
             "mine": {
                 "filter": {
                     "bool": {
+                        "must": [
+                            {"term": {"time_category": category}}
+                        ],
                         "should": [
                             {"term": {"player_white_id": pid_str}},
                             {"term": {"player_black_id": pid_str}}
-                        ]
+                        ],
+                        "minimum_should_match": 1
                     }
                 },
                 "aggs": {
@@ -131,7 +136,7 @@ def get_player_stats(player_id):
                 }
             },
             "everyone": {
-                "filter": {"match_all": {}},
+                "filter": {"term": {"time_category": category}},
                 "aggs": {
                     "total_games": {"value_count": {"field": "timestamp"}},
                     "avg_speed": {"avg": {"field": "moves.time_taken_ms"}},
@@ -283,14 +288,14 @@ def get_player_stats(player_id):
             "all_players_piece_usage": all_piece_usage,
 
             # --- NOUVELLE MÉTRIQUE : Historique de performance ---
-            "performance_history": get_performance_history(player_id, global_avg_sec)
+            "performance_history": get_performance_history(player_id, global_avg_sec, category)
         }
     except Exception as e:
         print(f"Erreur de lecture Elasticsearch (Stats) : {e}")
         return {}
 
 
-def get_performance_history(player_id, global_avg_sec=5.0):
+def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
     """
     Renvoie deux listes : 
     1. move_speed_history : tous les coups individuels (pour la vitesse).
@@ -303,10 +308,14 @@ def get_performance_history(player_id, global_avg_sec=5.0):
         "size": 50, # On prend un échantillon plus large pour l'ELO et le Tilt
         "query": {
             "bool": {
+                "must": [
+                    {"term": {"time_category": category}}
+                ],
                 "should": [
                     {"term": {"player_white_id": pid_str}},
                     {"term": {"player_black_id": pid_str}}
-                ]
+                ],
+                "minimum_should_match": 1
             }
         },
         "sort": [{"timestamp": "asc"}] # Chronologique pour les calculs cumulatifs

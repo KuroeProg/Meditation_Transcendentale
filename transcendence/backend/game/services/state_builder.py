@@ -8,12 +8,15 @@ from game.services.player_profiles import (
 )
 
 
-def infer_time_category(time_control):
-	"""Infer chess cadence category from initial clock seconds."""
+def infer_time_category(time_control, increment=0):
+	"""Infer chess cadence category from initial clock and increment."""
 	seconds = int(time_control)
-	if seconds <= 120:
+	inc = int(increment)
+	estimated_time = seconds + 40 * inc
+	
+	if estimated_time < 180:
 		return 'bullet'
-	if seconds <= 300:
+	if estimated_time < 480:
 		return 'blitz'
 	if seconds >= 86400:
 		return 'correspondence'
@@ -29,7 +32,7 @@ async def build_new_game_state(white_id, black_id, time_control=600, increment=0
 	black_profile = await fetch_user_public_profile(black_id)
 	time_control = int(time_control)
 	increment = int(increment)
-	time_category = infer_time_category(time_control)
+	time_category = infer_time_category(time_control, increment)
 	is_competitive = bool(competitive)
 
 	return {
