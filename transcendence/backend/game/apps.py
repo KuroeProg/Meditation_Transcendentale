@@ -17,11 +17,12 @@ class ChessAppConfig(AppConfig):
         # Note: We put this in a try/except so if Elasticsearch is down, 
         # Django still boots up safely to serve other web pages.
         try:
-            es_password = os.environ.get('ELASTIC_PASSWORD', 'fallback_password')
+            from django.conf import settings
+            es_password = settings.ELASTIC_PASSWORD
 
             es = Elasticsearch(
                 "https://elasticsearch:9200", 
-                verify_certs=False,     
+                ca_certs="/etc/certs_elastic/elasticsearch.crt",
                 basic_auth=("elastic", es_password)
             )
             
@@ -43,4 +44,7 @@ class ChessAppConfig(AppConfig):
                 logger.info("BOOT UP: 'chess-games' index already exists. All good.")
                 
         except Exception as e:
-            logger.warning(f"BOOT UP: Could not connect to Elasticsearch. Analytics offline. Error: {e}")
+            if "resource_already_exists_exception" in str(e):
+                logger.info("BOOT UP: 'chess-games' index creation hit a race condition, but it exists safely. All good.")
+            else:
+                logger.warning(f"BOOT UP: Could not connect to Elasticsearch. Analytics offline. Error: {e}")

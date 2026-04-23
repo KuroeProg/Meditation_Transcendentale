@@ -35,6 +35,10 @@ def _env_list(name, default_values):
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# LOGS_DIR ensures we have a dedicated writable folder for local JSON ELK logs
+LOGS_DIR = os.path.join(BASE_DIR, 'logs')
+os.makedirs(LOGS_DIR, exist_ok=True)
+
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.0/howto/deployment/checklist/
@@ -154,6 +158,7 @@ redis_password = ''
 ft_client_id = ''
 ft_client_secret = ''
 email_password = ''
+elastic_password = ''
 
 if vault_token:
     try:
@@ -170,6 +175,7 @@ if vault_token:
         ft_client_id = secrets.get('ft_client', ft_client_id)
         ft_client_secret = secrets.get('ft_secret', ft_client_secret)
         email_password = secrets.get('email_pass', email_password)
+        elastic_password = secrets.get('elastic_pass', elastic_password)
         
         print("All the secrets are now in vault!")
     except Exception as e:
@@ -179,6 +185,7 @@ REDIS_PASSWORD = redis_password
 FORTYTWO_CLIENT_ID = ft_client_id
 FORTYTWO_CLIENT_SECRET = ft_client_secret
 EMAIL_HOST_PASSWORD = email_password
+ELASTIC_PASSWORD = elastic_password
 
 DATABASES = {
     'default': {
@@ -283,3 +290,46 @@ MEDIA_ROOT = BASE_DIR / 'media'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'json_formatter': {
+            '()': 'utils.json_logger.JsonFormatter',
+        },
+    },
+    'handlers': {
+        'app_file': {
+            'level': 'INFO', # Includes INFO, WARNING, ERROR, CRITICAL
+            'class': 'logging.handlers.RotatingFileHandler',
+            'filename': os.path.join(LOGS_DIR, 'application.log'),
+            'maxBytes': 1024 * 1024 * 50, # 50 MB
+            'backupCount': 3,
+            'formatter': 'json_formatter',
+        },
+        'console': {
+            'level': 'INFO',
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        # Core Django Logger (Requests, SQL, Errors)
+        'django': {
+            'handlers': ['app_file', 'console'],
+            'level': 'INFO',  # Restored INFO and console so the developer terminal is not empty
+            'propagate': True,
+        },
+        # Dedicated Application Loggers
+        'transcendence': {
+            'handlers': ['app_file', 'console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'frontend': {
+            'handlers': ['app_file'],
+            'level': 'INFO',
+            'propagate': False,
+        }
+    },
+}

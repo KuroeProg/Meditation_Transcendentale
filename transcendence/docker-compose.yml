@@ -119,6 +119,8 @@ services:
       - ./backend:/app
       - shared_assets:/app/shared_plots:ro
       - ./nginx/certs:/app/certs:ro
+      - ./elasticsearch/certs/elasticsearch.crt:/etc/certs_elastic/elasticsearch.crt:ro
+      - ./logs/app:/app/logs
     environment:
       - DB_NAME=${POSTGRES_DB}
       - DB_USER=${POSTGRES_USER}
@@ -258,6 +260,7 @@ services:
       # Dossier template pour ne pas effacer notre fichier de config
       - ./nginx/conf.d/default.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+      - ./elasticsearch/certs/elasticsearch.crt:/etc/nginx/certs_elastic/elasticsearch.crt:ro
       # .htpasswd pour prometheus
       - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
       - ./nginx/modsec/api-rules.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSIONS.conf:ro
@@ -394,8 +397,9 @@ services:
     container_name: logstash
     env_file: .env
     volumes:
-      - ./certs:/usr/share/logstash/config/certs
+      - ./elasticsearch/certs/elasticsearch.crt:/usr/share/logstash/config/certs/elasticsearch.crt:ro
       - ./logs/nginx:/var/log/nginx:ro
+      - ./logs/app:/var/log/app:ro
     environment:
       - MONITORING_ENABLED=false
       - XPACK_MONITORING_ENABLED=false

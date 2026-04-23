@@ -1,14 +1,14 @@
 import os
 import re
 import math
+import json
 from elasticsearch import Elasticsearch
-
-ES_PASSWORD = os.getenv('ELASTIC_PASSWORD', 'pwElastic')
+from django.conf import settings
 
 es = Elasticsearch(
     "https://elasticsearch:9200",
-    basic_auth=("elastic", ES_PASSWORD),
-    verify_certs=False
+    ca_certs="/etc/certs_elastic/elasticsearch.crt",
+    basic_auth=("elastic", settings.ELASTIC_PASSWORD),
 )
 
 def index_game_result(game_data):
