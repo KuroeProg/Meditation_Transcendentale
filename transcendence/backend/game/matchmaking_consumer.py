@@ -4,6 +4,7 @@ Handles queue join/leave and broadcasts match_found events.
 Delegates queue management to services.
 """
 import json
+import logging
 from asgiref.sync import sync_to_async
 from game.services.elasticsearch_service import get_player_stats
 import redis.asyncio as redis
@@ -30,6 +31,7 @@ from game.services.payloads import build_ws_matchmaking_payload
 
 ERROR_PLAYER_ID_REQUIRED = {'error': 'Player ID required'}
 
+logger = logging.getLogger('transcendence')
 
 class MatchmakingConsumer(AsyncWebsocketConsumer):
 	"""Pure matchmaking logic WebSocket consumer: pairing players from queue.
@@ -126,6 +128,17 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			self.matchmaking_player_id = player_id
 			redis_client = self.get_redis()
 
+			logger.info(
+				"Player started matchmaking",
+				extra={
+					"user_id": player_id,
+					"action": "start_matchmaking",
+					"time_control": self.time_control,
+					"increment": self.increment,
+					"competitive": self.competitive
+				}
+			)
+
 			await queue_player_for_matchmaking(
 				redis_client,
 				self.channel_layer,
@@ -144,6 +157,11 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 		player_id = normalize_player_id(data.get('player_id')) or self.matchmaking_player_id
 		if player_id is None:
 			return
+
+		logger.info(
+			"Player cancelled matchmaking",
+			extra={"user_id": player_id, "action": "cancel_matchmaking"}
+		)
 
 		if self.queue_key:
 			redis_client = self.get_redis()

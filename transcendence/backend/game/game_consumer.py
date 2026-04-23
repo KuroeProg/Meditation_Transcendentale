@@ -4,6 +4,7 @@ Handles moves, timeouts, resignations, draw flow, and reconnection.
 Delegates game rules to services; owns I/O (Redis, WebSocket).
 """
 import json
+import logging
 import asyncio
 import contextlib
 import chess
@@ -38,6 +39,9 @@ from game.services.reconnect import synchronize_reconnecting_player
 from game.services.errors import json_invalid, action_unknown
 
 from game.services.save_game import async_save_full_game
+
+
+logger = logging.getLogger('transcendence')
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -260,6 +264,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
 		await self._sync_clock_task(new_game_state)
+
+		logger.info(
+			"Players started a game",
+			extra={
+				"action": "game_started",
+				"game_id": self.game_id,
+				"player_white_id": white_id,
+				"player_black_id": black_id,
+				"time_control": time_control,
+				"increment": increment,
+				"competitive": competitive
+			}
+		)
+
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
@@ -291,6 +309,18 @@ class GameConsumer(AsyncWebsocketConsumer):
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
 				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+
+			logger.info(
+				"Game finished",
+				extra={
+					"action": "game_finished",
+					"game_id": self.game_id,
+					"termination_reason": "timeout",
+					"winner_id": winner_id,
+					"player_white_id": game_state['white_player_id'],
+					"player_black_id": game_state['black_player_id']
+				}
+			)
 			#end game
 			return
 
@@ -327,20 +357,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
-##########################
-		
-	#	if game_state.get('status') not in (None, 'active'):
-
-	#		final_game_data = {
-	#			'player_white_id': game_state['white_player_id'],
-	#			'player_black_id': game_state['black_player_id'],
-	#			'winner_id': game_state.get('winner_player_id'),
-	#			'start_timestamp': game_state['start_timestamp'],
-	#			'time_control': game_state.get('time_control', 0),
-	#			'increment': game_state.get('increment', 0),
-	#			'duration_seconds': int(time.time() - game_state.get('start_timestamp', time.time())),
-	#			'moves': game_state.get('moves', [])
-		#	}
 
 		updated_board = chess.Board(game_state['fen'])
 		if updated_board.is_game_over():
@@ -360,9 +376,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
 				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-			#end game
+
+			logger.info(
+				"Game finished",
+				extra={
+					"action": "game_finished",
+					"game_id": self.game_id,
+					"termination_reason": "checkmate_or_draw",
+					"winner_id": winner_id,
+					"player_white_id": game_state['white_player_id'],
+					"player_black_id": game_state['black_player_id']
+				}
+			)
 			return
-##########################
+
 	async def handle_resign(self, game_state_json, data):
 		"""Process player resignation and end game."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
@@ -376,7 +403,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
-##########################
+
 		winner_id = game_state.get('winner_player_id')
 
 		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
@@ -387,8 +414,19 @@ class GameConsumer(AsyncWebsocketConsumer):
 			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 		else:
 			print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-		#end game
-##########################
+
+		logger.info(
+			"Game finished",
+			extra={
+				"action": "game_finished",
+				"game_id": self.game_id,
+				"termination_reason": "resign",
+				"winner_id": winner_id,
+				"player_white_id": game_state['white_player_id'],
+				"player_black_id": game_state['black_player_id']
+			}
+		)
+
 	async def handle_draw_offer(self, game_state_json, data):
 		"""Process draw offer from a player."""
 		game_state = await self._load_game_state_or_send_error(game_state_json)
@@ -421,7 +459,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
-##########################
+
 		if game_state.get('status') == 'draw':
 			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
 			success = await async_save_full_game(final_game_data)
@@ -430,8 +468,19 @@ class GameConsumer(AsyncWebsocketConsumer):
 				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
 			else:
 				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-			#end game
-##########################
+
+			logger.info(
+				"Game finished",
+				extra={
+					"action": "game_finished",
+					"game_id": self.game_id,
+					"termination_reason": "draw_agreement",
+					"winner_id": None,
+					"player_white_id": game_state['white_player_id'],
+					"player_black_id": game_state['black_player_id']
+				}
+			)
+
 	async def handle_reconnect(self, game_state_json):
 		"""Re-sync reconnecting player with current game state."""
 		game_state, _ = await synchronize_reconnecting_player(self.get_redis(), self.game_id, game_state_json)
