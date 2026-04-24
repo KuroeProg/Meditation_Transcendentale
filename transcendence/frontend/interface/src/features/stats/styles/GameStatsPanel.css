@@ -1831,6 +1831,7 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	border-radius: 12px;
 	font-size: 0.75rem;
 	line-height: 1.45;
+	color: rgba(255, 255, 255, 0.95);
 	word-break: break-word;
 }
 

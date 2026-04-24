@@ -130,12 +130,14 @@ export function InGameChat({
 
 	// Normalise message format (API vs WS shape)
 	const normalizedMessages = messages.map((m) => {
-		if (m.sender !== undefined) return m // already WS format
-		const isMe = m.sender_id === userId || m.sender?.id === userId
+		const senderId = typeof m.sender === 'object' ? m.sender?.id : m.sender_id
+		const isMe =
+			m.sender === 'me' ||
+			(senderId != null && userId != null && String(senderId) === String(userId))
 		return {
 			id: m.id,
 			sender: isMe ? 'me' : 'opponent',
-			text: m.content ?? m.text ?? '',
+			text: m.text ?? m.content ?? '',
 			timestamp: toTimestamp(m.created_at ?? m.timestamp),
 		}
 	})

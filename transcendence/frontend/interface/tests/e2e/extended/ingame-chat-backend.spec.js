@@ -136,6 +136,11 @@ test.describe('chat ingame — intégration backend', () => {
 				}),
 			})
 		})
+		const messageRow = page.locator('.igc-msg', { hasText: 'Bien joué cavalier !' })
+		const messageText = messageRow.locator('.igc-msg-text')
+
 		await expect(page.getByTestId('ingame-chat-messages')).toContainText('Bien joué cavalier !', { timeout: 3000 })
+		await expect(messageRow).toHaveClass(/igc-msg--opponent/)
+		await expect(messageText).toHaveCSS('color', 'rgba(255, 255, 255, 0.95)')
 	})
 })
