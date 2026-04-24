@@ -131,7 +131,7 @@ def _duration_display(game: Game) -> str:
 
 def _game_to_list_item(game: Game, user: LocalUser) -> dict:
     opponent = _opponent_of(game, user)
-    _, _, elo_attr = _clock_format_meta(game, user)
+    fmt_val, _, elo_attr = _clock_format_meta(game, user)
     is_white = game.player_white_id == user.id
     elo_change = game.elo_delta_white if is_white else game.elo_delta_black
     player_elo = getattr(user, elo_attr, 1500)
