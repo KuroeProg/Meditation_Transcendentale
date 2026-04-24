@@ -1,6 +1,22 @@
 /* Plateau, pièces, popups fin de partie, fond aurore — importé depuis index.css */
 /* Game.jsx */
 
+/* ── Bannière spectateur ── */
+.spectator-banner {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.45rem 1rem;
+	background: rgba(255, 165, 0, 0.12);
+	border: 1px solid rgba(255, 165, 0, 0.35);
+	border-radius: 0.5rem;
+	color: #f5a623;
+	font-size: 0.82rem;
+	font-weight: 500;
+	margin-bottom: 0.5rem;
+	letter-spacing: 0.01em;
+}
+
 html, body, #root {
 	margin: 0;
 	padding: 0;
@@ -12,7 +28,10 @@ html, body, #root {
 @media (min-width: 771px) {
 	html:has(.game-container),
 	body:has(.game-container),
-	#root:has(.game-container) {
+	#root:has(.game-container),
+	html:has(.gr-review),
+	body:has(.gr-review),
+	#root:has(.gr-review) {
 		overflow: hidden;
 		height: 100%;
 	}
@@ -23,6 +42,26 @@ html, body, #root {
 	html:has(.game-container),
 	body:has(.game-container),
 	#root:has(.game-container) {
+		overflow-x: hidden;
+		overflow-y: auto;
+		height: auto;
+		min-height: 100%;
+	}
+
+	/* Relecture : on garde un seul écran sans scroll (layout interne gère le surplus) */
+	html:has(.gr-review),
+	body:has(.gr-review),
+	#root:has(.gr-review) {
+		overflow: hidden;
+		height: 100%;
+	}
+}
+
+/* Relecture mobile / tablette étroite : scroll page autorisé */
+@media (max-width: 900px) {
+	html:has(.gr-review),
+	body:has(.gr-review),
+	#root:has(.gr-review) {
 		overflow-x: hidden;
 		overflow-y: auto;
 		height: auto;

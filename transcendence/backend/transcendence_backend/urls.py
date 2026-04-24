@@ -21,6 +21,7 @@ urlpatterns = [
     *with_optional_trailing_slash('api/auth/42/callback', views.Callback42View.as_view(), name='callback_42'),
     path('api/auth/', include('accounts.urls')),
     path('api/chat/', include('chat.urls')),
+    path('api/game/', include('game.urls')),
     path('api/logs/client/', client_log_view, name='client_log'),
     path('', include('django_prometheus.urls')),
 ]

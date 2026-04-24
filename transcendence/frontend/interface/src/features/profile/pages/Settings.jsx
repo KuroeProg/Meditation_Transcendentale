@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import {
@@ -10,25 +10,73 @@ import {
 import { GAME_AUDIO_PREFS_KEY } from '../../../config/gameAudioPrefs.js'
 import { GameAudioPrefsForm } from '../../audio/components/AudioPrefsForm.jsx'
 
+async function fetchServerPrefs() {
+	const res = await fetch('/api/auth/me/client-settings', { credentials: 'include' })
+	if (!res.ok) return null
+	const data = await res.json()
+	return data.prefs || {}
+}
+
+async function patchServerPrefs(delta) {
+	await fetch('/api/auth/me/client-settings', {
+		method: 'PATCH',
+		credentials: 'include',
+		headers: { 'Content-Type': 'application/json' },
+		body: JSON.stringify(delta),
+	})
+}
+
 function Settings() {
 	const { user, loading, loginWith42, logout } = useAuth()
-	const [prefs, setPrefs] = useState(loadUiPrefs)
+	const [prefs, setPrefsRaw] = useState(loadUiPrefs)
 	const [resetDone, setResetDone] = useState(false)
 	const [eraseDone, setEraseDone] = useState(false)
 	const [confirmErase, setConfirmErase] = useState(false)
+	const syncDebounce = useRef(null)
+
+	// On mount: merge server prefs into local (server wins for keys it has)
+	useEffect(() => {
+		if (!user) return
+		fetchServerPrefs().then((serverPrefs) => {
+			if (!serverPrefs || !Object.keys(serverPrefs).length) return
+			setPrefsRaw((local) => {
+				const merged = { ...local, ...serverPrefs }
+				localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(merged))
+				applyDocumentUiPrefs()
+				notifyPrefsChanged()
+				return merged
+			})
+		}).catch(() => {})
+	// eslint-disable-next-line react-hooks/exhaustive-deps
+	}, [user?.id])
+
+	const setPrefs = useCallback((updater) => {
+		setPrefsRaw((prev) => {
+			const next = typeof updater === 'function' ? updater(prev) : updater
+			localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(next))
+			applyDocumentUiPrefs()
+			notifyPrefsChanged()
+			// Debounced server sync
+			if (syncDebounce.current) clearTimeout(syncDebounce.current)
+			syncDebounce.current = setTimeout(() => {
+				if (user) patchServerPrefs(next).catch(() => {})
+			}, 800)
+			return next
+		})
+	}, [user])
 
 	useEffect(() => {
-		localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs))
-		applyDocumentUiPrefs()
-		notifyPrefsChanged()
-	}, [prefs])
+		return () => { if (syncDebounce.current) clearTimeout(syncDebounce.current) }
+	}, [])
 
 	function handleResetPrefs() {
 		localStorage.removeItem(PREFS_STORAGE_KEY)
 		localStorage.removeItem(GAME_AUDIO_PREFS_KEY)
+		const defaults = loadUiPrefs()
 		applyDocumentUiPrefs()
 		notifyPrefsChanged()
-		setPrefs(loadUiPrefs())
+		setPrefsRaw(defaults)
+		if (user) patchServerPrefs(defaults).catch(() => {})
 		setResetDone(true)
 		setTimeout(() => setResetDone(false), 2500)
 	}
@@ -40,9 +88,11 @@ function Settings() {
 		}
 		const keysToRemove = [PREFS_STORAGE_KEY, GAME_AUDIO_PREFS_KEY]
 		keysToRemove.forEach((k) => localStorage.removeItem(k))
+		const defaults = loadUiPrefs()
 		applyDocumentUiPrefs()
 		notifyPrefsChanged()
-		setPrefs(loadUiPrefs())
+		setPrefsRaw(defaults)
+		if (user) patchServerPrefs(defaults).catch(() => {})
 		setConfirmErase(false)
 		setEraseDone(true)
 		setTimeout(() => setEraseDone(false), 2500)

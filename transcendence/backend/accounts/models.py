@@ -23,6 +23,7 @@ class LocalUser(models.Model):
     games_won = models.IntegerField(default=0)
     is_2fa_enabled = models.BooleanField(default=True)
     is_2fa_verified = models.BooleanField(default=True)
+    client_prefs = models.JSONField(null=True, blank=True, default=None, help_text='Persistent UI/audio preferences.')
 
     class Meta:
         db_table = 'local_users'

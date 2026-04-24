@@ -109,4 +109,43 @@ test.describe('page Paramètres — préférences UI et audio', () => {
 		await expect(page.getByTestId('settings-bgm-track-fixed')).toBeChecked()
 		await expect(select).toHaveValue('Main Title.m4a')
 	})
+
+	test('cocher un toggle envoie un PATCH à l\'API serveur', async ({ page }) => {
+		let patchBody = null
+		await page.route('**/api/auth/me/client-settings', async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ prefs: {} }) })
+				return
+			}
+			if (route.request().method() === 'PATCH') {
+				patchBody = route.request().postDataJSON()
+				await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ prefs: patchBody }) })
+				return
+			}
+			await route.continue()
+		})
+		await page.goto('/settings')
+		await page.getByTestId('settings-reduce-motion').check()
+		// Debounce is 800ms — wait for it to fire
+		await page.waitForTimeout(1200)
+		expect(patchBody).toBeTruthy()
+		expect(patchBody.reduceMotion).toBe(true)
+	})
+
+	test('les préférences serveur sont fusionnées au chargement (serveur gagne)', async ({ page }) => {
+		await page.route('**/api/auth/me/client-settings', async (route) => {
+			if (route.request().method() === 'GET') {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({ prefs: { lightMode: true } }),
+				})
+				return
+			}
+			await route.continue()
+		})
+		await page.goto('/settings')
+		// Server sent lightMode:true → checkbox should be checked
+		await expect(page.getByTestId('settings-light-mode')).toBeChecked({ timeout: 3000 })
+	})
 })

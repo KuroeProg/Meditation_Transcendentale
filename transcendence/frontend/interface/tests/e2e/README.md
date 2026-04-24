@@ -105,6 +105,27 @@ Current stable selectors:
 - Friend requests:
   - friend-accept-${friendshipId} (dynamic)
 
+- Spectator mode:
+  - spectator-banner (game page, when WS delivers spectator:true)
+  - friend-watch-${userId} (FriendsView card per accepted friend with active_game_id)
+- Contact removal:
+  - friend-remove-${friendshipId} (ContactSearch, accepted contacts only)
+- Game review / replay (/game/review/:pk):
+  - review-page
+  - review-board
+  - review-controls
+  - review-player-top
+  - review-player-bottom
+  - review-btn-first
+  - review-btn-prev
+  - review-btn-play
+  - review-btn-next
+  - review-btn-last
+  - review-progress
+- In-game chat (live):
+  - ingame-chat-status-offline (connecting state)
+  - ingame-chat-status-live (connected state)
+
 Notes:
 - Some tests still rely on non-testid selectors for legacy areas (example: auth form ids, typing indicator classes).
 - When touching these areas, prefer adding a stable `data-testid` and update this file.

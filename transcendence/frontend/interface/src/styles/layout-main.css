@@ -77,6 +77,37 @@ body:has(.auth-page),
 	box-sizing: border-box;
 }
 
+/* Relecture partie : même logique que l’écran jeu — padding bas = footer */
+.main-content:has(.gr-review) {
+	max-width: none;
+	width: auto;
+	padding: 0.35rem 0.75rem calc(0.25rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem)) 1rem;
+	box-sizing: border-box;
+	min-height: 0;
+}
+
+@media (min-width: 901px) {
+	.main-content:has(.gr-review) {
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+		max-height: 100dvh;
+		flex: 1 1 auto;
+		min-height: 0;
+		align-self: stretch;
+	}
+}
+
+@media (max-width: 900px) {
+	.main-content:has(.gr-review) {
+		padding: 0.75rem 1rem calc(1.5rem + var(--site-footer-reserve));
+		height: auto;
+		min-height: auto;
+		max-height: none;
+		overflow: visible;
+	}
+}
+
 @media (max-width: 770px) {
 	/* Gouttière serrée : moins d’inset = bords/angles de la page visibles (le hack 100vw
 	   sur la seule table créait un décalage bord / viewport) */

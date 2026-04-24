@@ -1,6 +1,7 @@
 """Game WebSocket consumer: pure chess game logic and real-time synchronization.
 
 Handles moves, timeouts, resignations, draw flow, and reconnection.
+Also supports spectator connections (friends of players, read-only).
 Delegates game rules to services; owns I/O (Redis, WebSocket).
 """
 import json
@@ -43,14 +44,24 @@ from game.services.save_game import async_save_full_game
 
 logger = logging.getLogger('transcendence')
 
+ACTIVE_GAME_KEY_PREFIX = 'active_game:'
+ACTIVE_GAME_TTL = 7200  # 2 h safety TTL
+
 
 class GameConsumer(AsyncWebsocketConsumer):
 	"""Pure game logic WebSocket consumer: orchestrates moves, timeouts, draw flow.
-	
+
+	Roles:
+	- 'player'    — one of the two authenticated players; can act.
+	- 'spectator' — accepted friend of a player; read-only.
+	- 'training'  — anonymous/local training game; no restrictions.
+
 	Separated from matchmaking consumer for clean domain boundary.
 	Delegates business logic to services; owns I/O (Redis, WebSocket).
 	"""
 	_redis = None
+
+	# Aliases for action names sent by clients
 	ACTION_ALIASES = {
 		'play': 'play_move',
 		'move': 'play_move',
@@ -64,6 +75,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 		'refuse_draw': 'draw_response',
 	}
 
+	# Actions only players may send
+	PLAYER_ONLY_ACTIONS = {'play_move', 'resign', 'draw_offer', 'draw_response', 'create_game', 'reset_game'}
+
 	@classmethod
 	def get_redis(cls):
 		"""Get or initialize Redis async client."""
@@ -72,31 +86,83 @@ class GameConsumer(AsyncWebsocketConsumer):
 			cls._redis = redis.from_url(url)
 		return cls._redis
 
+	# ─── lifecycle ──────────────────────────────────────────────────────────────
+
 	async def connect(self):
-		"""Setup: join group, accept, send prior state if reconnecting, start clock."""
+		"""Setup: authenticate user, determine role, join group, sync state."""
 		self.game_id = self.scope['url_route']['kwargs'].get('game_id', 'default_room')
 		if self.game_id == 'matchmaking':
 			await self.close()
 			return
 
+		self.is_training = self.game_id == 'training'
 		self.room_group_name = f'chess_{self.game_id}'
 		self.clock_task = None
+
+		# Read session-based user id (custom auth, not Django's built-in)
+		session = self.scope.get('session', {})
+		raw_uid = session.get('local_user_id') if session else None
+		self.auth_user_id = str(raw_uid) if raw_uid is not None else None
+
+		# Default role; updated below once game state is known
+		self.role = 'training' if self.is_training else None
 
 		await self.channel_layer.group_add(self.room_group_name, self.channel_name)
 		await self.accept()
 
-		# Reconnecting client: sync state immediately
+		# Reconnecting client: sync state and determine role
 		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = None
 		if game_state_json is not None:
 			game_state = json.loads(game_state_json)
+			if not self.is_training:
+				self.role = await self._resolve_role(game_state)
+				if self.role is None:
+					# Not a player nor an accepted friend — deny
+					await self.send(text_data=json.dumps({'error': 'Accès refusé à cette partie'}))
+					await self.close(code=4403)
+					return
+			if self.role == 'player':
+				await _set_active_game(self.auth_user_id, self.game_id)
 			await self.handle_reconnect(game_state_json)
+		elif not self.is_training and self.auth_user_id is None:
+			# No game state yet and unauthenticated on a real game → reject
+			await self.send(text_data=json.dumps({'error': 'Authentification requise'}))
+			await self.close(code=4401)
+			return
 
 		await self._sync_clock_task(game_state)
 
 	async def disconnect(self, close_code):
-		await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+		if hasattr(self, 'room_group_name'):
+			await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 		await self._stop_clock_task()
+		# Clear active presence when a player disconnects
+		if getattr(self, 'role', None) == 'player' and getattr(self, 'auth_user_id', None):
+			await _clear_active_game(self.auth_user_id, self.game_id)
+
+	# ─── role resolution ────────────────────────────────────────────────────────
+
+	async def _resolve_role(self, game_state):
+		"""Return 'player', 'spectator', or None based on user identity and game state."""
+		if self.auth_user_id is None:
+			return None
+		white_id = str(game_state.get('white_player_id', ''))
+		black_id = str(game_state.get('black_player_id', ''))
+		if self.auth_user_id in (white_id, black_id):
+			return 'player'
+		# Check if accepted friend of one of the players
+		player_ids = []
+		for pid in (white_id, black_id):
+			try:
+				player_ids.append(int(pid))
+			except (ValueError, TypeError):
+				pass
+		if player_ids and await _is_accepted_friend_of_any(self.auth_user_id, player_ids):
+			return 'spectator'
+		return None
+
+	# ─── clock helpers ──────────────────────────────────────────────────────────
 
 	async def _stop_clock_task(self):
 		"""Stop background clock task if it is currently running."""
@@ -114,31 +180,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 		elif not should_run:
 			await self._stop_clock_task()
 
-	async def _broadcast_current_game_state(self, game_state):
-		"""Broadcast game state to all connected clients in the game group."""
-		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
-
-	async def _close_invite_joinability(self, reason='game_finished'):
-		closed_invites = await _close_invite_joinability_for_game(self.game_id, reason)
-		for invite in closed_invites:
-			payload = {
-				'action': 'invite_updated',
-				'invite': invite,
-			}
-			await self.channel_layer.group_send(
-				f"user_{int(invite['sender_id'])}",
-				{
-					'type': 'notification',
-					'data': payload,
-				},
-			)
-			await self.channel_layer.group_send(
-				f"user_{int(invite['receiver_id'])}",
-				{
-					'type': 'notification',
-					'data': payload,
-				},
-			)
+	async def _clock_loop(self):
+		"""Tick clock every second: apply time decay, detect timeout, broadcast state."""
+		while True:
+			await asyncio.sleep(1)
+			await self._tick_game_clock()
 
 	async def _tick_game_clock(self):
 		"""Apply one second of time decay and detect timeouts."""
@@ -151,17 +197,90 @@ class GameConsumer(AsyncWebsocketConsumer):
 			build_group_game_state_event,
 		)
 
-	async def _clock_loop(self):
-		"""Tick clock every second: apply time decay, detect timeout, broadcast state."""
-		while True:
-			await asyncio.sleep(1)
-			await self._tick_game_clock()
+	# ─── broadcast helpers ──────────────────────────────────────────────────────
+
+	async def _broadcast_current_game_state(self, game_state):
+		"""Broadcast game state to all connected clients in the game group."""
+		await self.channel_layer.group_send(self.room_group_name, build_group_game_state_event(game_state))
+
+	async def _close_invite_joinability(self, reason='game_finished'):
+		closed_invites = await _close_invite_joinability_for_game(self.game_id, reason)
+		for invite in closed_invites:
+			payload = {'action': 'invite_updated', 'invite': invite}
+			for key in ('sender_id', 'receiver_id'):
+				uid = invite.get(key)
+				if uid:
+					await self.channel_layer.group_send(
+						f"user_{int(uid)}",
+						{'type': 'notification', 'data': payload},
+					)
+
+	# ─── receive / routing ──────────────────────────────────────────────────────
 
 	def _normalize_action(self, data):
 		"""Map raw action name to canonical handler name using aliases."""
 		raw_action = data.get('action', data.get('type'))
 		action = str(raw_action).lower() if raw_action is not None else None
 		return self.ACTION_ALIASES.get(action, action)
+
+	async def receive(self, text_data):
+		try:
+			data = json.loads(text_data)
+		except json.JSONDecodeError:
+			await self.send(text_data=json.dumps(json_invalid()))
+			return
+
+		action = self._normalize_action(data)
+		if action is None:
+			await self.send(text_data=json.dumps(action_unknown()))
+			return
+
+		# Spectators may only observe — reject any mutating action
+		if getattr(self, 'role', None) == 'spectator' and action in self.PLAYER_ONLY_ACTIONS:
+			await self.send(text_data=json.dumps({'error': 'Les spectateurs ne peuvent pas agir'}))
+			return
+
+		# Anti-spoof: override player_id with the authenticated user's id
+		if getattr(self, 'auth_user_id', None) and action in self.PLAYER_ONLY_ACTIONS:
+			data = dict(data)
+			data['player_id'] = self.auth_user_id
+
+		game_state_json = await self.get_redis().get(self.game_id)
+		await self._handle_action_with_game_state(action, data, game_state_json)
+
+	async def _handle_action_with_game_state(self, action, data, game_state_json):
+		"""Route action to appropriate handler based on action type."""
+		if action == 'create_game':
+			await self.handle_create_game(data)
+			return
+
+		if action == 'reset_game':
+			await self.get_redis().delete(self.game_id)
+			await self.handle_create_game(data)
+			return
+
+		game_action_handlers = {
+			'play_move': self.handle_play_move,
+			'resign': self.handle_resign,
+			'draw_offer': self.handle_draw_offer,
+			'draw_response': self.handle_draw_response,
+			'reconnect': self.handle_reconnect,
+		}
+
+		handler = game_action_handlers.get(action)
+		if handler is None:
+			await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
+			return
+
+		if action == 'reconnect' and game_state_json is None:
+			return
+		if action == 'reconnect':
+			await handler(game_state_json)
+			return
+
+		await handler(game_state_json, data)
+
+	# ─── helpers ────────────────────────────────────────────────────────────────
 
 	async def _load_game_state_or_send_error(self, game_state_json):
 		"""Parse game state JSON or send error if not found."""
@@ -196,75 +315,50 @@ class GameConsumer(AsyncWebsocketConsumer):
 			'moves': game_state.get('moves', []),
 		}
 
-	async def _handle_action_with_game_state(self, action, data, game_state_json):
-		"""Route action to appropriate handler based on action type."""
-		# Game creation: no prior state needed
-		if action == 'create_game':
-			await self.handle_create_game(data)
-			return
+	async def _finish_game(self, game_state, winner_id, termination_reason):
+		"""Persist, broadcast, clear presence and invites for a finished game."""
+		final_game_data = self._build_final_game_data(game_state, winner_id, termination_reason)
+		success = await async_save_full_game(final_game_data)
+		await self._close_invite_joinability('game_finished')
+		# Clear active game for both players
+		for pid_key in ('white_player_id', 'black_player_id'):
+			pid = game_state.get(pid_key)
+			if pid is not None:
+				await _clear_active_game(str(pid), self.game_id)
+		if success:
+			logger.info(
+				"Game finished",
+				extra={
+					"action": "game_finished",
+					"game_id": self.game_id,
+					"termination_reason": termination_reason,
+					"winner_id": winner_id,
+					"player_white_id": game_state['white_player_id'],
+					"player_black_id": game_state['black_player_id'],
+				},
+			)
+		else:
+			logger.warning("Game finished but DB save failed", extra={"game_id": self.game_id})
 
-		if action == 'reset_game':
-			await self.get_redis().delete(self.game_id)
-			await self.handle_create_game(data)
-			return
-
-		# Game actions: dispatch table for clean routing
-		game_action_handlers = {
-			'play_move': self.handle_play_move,
-			'resign': self.handle_resign,
-			'draw_offer': self.handle_draw_offer,
-			'draw_response': self.handle_draw_response,
-			'reconnect': self.handle_reconnect,
-		}
-
-		handler = game_action_handlers.get(action)
-		if handler is None:
-			await self.send(text_data=json.dumps({'error': 'Action inconnue ou état inexistant'}))
-			return
-
-		# Reconnect only available if game exists; skip if not
-		if action == 'reconnect' and game_state_json is None:
-			return
-
-		if action == 'reconnect':
-			await handler(game_state_json)
-			return
-
-		await handler(game_state_json, data)
-
-	async def receive(self, text_data):
-		try:
-			data = json.loads(text_data)
-		except json.JSONDecodeError:
-			await self.send(text_data=json.dumps(json_invalid()))
-			return
-
-		action = self._normalize_action(data)
-		if action is None:
-			await self.send(text_data=json.dumps(action_unknown()))
-			return
-
-		game_state_json = await self.get_redis().get(self.game_id)
-		await self._handle_action_with_game_state(action, data, game_state_json)
+	# ─── action handlers ────────────────────────────────────────────────────────
 
 	async def handle_create_game(self, data):
 		"""Create a new chess game with given white and black player IDs."""
-
 		white_id = data.get('white_id', 42)
 		black_id = data.get('black_id', 84)
 		time_control = data.get('time_control', 600)
 		increment = data.get('increment', 0)
-
-#		now = time.time()
-#		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment)
-#		new_game_state['last_move_timestamp'] = now
-#		new_game_state['turn_start_timestamp'] = now
 		competitive = bool(data.get('competitive', False))
 
 		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
 		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
-		await self._sync_clock_task(new_game_state)
 
+		# Register the connecting player's active game
+		if self.auth_user_id:
+			await _set_active_game(self.auth_user_id, self.game_id)
+			self.role = 'player'
+
+		await self._sync_clock_task(new_game_state)
 		logger.info(
 			"Players started a game",
 			extra={
@@ -274,10 +368,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 				"player_black_id": black_id,
 				"time_control": time_control,
 				"increment": increment,
-				"competitive": competitive
-			}
+				"competitive": competitive,
+			},
 		)
-
 		await self._broadcast_current_game_state(new_game_state)
 
 	async def handle_play_move(self, game_state_json, data):
@@ -285,7 +378,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
- 
+
 		board = chess.Board(game_state['fen'])
 		move_number = len(game_state.get('moves', [])) + 1
 		move_start_time = game_state.get('turn_start_timestamp', game_state.get('last_move_timestamp', time.time()))
@@ -299,60 +392,35 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if mark_timeout_if_needed(game_state, board):
 			await self.get_redis().set(self.game_id, json.dumps(game_state))
 			await self._broadcast_current_game_state(game_state)
-			await self._close_invite_joinability('game_finished')
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
-	
-			success = await async_save_full_game(final_game_data)
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
-			logger.info(
-				"Game finished",
-				extra={
-					"action": "game_finished",
-					"game_id": self.game_id,
-					"termination_reason": "timeout",
-					"winner_id": winner_id,
-					"player_white_id": game_state['white_player_id'],
-					"player_black_id": game_state['black_player_id']
-				}
-			)
-			#end game
+			await self._finish_game(game_state, winner_id, 'timeout')
 			return
 
 		if game_state.get('status') != 'active':
 			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
 			return
 
-		# --- IDENTIFICATION DE LA PIÈCE (AVANT APPLICATION DU COUP) ---
 		move = chess.Move.from_uci(data.get('move'))
 		piece = board.piece_at(move.from_square)
 		piece_symbol = piece.symbol().lower() if piece else "unknown"
 
-		# On applique le mouvement
 		success, error = apply_play_move(game_state, data.get('player_id'), data.get('move'))
 		if not success:
 			await self.send(text_data=json.dumps({'error': error}))
 			return
-		
-		# Après le coup, on évalue l'avantage matériel sur le nouvel état
+
 		final_board = chess.Board(game_state['fen'])
 		advantage = calculate_material_advantage(final_board)
 
-		# On traque le mouvement
 		move_obj = {
 			'player_id': str(data.get('player_id')),
 			'move_number': move_number,
 			'san_notation': data.get('move'),
 			'piece_played': pieces.get(piece_symbol, "unknown"),
 			'time_taken_ms': int((time.time() - move_start_time) * 1000),
-			'material_advantage': advantage
+			'material_advantage': advantage,
 		}
-		print(f"DEBUG: Coup {move_number} enregistré pour {move_obj['player_id']} - Temps: {move_obj['time_taken_ms']}ms")
 		game_state.setdefault('moves', []).append(move_obj)
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
@@ -367,28 +435,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 				winner_id = game_state['black_player_id']
 			else:
 				winner_id = None
-
-			final_game_data = self._build_final_game_data(game_state, winner_id, 'checkmate_or_draw')
-	
-			success = await async_save_full_game(final_game_data)
-			await self._close_invite_joinability('game_finished')
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
-			logger.info(
-				"Game finished",
-				extra={
-					"action": "game_finished",
-					"game_id": self.game_id,
-					"termination_reason": "checkmate_or_draw",
-					"winner_id": winner_id,
-					"player_white_id": game_state['white_player_id'],
-					"player_black_id": game_state['black_player_id']
-				}
-			)
-			return
+			await self._finish_game(game_state, winner_id, 'checkmate_or_draw')
 
 	async def handle_resign(self, game_state_json, data):
 		"""Process player resignation and end game."""
@@ -403,29 +450,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		await self.get_redis().set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
-
-		winner_id = game_state.get('winner_player_id')
-
-		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
-
-		success = await async_save_full_game(final_game_data)
-		await self._close_invite_joinability('game_finished')
-		if success:
-			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-		else:
-			print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
-		logger.info(
-			"Game finished",
-			extra={
-				"action": "game_finished",
-				"game_id": self.game_id,
-				"termination_reason": "resign",
-				"winner_id": winner_id,
-				"player_white_id": game_state['white_player_id'],
-				"player_black_id": game_state['black_player_id']
-			}
-		)
+		await self._finish_game(game_state, game_state.get('winner_player_id'), 'resign')
 
 	async def handle_draw_offer(self, game_state_json, data):
 		"""Process draw offer from a player."""
@@ -461,25 +486,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 		if game_state.get('status') == 'draw':
-			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
-			success = await async_save_full_game(final_game_data)
-			await self._close_invite_joinability('game_finished')
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
-			logger.info(
-				"Game finished",
-				extra={
-					"action": "game_finished",
-					"game_id": self.game_id,
-					"termination_reason": "draw_agreement",
-					"winner_id": None,
-					"player_white_id": game_state['white_player_id'],
-					"player_black_id": game_state['black_player_id']
-				}
-			)
+			await self._finish_game(game_state, None, 'draw_agreement')
 
 	async def handle_reconnect(self, game_state_json):
 		"""Re-sync reconnecting player with current game state."""
@@ -487,11 +494,72 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if game_state is None:
 			await self.send(text_data=json.dumps({'error': 'Partie introuvable'}))
 			return
-		await self.send(text_data=json.dumps(build_ws_game_state_payload(game_state)))
+		payload = build_ws_game_state_payload(game_state)
+		# Inform spectators of their role so the UI can disable controls
+		if getattr(self, 'role', None) == 'spectator':
+			payload['spectator'] = True
+		await self.send(text_data=json.dumps(payload))
 
 	async def broadcast_game_state(self, event):
 		"""Send game state to this WebSocket client (called by group_send)."""
-		await self.send(text_data=json.dumps(build_ws_game_state_payload(event['game_state'], event['action'])))
+		payload = build_ws_game_state_payload(event['game_state'], event['action'])
+		if getattr(self, 'role', None) == 'spectator':
+			payload['spectator'] = True
+		await self.send(text_data=json.dumps(payload))
+
+
+# ─── Redis active-game helpers ───────────────────────────────────────────────
+
+async def _set_active_game(user_id: str, game_id: str):
+	"""Record that a user is currently in game_id."""
+	try:
+		import redis.asyncio as _redis
+		r = _redis.from_url(settings.CACHES['default']['LOCATION'])
+		await r.set(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}', game_id, ex=ACTIVE_GAME_TTL)
+	except Exception:
+		pass
+
+
+async def _clear_active_game(user_id: str, game_id: str):
+	"""Remove the active-game marker only if it still points to this game."""
+	try:
+		import redis.asyncio as _redis
+		r = _redis.from_url(settings.CACHES['default']['LOCATION'])
+		current = await r.get(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}')
+		if current and current.decode() == game_id:
+			await r.delete(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}')
+	except Exception:
+		pass
+
+
+def get_active_game_sync(user_id: int) -> str | None:
+	"""Synchronous helper used by HTTP views to read a user's active game."""
+	try:
+		import redis as _redis_sync
+		r = _redis_sync.from_url(settings.CACHES['default']['LOCATION'])
+		val = r.get(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}')
+		return val.decode() if val else None
+	except Exception:
+		return None
+
+
+# ─── DB helpers ──────────────────────────────────────────────────────────────
+
+@database_sync_to_async
+def _is_accepted_friend_of_any(user_id_str: str, player_ids: list[int]) -> bool:
+	"""Return True if user_id is an accepted friend of any id in player_ids."""
+	from django.db.models import Q
+	from accounts.models import Friendship
+	try:
+		uid = int(user_id_str)
+	except (ValueError, TypeError):
+		return False
+	return Friendship.objects.filter(
+		status='accepted',
+	).filter(
+		Q(from_user_id=uid, to_user_id__in=player_ids) |
+		Q(from_user_id__in=player_ids, to_user_id=uid)
+	).exists()
 
 
 @database_sync_to_async

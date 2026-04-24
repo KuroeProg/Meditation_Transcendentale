@@ -97,6 +97,17 @@ function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
 						>
 							<i className="ri-forbid-line" aria-hidden="true" />
 						</button>
+						<button
+							type="button"
+							className="chat-ca-btn chat-ca-remove"
+							onClick={() => onAction(contact.friendship_id, 'delete')}
+							disabled={isBusy}
+							aria-label="Retirer des amis"
+							title="Retirer des amis"
+							data-testid={`friend-remove-${contact.friendship_id}`}
+						>
+							<i className="ri-user-unfollow-line" aria-hidden="true" />
+						</button>
 					</>
 				)}
 				{contact.status === 'blocked' && isBlockedByMe && (

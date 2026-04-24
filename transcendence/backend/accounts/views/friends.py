@@ -19,8 +19,9 @@ def _get_authenticated_user(request):
         return None, JsonResponse({'error': 'Session invalide'}, status=401)
 
 
-def _friendship_to_contact(friendship, current_user):
+def _friendship_to_contact(friendship, current_user, active_games=None):
     other = friendship.to_user if friendship.from_user_id == current_user.id else friendship.from_user
+    active_game_id = (active_games or {}).get(other.id)
     return {
         'friendship_id': friendship.id,
         'user': {
@@ -29,6 +30,9 @@ def _friendship_to_contact(friendship, current_user):
             'avatar': other.get_avatar_url(),
             'coalition': other.coalition,
             'is_online': other.is_online,
+            'elo_rapid': other.elo_rapid,
+            'elo_blitz': other.elo_blitz,
+            'active_game_id': active_game_id,
         },
         'status': friendship.status,
         'is_sender': friendship.from_user_id == current_user.id,
@@ -56,8 +60,22 @@ def friends_list(request):
     if status_filter:
         qs = qs.filter(status=status_filter)
 
-    contacts = [_friendship_to_contact(f, user) for f in qs.order_by('-updated_at')]
+    friendships = list(qs.order_by('-updated_at'))
 
+    # Enrich accepted friends with active-game info from Redis
+    active_games = {}
+    try:
+        from game.game_consumer import get_active_game_sync
+        for f in friendships:
+            if f.status == 'accepted':
+                other = f.to_user if f.from_user_id == user.id else f.from_user
+                game_id = get_active_game_sync(other.id)
+                if game_id:
+                    active_games[other.id] = game_id
+    except Exception:
+        pass
+
+    contacts = [_friendship_to_contact(f, user, active_games) for f in friendships]
     return JsonResponse({'friends': contacts})
 
 

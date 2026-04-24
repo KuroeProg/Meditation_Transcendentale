@@ -211,6 +211,53 @@ test.describe("gestion des contacts et demandes d'amis", () => {
 		})
 	})
 
+	// Vérifie que le bouton "Retirer des amis" sur un ami accepté déclenche un DELETE.
+	test('retirer un ami accepté déclenche DELETE /api/auth/friends/:id', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await mockDashboardShell(page)
+
+			await page.route('**/api/auth/friends', async (route) => {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						friends: [
+							{
+								friendship_id: 99,
+								status: 'accepted',
+								is_sender: true,
+								user: { id: 210, username: 'FRIEND_TO_REMOVE', avatar: '', coalition: 'fire', is_online: true },
+							},
+						],
+					}),
+				})
+			})
+
+			let deleteCalled = false
+			await page.route('**/api/auth/friends/99', async (route) => {
+				if (route.request().method() === 'DELETE') {
+					deleteCalled = true
+					await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) })
+				} else {
+					await route.continue()
+				}
+			})
+
+			await page.goto('/dashboard')
+			await waitForDashboardReady(page)
+			await page.getByTestId('chat-open-button').click()
+			await waitForChatDrawerReady(page)
+			await page.getByTitle('Contacts').click()
+
+			// Switch to the "Amis" tab where accepted contacts are shown
+			await page.getByRole('button', { name: /Amis/ }).click()
+			await page.getByTestId('friend-remove-99').click()
+
+			await expect.poll(() => deleteCalled).toBeTruthy()
+		})
+	})
+
 	// Vérifie qu'une requête trop courte n'appelle pas l'endpoint de recherche.
 	test('short search query does not trigger search endpoint', async ({ browser }) => {
 		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {

@@ -1,6 +1,6 @@
 import Board from "../components/Board.jsx";
 import { CapturedPiecesBar } from "../components/CapturedPieces.jsx";
-import { useEffect, useCallback, useMemo } from "react";
+import { useEffect, useCallback, useMemo, useState } from "react";
 import { useSynchronizedChessTimers } from "../components/Chrono.jsx";
 import { useParams } from "react-router-dom";
 import { useAuth } from "../../auth/index.js";
@@ -31,6 +31,12 @@ function App() {
 
   const { isConnected, socketError, lastMessage, sendMove } =
     useChessSocket(mode === "online" ? gameId : null);
+
+  // Track spectator flag from WS server payload
+  const [isSpectator, setIsSpectator] = useState(false);
+  useEffect(() => {
+    if (lastMessage?.spectator === true) setIsSpectator(true);
+  }, [lastMessage]);
 
   const {
     state,
@@ -243,17 +249,24 @@ function App() {
             position="top"
           />
 
+          {isSpectator && (
+            <div className="spectator-banner" data-testid="spectator-banner" role="status" aria-live="polite">
+              <i className="ri-eye-line" aria-hidden="true" />
+              Mode spectateur — vous observez cette partie
+            </div>
+          )}
+
           <div className="board-frame" data-testid="game-board-frame">
             <Board
               game={displayedGame}
               winner={winner}
-              onMoveRequest={handleMoveRequest}
-              playerColor={playerColor}
+              onMoveRequest={isSpectator ? null : handleMoveRequest}
+              playerColor={isSpectator ? 'w' : playerColor}
               whiteCoalition={gameState?.white_player_coalition}
               blackCoalition={gameState?.black_player_coalition}
               moveFeedback={moveFeedback}
               tilePatternSeed={tilePatternSeed}
-              isViewOnly={viewPlies !== null}
+              isViewOnly={isSpectator || viewPlies !== null}
             />
           </div>
 

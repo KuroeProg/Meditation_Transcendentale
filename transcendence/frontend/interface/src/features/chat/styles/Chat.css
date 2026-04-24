@@ -968,6 +968,16 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 	background: rgba(255, 71, 87, 0.08);
 }
 
+.chat-ca-remove {
+	border-color: rgba(255, 100, 30, 0.2);
+	color: rgba(255, 100, 30, 0.55);
+}
+
+.chat-ca-remove:hover {
+	color: #ff641e;
+	background: rgba(255, 100, 30, 0.08);
+}
+
 .chat-ca-add {
 	border-color: rgba(76, 187, 95, 0.3);
 	color: #4cbb5f;

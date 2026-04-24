@@ -12,6 +12,7 @@ def with_optional_trailing_slash(route, view_callable, name=None):
 
 
 urlpatterns = [
+    *with_optional_trailing_slash('game-conversation', views.game_conversation, name='game_conversation'),
     *with_optional_trailing_slash('conversations', views.conversation_list, name='conversation_list'),
     *with_optional_trailing_slash('invites/pending-outgoing', views.pending_outgoing_invite, name='pending_outgoing_invite'),
     *with_optional_trailing_slash('conversations/create', views.create_conversation, name='create_conversation'),

@@ -193,6 +193,7 @@ export default function GameStatsPanel({
         <InGameChat
           opponentUsername={opponentUsername}
           gameId={gameId}
+          userId={user?.id}
           coalitionSlug={coalitionSlug}
         />
       )}

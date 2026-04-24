@@ -1687,6 +1687,12 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	padding: 0.1rem 0.35rem;
 }
 
+.igc-mock-badge--live {
+	color: rgba(74, 222, 128, 0.9);
+	background: rgba(74, 222, 128, 0.1);
+	border-color: rgba(74, 222, 128, 0.25);
+}
+
 /* Zone messages */
 .igc-messages {
 	flex: 1;

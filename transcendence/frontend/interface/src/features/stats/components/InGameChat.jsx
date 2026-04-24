@@ -1,43 +1,77 @@
 /**
- * InGameChat — Shell frontend du chat en cours de partie.
+ * InGameChat — Chat temps réel pendant une partie en ligne.
  *
- * V1 : UI complète avec mocks, prête pour branchement backend.
- * Contrat API attendu (backend) :
- *   GET  /api/chat/conversations/?type=game&game_id=<id>  → { conversation_id }
- *   WS   /ws/chat/<conversation_id>/                       → messages
- *   POST /api/chat/conversations/<id>/messages/            → envoyer un message
+ * Contrat API :
+ *   GET  /api/chat/game-conversation?game_id=<id>   → { id, ... }  (get-or-create)
+ *   WS   /ws/chat/<conversation_id>/                → new_message / typing
  */
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
+import { useChatSocket } from '../../chat/hooks/useChatSocket.js'
 
-/* ── Mock messages initiaux ── */
-const MOCK_MESSAGES = [
-	{ id: 1, sender: 'opponent', text: 'Bonne partie !',       timestamp: '14:28' },
-	{ id: 2, sender: 'me',       text: 'À toi aussi 😄',       timestamp: '14:28' },
-	{ id: 3, sender: 'opponent', text: 'Tu joues la Sicilienne souvent ?', timestamp: '14:30' },
-]
+const QUICK_REPLIES = ['Bonne chance !', 'Bien joué !', 'Match nul ?', 'Rematch ?']
 
-/* ── Suggestions rapides ── */
-const QUICK_REPLIES = [
-	'Bonne chance !',
-	'Bien joué !',
-	'Match nul ?',
-	'Rematch ?',
-]
+async function resolveGameConversation(gameId) {
+	const res = await fetch(`/api/chat/game-conversation?game_id=${encodeURIComponent(gameId)}`, {
+		credentials: 'include',
+	})
+	if (!res.ok) return null
+	const data = await res.json()
+	return data.id ?? null
+}
+
+async function fetchPreviousMessages(conversationId) {
+	const res = await fetch(
+		`/api/chat/conversations/${conversationId}/messages/`,
+		{ credentials: 'include' }
+	)
+	if (!res.ok) return []
+	const data = await res.json()
+	return Array.isArray(data.messages) ? data.messages : []
+}
+
+function toTimestamp(dateStr) {
+	try {
+		const d = new Date(dateStr)
+		return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`
+	} catch {
+		return '—'
+	}
+}
 
 export function InGameChat({
 	opponentUsername = 'Adversaire',
 	gameId,
+	userId,
 	/** @type {string} slug coalition thème (feu, eau, terre, air) */
 	coalitionSlug = null,
 }) {
-	const [messages, setMessages] = useState(MOCK_MESSAGES)
+	const [convId, setConvId] = useState(null)
 	const [input, setInput] = useState('')
-	const [isConnected] = useState(false) // false = mock / pas encore branché backend
+	const [historyLoaded, setHistoryLoaded] = useState(false)
 	const bottomRef = useRef(null)
 	const inputRef  = useRef(null)
 
-	// Auto-scroll au dernier message
+	// Resolve conversation once game_id is known
+	useEffect(() => {
+		if (!gameId) return
+		resolveGameConversation(gameId)
+			.then((id) => { if (id) setConvId(id) })
+			.catch(() => {})
+	}, [gameId])
+
+	const { isConnected, messages, setMessages, sendMessage: wsSend } = useChatSocket(convId, userId)
+
+	// Load previous messages once WS is open
+	useEffect(() => {
+		if (!isConnected || !convId || historyLoaded) return
+		setHistoryLoaded(true)
+		fetchPreviousMessages(convId).then((prev) => {
+			if (prev.length) setMessages(prev)
+		}).catch(() => {})
+	}, [isConnected, convId, historyLoaded, setMessages])
+
+	// Auto-scroll
 	useEffect(() => {
 		bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
 	}, [messages])
@@ -45,13 +79,10 @@ export function InGameChat({
 	const sendMessage = useCallback(() => {
 		const text = input.trim()
 		if (!text) return
-		const now = new Date()
-		const timestamp = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
-		setMessages((prev) => [...prev, { id: Date.now(), sender: 'me', text, timestamp }])
+		wsSend(text)
 		setInput('')
 		inputRef.current?.focus()
-		// TODO: envoyer via WS ou POST /api/chat/conversations/<id>/messages/
-	}, [input])
+	}, [input, wsSend])
 
 	const handleKeyDown = (e) => {
 		if (e.key === 'Enter' && !e.shiftKey) {
@@ -60,15 +91,19 @@ export function InGameChat({
 		}
 	}
 
-	const sendQuick = (text) => {
-		setMessages((prev) => [...prev, {
-			id: Date.now(),
-			sender: 'me',
-			text,
-			timestamp: `${String(new Date().getHours()).padStart(2,'0')}:${String(new Date().getMinutes()).padStart(2,'0')}`,
-		}])
-		// TODO: envoyer via backend
-	}
+	const sendQuick = useCallback((text) => wsSend(text), [wsSend])
+
+	// Normalise message format (API vs WS shape)
+	const normalizedMessages = messages.map((m) => {
+		if (m.sender !== undefined) return m // already WS format
+		const isMe = m.sender_id === userId || m.sender?.id === userId
+		return {
+			id: m.id,
+			sender: isMe ? 'me' : 'opponent',
+			text: m.content ?? m.text ?? '',
+			timestamp: toTimestamp(m.created_at ?? m.timestamp),
+		}
+	})
 
 	const gMod = coalitionSlug ? ` ghv-header--${coalitionSlug}` : ''
 	return (
@@ -81,15 +116,22 @@ export function InGameChat({
 							{opponentUsername}
 						</h2>
 						<p className="ghv-header-subtitle igc-header-subline">
-							{!isConnected
-								? 'Aperçu — le chat retranscrit sera branché côté serveur.'
-								: 'Connecté en temps réel à la salle de partie.'}
+							{isConnected
+								? 'Connecté en temps réel à la salle de partie.'
+								: !gameId
+									? 'Chat disponible en partie en ligne.'
+									: 'Connexion au chat…'}
 						</p>
-						{!isConnected ? (
-							<span className="igc-mock-badge" title="Mode aperçu — le chat sera actif en partie réelle">
-								<i className="ri-information-line" aria-hidden="true" /> Aperçu
+						{!isConnected && gameId && (
+							<span className="igc-mock-badge" data-testid="ingame-chat-status-offline">
+								<i className="ri-loader-4-line" aria-hidden="true" /> Connexion…
 							</span>
-						) : null}
+						)}
+						{isConnected && (
+							<span className="igc-mock-badge igc-mock-badge--live" data-testid="ingame-chat-status-live">
+								<i className="ri-live-line" aria-hidden="true" /> Live
+							</span>
+						)}
 					</div>
 					<div className="ghv-header-actions">
 						<GameMusicPanel />
@@ -105,13 +147,13 @@ export function InGameChat({
 				aria-label="Messages du chat"
 				data-testid="ingame-chat-messages"
 			>
-				{messages.map((msg) => (
+				{normalizedMessages.map((msg) => (
 					<div
 						key={msg.id}
 						className={`igc-msg igc-msg--${msg.sender}`}
-						aria-label={`${msg.sender === 'me' ? 'Vous' : opponentUsername} : ${msg.text}`}
+						aria-label={`${msg.sender === 'me' ? 'Vous' : opponentUsername} : ${msg.text ?? msg.content}`}
 					>
-						<span className="igc-msg-text">{msg.text}</span>
+						<span className="igc-msg-text">{msg.text ?? msg.content}</span>
 						<time className="igc-msg-time" dateTime={msg.timestamp}>{msg.timestamp}</time>
 					</div>
 				))}
@@ -126,6 +168,7 @@ export function InGameChat({
 						type="button"
 						className="igc-quick-btn"
 						onClick={() => sendQuick(q)}
+						disabled={!isConnected}
 					>
 						{q}
 					</button>
@@ -140,19 +183,20 @@ export function InGameChat({
 					id="igc-input"
 					type="text"
 					className="igc-input"
-					placeholder="Message…"
+					placeholder={isConnected ? 'Message…' : 'En attente de connexion…'}
 					value={input}
 					onChange={(e) => setInput(e.target.value)}
 					onKeyDown={handleKeyDown}
 					maxLength={200}
 					autoComplete="off"
+					disabled={!isConnected}
 					data-testid="ingame-chat-input"
 				/>
 				<button
 					type="button"
 					className="igc-send-btn"
 					onClick={sendMessage}
-					disabled={!input.trim()}
+					disabled={!input.trim() || !isConnected}
 					aria-label="Envoyer le message"
 					data-testid="ingame-chat-send"
 				>

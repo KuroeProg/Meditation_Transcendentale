@@ -262,4 +262,110 @@ La page propose deux actions :
 
 ---
 
-*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles + page Paramètres étendue).*
+---
+
+## 9. Nouvelles routes implémentées (lot social + jeu — avril 2026)
+
+### 9.1 Mode spectateur
+
+| Méthode | Route | Corps / query | Rôle |
+|---------|--------|-----------------|------|
+| `GET` | `/api/auth/friends` | — | Enrichi avec `user.active_game_id` (string Redis ou null) pour les amis acceptés |
+| `WS` | `/ws/chess/<game_id>/` | — | `connect` vérifie `session['local_user_id']`. Rôles : `player`, `spectator` (ami accepté), `training`. Les spectateurs reçoivent `spectator: true` dans chaque payload WS. Actions mutatrices (`play_move`, `resign`, …) refusées pour les spectateurs. |
+
+**Forme contact enrichie** (`_friendship_to_contact`) :
+```json
+{
+  "friendship_id": 1,
+  "user": {
+    "id": 802,
+    "username": "…",
+    "avatar": "https://…",
+    "coalition": "feu",
+    "is_online": true,
+    "elo_rapid": 1450,
+    "elo_blitz": 1380,
+    "active_game_id": "e2e-game-123"
+  },
+  "status": "accepted",
+  "is_sender": false,
+  "created_at": "2026-04-22T12:00:00+00:00"
+}
+```
+
+**Redis active-game keys** : `active_game:<user_id>` → `game_id` (TTL 2h). Gestion par `game_consumer.py` (`_set_active_game` / `_clear_active_game`).
+
+### 9.2 Supprimer un ami accepté
+
+| Méthode | Route | Rôle |
+|---------|--------|------|
+| `DELETE` | `/api/auth/friends/<friendship_id>` | Existant — exposé via le nouveau bouton `data-testid="friend-remove-<friendship_id>"` dans `ContactSearch.jsx` |
+
+### 9.3 Historique et relecture de partie
+
+| Méthode | Route | Query params | Rôle |
+|---------|--------|--------------|------|
+| `GET` | `/api/game/history` | `result`, `format`, `mode`, `limit`, `offset` | Liste paginée des parties terminées du user connecté |
+| `GET` | `/api/game/history/<pk>` | — | Payload complet pour le lecteur de replay : positions FEN, coups UCI, courbe d'avantage matériel |
+
+**Payload replay (GET /api/game/history/<pk>)** :
+```json
+{
+  "id": 42,
+  "result": "win",
+  "score": "1-0",
+  "positions": ["rnbqkbnr/…", "…"],
+  "moves": [
+    { "move_number": 1, "uci": "e2e4", "piece_played": "pawn", "time_taken_ms": 1000, "material_advantage": 0, "player_id": 101, "color": "white" }
+  ],
+  "advantage_curve": [0, 0, 1, 1, 3],
+  "player_white": { "id": 101, "username": "…", "avatar": "…", "elo": 1450 },
+  "player_black": { "id": 202, "username": "…", "avatar": "…", "elo": 1200 },
+  "winner_id": 101,
+  "termination_reason": "checkmate_or_draw",
+  "time_category": "rapid",
+  "duration_seconds": 240
+}
+```
+
+**Note** : les coups sont stockés dans `Move.san_notation` mais encodés en **UCI** par `GameConsumer`. L'API les expose tel quel via le champ `uci`.
+
+### 9.4 Chat ingame (get-or-create conversation de partie)
+
+| Méthode | Route | Query params | Rôle |
+|---------|--------|--------------|------|
+| `GET` | `/api/chat/game-conversation` | `game_id` (requis) | Retourne ou crée la conversation `type=game` pour les deux joueurs de la partie Redis. 403 si l'appelant n'est pas joueur. |
+
+La liste inbox (`GET /api/chat/conversations`) **exclut désormais** les conversations `type=game` pour ne pas polluer le tiroir principal.
+
+**InGameChat.jsx** résout la conversation via `GET /api/chat/game-conversation?game_id=<id>`, charge l'historique via `GET /api/chat/conversations/<conv_id>/messages/`, puis se connecte sur `WS /ws/chat/<conv_id>/`.
+
+### 9.5 Paramètres — préférences hybrides (serveur + local)
+
+| Méthode | Route | Corps | Rôle |
+|---------|--------|-------|------|
+| `GET` | `/api/auth/me/client-settings` | — | Retourne `{ prefs: { … } }` — les préférences persistées côté serveur |
+| `PATCH` | `/api/auth/me/client-settings` | Objet partiel (clés autorisées) | Fusionne les nouvelles valeurs ; répond avec `{ prefs: { … } }` mis à jour |
+
+**Clés synchronisées** (stockées dans `LocalUser.client_prefs`) :
+
+| Clé | Type | Source |
+|-----|------|--------|
+| `reduceMotion` | bool | `uiPrefs.js` |
+| `lightMode` | bool | `uiPrefs.js` |
+| `showScrollbars` | bool | `uiPrefs.js` |
+| `hideInviteToasts` | bool | `uiPrefs.js` |
+| `gameBgmVolume` | float | `gameAudioPrefs.js` |
+| `gameBgmMuted` | bool | `gameAudioPrefs.js` |
+| `homeBgmVolume` | float | `gameAudioPrefs.js` |
+| `homeBgmMuted` | bool | `gameAudioPrefs.js` |
+| `sfxVolume` | float | `gameAudioPrefs.js` |
+| `sfxMuted` | bool | `gameAudioPrefs.js` |
+| `gameBgmTrackMode` | string | `gameAudioPrefs.js` |
+| `gameBgmFixedTrack` | string | `gameAudioPrefs.js` |
+
+**Stratégie de fusion** : au chargement de `Settings.jsx`, les préférences serveur **remplacent** les valeurs locales pour les clés connues (le serveur est source de vérité cross-device). Sur changement côté client, un `PATCH` debounced (800ms) est envoyé.
+
+---
+
+*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles + page Paramètres étendue + spectateur, historique, chat ingame, préférences hybrides).*

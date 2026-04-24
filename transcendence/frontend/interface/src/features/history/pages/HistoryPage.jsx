@@ -1,9 +1,58 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import mockData from '../assets/mockHistoryData.json'
 import '../styles/History.css'
+
+async function fetchGameHistory(filters = {}) {
+	const qs = new URLSearchParams()
+	if (filters.result && filters.result !== 'all') qs.set('result', filters.result)
+	if (filters.format && filters.format !== 'all') qs.set('format', filters.format)
+	if (filters.mode && filters.mode !== 'all') qs.set('mode', filters.mode)
+	qs.set('limit', '50')
+	const res = await fetch(`/api/game/history?${qs}`, { credentials: 'include' })
+	if (!res.ok) throw new Error(`HTTP ${res.status}`)
+	return res.json()
+}
+
+function normalizeApiGame(g, currentUserId) {
+	const result = g.result ?? 'draw'
+	const score = g.score ?? '½-½'
+	const date = g.date ?? null
+	const relativeDate = date
+		? new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
+				Math.round((new Date(date) - Date.now()) / 86400000),
+				'day'
+			)
+		: '—'
+	return {
+		id: g.id,
+		result,
+		score,
+		format: g.format ?? 'rapid',
+		formatLabel: (g.format ?? 'rapid').charAt(0).toUpperCase() + (g.format ?? 'rapid').slice(1),
+		date: date ?? new Date().toISOString(),
+		relativeDate,
+		opponent: {
+			username: g.opponent?.username ?? 'Inconnu',
+			coalition: g.opponent?.coalition ?? null,
+			elo: g.opponent?.elo ?? null,
+			isBot: false,
+		},
+		moveCount: g.moveCount ?? 0,
+		competitive: g.competitive ?? false,
+		accuracy: null,
+		evalTrend: [],
+		shortPgn: '',
+		capturedByMe: {},
+		capturedByOpponent: {},
+		analysisStatus: null,
+		blunders: 0,
+		missedWins: 0,
+		_fromApi: true,
+	}
+}
 
 /* ── Constantes pièces ── */
 const PIECE_SYMBOLS = {
@@ -93,7 +142,7 @@ function HistoryRow({ game, isSelected, onSelect }) {
 		if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelect() }
 	}
 
-	const handleReview = (e) => { e.stopPropagation(); navigate(`/game/${game.id}`) }
+	const handleReview = (e) => { e.stopPropagation(); navigate(`/game/review/${game.id}`) }
 	const handleChallenge = (e) => { e.stopPropagation() /* TODO: ouvrir modale défi */ }
 
 	return (
@@ -419,11 +468,12 @@ export default function HistoryPage() {
 	const { user } = useAuth()
 	const coalition = coalitionToSlug(user?.coalition)
 
-	const [filterPeriod, setFilterPeriod] = useState('all')
 	const [filterResult, setFilterResult] = useState('all')
 	const [filterFormat,  setFilterFormat]  = useState('all')
 	const [filterMode,    setFilterMode]    = useState('all')
 	const [selectedId,    setSelectedId]    = useState(null)
+	const [apiGames,      setApiGames]      = useState(null)
+	const [apiLoading,    setApiLoading]    = useState(true)
 
 	// Mise à jour du titre de page
 	useEffect(() => {
@@ -431,7 +481,24 @@ export default function HistoryPage() {
 		return () => { document.title = 'Transcendance' }
 	}, [])
 
+	// Load from API, fall back to mock if API fails
+	const loadGames = useCallback((filters) => {
+		setApiLoading(true)
+		fetchGameHistory(filters)
+			.then((data) => setApiGames((data.games ?? []).map((g) => normalizeApiGame(g, user?.id))))
+			.catch(() => setApiGames(null)) // fallback to mock on error
+			.finally(() => setApiLoading(false))
+	}, [user?.id])
+
+	useEffect(() => {
+		loadGames({ result: filterResult, format: filterFormat, mode: filterMode })
+	}, [filterResult, filterFormat, filterMode, loadGames])
+
+	// Use API games when available, fallback to static mock
+	const sourceGames = apiGames !== null ? apiGames : mockData.games
+
 	const filteredGames = useMemo(() => {
+		if (apiGames !== null) return sourceGames // API already filtered server-side
 		return mockData.games.filter((g) => {
 			if (filterResult !== 'all' && g.result !== filterResult) return false
 			if (filterFormat  !== 'all' && g.format  !== filterFormat)  return false
@@ -441,7 +508,7 @@ export default function HistoryPage() {
 			}
 			return true
 		})
-	}, [filterResult, filterFormat, filterMode])
+	}, [apiGames, sourceGames, filterResult, filterFormat, filterMode])
 
 	const selectedGame = useMemo(
 		() => filteredGames.find((g) => g.id === selectedId) ?? null,

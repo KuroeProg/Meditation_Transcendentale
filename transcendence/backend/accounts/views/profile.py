@@ -184,3 +184,46 @@ def presence_ping(request):
 
     mark_user_presence_heartbeat(user.id)
     return JsonResponse({'ok': True})
+
+
+# ── Client preferences ────────────────────────────────────────────────────────
+
+# Allowed top-level keys that can be persisted
+_ALLOWED_PREF_KEYS = frozenset({
+    # UI prefs (from uiPrefs.js)
+    'reduceMotion', 'lightMode', 'showScrollbars', 'hideInviteToasts',
+    # Audio prefs (from gameAudioPrefs.js)
+    'gameBgmVolume', 'gameBgmMuted', 'homeBgmVolume', 'homeBgmMuted',
+    'sfxVolume', 'sfxMuted', 'gameBgmTrackMode', 'gameBgmFixedTrack',
+})
+
+
+@csrf_exempt
+def client_settings(request):
+    """GET or PATCH the user's persistent client preferences."""
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    if request.method == 'GET':
+        return JsonResponse({'prefs': user.client_prefs or {}})
+
+    if request.method == 'PATCH':
+        try:
+            payload = json.loads(request.body.decode('utf-8'))
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+        if not isinstance(payload, dict):
+            return JsonResponse({'error': 'Object expected'}, status=400)
+
+        current = dict(user.client_prefs or {})
+        for key, value in payload.items():
+            if key in _ALLOWED_PREF_KEYS:
+                current[key] = value
+
+        user.client_prefs = current
+        user.save(update_fields=['client_prefs'])
+        return JsonResponse({'prefs': current})
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

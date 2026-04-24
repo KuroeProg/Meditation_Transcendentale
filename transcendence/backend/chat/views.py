@@ -173,9 +173,10 @@ def conversation_list(request):
     if err:
         return err
 
+    # Exclude in-game conversations from the inbox; they are fetched via game-conversation
     conversations = Conversation.objects.filter(
-        participants=user
-    ).prefetch_related('participants', 'messages__sender')
+        participants=user,
+    ).exclude(type='game').prefetch_related('participants', 'messages__sender')
 
     return JsonResponse({
         'conversations': [c.to_dict(current_user=user) for c in conversations]
@@ -561,6 +562,67 @@ def cancel_game_invite(request, invite_id):
 
     _broadcast_invite_event('invite_updated', invite)
     return JsonResponse({'invite': invite.to_dict()}, status=200)
+
+
+@require_GET
+def game_conversation(request):
+    """Get-or-create the chat conversation for an active game.
+
+    The caller must be one of the two players of the game.
+    Returns the existing conversation or creates a new one.
+    Query param: game_id (required).
+    """
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    game_id = request.GET.get('game_id', '').strip()
+    if not game_id:
+        return JsonResponse({'error': 'game_id requis'}, status=400)
+
+    # Verify the requesting user is a player in this game (Redis check)
+    try:
+        import redis
+        from django.conf import settings
+        r = redis.Redis.from_url(settings.CACHES['default']['LOCATION'])
+        raw = r.get(game_id)
+        if raw is None:
+            return JsonResponse({'error': 'Partie introuvable'}, status=404)
+
+        import json as _json
+        game_state = _json.loads(raw)
+        white_id = str(game_state.get('white_player_id', ''))
+        black_id = str(game_state.get('black_player_id', ''))
+        if str(user.id) not in (white_id, black_id):
+            return JsonResponse({'error': 'Non autorisé'}, status=403)
+
+        # Determine the opponent
+        opponent_id = int(black_id) if str(user.id) == white_id else int(white_id)
+        try:
+            opponent = LocalUser.objects.get(id=opponent_id)
+        except LocalUser.DoesNotExist:
+            return JsonResponse({'error': 'Adversaire introuvable'}, status=404)
+    except Exception as e:
+        return JsonResponse({'error': 'Erreur serveur', 'detail': str(e)}, status=500)
+
+    # Find existing game conversation or create one
+    existing = Conversation.objects.filter(
+        type='game',
+        game_id=game_id,
+    ).filter(participants=user).first()
+
+    if existing:
+        return JsonResponse(existing.to_dict(current_user=user))
+
+    # Create a new game conversation (idempotent: game_id + participants)
+    is_blocked = Q(from_user=user, to_user=opponent, status='blocked') | Q(from_user=opponent, to_user=user, status='blocked')
+    from accounts.models import Friendship as _Friendship
+    if _Friendship.objects.filter(is_blocked).exists():
+        return JsonResponse({'error': 'Relation bloquée'}, status=403)
+
+    conversation = Conversation.objects.create(type='game', game_id=game_id)
+    conversation.participants.add(user, opponent)
+    return JsonResponse(conversation.to_dict(current_user=user), status=201)
 
 
 def _sync_source_message_status(invite):
