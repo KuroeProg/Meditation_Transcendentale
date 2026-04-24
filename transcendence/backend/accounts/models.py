@@ -21,6 +21,8 @@ class LocalUser(models.Model):
     elo_rapid = models.IntegerField(default=1200)
     games_played = models.IntegerField(default=0)
     games_won = models.IntegerField(default=0)
+    games_lost = models.IntegerField(default=0)
+    games_draw = models.IntegerField(default=0)
     is_2fa_enabled = models.BooleanField(default=True)
     is_2fa_verified = models.BooleanField(default=True)
 
@@ -66,6 +68,8 @@ class LocalUser(models.Model):
             'elo_rapid': self.elo_rapid,
             'games_played': self.games_played,
             'games_won': self.games_won,
+            'games_lost': self.games_lost,
+            'games_draw': self.games_draw,
             'image': {
                 'link': image_link,
                 'versions': {'medium': image_link},

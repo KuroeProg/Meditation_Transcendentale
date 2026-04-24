@@ -24,13 +24,22 @@ def get_rating_field(time_category):
 	return RATING_FIELDS.get(normalize_time_category(time_category), 'elo_rapid')
 
 
-def compute_elo_delta(rating_a, rating_b, score_a, k_factor=32):
-	"""Compute an Elo delta for player A against player B."""
+def compute_elo_delta(rating_a, rating_b, score_a, games_played_a=0):
+	"""
+	Compute an Elo delta for player A against player B.
+	Uses a dynamic K-factor: 
+	- 40 for new players (< 30 games) to help them find their rank fast.
+	- 20 for established players.
+	"""
 	rating_a = float(rating_a)
 	rating_b = float(rating_b)
 	score_a = float(score_a)
+	
+	# Dynamic K-Factor
+	k_factor = 40 if games_played_a < 30 else 20
+	
 	expected_a = 1.0 / (1.0 + 10 ** ((rating_b - rating_a) / 400.0))
-	return round(k_factor * (score_a - expected_a))
+	return int(round(k_factor * (score_a - expected_a)))
 
 
 def get_game_score(game_result, player_id, white_id, black_id):

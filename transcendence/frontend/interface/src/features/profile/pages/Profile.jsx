@@ -284,25 +284,26 @@ function Profile() {
 						<span>Coalition &amp; niveau</span>
 					</h2>
 					<dl className="info-dl info-dl--compact">
-						<div className="profile-coalition-field">
-							<dt>Coalition</dt>
-							<dd className={hasCoalition ? 'profile-coalition-value' : undefined}>
-								{hasCoalition ? (
-									<>
-										<span className="profile-coalition-icon-wrap" aria-hidden>
-											<ProfileCoalitionIcon slug={coalitionSlug} />
-										</span>
-										<span className="profile-coalition-text">
-											<span className="profile-coalition-label">{coalitionLabel}</span>
-											{showCoalitionRaw && <span className="muted small profile-coalition-raw">{coalition}</span>}
-										</span>
-									</>
-								) : '—'}
-							</dd>
-						</div>
-						<div>
-							<dt>Niveau</dt>
-							<dd className="profile-cursus-level">{levelCursus != null ? String(levelCursus) : '—'}</dd>
+						<div className="profile-coalition-row">
+							<div className="profile-coalition-col">
+                                <dt>Coalition</dt>
+                                <dd className={hasCoalition ? 'profile-coalition-value' : undefined}>
+                                    {hasCoalition ? (
+                                        <>
+                                            <span className="profile-coalition-icon-wrap" aria-hidden>
+                                                <ProfileCoalitionIcon slug={coalitionSlug} />
+                                            </span>
+                                            <span className="profile-coalition-text">
+                                                <span className="profile-coalition-label">{coalitionLabel}</span>
+                                            </span>
+                                        </>
+                                    ) : '—'}
+                                </dd>
+                            </div>
+                            <div className="profile-level-col">
+                                <dt>Niveau</dt>
+                                <dd className="profile-cursus-level">{levelCursus != null ? String(levelCursus) : '—'}</dd>
+                            </div>
 						</div>
 					</dl>
 				</section>

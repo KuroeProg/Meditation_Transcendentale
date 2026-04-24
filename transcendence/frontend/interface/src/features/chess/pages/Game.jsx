@@ -13,6 +13,7 @@ import {
 } from "../core/chessSelectors.js";
 import { useChessEngine } from "../hooks/useChessEngine.js";
 import { useChessAudio } from "../hooks/useChessAudio.js";
+import { fetchGameDetails } from "../services/chessApi.js";
 
 function App() {
   useEffect(() => {
@@ -295,6 +296,7 @@ function App() {
             gameId={gameId}
             whiteLabel={whiteLabel}
             blackLabel={blackLabel}
+            gameState={gameState}
           />
         </div>
       </div>

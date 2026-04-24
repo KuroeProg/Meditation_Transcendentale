@@ -104,6 +104,82 @@ html[data-coalition='neutral'] {
 	color: var(--coalition-accent);
 }
 
+/* —— ELO Row in Stats Section —— */
+.stats-elo-row {
+	display: flex;
+	gap: 1rem;
+	margin-top: 1.5rem;
+	padding-top: 1.25rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	flex-wrap: wrap;
+}
+
+.stat-elo-item {
+	flex: 1;
+	min-width: 100px;
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.06);
+	transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.stat-elo-item:hover {
+	transform: translateY(-2px);
+	border-color: var(--coalition-accent-border);
+}
+
+.stat-elo-item i {
+	font-size: 1.5rem;
+	color: var(--coalition-accent);
+    opacity: 0.85;
+}
+
+.stat-elo-details {
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+}
+
+.stat-elo-label {
+	font-size: 0.58rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: rgba(255, 255, 255, 0.4);
+}
+
+.stat-elo-value {
+	font-size: 1.1rem;
+	font-weight: 800;
+	color: #fff;
+	font-family: ui-monospace, monospace;
+    text-shadow: 0 0 15px var(--coalition-accent-soft);
+}
+
+.profile-coalition-row {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 3rem;
+    width: 100%;
+}
+
+.profile-coalition-col {
+    display: flex;
+    flex-direction: column;
+}
+
+.profile-level-col {
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+}
+
 /* Profil : bloc identité = même fond que .phistory-header (Annales de l'Arène) + dash-hero */
 .page-shell .surface-card.profile-hero {
 	position: relative;

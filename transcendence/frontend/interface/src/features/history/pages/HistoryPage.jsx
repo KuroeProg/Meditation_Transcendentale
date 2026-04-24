@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
-import mockData from '../assets/mockHistoryData.json'
+import { fetchHistory } from '../services/historyApi.js'
 import '../styles/History.css'
 
 /* ── Constantes pièces ── */
@@ -14,10 +14,9 @@ const PIECE_SYMBOLS = {
 const COALITION_LABELS = { feu: 'Feu', eau: 'Eau', terre: 'Terre', air: 'Air' }
 
 const FORMAT_ICONS = {
-	blitz:     'ri-flashlight-line',
-	rapid:     'ri-time-line',
-	classical: 'ri-chess-line',
-	puzzle:    'ri-puzzle-line',
+	bullet: 'ri-dashboard-3-line',
+	blitz: 'ri-flashlight-line',
+	rapid: 'ri-timer-line',
 }
 
 function formatIcon(format) {
@@ -141,30 +140,26 @@ function HistoryRow({ game, isSelected, onSelect }) {
 				{/* Coalition adversaire */}
 				<CoalitionBadge coalition={game.opponent.coalition} />
 
-				{/* Précision */}
-				{game.accuracy && (
-					<div className="phistory-accuracy">
-						<span className="phistory-accuracy-val">{game.accuracy.me}%</span>
-						<span className="phistory-accuracy-label">préc.</span>
-					</div>
-				)}
+				{/* Mode et ELO Delta */}
+				<div className="phistory-mode-elo">
+					<span className={`phistory-mode-badge ${game.competitive ? 'phistory-mode-badge--ranked' : 'phistory-mode-badge--casual'}`}>
+						{game.competitive ? 'Compétitive' : 'Amical'}
+					</span>
+					{game.competitive && game.player.eloChange !== 0 && (
+						<span className={`phistory-elo-delta ${game.player.eloChange >= 0 ? 'phistory-elo-delta--pos' : 'phistory-elo-delta--neg'}`}>
+							{game.player.eloChange >= 0 ? '+' : ''}{game.player.eloChange}
+						</span>
+					)}
+				</div>
 
-				{/* Actions rapides */}
-				<div className="phistory-row-actions" role="group" aria-label="Actions de la partie">
+				{/* Visionnage */}
+				<div className="phistory-row-actions" role="group" aria-label="Visionnage de la partie">
 					{game.analysisStatus === 'analyzed' && (
 						<span
 							className="phistory-analysis-status phistory-analysis-status--analyzed"
 							title="Analysée"
 						>
 							<i className="ri-checkbox-circle-line" aria-hidden="true" />
-						</span>
-					)}
-					{game.analysisStatus === 'pending' && (
-						<span
-							className="phistory-analysis-status phistory-analysis-status--pending"
-							title="En attente d'analyse"
-						>
-							<i className="ri-time-line" aria-hidden="true" />
 						</span>
 					)}
 					<button
@@ -175,15 +170,6 @@ function HistoryRow({ game, isSelected, onSelect }) {
 						title="Revoir la partie"
 					>
 						<i className="ri-play-line" aria-hidden="true" />
-					</button>
-					<button
-						type="button"
-						className="phistory-action-btn"
-						onClick={handleChallenge}
-						aria-label="Défier à nouveau"
-						title="Défier à nouveau"
-					>
-						<i className="ri-sword-line" aria-hidden="true" />
 					</button>
 				</div>
 			</div>
@@ -215,7 +201,6 @@ function HistoryRow({ game, isSelected, onSelect }) {
 						<CapturesPreview capturedByMe={game.capturedByMe} capturedByOpponent={game.capturedByOpponent} />
 					</div>
 
-					{/* CTA */}
 					<div className="phistory-preview-actions">
 						<button type="button" className="phistory-cta-btn phistory-cta-btn--primary" onClick={handleReview}>
 							<i className="ri-play-circle-line" aria-hidden="true" />
@@ -224,10 +209,6 @@ function HistoryRow({ game, isSelected, onSelect }) {
 						<button type="button" className="phistory-cta-btn">
 							<i className="ri-bar-chart-2-line" aria-hidden="true" />
 							Analyse complète
-						</button>
-						<button type="button" className="phistory-cta-btn" onClick={handleChallenge}>
-							<i className="ri-sword-line" aria-hidden="true" />
-							Défier à nouveau
 						</button>
 					</div>
 				</div>
@@ -419,29 +400,58 @@ export default function HistoryPage() {
 	const { user } = useAuth()
 	const coalition = coalitionToSlug(user?.coalition)
 
+	const [data, setData] = useState(null)
+	const [isLoading, setIsLoading] = useState(true)
+	const [error, setError] = useState(null)
 	const [filterPeriod, setFilterPeriod] = useState('all')
 	const [filterResult, setFilterResult] = useState('all')
-	const [filterFormat,  setFilterFormat]  = useState('all')
-	const [filterMode,    setFilterMode]    = useState('all')
-	const [selectedId,    setSelectedId]    = useState(null)
+	const [filterFormat, setFilterFormat] = useState('all')
+	const [filterMode, setFilterMode] = useState('all')
+	const [selectedId, setSelectedId] = useState(null)
 
 	// Mise à jour du titre de page
 	useEffect(() => {
 		document.title = 'Transcendance — Annales de l\'Arène'
-		return () => { document.title = 'Transcendance' }
+
+		let isMounted = true
+		fetchHistory()
+			.then(res => {
+				if (isMounted) {
+					setData(res)
+					setIsLoading(false)
+				}
+			})
+			.catch(err => {
+				if (isMounted) {
+					setError(err.message)
+					setIsLoading(false)
+				}
+			})
+
+		return () => {
+			document.title = 'Transcendance'
+			isMounted = false
+		}
 	}, [])
 
 	const filteredGames = useMemo(() => {
-		return mockData.games.filter((g) => {
+		if (!data?.games) return []
+		return data.games.filter((g) => {
 			if (filterResult !== 'all' && g.result !== filterResult) return false
-			if (filterFormat  !== 'all' && g.format  !== filterFormat)  return false
-			if (filterMode    !== 'all') {
-				if (filterMode === 'ranked'  && !g.competitive) return false
-				if (filterMode === 'casual'  && g.competitive)  return false
+			if (filterFormat !== 'all' && g.format !== filterFormat) return false
+			if (filterMode !== 'all') {
+				if (filterMode === 'ranked') {
+					if (!g.competitive) return false
+				} else if (filterMode === 'casual') {
+					if (g.competitive) return false
+				} else {
+					// Filtre dynamique (standard, tournament, etc.)
+					if (g.gameMode !== filterMode) return false
+				}
 			}
 			return true
 		})
-	}, [filterResult, filterFormat, filterMode])
+	}, [data, filterResult, filterFormat, filterMode])
 
 	const selectedGame = useMemo(
 		() => filteredGames.find((g) => g.id === selectedId) ?? null,
@@ -450,9 +460,9 @@ export default function HistoryPage() {
 
 	const handleSelect = (id) => setSelectedId((prev) => (prev === id ? null : id))
 
-	const wins   = filteredGames.filter((g) => g.result === 'win').length
+	const wins = filteredGames.filter((g) => g.result === 'win').length
 	const losses = filteredGames.filter((g) => g.result === 'loss').length
-	const draws  = filteredGames.filter((g) => g.result === 'draw').length
+	const draws = filteredGames.filter((g) => g.result === 'draw').length
 
 	return (
 		<div
@@ -491,7 +501,7 @@ export default function HistoryPage() {
 				<nav className="phistory-filters" aria-label="Filtres de l'historique" data-testid="history-filters">
 					{/* Résultat */}
 					<div className="phistory-filter-group" role="group" aria-label="Filtrer par résultat">
-						{mockData.filters.results.map((f) => (
+						{data?.filters?.results.map((f) => (
 							<button
 								key={f.id}
 								type="button"
@@ -508,7 +518,7 @@ export default function HistoryPage() {
 
 					{/* Format */}
 					<div className="phistory-filter-group" role="group" aria-label="Filtrer par format">
-						{mockData.filters.formats.map((f) => (
+						{data?.filters?.formats.map((f) => (
 							<button
 								key={f.id}
 								type="button"
@@ -526,7 +536,7 @@ export default function HistoryPage() {
 
 					{/* Mode */}
 					<div className="phistory-filter-group" role="group" aria-label="Filtrer par mode">
-						{mockData.filters.modes.map((f) => (
+						{data?.filters?.modes.map((f) => (
 							<button
 								key={f.id}
 								type="button"
@@ -543,62 +553,109 @@ export default function HistoryPage() {
 
 			{/* ── Corps ── */}
 			<div className="phistory-body">
-				{/* Colonne principale */}
-				<main className="phistory-main" aria-label="Liste des parties">
-					<div className="phistory-table-section">
-						{/* En-têtes */}
-						<div className="phistory-table-header" role="row" aria-hidden="true">
-							<span className="phistory-table-col">Résultat</span>
-							<span className="phistory-table-col">Format</span>
-							<span className="phistory-table-col">Date</span>
-							<span className="phistory-table-col">Adversaire</span>
-							<span className="phistory-table-col">Coalition</span>
-							<span className="phistory-table-col phistory-table-col--right">Précision</span>
-							<span className="phistory-table-col phistory-table-col--right">Actions</span>
-						</div>
-
-						{/* Lignes */}
-						<div
-							className="phistory-table-body"
-							role="table"
-							aria-label="Parties jouées"
-							aria-rowcount={filteredGames.length}
-							data-testid="history-game-list"
-						>
-							{filteredGames.length === 0 ? (
-								<div className="phistory-empty" role="status">
-									<i className="ri-inbox-line" aria-hidden="true" />
-									<p className="phistory-empty-title">Aucune partie trouvée</p>
-									<p className="phistory-empty-sub">Essaie de modifier les filtres</p>
-								</div>
-							) : (
-								filteredGames.map((game) => (
-									<HistoryRow
-										key={game.id}
-										game={game}
-										isSelected={selectedId === game.id}
-										onSelect={() => handleSelect(game.id)}
-									/>
-								))
-							)}
-						</div>
+				{isLoading && (
+					<div className="phistory-loading" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '4rem', opacity: 0.6 }}>
+						<i className="ri-loader-2-line spinner" style={{ fontSize: '2rem', marginRight: '1rem' }} />
+						Chargement des mémoires de l'arène...
 					</div>
+				)}
 
-					{filteredGames.length > 0 && (
-						<div className="phistory-footer">
-							<button type="button" className="phistory-load-more">
-								<i className="ri-loader-2-line" aria-hidden="true" />
-								Charger plus de parties
-							</button>
-						</div>
-					)}
-				</main>
+				{error && (
+					<div className="phistory-error" style={{ flex: 1, padding: '4rem', textAlign: 'center', color: '#ff4b4b' }}>
+						<i className="ri-error-warning-line" style={{ fontSize: '3rem', marginBottom: '1rem' }} />
+						<p>Erreur lors du chargement : {error}</p>
+					</div>
+				)}
 
-				{/* Colonne latérale */}
-				<aside className="phistory-sidebar" aria-label="Panneaux d'analyse et communauté">
-					<AnalysisPanel game={selectedGame} />
-					<CommunityPanel community={mockData.communityPanel} />
-				</aside>
+				{!isLoading && !error && (
+					<>
+						{/* Colonne principale */}
+						<main className="phistory-main" aria-label="Liste des parties">
+							<div className="phistory-table-section">
+								{/* En-têtes */}
+								<div className="phistory-table-header" role="row" aria-hidden="true">
+									<span className="phistory-table-col">Résultat</span>
+									<span className="phistory-table-col">Format</span>
+									<span className="phistory-table-col">Date</span>
+									<span className="phistory-table-col">Adversaire</span>
+									<span className="phistory-table-col">Coalition</span>
+									<span className="phistory-table-col">Mode / ELO</span>
+									<span className="phistory-table-col phistory-table-col--right">Visionnage</span>
+								</div>
+
+								{/* Lignes */}
+								<div
+									className="phistory-table-body"
+									role="table"
+									aria-label="Parties jouées"
+									aria-rowcount={filteredGames.length}
+									data-testid="history-game-list"
+								>
+									{filteredGames.length === 0 ? (
+										<div className="phistory-empty" role="status">
+											<i className="ri-inbox-line" aria-hidden="true" />
+											<p className="phistory-empty-title">Aucune partie trouvée</p>
+											<p className="phistory-empty-sub">Essaie de modifier les filtres</p>
+										</div>
+									) : (
+										filteredGames.map((game) => (
+											<HistoryRow
+												key={game.id}
+												game={game}
+												isSelected={selectedId === game.id}
+												onSelect={() => handleSelect(game.id)}
+											/>
+										))
+									)}
+								</div>
+							</div>
+
+							{filteredGames.length > 0 && (
+								<div className="phistory-footer">
+									<button type="button" className="phistory-load-more">
+										<i className="ri-loader-2-line" aria-hidden="true" />
+										Charger plus de parties
+									</button>
+								</div>
+							)}
+						</main>
+
+						{/* Colonne latérale */}
+						{/* Colonne latérale - Commentée temporairement 
+						<aside className="phistory-sidebar" aria-label="Panneaux d'analyse et communauté">
+							<AnalysisPanel game={selectedGame} />
+							
+							{data?.puzzleRecommendations?.length > 0 && (
+								<div className="phistory-panel">
+									<div className="phistory-panel-header">
+										<i className="phistory-panel-icon ri-lightbulb-line" aria-hidden="true" />
+										<h2 className="phistory-panel-title">Progresser</h2>
+									</div>
+									<div className="phistory-panel-body">
+										<p className="phistory-preview-title">Puzzles recommandés</p>
+										<div className="phistory-puzzles">
+											{data.puzzleRecommendations.map(p => (
+												<div key={p.id} className="phistory-puzzle-card">
+													<div className="phistory-puzzle-icon">
+														<i className={p.icon} />
+													</div>
+													<div className="phistory-puzzle-info">
+														<div className="phistory-puzzle-theme">{p.theme}</div>
+														<div className="phistory-puzzle-diff">{p.difficulty}</div>
+													</div>
+													<i className="ri-arrow-right-s-line" />
+												</div>
+											))}
+										</div>
+									</div>
+								</div>
+							)}
+							
+							{data && <CommunityPanel community={data.communityPanel} />}
+						</aside>
+						*/}
+					</>
+				)}
 			</div>
 		</div>
 	)

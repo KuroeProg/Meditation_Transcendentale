@@ -14,6 +14,7 @@ def with_optional_trailing_slash(route, view_callable, name=None):
     return patterns
 
 from transcendence_backend.views import client_log_view
+from game.views import history_view, game_detail_view
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -21,6 +22,8 @@ urlpatterns = [
     *with_optional_trailing_slash('api/auth/42/callback', views.Callback42View.as_view(), name='callback_42'),
     path('api/auth/', include('accounts.urls')),
     path('api/chat/', include('chat.urls')),
+    *with_optional_trailing_slash('api/history', history_view, name='game_history'),
+    path('api/history/detail/<str:game_id>/', game_detail_view, name='game_detail'),
     path('api/logs/client/', client_log_view, name='client_log'),
     path('', include('django_prometheus.urls')),
 ]
