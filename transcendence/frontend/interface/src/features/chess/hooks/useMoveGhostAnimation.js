@@ -63,6 +63,8 @@ export function useMoveGhostAnimation({
   whitePieceThemeSlug,
   blackPieceThemeSlug,
   boardRootRef,
+  /** Si true au prochain changement de FEN : pas d’animation fantôme (ex. coup par drag-and-drop). */
+  skipNextGhostAnimRef,
 }) {
   const [activeMoveAnim, setActiveMoveAnim] = useState(null);
   
@@ -103,6 +105,15 @@ export function useMoveGhostAnimation({
       return;
     }
 
+    if (skipNextGhostAnimRef?.current) {
+      skipNextGhostAnimRef.current = false;
+      committedFenRef.current = nextFen;
+      previousFenRef.current = nextFen;
+      pendingFenRef.current = null;
+      finalizeGhostAnimation();
+      return;
+    }
+
     const moveAnim = findAnimatedMove(prevFen, nextFen);
     committedFenRef.current = nextFen;
     if (!moveAnim || isViewOnly) {
@@ -131,6 +142,7 @@ export function useMoveGhostAnimation({
     whitePieceThemeSlug,
     blackPieceThemeSlug,
     finalizeGhostAnimation,
+    skipNextGhostAnimRef,
   ]);
 
   // Measure DOM and calculate animation coordinates

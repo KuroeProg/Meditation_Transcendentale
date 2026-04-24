@@ -30,6 +30,7 @@ const PROMOTION_PIECE_ORDER = ["q", "r", "b", "n"];
 const MOVE_ANIM_MS = 200;
 const FILE_LABELS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const RANK_LABELS = [8, 7, 6, 5, 4, 3, 2, 1];
+const DRAG_THRESHOLD_PX = 5;
 
 function toSquare(row, col) {
   const files = "abcdefgh";
@@ -91,9 +92,21 @@ function Board({
   const [illegalFlashSq, setIllegalFlashSq] = useState(null);
   const [promotionPick, setPromotionPick] = useState(null);
 
+  // Drag and drop
+  const [dragSourceSq, setDragSourceSq] = useState(null);
+  const [dragOverSq, setDragOverSq] = useState(null);
+  const [dragGhost, setDragGhost] = useState(null);
+
   const winnerRef = useRef(null);
   const illegalTimerRef = useRef(null);
   const boardRootRef = useRef(null);
+  // Drag refs : pas de setState pendant le move pour éviter les re-renders
+  const dragStateRef = useRef(null);
+  const dragOccurredRef = useRef(false);
+  /** Gestionnaires window (pointermove / pointerup) pour ne pas capturer le pointeur au mousedown : le clic deux temps reste fiable. */
+  const windowDragHandlersRef = useRef({ move: null, up: null });
+  /** Prochain changement de FEN issu d’un drag : ne pas lancer l’animation fantôme du plateau. */
+  const skipNextGhostAnimRef = useRef(false);
 
   const pieceRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
   const tileRotation = playerColor === "b" ? "rotate(180deg)" : "rotate(0deg)";
@@ -115,6 +128,7 @@ function Board({
       whitePieceThemeSlug,
       blackPieceThemeSlug,
       boardRootRef,
+      skipNextGhostAnimRef,
     });
 
   useEffect(() => {
@@ -175,6 +189,12 @@ function Board({
 
   const handleBoardClick = useCallback(
     (e) => {
+      // Un drag vient de se terminer : le click synthétique qui suit est ignoré
+      if (dragOccurredRef.current) {
+        dragOccurredRef.current = false;
+        return;
+      }
+
       const el = e.target.closest?.(".cell[data-square]");
       if (!el || !(el instanceof HTMLElement)) return;
       const sq = el.dataset.square;
@@ -303,6 +323,206 @@ function Board({
     ],
   );
 
+  // --- Drag and drop via Pointer Events (window : préserve le clic deux temps) ---
+
+  const detachWindowDragListeners = useCallback(() => {
+    const { move, up } = windowDragHandlersRef.current;
+    if (move) window.removeEventListener("pointermove", move, true);
+    if (up) {
+      window.removeEventListener("pointerup", up, true);
+      window.removeEventListener("pointercancel", up, true);
+    }
+    windowDragHandlersRef.current = { move: null, up: null };
+  }, []);
+
+  useEffect(() => () => detachWindowDragListeners(), [detachWindowDragListeners]);
+
+  const cleanupDrag = useCallback(() => {
+    dragStateRef.current = null;
+    setDragSourceSq(null);
+    setDragOverSq(null);
+    setDragGhost(null);
+  }, []);
+
+  const completeDragMove = useCallback(
+    (targetSq) => {
+      const ds = dragStateRef.current;
+      if (!ds) return;
+
+      if (!targetSq || targetSq === ds.from) {
+        if (!targetSq) {
+          setSelected(null);
+          setPossibleMoves([]);
+        }
+        return;
+      }
+
+      if (!ds.legalTargets.includes(targetSq)) {
+        unlockGameAudio();
+        playUiErrorDeny();
+        flashIllegalSquare(targetSq);
+        setSelected(null);
+        setPossibleMoves([]);
+        return;
+      }
+
+      const movingPiece = { type: ds.pieceType, color: ds.pieceColor };
+      const destinationRank = targetSq[1];
+      const isPromo =
+        ds.pieceType === "p" && (destinationRank === "8" || destinationRank === "1");
+
+      if (isPromo) {
+        const candidates = game
+          .moves({ square: ds.from, verbose: true })
+          .filter((m) => m.to === targetSq);
+        const promoCodes = [
+          ...new Set(candidates.filter((m) => m.promotion).map((m) => m.promotion)),
+        ].sort((a, b) => PROMOTION_PIECE_ORDER.indexOf(a) - PROMOTION_PIECE_ORDER.indexOf(b));
+
+        if (promoCodes.length >= 1) {
+          skipNextGhostAnimRef.current = true;
+          setPromotionPick({
+            from: ds.from,
+            to: targetSq,
+            color: movingPiece.color,
+            themeSlug: ds.themeSlug,
+            options: promoCodes,
+          });
+          setSelected(null);
+          setPossibleMoves([]);
+          return;
+        }
+      }
+
+      skipNextGhostAnimRef.current = true;
+      submitMoveRequest(ds.from, targetSq, movingPiece, undefined);
+      setSelected(null);
+      setPossibleMoves([]);
+    },
+    [game, flashIllegalSquare, submitMoveRequest],
+  );
+
+  const handlePointerDown = useCallback(
+    (e) => {
+      if (isViewOnly || winnerRef.current || promotionPick || activeMoveAnimRef.current) return;
+      if (e.pointerType === "mouse" && e.button !== 0) return;
+
+      detachWindowDragListeners();
+
+      const el = e.target.closest?.(".cell[data-square]");
+      if (!el) return;
+      const sq = el.dataset.square;
+      if (!sq) return;
+
+      const piece = game.get(sq);
+      if (!piece) return;
+      if (game.turn() !== piece.color) return;
+      if (playerColor && piece.color !== playerColor) return;
+
+      const moves = game.moves({ square: sq, verbose: true });
+      if (moves.length === 0) return;
+
+      dragOccurredRef.current = false;
+      dragStateRef.current = {
+        from: sq,
+        pointerId: e.pointerId,
+        startX: e.clientX,
+        startY: e.clientY,
+        moved: false,
+        pieceType: piece.type,
+        pieceColor: piece.color,
+        themeSlug: piece.color === "w" ? whitePieceThemeSlug : blackPieceThemeSlug,
+        legalTargets: moves.map((m) => m.to),
+      };
+
+      const onWindowMove = (ev) => {
+        const ds = dragStateRef.current;
+        if (!ds || ev.pointerId !== ds.pointerId) return;
+
+        const dist = Math.hypot(ev.clientX - ds.startX, ev.clientY - ds.startY);
+        if (!ds.moved && dist < DRAG_THRESHOLD_PX) return;
+
+        if (!ds.moved) {
+          ds.moved = true;
+          dragOccurredRef.current = true;
+          try {
+            boardRootRef.current?.setPointerCapture?.(ev.pointerId);
+          } catch {
+            /* ignore */
+          }
+          setDragSourceSq(ds.from);
+          setSelected(ds.from);
+          setPossibleMoves(ds.legalTargets);
+          unlockGameAudio();
+        }
+
+        setDragGhost({
+          x: ev.clientX,
+          y: ev.clientY,
+          pieceType: ds.pieceType,
+          pieceColor: ds.pieceColor,
+          themeSlug: ds.themeSlug,
+        });
+
+        const elUnder = document.elementFromPoint(ev.clientX, ev.clientY);
+        const cellEl = elUnder?.closest?.(".cell[data-square]");
+        setDragOverSq(cellEl?.dataset?.square ?? null);
+      };
+
+      const onWindowUp = (ev) => {
+        const ds = dragStateRef.current;
+        if (!ds || ev.pointerId !== ds.pointerId) return;
+
+        try {
+          boardRootRef.current?.releasePointerCapture?.(ev.pointerId);
+        } catch {
+          /* ignore */
+        }
+
+        window.removeEventListener("pointermove", onWindowMove, true);
+        window.removeEventListener("pointerup", onWindowUp, true);
+        window.removeEventListener("pointercancel", onWindowUp, true);
+        windowDragHandlersRef.current = { move: null, up: null };
+
+        if (!ds.moved) {
+          dragStateRef.current = null;
+          return;
+        }
+
+        if (ev.type === "pointercancel") {
+          setSelected(null);
+          setPossibleMoves([]);
+          cleanupDrag();
+          return;
+        }
+
+        const elUnder = document.elementFromPoint(ev.clientX, ev.clientY);
+        const cellEl = elUnder?.closest?.(".cell[data-square]");
+        const targetSq = cellEl?.dataset?.square ?? null;
+
+        completeDragMove(targetSq);
+        cleanupDrag();
+      };
+
+      windowDragHandlersRef.current = { move: onWindowMove, up: onWindowUp };
+      window.addEventListener("pointermove", onWindowMove, true);
+      window.addEventListener("pointerup", onWindowUp, true);
+      window.addEventListener("pointercancel", onWindowUp, true);
+    },
+    [
+      game,
+      isViewOnly,
+      playerColor,
+      promotionPick,
+      activeMoveAnimRef,
+      whitePieceThemeSlug,
+      blackPieceThemeSlug,
+      detachWindowDragListeners,
+      completeDragMove,
+      cleanupDrag,
+    ],
+  );
+
   useEffect(() => {
     if (!isViewOnly) return;
     setSelected(null);
@@ -314,7 +534,10 @@ function Board({
   useEffect(() => {
     if (!promotionPick) return;
     const onKey = (e) => {
-      if (e.key === "Escape") setPromotionPick(null);
+      if (e.key === "Escape") {
+        skipNextGhostAnimRef.current = false;
+        setPromotionPick(null);
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -392,9 +615,12 @@ function Board({
           <div className="board-play-area">
             <div
               id="board"
+              data-testid="chess-board"
               ref={boardRootRef}
               role="presentation"
+              className={dragSourceSq ? "is-dragging" : undefined}
               onClick={handleBoardClick}
+              onPointerDown={handlePointerDown}
             >
               <CellRenderer
                 position={position}
@@ -412,7 +638,8 @@ function Board({
                 blackPieceThemeSlug={blackPieceThemeSlug}
                 activeMoveAnim={activeMoveAnim}
                 pieceRotation={pieceRotation}
-                pieceSuppressed={pieceSuppressed}
+                pieceSuppressed={(sq, anim) => pieceSuppressed(sq, anim) || sq === dragSourceSq}
+                dragOverSq={dragOverSq}
               />
 
               <MoveGhost
@@ -435,7 +662,10 @@ function Board({
               <PromotionPicker
                 promotionPick={promotionPick}
                 isViewOnly={isViewOnly}
-                onCancel={() => setPromotionPick(null)}
+                onCancel={() => {
+                  skipNextGhostAnimRef.current = false;
+                  setPromotionPick(null);
+                }}
                 onChoose={(code) => {
                   submitMoveRequest(
                     promotionPick.from,
@@ -471,6 +701,22 @@ function Board({
           </div>
         </div>
       </div>
+
+      {/* Ghost de pièce en position fixe : hors du container rotatif pour éviter les décalages */}
+      {dragGhost && (
+        <div
+          className="board-drag-ghost"
+          style={{ left: dragGhost.x, top: dragGhost.y }}
+          aria-hidden="true"
+        >
+          <img
+            className="board-drag-ghost__img"
+            src={`/chess/pieces/${dragGhost.themeSlug}/${dragGhost.pieceColor === "w" ? "light" : "dark"}/${dragGhost.pieceType}.png`}
+            alt=""
+            draggable={false}
+          />
+        </div>
+      )}
     </div>
   );
 }

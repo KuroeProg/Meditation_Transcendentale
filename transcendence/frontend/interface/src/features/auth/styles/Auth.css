@@ -1,8 +1,8 @@
 /* ===== AUTH PAGE — SPLIT LAYOUT ===== */
 .auth-page {
   display: flex;
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: 100dvh;
   width: 100%;
   margin: 0;
   padding: 0;
@@ -247,8 +247,8 @@ html[data-reduce-motion='true'] .auth-coalition-symbol:hover {
   align-items: center;
   justify-content: flex-start;
   padding: clamp(0.75rem, 2vh, 1.25rem) clamp(0.75rem, 2.5vw, 1.5rem) clamp(1rem, 3vh, 1.5rem);
-  min-height: 100dvh;
   min-height: 100vh;
+  min-height: 100dvh;
   box-sizing: border-box;
   background:
     linear-gradient(145deg, rgba(14, 14, 24, 0.97) 0%, rgba(10, 10, 20, 0.99) 100%);

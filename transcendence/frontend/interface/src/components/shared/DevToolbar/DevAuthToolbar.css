@@ -74,6 +74,7 @@
 .dev-auth-toolbar--panel {
 	scrollbar-width: thin;
 }
+.dev-auth-toolbar--panel::-webkit-scrollbar { width: 4px; }
 
 .dev-auth-toolbar__row {
 	display: flex;

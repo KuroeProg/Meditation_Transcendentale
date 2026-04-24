@@ -25,6 +25,7 @@ Current stable selectors:
   - game-board-frame
   - game-player-bar-top
   - game-player-bar-bottom
+  - chess-board (le conteneur `#board`, pour cibler les cases via `[data-square="e2"]`)
 - Chat:
   - chat-fab-cluster
   - chat-open-button

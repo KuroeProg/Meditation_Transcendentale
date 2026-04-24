@@ -18,6 +18,7 @@ const BoardCell = memo(function BoardCell({
   isIllegalFlash,
   suppressPiece,
   pieceRotation,
+  isDragOver,
 }) {
   const className = [
     'cell',
@@ -28,6 +29,7 @@ const BoardCell = memo(function BoardCell({
     isPossibleCapture ? 'possible-capture' : '',
     isKingCheckCell ? 'king-check king-check-attn' : '',
     isIllegalFlash ? 'illegal-move-flash' : '',
+    isDragOver ? 'drag-over' : '',
   ]
     .filter(Boolean)
     .join(' ')
@@ -83,6 +85,7 @@ export function CellRenderer({
   activeMoveAnim,
   pieceRotation,
   pieceSuppressed,
+  dragOverSq,
 }) {
   return position.map((row, rowIndex) =>
     row.map((piece, colIndex) => {
@@ -114,6 +117,7 @@ export function CellRenderer({
           isIllegalFlash={isIllegal}
           suppressPiece={pieceSuppressed(sq, activeMoveAnim)}
           pieceRotation={pieceRotation}
+          isDragOver={dragOverSq === sq}
         />
       )
     }),

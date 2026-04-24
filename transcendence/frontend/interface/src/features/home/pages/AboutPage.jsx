@@ -17,8 +17,8 @@ const GITHUB_URL_THEO = 'https://github.com/Mileumm'
 const PHOTO_SRC_VINCENT = '/team/vincent.png'
 const PHOTO_SRC_ALEXIE = null // ex. '/team/alexie.png'
 const PHOTO_SRC_EVEN = null
-const PHOTO_SRC_CLOE = null
-const PHOTO_SRC_THEO = null
+const PHOTO_SRC_CLOE = '/team/cloe.png'
+const PHOTO_SRC_THEO = '/team/theo.png'
 
 /** Si la constante photo est `null`, on retombe sur l’avatar Intra (à retirer quand tout est local). */
 const intraAvatar = (login) => `https://cdn.intra.42.fr/users/${login}/medium_avatar.jpg`

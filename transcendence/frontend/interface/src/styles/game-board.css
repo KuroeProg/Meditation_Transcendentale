@@ -776,6 +776,48 @@ html[data-reduce-motion='true'] .board-move-ghost {
 	filter: brightness(1.05);
 }
 
+/* Drag and drop : curseur pendant le glisser */
+#board.is-dragging {
+	cursor: grabbing;
+}
+#board.is-dragging .piece {
+	cursor: grabbing;
+}
+
+/* Case survolée pendant un drag */
+.cell.drag-over:not(.selected)::after {
+	content: '';
+	position: absolute;
+	inset: 0;
+	z-index: 6;
+	pointer-events: none;
+	border-radius: 1px;
+	background: rgba(100, 200, 140, 0.28);
+	box-shadow: inset 0 0 0 3px rgba(60, 200, 100, 0.65);
+}
+
+/* Fantôme de pièce suivant le curseur */
+.board-drag-ghost {
+	position: fixed;
+	z-index: 9999;
+	pointer-events: none;
+	width: var(--cell, 64px);
+	height: var(--cell, 64px);
+	transform: translate(-50%, -50%);
+	opacity: 0.9;
+	will-change: transform;
+}
+
+.board-drag-ghost__img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	display: block;
+	filter:
+		drop-shadow(0 2px 6px rgba(0, 0, 0, 0.6))
+		drop-shadow(0 0 2px rgba(0, 0, 0, 0.4));
+}
+
 /* augmenter inline border quand une piece se déplace dessus + */
 
 

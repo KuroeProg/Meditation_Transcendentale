@@ -20,6 +20,11 @@
 	animation: statsSlideIn 0.35s ease-out both;
 	box-sizing: border-box;
 }
+.game-stats-panel::-webkit-scrollbar { width: 4px; }
+.game-stats-panel::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.12);
+	border-radius: 4px;
+}
 
 @keyframes statsSlideIn {
 	from {
@@ -485,6 +490,11 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	scrollbar-width: thin;
 	scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
+.stats-move-list::-webkit-scrollbar { width: 4px; }
+.stats-move-list::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.12);
+	border-radius: 4px;
+}
 
 .stats-move-list--pgn {
 	max-height: min(400px, 50vh);
@@ -735,6 +745,7 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	padding: 1rem;
 	box-sizing: border-box;
 	background: rgba(0, 0, 0, 0.55);
+	-webkit-backdrop-filter: blur(2px);
 	backdrop-filter: blur(2px);
 }
 
@@ -1693,6 +1704,11 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	max-height: min(320px, 40vh);
 	scrollbar-width: thin;
 	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+}
+.igc-messages::-webkit-scrollbar { width: 4px; }
+.igc-messages::-webkit-scrollbar-thumb {
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 4px;
 }
 
 .igc-msg {
