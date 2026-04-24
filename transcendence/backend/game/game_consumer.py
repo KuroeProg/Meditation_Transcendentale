@@ -315,12 +315,14 @@ class GameConsumer(AsyncWebsocketConsumer):
 			'moves': game_state.get('moves', []),
 		}
 
-	async def _finish_game(self, game_state, winner_id, termination_reason):
-		"""Persist, broadcast, clear presence and invites for a finished game."""
+	async def _save_and_broadcast_final_state(self, game_state, winner_id, termination_reason):
+		"""Save game to DB, broadcast final state with Elo deltas, clear presence and invites."""
 		final_game_data = self._build_final_game_data(game_state, winner_id, termination_reason)
-		success = await async_save_full_game(final_game_data)
+		success, deltas = await async_save_full_game(final_game_data)
+		game_state['elo_deltas'] = deltas if isinstance(deltas, dict) else {}
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
 		await self._close_invite_joinability('game_finished')
-		# Clear active game for both players
 		for pid_key in ('white_player_id', 'black_player_id'):
 			pid = game_state.get(pid_key)
 			if pid is not None:
@@ -338,7 +340,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 				},
 			)
 		else:
-			logger.warning("Game finished but DB save failed", extra={"game_id": self.game_id})
+			logger.warning(
+				"Game finished but DB save failed",
+				extra={"game_id": self.game_id, "termination_reason": termination_reason},
+			)
 
 	# ─── action handlers ────────────────────────────────────────────────────────
 
@@ -390,11 +395,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		apply_elapsed_for_active_turn(game_state, board, now_ts)
 		if mark_timeout_if_needed(game_state, board):
-			await self.get_redis().set(self.game_id, json.dumps(game_state))
-			await self._broadcast_current_game_state(game_state)
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-			await self._finish_game(game_state, winner_id, 'timeout')
+			await self._save_and_broadcast_final_state(game_state, winner_id, 'timeout')
 			return
 
 		if game_state.get('status') != 'active':
@@ -435,7 +438,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 				winner_id = game_state['black_player_id']
 			else:
 				winner_id = None
-			await self._finish_game(game_state, winner_id, 'checkmate_or_draw')
+			await self._save_and_broadcast_final_state(game_state, winner_id, 'checkmate_or_draw')
+			return
 
 	async def handle_resign(self, game_state_json, data):
 		"""Process player resignation and end game."""
@@ -448,9 +452,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': error}))
 			return
 
-		await self.get_redis().set(self.game_id, json.dumps(game_state))
-		await self._broadcast_current_game_state(game_state)
-		await self._finish_game(game_state, game_state.get('winner_player_id'), 'resign')
+		winner_id = game_state.get('winner_player_id')
+		await self._save_and_broadcast_final_state(game_state, winner_id, 'resign')
 
 	async def handle_draw_offer(self, game_state_json, data):
 		"""Process draw offer from a player."""
@@ -486,7 +489,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 		if game_state.get('status') == 'draw':
-			await self._finish_game(game_state, None, 'draw_agreement')
+			await self._save_and_broadcast_final_state(game_state, None, 'draw_agreement')
 
 	async def handle_reconnect(self, game_state_json):
 		"""Re-sync reconnecting player with current game state."""
