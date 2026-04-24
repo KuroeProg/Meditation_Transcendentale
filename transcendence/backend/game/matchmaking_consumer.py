@@ -187,8 +187,9 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			return
 			
 		# 2. Query Elasticsearch (wrapping the synchronous method to avoid blocking the WebSocket)
-		print(f"CQRS : Demande de stats reçue pour le joueur {player_id}")
-		stats = await sync_to_async(get_player_stats)(player_id)
+		category = data.get('category', 'rapid')
+		print(f"CQRS : Demande de stats {category} reçue pour le joueur {player_id}")
+		stats = await sync_to_async(get_player_stats)(player_id, category)
 		
 		# 3. Send the result back to the frontend
 		print(f"CQRS : Envoi des stats à {player_id} : {stats}")

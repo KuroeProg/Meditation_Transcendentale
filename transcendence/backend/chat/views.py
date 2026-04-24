@@ -41,11 +41,14 @@ def _format_time_control_label(seconds):
     return f'{seconds}s'
 
 
-def _infer_time_category(time_control):
+def _infer_time_category(time_control, increment=0):
     seconds = int(time_control)
-    if seconds <= 120:
+    inc = int(increment)
+    estimated_time = seconds + 40 * inc
+    
+    if estimated_time < 180:
         return 'bullet'
-    if seconds <= 300:
+    if estimated_time < 480:
         return 'blitz'
     if seconds >= 86400:
         return 'correspondence'
@@ -83,7 +86,7 @@ def _create_online_game_for_invite(invite):
         'time_control_seconds': time_control,
         'increment': increment,
         'increment_seconds': increment,
-        'time_category': _infer_time_category(time_control),
+        'time_category': _infer_time_category(time_control, increment),
         'is_competitive': is_competitive,
         'is_rated': is_competitive,
         'game_mode': 'standard',
