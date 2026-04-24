@@ -37,6 +37,21 @@ async function jsonFetch(url, opts = {}) {
 	return res.json()
 }
 
-export function fetchHistory() {
-	return jsonFetch('/api/game/history?limit=100')
+const HISTORY_LIST_URLS = ['/api/game/history?limit=100', '/api/history?limit=100']
+
+/**
+ * Liste des parties (même contrat JSON) : route canonique sous /api/game/, alias legacy /api/history/.
+ * En cas de 404 sur la première (vieux proxy ou backend partiel), on retente la seconde.
+ */
+export async function fetchHistory() {
+	for (let i = 0; i < HISTORY_LIST_URLS.length; i++) {
+		try {
+			return await jsonFetch(HISTORY_LIST_URLS[i])
+		} catch (e) {
+			const is404 = String(e?.message || '').includes('404')
+			if (is404 && i < HISTORY_LIST_URLS.length - 1) continue
+			throw e
+		}
+	}
+	throw new Error('Historique indisponible')
 }
