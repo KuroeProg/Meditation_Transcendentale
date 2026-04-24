@@ -15,7 +15,7 @@ const GITHUB_URL_THEO = 'https://github.com/Mileumm'
  * Pour ajouter un membre : copier l’image → constante `PHOTO_SRC_*` → `photoSrc` dans `TEAM` (ou `null` + Intra).
  */
 const PHOTO_SRC_VINCENT = '/team/vincent.png'
-const PHOTO_SRC_ALEXIE = null // ex. '/team/alexie.png'
+const PHOTO_SRC_ALEXIE = '/team/alexie.png'
 const PHOTO_SRC_EVEN = null
 const PHOTO_SRC_CLOE = '/team/cloe.png'
 const PHOTO_SRC_THEO = '/team/theo.png'
