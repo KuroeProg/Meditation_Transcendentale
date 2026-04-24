@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react"
 import {
   buildPerfChartData,
   buildMaterialChartData,
@@ -22,10 +22,17 @@ import { InGameChat } from './InGameChat.jsx'
 import { GameMusicPanel } from '../../audio/components/GameAudio.jsx'
 import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
-import mockPersonalStats from '../../stats/assets/mockPersonalStats.json'
+import { fetchHistory } from '../../history/services/historyApi.js'
+import { enrichGameForUi } from '../../history/services/historyGameUi.js'
 import '../styles/GameStatsPanel.css'
 
-const mockStats = mockPersonalStats.gamePanel
+/**
+ * Panneau droit en partie : onglet « Parties » charge l’historique via GET /api/game/history
+ * (même contrat que la page Annales — voir docs/BACKEND_IN_GAME_SOCIAL.md §9.3).
+ */
+
+/** Nombre de parties chargées dans l’onglet « Parties » (GET /api/game/history?limit=…) */
+const INGAME_HISTORY_LIMIT = 40
 
 export default function GameStatsPanel({
   moveLog = [],
@@ -50,7 +57,7 @@ export default function GameStatsPanel({
   whiteLabel = "Joueur blancs",
   blackLabel = "Joueur noirs",
 }) {
-  const { user } = useAuth()
+  const { user, refetch: refetchUser } = useAuth()
   const normalizeId = (id) => id ? String(id) : null;
   
   // Real Elo data from backend
@@ -81,10 +88,15 @@ export default function GameStatsPanel({
 
   const coalitionSlug = coalitionToSlug(user?.coalition)
   const [activeTab, setActiveTab] = useState("moves");
+  const [historyGames, setHistoryGames] = useState([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [historyFetchKey, setHistoryFetchKey] = useState(0);
   const [perfFilter, setPerfFilter] = useState("time");
   const [resignOpen, setResignOpen] = useState(false);
   const [drawInfoOpen, setDrawInfoOpen] = useState(false);
   const [friendsList, setFriendsList] = useState([]);
+  const [chatUnread, setChatUnread] = useState(0);
   const prevGameEndedRef = useRef(false);
 
   useEffect(() => {
@@ -136,12 +148,47 @@ export default function GameStatsPanel({
     playerColor,
   });
 
+  const refetchIngameHistory = useCallback(() => {
+    setHistoryFetchKey((k) => k + 1);
+  }, []);
+
   useEffect(() => {
     if (gameEnded && !prevGameEndedRef.current) {
       setActiveTab("moves");
+      // Rafraîchir les stats utilisateur (games_played, winrate, etc.) après la sauvegarde backend
+      const timer = setTimeout(() => {
+        refetchUser().catch(() => {})
+        refetchIngameHistory()
+      }, 2500)
+      return () => clearTimeout(timer)
     }
     prevGameEndedRef.current = gameEnded;
-  }, [gameEnded]);
+  }, [gameEnded, refetchUser, refetchIngameHistory]);
+
+  useEffect(() => {
+    if (activeTab !== "history") return;
+    let cancelled = false;
+    setHistoryLoading(true);
+    setHistoryError(null);
+    (async () => {
+      try {
+        const res = await fetchHistory({ limit: INGAME_HISTORY_LIMIT });
+        if (cancelled) return;
+        const raw = res?.games ?? [];
+        setHistoryGames(raw.map(enrichGameForUi));
+      } catch (e) {
+        if (!cancelled) {
+          setHistoryGames([]);
+          setHistoryError(e?.message || "Impossible de charger l’historique");
+        }
+      } finally {
+        if (!cancelled) setHistoryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, historyFetchKey]);
 
   const perfData = useMemo(() => buildPerfChartData(moveLog), [moveLog]);
   const materialData = useMemo(
@@ -151,13 +198,23 @@ export default function GameStatsPanel({
   const pieceData = useMemo(() => buildMovePieceUsageData(moveLog), [moveLog]);
   const result = getResultInfo(winner);
 
+  const handleChatUnreadChange = useCallback((count) => {
+    setChatUnread(count)
+  }, [])
+
+  const handleSetActiveTab = useCallback((tab) => {
+    setActiveTab(tab)
+    if (tab === 'chat') setChatUnread(0)
+  }, [])
+
   return (
     <div className="game-stats-panel">
       <StatsTabsNav
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={handleSetActiveTab}
         onPlayAgain={onPlayAgain}
         gameEnded={gameEnded}
+        chatUnread={chatUnread}
       />
 
       {activeTab === "moves" && (
@@ -212,26 +269,30 @@ export default function GameStatsPanel({
 
       {activeTab === "history" && (
         <HistoryView
-          recentGames={mockStats.recentGames}
+          recentGames={historyGames}
           coalitionSlug={coalitionSlug}
           headerAudio={<GameMusicPanel />}
+          loading={historyLoading}
+          error={historyError}
+          onRetry={refetchIngameHistory}
         />
       )}
 
-      {activeTab === "chat" && (
+      {/* Toujours monté pour conserver le socket WS, masqué quand inactif */}
+      <div style={{ display: activeTab === 'chat' ? 'contents' : 'none' }}>
         <InGameChat
           opponentUsername={opponentUsername}
           gameId={gameId}
           userId={user?.id}
           coalitionSlug={coalitionSlug}
+          isVisible={activeTab === 'chat'}
+          onUnreadChange={handleChatUnreadChange}
         />
-      )}
+      </div>
 
       {activeTab === "friends" && (
         <FriendsView
           friends={friendsList}
-          friendsRoster={mockStats.friendsRoster}
-          myCoalition={user?.coalition}
           coalitionSlug={coalitionSlug}
           headerAudio={<GameMusicPanel />}
         />

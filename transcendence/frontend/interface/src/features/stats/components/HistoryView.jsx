@@ -177,7 +177,9 @@ function GameRow({ game, isOpen, onToggle }) {
 						<button
 							type="button"
 							className="ghv-btn ghv-btn--primary"
-							onClick={stopAndGo(() => navigate(`/game/${game.id}`))}
+							onClick={stopAndGo(() =>
+								navigate(`/game/review/${String(game.id).replace(/^game-/, '')}`),
+							)}
 						>
 							<i className="ri-play-line" aria-hidden="true" />
 							Revoir
@@ -208,10 +210,20 @@ function GameRow({ game, isOpen, onToggle }) {
 /* ══════════════════════════════════════════════════
    Composant principal HistoryView
    Props:
-     recentGames   — tableau de parties (shape: mockPersonalStats.gamePanel.recentGames)
+     recentGames   — tableau de parties (même enrichissement que la page Historique)
      coalitionSlug — slug coalition du joueur courant pour la bannière
+     loading        — chargement API en cours
+     error          — message d’erreur API
+     onRetry        — rappelé au clic sur « Réessayer »
    ══════════════════════════════════════════════════ */
-export function HistoryView({ recentGames = [], coalitionSlug, headerAudio = null }) {
+export function HistoryView({
+	recentGames = [],
+	coalitionSlug,
+	headerAudio = null,
+	loading = false,
+	error = null,
+	onRetry = null,
+}) {
 	const [filterResult, setFilterResult] = useState('all')
 	const [filterFormat,  setFilterFormat]  = useState('all')
 	const [openId, setOpenId] = useState(null)
@@ -295,12 +307,30 @@ export function HistoryView({ recentGames = [], coalitionSlug, headerAudio = nul
 				aria-rowcount={filtered.length}
 				data-testid="ingame-history-list"
 			>
-				{filtered.length === 0 ? (
+				{error && (
+					<div className="ghv-empty ghv-empty--error" role="alert" data-testid="ingame-history-error">
+						<i className="ri-error-warning-line" aria-hidden="true" />
+						<span>{error}</span>
+						{typeof onRetry === 'function' ? (
+							<button type="button" className="ghv-footer-btn" onClick={onRetry}>
+								Réessayer
+							</button>
+						) : null}
+					</div>
+				)}
+				{!error && loading && (
+					<div className="ghv-empty" role="status" data-testid="ingame-history-loading">
+						<i className="ri-loader-2-line ghv-spinner" aria-hidden="true" />
+						<span>Chargement des annales…</span>
+					</div>
+				)}
+				{!error && !loading && filtered.length === 0 ? (
 					<div className="ghv-empty" role="status">
 						<i className="ri-inbox-line" aria-hidden="true" />
 						<span>Aucune partie correspondante</span>
 					</div>
-				) : (
+				) : null}
+				{!error && !loading &&
 					filtered.map((game) => (
 						<GameRow
 							key={game.id}
@@ -308,12 +338,11 @@ export function HistoryView({ recentGames = [], coalitionSlug, headerAudio = nul
 							isOpen={openId === game.id}
 							onToggle={() => handleToggle(game.id)}
 						/>
-					))
-				)}
+					))}
 			</div>
 
 			{/* ── Footer : lien vers page dédiée ── */}
-			{filtered.length > 0 && (
+			{!error && !loading && filtered.length > 0 && (
 				<div className="ghv-footer">
 					<button type="button" className="ghv-footer-btn" onClick={() => navigate('/history')}>
 						<i className="ri-history-line" aria-hidden="true" />

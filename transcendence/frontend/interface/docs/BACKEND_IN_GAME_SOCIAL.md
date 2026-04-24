@@ -308,6 +308,8 @@ La page propose deux actions :
 | `GET` | `/api/game/history` | `result`, `format`, `mode`, `limit`, `offset` | Liste paginée des parties terminées du user connecté |
 | `GET` | `/api/game/history/<pk>` | — | Payload complet pour le lecteur de replay : positions FEN, coups UCI, courbe d'avantage matériel |
 
+**Panneau jeu — onglet « Parties »** : `GameStatsPanel.jsx` appelle la même route `GET /api/game/history?limit=40` au passage sur l’onglet (même payload `{ games, … }` que la page `/history`), avec normalisation partagée `historyGameUi.js` (`enrichGameForUi`).
+
 **Payload replay (GET /api/game/history/<pk>)** :
 ```json
 {

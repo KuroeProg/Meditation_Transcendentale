@@ -37,19 +37,24 @@ async function jsonFetch(url, opts = {}) {
 	return res.json()
 }
 
-const HISTORY_LIST_URLS = ['/api/game/history?limit=100', '/api/history?limit=100']
+const HISTORY_LIST_PATHS = ['/api/game/history', '/api/history']
 
 /**
  * Liste des parties (même contrat JSON) : route canonique sous /api/game/, alias legacy /api/history/.
  * En cas de 404 sur la première (vieux proxy ou backend partiel), on retente la seconde.
+ *
+ * @param {{ limit?: number }} [opts]
  */
-export async function fetchHistory() {
-	for (let i = 0; i < HISTORY_LIST_URLS.length; i++) {
+export async function fetchHistory(opts = {}) {
+	const limit = opts.limit ?? 100
+	const q = `?limit=${encodeURIComponent(String(limit))}`
+	const urls = HISTORY_LIST_PATHS.map((p) => `${p}${q}`)
+	for (let i = 0; i < urls.length; i++) {
 		try {
-			return await jsonFetch(HISTORY_LIST_URLS[i])
+			return await jsonFetch(urls[i])
 		} catch (e) {
 			const is404 = String(e?.message || '').includes('404')
-			if (is404 && i < HISTORY_LIST_URLS.length - 1) continue
+			if (is404 && i < urls.length - 1) continue
 			throw e
 		}
 	}

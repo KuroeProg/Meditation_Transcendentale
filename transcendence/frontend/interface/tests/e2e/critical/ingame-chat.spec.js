@@ -66,4 +66,24 @@ test.describe('in-game chat shell', () => {
 		// After clicking a quick reply, the messages area should contain something
 		await expect(page.getByTestId('ingame-chat-messages')).not.toBeEmpty()
 	})
+
+	test('empty state placeholder is visible when no messages', async ({ page }) => {
+		// Messages area shows a helpful placeholder when empty
+		const messages = page.getByTestId('ingame-chat-messages')
+		await expect(messages).toBeVisible()
+		const placeholder = page.locator('.igc-empty')
+		await expect(placeholder).toBeVisible()
+	})
+
+	test('chat onglet visible même quand non actif (socket maintenu)', async ({ page }) => {
+		// Le composant InGameChat est toujours monté (pour garder le socket actif)
+		// Vérifier qu'on peut revenir à coups sans que le chat disparaisse définitivement
+		await page.getByTestId('stats-tab-moves').click()
+		// InGameChat reste dans le DOM mais caché
+		const chatRoot = page.getByTestId('ingame-chat')
+		await expect(chatRoot).toBeHidden()
+		// Revenir sur chat : il est à nouveau visible
+		await page.getByTestId('stats-tab-chat').click()
+		await expect(chatRoot).toBeVisible()
+	})
 })

@@ -4,12 +4,14 @@ export default function ChatFabCluster({
 	onOpenChat,
 	textUnread,
 	inviteUnread,
+	friendUnread,
 	toast,
 	onToastClick,
 	onToastDismiss,
 }) {
 	const showMsg = textUnread > 0
 	const showInv = inviteUnread > 0
+	const showFriend = friendUnread > 0
 
 	return (
 		<div className={`chat-fab-cluster${toast ? ' chat-fab-cluster--toast' : ''}`} data-testid="chat-fab-cluster">
@@ -26,7 +28,7 @@ export default function ChatFabCluster({
 				>
 					<i className="ri-chat-3-line" />
 					{showInv && (
-						<span className="chat-fab-badge chat-fab-badge--invite" title="Invitations">
+						<span className="chat-fab-badge chat-fab-badge--invite" title="Invitations de partie">
 							{inviteUnread > 99 ? '99+' : inviteUnread}
 						</span>
 					)}
@@ -36,6 +38,14 @@ export default function ChatFabCluster({
 							title="Messages non lus"
 						>
 							{textUnread > 99 ? '99+' : textUnread}
+						</span>
+					)}
+					{showFriend && (
+						<span
+							className={`chat-fab-badge chat-fab-badge--friend${showInv || showMsg ? ' chat-fab-badge--triple' : ''}`}
+							title="Demandes d'ami en attente"
+						>
+							{friendUnread > 99 ? '99+' : friendUnread}
 						</span>
 					)}
 				</button>

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchHistory } from '../services/historyApi.js'
+import { enrichGameForUi } from '../services/historyGameUi.js'
 import '../styles/History.css'
 
 const FALLBACK_FILTERS = {
@@ -23,53 +24,6 @@ const FALLBACK_FILTERS = {
 		{ id: 'ranked', label: 'Classé' },
 		{ id: 'casual', label: 'Amical' },
 	],
-}
-
-/** Complète les champs attendus par l’UI à partir de la réponse API. */
-function enrichGameForUi(g) {
-	const date = g.date ?? null
-	const relativeDate =
-		g.relativeDate ??
-		(date
-			? new Intl.RelativeTimeFormat('fr', { numeric: 'auto' }).format(
-					Math.round((new Date(date) - Date.now()) / 86400000),
-					'day',
-				)
-			: '—')
-	const fmt = g.format ?? 'rapid'
-	return {
-		...g,
-		id: typeof g.id === 'string' && g.id.startsWith('game-') ? g.id.replace(/^game-/, '') : g.id,
-		result: g.result ?? 'draw',
-		score: g.score ?? '½-½',
-		format: fmt,
-		formatLabel: g.formatLabel ?? (fmt.charAt(0).toUpperCase() + fmt.slice(1)),
-		date: date ?? new Date().toISOString(),
-		relativeDate,
-		opponent: {
-			username: g.opponent?.username ?? 'Inconnu',
-			coalition: g.opponent?.coalition ?? null,
-			elo: g.opponent?.elo ?? null,
-			isBot: g.opponent?.isBot ?? false,
-		},
-		moveCount: g.moveCount ?? 0,
-		competitive: g.competitive ?? false,
-		player: {
-			username: g.player?.username ?? '',
-			coalition: g.player?.coalition ?? null,
-			eloAfter: g.player?.eloAfter ?? null,
-			eloChange: g.player?.eloChange ?? 0,
-		},
-		accuracy: g.accuracy ?? null,
-		evalTrend: g.evalTrend ?? [],
-		shortPgn: g.shortPgn ?? '',
-		capturedByMe: g.capturedByMe ?? {},
-		capturedByOpponent: g.capturedByOpponent ?? {},
-		analysisStatus: g.analysisStatus ?? 'pending',
-		blunders: g.blunders ?? 0,
-		missedWins: g.missedWins ?? 0,
-		gameMode: g.gameMode ?? 'standard',
-	}
 }
 
 /* ── Constantes pièces ── */

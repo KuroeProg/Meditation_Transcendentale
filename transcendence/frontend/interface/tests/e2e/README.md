@@ -76,6 +76,8 @@ Current stable selectors:
   - profile-logout-button
 
 - Stats / History panel (in-game):
+  - stats-tab-moves | stats-tab-history | stats-tab-chat | stats-tab-friends (navigation du panneau droit)
+  - ingame-history-loading | ingame-history-error (chargement / erreur API onglet Parties)
   - ingame-bgm-fab (musique — un seul par onglet, dans l’en-tête type Annales)
   - ingame-moves-ghv-header
   - ingame-history-ghv-header
@@ -112,6 +114,7 @@ Current stable selectors:
   - friend-remove-${friendshipId} (ContactSearch, accepted contacts only)
 - Game review / replay (/game/review/:pk):
   - review-page
+  - review-header (header style Annales)
   - review-board
   - review-controls
   - review-player-top
@@ -125,6 +128,12 @@ Current stable selectors:
 - In-game chat (live):
   - ingame-chat-status-offline (connecting state)
   - ingame-chat-status-live (connected state)
+- Chat FAB badges (CSS classes, not testid):
+  - .chat-fab-badge--invite (game invitations)
+  - .chat-fab-badge--msg (unread messages)
+  - .chat-fab-badge--friend (pending friend requests received)
+- In-game chat tab badge:
+  - .stats-nav-chat-badge (unread messages when chat tab not active)
 
 Notes:
 - Some tests still rely on non-testid selectors for legacy areas (example: auth form ids, typing indicator classes).

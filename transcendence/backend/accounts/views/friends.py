@@ -1,10 +1,25 @@
 import json
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db.models import Q
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import Friendship, LocalUser
+
+
+def _notify_user(user_id, payload):
+    """Envoie une notification WS à un utilisateur spécifique (user_<id>)."""
+    try:
+        channel_layer = get_channel_layer()
+        if channel_layer:
+            async_to_sync(channel_layer.group_send)(
+                f'user_{user_id}',
+                {'type': 'notification', 'data': payload},
+            )
+    except Exception:
+        pass
 
 
 def _get_authenticated_user(request):
@@ -122,6 +137,14 @@ def friend_request(request):
             return JsonResponse({'error': 'Demande deja envoyee'}, status=409)
 
     friendship = Friendship.objects.create(from_user=user, to_user=target, status='pending')
+    _notify_user(target.id, {
+        'action': 'friend_request',
+        'from_user': {
+            'id': user.id,
+            'username': user.username,
+            'avatar': user.get_avatar_url(),
+        },
+    })
     return JsonResponse(_friendship_to_contact(friendship, user), status=201)
 
 
@@ -152,6 +175,14 @@ def friend_action(request, friendship_id):
                 return JsonResponse({'error': 'Impossible d\'accepter cette demande'}, status=400)
             friendship.status = 'accepted'
             friendship.save(update_fields=['status', 'updated_at'])
+            _notify_user(friendship.from_user_id, {
+                'action': 'friend_accepted',
+                'by_user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'avatar': user.get_avatar_url(),
+                },
+            })
 
         elif action == 'block':
             friendship.status = 'blocked'

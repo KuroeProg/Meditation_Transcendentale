@@ -57,6 +57,7 @@ export function AuthProvider({ children }) {
   const [outgoingPendingInvite, setOutgoingPendingInvite] = useState(null)
   const [priorityGameReady, setPriorityGameReady] = useState(null)
   const [inviteById, setInviteById] = useState({})
+  const [friendSignalCount, setFriendSignalCount] = useState(0)
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -164,6 +165,11 @@ export function AuthProvider({ children }) {
               receivedAt: Date.now(),
             })
           }
+          return
+        }
+
+        if (data?.action === 'friend_request' || data?.action === 'friend_accepted') {
+          setFriendSignalCount((n) => n + 1)
         }
       } catch {
         // ignore malformed websocket payloads
@@ -546,6 +552,7 @@ export function AuthProvider({ children }) {
     dismissPriorityGameReady,
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
+    friendSignalCount,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

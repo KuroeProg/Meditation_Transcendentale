@@ -28,7 +28,8 @@ def save_game_data_atomically(game_data: dict) -> bool:
             
             # 1. Récupération des utilisateurs concernés
             white_user = LocalUser.objects.get(id=game_data['player_white_id'])
-            black_user = LocalUser.objects.get(id=game_data['player_black_id'])
+            is_self_game = str(game_data['player_white_id']) == str(game_data['player_black_id'])
+            black_user = white_user if is_self_game else LocalUser.objects.get(id=game_data['player_black_id'])
             winner_user = None
             game_result = game_data.get('game_result')
             if game_data.get('winner_id'):
@@ -69,20 +70,23 @@ def save_game_data_atomically(game_data: dict) -> bool:
             black_score = get_game_score(game_result, black_user.id, white_user.id, black_user.id)
 
             white_user.games_played += 1
-            black_user.games_played += 1
+            if not is_self_game:
+                black_user.games_played += 1
 
             # IDs from game_data are often strings, while user.id is int. Normalizing to str for comparison.
             winner_id_str = str(game_data.get('winner_id')) if game_data.get('winner_id') else None
             
             if winner_id_str == str(white_user.id):
                 white_user.games_won += 1
-                black_user.games_lost += 1
-            elif winner_id_str == str(black_user.id):
+                if not is_self_game:
+                    black_user.games_lost += 1
+            elif not is_self_game and winner_id_str == str(black_user.id):
                 black_user.games_won += 1
                 white_user.games_lost += 1
             elif game_result in {'draw', 'stalemate'}:
                 white_user.games_draw += 1
-                black_user.games_draw += 1
+                if not is_self_game:
+                    black_user.games_draw += 1
             else:
                 # Fallback (maybe game aborted?)
                 pass
@@ -91,7 +95,8 @@ def save_game_data_atomically(game_data: dict) -> bool:
             white_rating = getattr(white_user, rating_field)
             black_rating = getattr(black_user, rating_field)
 
-            if game.is_competitive:
+            # Pas d'ELO pour les parties contre soi-même
+            if game.is_competitive and not is_self_game:
                 
                 # Use dynamic calculation based on games played
                 white_delta = compute_elo_delta(white_rating, black_rating, white_score, white_user.games_played)
@@ -109,7 +114,8 @@ def save_game_data_atomically(game_data: dict) -> bool:
                 game.save(update_fields=['elo_delta_white', 'elo_delta_black', 'elo_white_before', 'elo_black_before'])
 
             white_user.save(update_fields=['games_played', 'games_won', 'games_lost', 'games_draw', rating_field])
-            black_user.save(update_fields=['games_played', 'games_won', 'games_lost', 'games_draw', rating_field])
+            if not is_self_game:
+                black_user.save(update_fields=['games_played', 'games_won', 'games_lost', 'games_draw', rating_field])
             
             # 3. Préparation et Création en bloc de l'ensemble des Coups (Bulk Create)
             moves_to_create = []

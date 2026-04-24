@@ -338,6 +338,19 @@
 	left: -4px;
 }
 
+/* Demandes d'ami — accent vert */
+.chat-fab-badge--friend {
+	bottom: -4px;
+	right: -4px;
+	top: auto;
+	background: linear-gradient(145deg, #4ade80, #16a34a);
+}
+
+.chat-fab-badge--friend.chat-fab-badge--triple {
+	bottom: -4px;
+	right: -4px;
+}
+
 /* Avec toast : garder les badges au-dessus du bouton, pas sur le texte */
 .chat-fab-cluster--toast .chat-fab-badge--invite {
 	top: -6px;
@@ -348,6 +361,11 @@
 	left: auto;
 	right: -4px;
 	top: 16px;
+}
+
+.chat-fab-cluster--toast .chat-fab-badge--friend {
+	bottom: -6px;
+	right: -4px;
 }
 
 html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab:hover {

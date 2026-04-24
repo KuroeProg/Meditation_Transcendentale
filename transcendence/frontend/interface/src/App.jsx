@@ -32,7 +32,7 @@ import { cancelGameInviteHttp, presencePing } from './features/chat/services/cha
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
 function AppContent() {
-	const { isAuthenticated, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite } = useAuth()
+	const { isAuthenticated, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite, friendSignalCount } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const navigate = useNavigate()
@@ -40,7 +40,7 @@ function AppContent() {
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
 	const inboxEnabled = isAuthenticated && !isAuthRoute
-	const { textUnread, inviteUnread, toast, clearToast, refresh: refreshInbox } = useChatInbox(inboxEnabled)
+	const { textUnread, inviteUnread, friendUnread, toast, clearToast, refresh: refreshInbox } = useChatInbox(inboxEnabled)
 	const clearChatInitial = useCallback(() => setChatInitialConversation(null), [])
 
 	const activeGameId = sessionStorage.getItem(ACTIVE_GAME_STORAGE_KEY)
@@ -82,6 +82,11 @@ function AppContent() {
 		if (!inviteId) return
 		cancelGameInviteHttp(inviteId, 'sender_busy').catch(() => {})
 	}, [isAuthenticated, isOnlineGameRoute, outgoingPendingInvite?.id])
+
+	useEffect(() => {
+		if (!inboxEnabled || friendSignalCount === 0) return
+		void refreshInbox()
+	}, [friendSignalCount, inboxEnabled, refreshInbox])
 
 	if (mustRedirectToActiveGame) {
 		return <Navigate to={`/game/${activeGameId}`} replace />
@@ -204,6 +209,7 @@ function AppContent() {
 					<ChatFabCluster
 						textUnread={textUnread}
 						inviteUnread={inviteUnread}
+						friendUnread={friendUnread}
 						toast={toast}
 						onToastClick={(t) => {
 							setChatInitialConversation(t.conversation)

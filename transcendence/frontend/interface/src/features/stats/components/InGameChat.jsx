@@ -11,6 +11,16 @@ import { useChatSocket } from '../../chat/hooks/useChatSocket.js'
 
 const QUICK_REPLIES = ['Bonne chance !', 'Bien joué !', 'Match nul ?', 'Rematch ?']
 
+function EmptyChatPlaceholder() {
+	return (
+		<div className="igc-empty" aria-label="Aucun message">
+			<i className="ri-chat-smile-2-line" aria-hidden="true" />
+			<p>Aucun message pour l'instant.</p>
+			<p className="igc-empty-sub">Dis bonjour à ton adversaire !</p>
+		</div>
+	)
+}
+
 async function resolveGameConversation(gameId) {
 	const res = await fetch(`/api/chat/game-conversation?game_id=${encodeURIComponent(gameId)}`, {
 		credentials: 'include',
@@ -45,12 +55,18 @@ export function InGameChat({
 	userId,
 	/** @type {string} slug coalition thème (feu, eau, terre, air) */
 	coalitionSlug = null,
+	/** appelé avec le nombre de messages non lus quand le chat n'est pas visible */
+	onUnreadChange = null,
+	/** true quand l'onglet chat est actif — remet le compteur à zéro */
+	isVisible = true,
 }) {
 	const [convId, setConvId] = useState(null)
 	const [input, setInput] = useState('')
 	const [historyLoaded, setHistoryLoaded] = useState(false)
+	const [unreadCount, setUnreadCount] = useState(0)
 	const bottomRef = useRef(null)
 	const inputRef  = useRef(null)
+	const prevMsgCount = useRef(0)
 
 	// Resolve conversation once game_id is known
 	useEffect(() => {
@@ -71,10 +87,29 @@ export function InGameChat({
 		}).catch(() => {})
 	}, [isConnected, convId, historyLoaded, setMessages])
 
+	// Compteur de non-lus quand l'onglet n'est pas actif
+	useEffect(() => {
+		if (!isVisible) {
+			const newCount = messages.length - prevMsgCount.current
+			if (newCount > 0) {
+				setUnreadCount((n) => n + newCount)
+			}
+		} else {
+			setUnreadCount(0)
+		}
+		prevMsgCount.current = messages.length
+	}, [messages, isVisible])
+
+	useEffect(() => {
+		onUnreadChange?.(unreadCount)
+	}, [unreadCount, onUnreadChange])
+
 	// Auto-scroll
 	useEffect(() => {
-		bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-	}, [messages])
+		if (isVisible) {
+			bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+		}
+	}, [messages, isVisible])
 
 	const sendMessage = useCallback(() => {
 		const text = input.trim()
@@ -139,26 +174,32 @@ export function InGameChat({
 				</div>
 			</header>
 
-			{/* Messages */}
-			<div
-				className="igc-messages"
-				role="log"
-				aria-live="polite"
-				aria-label="Messages du chat"
-				data-testid="ingame-chat-messages"
-			>
-				{normalizedMessages.map((msg) => (
+		{/* Messages */}
+		<div
+			className="igc-messages"
+			role="log"
+			aria-live="polite"
+			aria-label="Messages du chat"
+			data-testid="ingame-chat-messages"
+		>
+			{normalizedMessages.length === 0 && <EmptyChatPlaceholder />}
+			{normalizedMessages.map((msg) => {
+				const isMe = msg.sender === 'me'
+				const authorLabel = isMe ? 'Vous' : opponentUsername
+				return (
 					<div
 						key={msg.id}
 						className={`igc-msg igc-msg--${msg.sender}`}
-						aria-label={`${msg.sender === 'me' ? 'Vous' : opponentUsername} : ${msg.text ?? msg.content}`}
+						aria-label={`${authorLabel} : ${msg.text ?? msg.content}`}
 					>
+						<span className="igc-msg-author">{authorLabel}</span>
 						<span className="igc-msg-text">{msg.text ?? msg.content}</span>
 						<time className="igc-msg-time" dateTime={msg.timestamp}>{msg.timestamp}</time>
 					</div>
-				))}
-				<div ref={bottomRef} />
-			</div>
+				)
+			})}
+			<div ref={bottomRef} />
+		</div>
 
 			{/* Réponses rapides */}
 			<div className="igc-quick" role="group" aria-label="Réponses rapides">

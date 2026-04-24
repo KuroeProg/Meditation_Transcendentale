@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { fetchConversations } from '../services/chatApi.js'
+import { fetchConversations, fetchFriends } from '../services/chatApi.js'
 import { loadUiPrefs } from '../../../config/uiPrefs.js'
 
 const TOAST_MS = 7200
@@ -29,6 +29,7 @@ function formatGameInviteSubtitle(raw) {
 export function useChatInbox(enabled) {
 	const [textUnread, setTextUnread] = useState(0)
 	const [inviteUnread, setInviteUnread] = useState(0)
+	const [friendUnread, setFriendUnread] = useState(0)
 	const [toast, setToast] = useState(null)
 	const inboxInit = useRef(false)
 	const prevLastMsg = useRef(new Map())
@@ -48,7 +49,13 @@ export function useChatInbox(enabled) {
 		if (!enabled) return
 		let data
 		try {
-			data = await fetchConversations()
+			;[data] = await Promise.all([
+				fetchConversations(),
+				fetchFriends('pending').then((fd) => {
+					const pending = (fd.friends || []).filter((f) => !f.is_sender).length
+					setFriendUnread(pending)
+				}).catch(() => {}),
+			])
 		} catch {
 			return
 		}
@@ -117,6 +124,7 @@ export function useChatInbox(enabled) {
 			prevInviteUnreadByConv.current.clear()
 			setTextUnread(0)
 			setInviteUnread(0)
+			setFriendUnread(0)
 			clearToast()
 			return
 		}
@@ -145,6 +153,7 @@ export function useChatInbox(enabled) {
 	return {
 		textUnread,
 		inviteUnread,
+		friendUnread,
 		toast,
 		clearToast,
 		refresh,

@@ -117,6 +117,20 @@ test.describe('historique — API et relecture de partie', () => {
 		await expect(page.getByTestId('review-controls')).toBeVisible()
 	})
 
+	test('header de relecture style Annales est affiché', async ({ page }) => {
+		await mockHistoryApi(page)
+		await page.goto(`/game/review/${MOCK_GAME_ID}`)
+		await expect(page.getByTestId('review-header')).toBeVisible({ timeout: 8000 })
+		// Titre de style Annales
+		await expect(page.locator('.gr-title--arena')).toBeVisible()
+		await expect(page.locator('.gr-title--arena')).toContainText(/relecture/i)
+		// Sous-titre avec les joueurs
+		await expect(page.locator('.gr-subtitle--arena')).toContainText('SMOKE_USER')
+		await expect(page.locator('.gr-subtitle--arena')).toContainText('OPPONENT_X')
+		// Bouton retour aux annales
+		await expect(page.getByRole('button', { name: /retour aux annales/i })).toBeVisible()
+	})
+
 	test('avancer / reculer coup par coup met à jour le compteur de progression', async ({ page }) => {
 		await mockHistoryApi(page)
 		await page.goto(`/game/review/${MOCK_GAME_ID}`)

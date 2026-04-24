@@ -173,20 +173,39 @@ export default function GameReviewPage() {
 
 	return (
 		<div className="gr-page gr-review chess-grid-pattern" data-testid="review-page">
-			{/* Header : bandeau lisible, centré comme le corps */}
-			<header className="gr-header">
-				<div className="gr-header-inner">
-					<button type="button" className="gr-back-btn" onClick={() => navigate('/history')} aria-label="Retour à l'historique">
-						<i className="ri-arrow-left-line" aria-hidden="true" /> Historique
-					</button>
-					<div className="gr-header-title">
-						<h1 className="gr-title">Relecture de partie</h1>
-						<p className="gr-subtitle">
+			{/* Header — style Annales */}
+			<header className="gr-header gr-header--arena" data-testid="review-header">
+				<div className="gr-header-top">
+					<div className="gr-header-title-block">
+						<h1 className="gr-title--arena">
+							<i className="ri-sword-line" aria-hidden="true" />
+							Relecture de partie
+						</h1>
+						<p className="gr-subtitle--arena">
 							{whiteUser?.username ?? '?'} vs {blackUser?.username ?? '?'}
-							{data.time_category && ` · ${data.time_category}`}
+							{data.time_category && <> · <span className="gr-header-pill">{data.time_category}</span></>}
 							{data.started_at && ` · ${new Date(data.started_at).toLocaleDateString('fr-FR')}`}
 						</p>
 					</div>
+					<div className="gr-header-meta">
+						{data.termination_reason && (
+							<span className="gr-header-pill gr-header-pill--reason">
+								<i className="ri-flag-line" aria-hidden="true" />
+								{data.termination_reason}
+							</span>
+						)}
+						{data.is_competitive && (
+							<span className="gr-header-pill gr-header-pill--ranked">
+								<i className="ri-medal-line" aria-hidden="true" />
+								Classée
+							</span>
+						)}
+					</div>
+				</div>
+				<div className="gr-header-actions">
+					<button type="button" className="gr-back-btn" onClick={() => navigate('/history')} aria-label="Retour à l'historique">
+						<i className="ri-arrow-left-line" aria-hidden="true" /> Retour aux Annales
+					</button>
 				</div>
 			</header>
 
@@ -196,7 +215,7 @@ export default function GameReviewPage() {
 						<div className="gr-player-bar" data-testid="review-player-top">
 							<img className="gr-avatar" src={blackUser?.avatar} alt="" />
 							<span className="gr-player-name">{blackUser?.username ?? '?'}</span>
-							{blackUser?.elo && <span className="gr-elo">{blackUser.elo} ELO</span>}
+							{blackUser?.elo && <span className="gr-elo" aria-label={`${blackUser.elo} ELO`}>{blackUser.elo}</span>}
 						</div>
 						<CapturedPiecesBar game={currentGame} playerColor="w" position="top" />
 					</div>
@@ -218,7 +237,7 @@ export default function GameReviewPage() {
 						<div className="gr-player-bar" data-testid="review-player-bottom">
 							<img className="gr-avatar" src={whiteUser?.avatar} alt="" />
 							<span className="gr-player-name">{whiteUser?.username ?? '?'}</span>
-							{whiteUser?.elo && <span className="gr-elo">{whiteUser.elo} ELO</span>}
+							{whiteUser?.elo && <span className="gr-elo" aria-label={`${whiteUser.elo} ELO`}>{whiteUser.elo}</span>}
 						</div>
 						<div className="gr-controls" role="group" aria-label="Contrôles de relecture" data-testid="review-controls">
 							<button type="button" className="gr-ctrl-btn" onClick={goFirst} disabled={currentIdx === 0} aria-label="Premier coup" data-testid="review-btn-first">

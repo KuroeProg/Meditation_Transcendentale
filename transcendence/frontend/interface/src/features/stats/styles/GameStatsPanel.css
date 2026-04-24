@@ -219,6 +219,35 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	font-size: 1rem;
 }
 
+/* Wrapper icône avec badge */
+.stats-nav-btn__icon-wrap {
+	position: relative;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.stats-nav-chat-badge {
+	position: absolute;
+	top: -5px;
+	right: -7px;
+	min-width: 14px;
+	height: 14px;
+	padding: 0 3px;
+	border-radius: 999px;
+	background: linear-gradient(145deg, #f87171, #dc2626);
+	color: #fff;
+	font-size: 0.48rem;
+	font-weight: 800;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1.5px solid rgba(8, 12, 22, 0.9);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+	line-height: 1;
+	pointer-events: none;
+}
+
 .stats-nav-btn:hover {
 	background: rgba(255, 255, 255, 0.07);
 	color: rgba(255, 255, 255, 0.85);
@@ -1017,6 +1046,26 @@ html[data-reduce-motion='true'] .game-stats-panel {
 
 .ghv-empty i { font-size: 1.5rem; opacity: 0.3; }
 
+.ghv-empty--error {
+	color: rgba(255, 160, 160, 0.9);
+	gap: 0.55rem;
+}
+
+.ghv-empty--error i {
+	opacity: 0.95;
+	color: #ff7a7a;
+}
+
+.ghv-spinner {
+	display: inline-block;
+	animation: ghv-spin 0.85s linear infinite;
+	opacity: 0.75 !important;
+}
+
+@keyframes ghv-spin {
+	to { transform: rotate(360deg); }
+}
+
 /* ── Ligne de partie ── */
 .ghv-row {
 	border-bottom: 1px solid rgba(255, 255, 255, 0.04);
@@ -1698,30 +1747,55 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	flex: 1;
 	overflow-y: auto;
 	overflow-x: hidden;
-	padding: 0.55rem 0.65rem;
+	padding: 0.65rem 0.75rem;
 	display: flex;
 	flex-direction: column;
-	gap: 0.35rem;
+	gap: 0.55rem;
 	min-height: 100px;
-	border: 1px solid rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.07);
 	border-top: none;
 	border-radius: 0 0 8px 8px;
-	background: rgba(0, 0, 0, 0.1);
-	max-height: min(320px, 40vh);
+	background: linear-gradient(180deg, rgba(10, 14, 26, 0.6) 0%, rgba(6, 8, 16, 0.75) 100%);
+	max-height: min(340px, 42vh);
 	scrollbar-width: thin;
-	scrollbar-color: rgba(255, 255, 255, 0.1) transparent;
+	scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 }
 .igc-messages::-webkit-scrollbar { width: 4px; }
 .igc-messages::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.1);
+	background: rgba(255, 255, 255, 0.12);
 	border-radius: 4px;
+}
+
+/* État vide */
+.igc-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	flex: 1;
+	padding: 2rem 1rem;
+	color: rgba(255, 255, 255, 0.3);
+	text-align: center;
+}
+.igc-empty i {
+	font-size: 2rem;
+	opacity: 0.4;
+}
+.igc-empty p {
+	margin: 0;
+	font-size: 0.72rem;
+}
+.igc-empty-sub {
+	font-size: 0.62rem !important;
+	opacity: 0.6;
 }
 
 .igc-msg {
 	display: flex;
 	flex-direction: column;
-	max-width: 78%;
-	gap: 0.1rem;
+	max-width: 82%;
+	gap: 0.12rem;
 }
 
 .igc-msg--me {
@@ -1734,61 +1808,89 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	align-items: flex-start;
 }
 
+/* Nom de l'expéditeur */
+.igc-msg-author {
+	font-size: 0.58rem;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	padding: 0 0.25rem;
+	opacity: 0.65;
+}
+
+.igc-msg--me .igc-msg-author {
+	color: var(--coalition-accent, #7dd3fc);
+	text-align: right;
+}
+
+.igc-msg--opponent .igc-msg-author {
+	color: rgba(255, 255, 255, 0.7);
+}
+
 .igc-msg-text {
-	padding: 0.35rem 0.6rem;
-	border-radius: 10px;
-	font-size: 0.72rem;
-	line-height: 1.4;
+	padding: 0.45rem 0.7rem;
+	border-radius: 12px;
+	font-size: 0.75rem;
+	line-height: 1.45;
 	word-break: break-word;
 }
 
 .igc-msg--me .igc-msg-text {
-	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.18));
-	border: 1px solid var(--coalition-accent-border, rgba(125, 211, 252, 0.3));
+	background: color-mix(in srgb, var(--coalition-accent, #7dd3fc) 22%, rgba(6, 10, 22, 0.5));
+	border: 1px solid var(--coalition-accent-border, rgba(125, 211, 252, 0.35));
 	color: #fff;
-	border-radius: 10px 10px 2px 10px;
+	border-radius: 12px 12px 4px 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
 }
 
 .igc-msg--opponent .igc-msg-text {
-	background: rgba(255, 255, 255, 0.06);
-	border: 1px solid rgba(255, 255, 255, 0.08);
-	color: rgba(255, 255, 255, 0.88);
-	border-radius: 10px 10px 10px 2px;
+	background: rgba(255, 255, 255, 0.09);
+	border: 1px solid rgba(255, 255, 255, 0.13);
+	color: rgba(255, 255, 255, 0.95);
+	border-radius: 12px 12px 12px 4px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
 .igc-msg-time {
-	font-size: 0.52rem;
-	color: rgba(255, 255, 255, 0.28);
+	font-size: 0.55rem;
+	color: rgba(255, 255, 255, 0.32);
 	font-variant-numeric: tabular-nums;
+	padding: 0 0.25rem;
 }
 
 /* Réponses rapides */
 .igc-quick {
 	display: flex;
 	flex-wrap: wrap;
-	gap: 0.25rem;
-	padding: 0.35rem 0.65rem;
-	border-top: 1px solid rgba(255, 255, 255, 0.05);
+	gap: 0.3rem;
+	padding: 0.4rem 0.7rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.07);
+	background: rgba(255, 255, 255, 0.02);
 	flex-shrink: 0;
 }
 
 .igc-quick-btn {
-	padding: 0.2rem 0.5rem;
-	border-radius: 12px;
-	border: 1px solid rgba(255, 255, 255, 0.12);
-	background: rgba(255, 255, 255, 0.04);
-	color: rgba(255, 255, 255, 0.6);
-	font-size: 0.58rem;
+	padding: 0.25rem 0.6rem;
+	border-radius: 14px;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.05);
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.62rem;
 	font-weight: 600;
 	cursor: pointer;
-	transition: background 0.12s, color 0.12s;
+	transition: background 0.12s, color 0.12s, border-color 0.12s;
 	font-family: inherit;
 	white-space: nowrap;
 }
 
-.igc-quick-btn:hover {
-	background: rgba(255, 255, 255, 0.1);
-	color: rgba(255, 255, 255, 0.9);
+.igc-quick-btn:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.12);
+	color: #fff;
+	border-color: rgba(255, 255, 255, 0.22);
+}
+
+.igc-quick-btn:disabled {
+	opacity: 0.35;
+	cursor: not-allowed;
 }
 
 .igc-quick-btn:focus-visible {
@@ -1799,31 +1901,33 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 /* Zone de saisie */
 .igc-compose {
 	display: flex;
-	gap: 0.35rem;
-	padding: 0.45rem 0.65rem;
-	border-top: 1px solid rgba(255, 255, 255, 0.06);
+	gap: 0.4rem;
+	padding: 0.5rem 0.7rem;
+	border-top: 1px solid rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.02);
 	flex-shrink: 0;
 }
 
 .igc-input {
 	flex: 1;
-	background: rgba(255, 255, 255, 0.06);
-	border: 1px solid rgba(255, 255, 255, 0.12);
+	background: rgba(255, 255, 255, 0.07);
+	border: 1px solid rgba(255, 255, 255, 0.14);
 	border-radius: 8px;
-	padding: 0.35rem 0.65rem;
-	font-size: 0.72rem;
+	padding: 0.4rem 0.7rem;
+	font-size: 0.75rem;
 	color: #fff;
 	font-family: inherit;
 	outline: none;
-	transition: border-color 0.15s;
+	transition: border-color 0.15s, background 0.15s;
 	min-height: 36px;
 }
 
-.igc-input::placeholder { color: rgba(255, 255, 255, 0.3); }
+.igc-input::placeholder { color: rgba(255, 255, 255, 0.35); }
 
 .igc-input:focus {
-	border-color: var(--coalition-accent-border, rgba(125, 211, 252, 0.4));
-	box-shadow: 0 0 0 2px var(--coalition-accent-soft, rgba(125, 211, 252, 0.1));
+	background: rgba(255, 255, 255, 0.1);
+	border-color: var(--coalition-accent-border, rgba(125, 211, 252, 0.45));
+	box-shadow: 0 0 0 2px var(--coalition-accent-soft, rgba(125, 211, 252, 0.12));
 }
 
 .igc-send-btn {
@@ -1833,21 +1937,22 @@ html[data-reduce-motion='true'] .ghv-detail { animation: none; }
 	align-items: center;
 	justify-content: center;
 	border-radius: 8px;
-	border: none;
-	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.18));
+	border: 1px solid var(--coalition-accent-border, rgba(125, 211, 252, 0.3));
+	background: var(--coalition-accent-soft, rgba(125, 211, 252, 0.15));
 	color: var(--coalition-accent, #7dd3fc);
 	font-size: 1rem;
 	cursor: pointer;
-	transition: background 0.15s;
+	transition: background 0.15s, border-color 0.15s;
 	flex-shrink: 0;
 }
 
 .igc-send-btn:hover:not(:disabled) {
 	background: color-mix(in srgb, var(--coalition-accent, #7dd3fc) 30%, transparent);
+	border-color: var(--coalition-accent, #7dd3fc);
 }
 
 .igc-send-btn:disabled {
-	opacity: 0.4;
+	opacity: 0.35;
 	cursor: not-allowed;
 }
 
