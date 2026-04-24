@@ -18,9 +18,11 @@ def infer_time_category(time_control, increment=0):
 		return 'bullet'
 	if estimated_time < 480:
 		return 'blitz'
+	if estimated_time < 1500:
+		return 'rapid'
 	if seconds >= 86400:
 		return 'correspondence'
-	return 'rapid'
+	return 'classical'
 
 
 async def build_new_game_state(white_id, black_id, time_control=600, increment=0, competitive=False):

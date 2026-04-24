@@ -19,6 +19,13 @@ class Game(models.Model):
     game_mode = models.CharField(max_length=32, default='standard')
     termination_reason = models.CharField(max_length=32, blank=True, default='')
 
+    # ELO Tracking
+    elo_delta_white = models.IntegerField(default=0, help_text="ELO points gained/lost by white player")
+    elo_delta_black = models.IntegerField(default=0, help_text="ELO points gained/lost by black player")
+    elo_white_before = models.IntegerField(default=1200, help_text="ELO of white player before match")
+    elo_black_before = models.IntegerField(default=1200, help_text="ELO of black player before match")
+
+
     started_at = models.DateTimeField()
     time_control = models.PositiveIntegerField(null=True, blank=True, help_text="Initial time control in seconds")
     increment = models.PositiveIntegerField(null=True, blank=True, help_text="Increment per move in seconds")

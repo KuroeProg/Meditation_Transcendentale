@@ -11,11 +11,11 @@ export function getProfileSummaryFromMock() {
 /** Fusionne `user.stats` (API / session) avec le mock si une clé manque. */
 export function resolveProfileGameStats(user) {
 	const mock = mockPersonalStats.profileSummary
-	const s = user?.stats ?? {}
 	return {
-		wins: s.wins ?? s.victoires ?? mock.wins,
-		losses: s.losses ?? s.defaites ?? mock.losses,
-		rank: s.rank ?? s.classement ?? mock.rank,
-		level: s.level ?? s.niveau ?? mock.level,
+		wins: user?.games_won ?? user?.stats?.wins ?? 0,
+		losses: user?.games_lost ?? user?.stats?.losses ?? 0,
+		draws: user?.games_draw ?? user?.stats?.draws ?? 0,
+		rank: user?.stats?.rank ?? 0,
+		level: user?.stats?.level ?? 0,
 	}
 }

@@ -211,7 +211,7 @@
 
 .phistory-table-header {
 	display: grid;
-	grid-template-columns: 70px 48px 110px 1fr 0.8fr 80px 90px;
+	grid-template-columns: 70px 48px 110px 1.2fr 0.8fr 100px 90px;
 	gap: 0.5rem;
 	padding: 0.55rem 0.85rem;
 	background: rgba(255, 255, 255, 0.03);
@@ -239,7 +239,7 @@
 /* ── Ligne de partie ── */
 .phistory-row {
 	display: grid;
-	grid-template-columns: 70px 48px 110px 1fr 0.8fr 80px 90px;
+	grid-template-columns: 70px 48px 110px 1.2fr 0.8fr 100px 90px;
 	gap: 0.5rem;
 	align-items: center;
 	padding: 0.65rem 0.85rem;
@@ -400,6 +400,50 @@
 	font-size: 0.52rem;
 	color: rgba(255, 255, 255, 0.35);
 	font-weight: 500;
+}
+
+/* ── Mode et ELO Delta ── */
+.phistory-mode-elo {
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	align-items: flex-start;
+}
+
+.phistory-mode-badge {
+	font-size: 0.55rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	padding: 0.12rem 0.35rem;
+	border-radius: 4px;
+	white-space: nowrap;
+}
+
+.phistory-mode-badge--ranked {
+	background: rgba(125, 211, 252, 0.12);
+	color: #7dd3fc;
+	border: 1px solid rgba(125, 211, 252, 0.2);
+}
+
+.phistory-mode-badge--casual {
+	background: rgba(255, 255, 255, 0.06);
+	color: rgba(255, 255, 255, 0.45);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.phistory-elo-delta {
+	font-size: 0.68rem;
+	font-weight: 800;
+	font-family: ui-monospace, monospace;
+}
+
+.phistory-elo-delta--pos {
+	color: #4ade80;
+}
+
+.phistory-elo-delta--neg {
+	color: #f87171;
 }
 
 /* ── Actions ligne ── */

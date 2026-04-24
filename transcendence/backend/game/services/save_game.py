@@ -71,23 +71,45 @@ def save_game_data_atomically(game_data: dict) -> bool:
             white_user.games_played += 1
             black_user.games_played += 1
 
-            # CRITICAL: IDs from game_data are often strings, while user.id is int. Normalizing to str for comparison.
+            # IDs from game_data are often strings, while user.id is int. Normalizing to str for comparison.
             winner_id_str = str(game_data.get('winner_id')) if game_data.get('winner_id') else None
+            
             if winner_id_str == str(white_user.id):
                 white_user.games_won += 1
+                black_user.games_lost += 1
             elif winner_id_str == str(black_user.id):
                 black_user.games_won += 1
+                white_user.games_lost += 1
+            elif game_result in {'draw', 'stalemate'}:
+                white_user.games_draw += 1
+                black_user.games_draw += 1
+            else:
+                # Fallback (maybe game aborted?)
+                pass
 
-            if game.is_competitive or game.is_rated:
-                white_rating = getattr(white_user, rating_field)
-                black_rating = getattr(black_user, rating_field)
-                white_delta = compute_elo_delta(white_rating, black_rating, white_score)
-                black_delta = compute_elo_delta(black_rating, white_rating, black_score)
+            white_delta, black_delta = 0, 0
+            white_rating = getattr(white_user, rating_field)
+            black_rating = getattr(black_user, rating_field)
+
+            if game.is_competitive:
+                
+                # Use dynamic calculation based on games played
+                white_delta = compute_elo_delta(white_rating, black_rating, white_score, white_user.games_played)
+                black_delta = compute_elo_delta(black_rating, white_rating, black_score, black_user.games_played)
+                
+                # Update user ratings
                 setattr(white_user, rating_field, max(0, int(white_rating) + white_delta))
                 setattr(black_user, rating_field, max(0, int(black_rating) + black_delta))
+                
+                # Freeze deltas and initial ratings in Game record
+                game.elo_delta_white = white_delta
+                game.elo_delta_black = black_delta
+                game.elo_white_before = white_rating
+                game.elo_black_before = black_rating
+                game.save(update_fields=['elo_delta_white', 'elo_delta_black', 'elo_white_before', 'elo_black_before'])
 
-            white_user.save(update_fields=['games_played', 'games_won', rating_field])
-            black_user.save(update_fields=['games_played', 'games_won', rating_field])
+            white_user.save(update_fields=['games_played', 'games_won', 'games_lost', 'games_draw', rating_field])
+            black_user.save(update_fields=['games_played', 'games_won', 'games_lost', 'games_draw', rating_field])
             
             # 3. Préparation et Création en bloc de l'ensemble des Coups (Bulk Create)
             moves_to_create = []
@@ -114,12 +136,16 @@ def save_game_data_atomically(game_data: dict) -> bool:
             # 4. Appel au service externe pour l'indexation
             index_game_result(game_data)
             
-        return True # Succès de la transaction !
+        return True, {
+            'white_delta': white_delta if game.is_competitive else 0,
+            'black_delta': black_delta if game.is_competitive else 0,
+            'white_rating_new': getattr(white_user, rating_field),
+            'black_rating_new': getattr(black_user, rating_field),
+        }
 
     except Exception as e:
-        # En cas d'erreur (problème d'intégrité, contraintes db etc), tout est annulé sans laisser de données corrompues.
         print(f"Erreur lors de la sauvegarde atomique de la partie : {e}")
-        return False
+        return False, {}
 
 # =====================================================================
 # Wrapper Asynchrone (indispensable pour vos Consumers Channels)

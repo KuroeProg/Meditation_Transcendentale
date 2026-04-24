@@ -196,6 +196,24 @@ class GameConsumer(AsyncWebsocketConsumer):
 			'moves': game_state.get('moves', []),
 		}
 
+	async def _save_and_broadcast_final_state(self, game_state, winner_id, termination_reason):
+		"""Save game to DB and broadcast final state with Elo deltas."""
+		final_game_data = self._build_final_game_data(game_state, winner_id, termination_reason)
+		success, deltas = await async_save_full_game(final_game_data)
+		
+		# Add deltas to state for frontend display
+		game_state['elo_deltas'] = deltas
+		
+		# Sync final state to Redis and broadcast
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
+		await self._close_invite_joinability('game_finished')
+
+		if success:
+			print(f"Fin de match ({termination_reason}) : Stockage avec deltas Elo.")
+		else:
+			print(f"Alerte ({termination_reason}): Echec de la sauvegarde database.")
+
 	async def _handle_action_with_game_state(self, action, data, game_state_json):
 		"""Route action to appropriate handler based on action type."""
 		# Game creation: no prior state needed
@@ -297,19 +315,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 		apply_elapsed_for_active_turn(game_state, board, now_ts)
 		if mark_timeout_if_needed(game_state, board):
-			await self.get_redis().set(self.game_id, json.dumps(game_state))
-			await self._broadcast_current_game_state(game_state)
-			await self._close_invite_joinability('game_finished')
 			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
 			winner_id = game_state.get('winner_player_id')
-			final_game_data = self._build_final_game_data(game_state, winner_id, 'timeout')
+			await self._save_and_broadcast_final_state(game_state, winner_id, 'timeout')
 	
-			success = await async_save_full_game(final_game_data)
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
 			logger.info(
 				"Game finished",
 				extra={
@@ -321,7 +330,6 @@ class GameConsumer(AsyncWebsocketConsumer):
 					"player_black_id": game_state['black_player_id']
 				}
 			)
-			#end game
 			return
 
 		if game_state.get('status') != 'active':
@@ -368,15 +376,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 			else:
 				winner_id = None
 
-			final_game_data = self._build_final_game_data(game_state, winner_id, 'checkmate_or_draw')
+			await self._save_and_broadcast_final_state(game_state, winner_id, 'checkmate_or_draw')
 	
-			success = await async_save_full_game(final_game_data)
-			await self._close_invite_joinability('game_finished')
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
-
 			logger.info(
 				"Game finished",
 				extra={
@@ -401,19 +402,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self.send(text_data=json.dumps({'error': error}))
 			return
 
-		await self.get_redis().set(self.game_id, json.dumps(game_state))
-		await self._broadcast_current_game_state(game_state)
-
 		winner_id = game_state.get('winner_player_id')
-
-		final_game_data = self._build_final_game_data(game_state, winner_id, 'resign')
-
-		success = await async_save_full_game(final_game_data)
-		await self._close_invite_joinability('game_finished')
-		if success:
-			print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-		else:
-			print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+		await self._save_and_broadcast_final_state(game_state, winner_id, 'resign')
 
 		logger.info(
 			"Game finished",
@@ -461,13 +451,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 		await self._broadcast_current_game_state(game_state)
 
 		if game_state.get('status') == 'draw':
-			final_game_data = self._build_final_game_data(game_state, None, 'draw_agreement')
-			success = await async_save_full_game(final_game_data)
-			await self._close_invite_joinability('game_finished')
-			if success:
-				print("Fin de match : Stockage parfait et optimisé en Model accompli.")
-			else:
-				print("Alerte: Un problème est survenu et la database n'a pas été affectée.")
+			await self._save_and_broadcast_final_state(game_state, None, 'draw_agreement')
 
 			logger.info(
 				"Game finished",

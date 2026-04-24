@@ -20,6 +20,7 @@ import {
   normalizeId,
 } from "../core/chessSelectors.js";
 import { useChessReplay } from "./useChessReplay.js";
+import { fetchGameDetails } from "../services/chessApi.js";
 
 const ACTIVE_GAME_STORAGE_KEY = "activeGameId";
 
@@ -52,14 +53,20 @@ function buildMoveLogFromServerState(incomingState) {
 
   for (let i = 0; i < rawMoves.length; i += 1) {
     const moveFromServer = rawMoves[i] ?? {};
-    const uci =
-      typeof moveFromServer.san_notation === "string"
-        ? moveFromServer.san_notation.trim().toLowerCase()
-        : "";
-    const parsedMove = uciToMoveObject(uci);
-    if (!parsedMove) continue;
+    const san = moveFromServer.san_notation || moveFromServer.san || "";
+    if (!san) continue;
 
-    const madeMove = replayBoard.move(parsedMove);
+    // Try playing the move as SAN first, then as UCI if it fails
+    let madeMove = null;
+    try {
+      madeMove = replayBoard.move(san);
+    } catch (e) {
+      const parsedMove = uciToMoveObject(san);
+      if (parsedMove) {
+        try { madeMove = replayBoard.move(parsedMove); } catch(e2) {}
+      }
+    }
+    
     if (!madeMove) continue;
 
     hydrated.push({
@@ -70,7 +77,9 @@ function buildMoveLogFromServerState(incomingState) {
       to: madeMove.to,
       san: madeMove.san,
       timeSpentMs:
-        Number.isFinite(moveFromServer.time_taken_ms)
+        Number.isFinite(moveFromServer.timeSpentMs)
+          ? moveFromServer.timeSpentMs
+          : Number.isFinite(moveFromServer.time_taken_ms)
           ? moveFromServer.time_taken_ms
           : 0,
     });
@@ -100,6 +109,56 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
   const lastLoggedFenRef = useRef(new Chess().fen());
   const lastLoggedUciRef = useRef(null);
   const processingMoveRef = useRef(false); // Track if move is currently being processed
+
+  useEffect(() => {
+    if (mode !== "online" || !gameId || gameState) return;
+
+    let isMounted = true;
+    const cleanId = String(gameId).replace('game-', '');
+
+    fetchGameDetails(cleanId).then(data => {
+      if (!isMounted) return;
+      
+      // If we received a live state while fetching, ignore the API result
+      if (state.gameState) return;
+
+      const hydratedMoveLog = buildMoveLogFromServerState({ moves: data.moves });
+      const finalBoard = new Chess();
+      if (hydratedMoveLog) {
+          hydratedMoveLog.forEach(m => {
+            try { finalBoard.move(m.san); } catch(e) {}
+          });
+      }
+
+      // Map API response to typical WebSocket gameState format
+      const mappedState = {
+        ...data,
+        white_player_id: data.white_player_id,
+        black_player_id: data.black_player_id,
+        white_player_profile: data.player_white,
+        black_player_profile: data.player_black,
+        status: 'finished',
+        fen: finalBoard.fen(),
+      };
+
+      dispatch({
+        type: CHESS_ACTIONS.APPLY_SERVER_SNAPSHOT,
+        payload: {
+          gameState: mappedState,
+          winner: data.winner_id 
+            ? (data.winner_id === data.player_white?.id ? 'White' : 'Black') 
+            : (data.termination_reason?.toLowerCase().includes('draw') ? 'Nulle' : null),
+          game: finalBoard,
+          moveLog: hydratedMoveLog,
+        },
+      });
+    }).catch(() => {
+      // Game might be live and not yet in DB, or ID is invalid. 
+      // Silently fail as useChessSocket will handle live games.
+    });
+
+    return () => { isMounted = false; };
+  }, [mode, gameId, gameState, state.gameState]);
 
   useEffect(() => {
     lastMoveTs.current = Date.now();

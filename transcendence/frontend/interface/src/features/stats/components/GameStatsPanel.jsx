@@ -45,11 +45,40 @@ export default function GameStatsPanel({
   onReplayLast,
   opponentUsername,
   gameId,
+  gameState = null, // Added gameState prop
   /** libellés barres joueurs — affichés sous « Coups » (même style Annales) */
   whiteLabel = "Joueur blancs",
   blackLabel = "Joueur noirs",
 }) {
   const { user } = useAuth()
+  const normalizeId = (id) => id ? String(id) : null;
+  
+  // Real Elo data from backend
+  const eloDeltas = gameState?.elo_deltas;
+  const isWhite = normalizeId(gameState?.white_player_id) === normalizeId(user?.id);
+  const myEloChange = isWhite ? eloDeltas?.white_delta : eloDeltas?.black_delta;
+  const myEloNew = isWhite ? eloDeltas?.white_rating_new : eloDeltas?.black_rating_new;
+
+  const ratingField = useMemo(() => {
+    const cat = gameState?.time_category || 'rapid';
+    if (cat === 'bullet') return 'elo_bullet';
+    if (cat === 'blitz') return 'elo_blitz';
+    return 'elo_rapid';
+  }, [gameState?.time_category]);
+
+  const currentStats = useMemo(() => {
+    const whiteProfile = gameState?.white_player_profile;
+    const blackProfile = gameState?.black_player_profile;
+    const initialElo = isWhite ? whiteProfile?.[ratingField] : blackProfile?.[ratingField];
+
+    return {
+      gamesPlayed: user?.games_played || 0,
+      winrate: user?.games_played ? Math.round((user.games_won / user.games_played) * 100) : 0,
+      eloRating: myEloNew ?? initialElo ?? 1500,
+      eloChange: myEloChange ?? 0
+    };
+  }, [user, myEloNew, myEloChange, gameState, isWhite, ratingField]);
+
   const coalitionSlug = coalitionToSlug(user?.coalition)
   const [activeTab, setActiveTab] = useState("moves");
   const [perfFilter, setPerfFilter] = useState("time");
@@ -151,7 +180,7 @@ export default function GameStatsPanel({
 
           {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
 
-          {gameEnded && <SummaryCards stats={mockStats} />}
+          {gameEnded && <SummaryCards stats={currentStats} />}
 
           {gameEnded && (
             <PerformanceChartSection
