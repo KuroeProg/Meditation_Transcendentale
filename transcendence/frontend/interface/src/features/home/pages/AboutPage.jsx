@@ -16,7 +16,7 @@ const GITHUB_URL_THEO = 'https://github.com/Mileumm'
  */
 const PHOTO_SRC_VINCENT = '/team/vincent.png'
 const PHOTO_SRC_ALEXIE = '/team/alexie.png'
-const PHOTO_SRC_EVEN = null
+const PHOTO_SRC_EVEN = '/team/even.png'
 const PHOTO_SRC_CLOE = '/team/cloe.png'
 const PHOTO_SRC_THEO = '/team/theo.png'
 

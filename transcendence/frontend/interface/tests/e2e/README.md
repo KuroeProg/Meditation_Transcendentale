@@ -13,6 +13,9 @@ Current stable selectors:
   - home-login-cta
   - home-register-cta
   - home-dashboard-link
+- About:
+  - about-member-${login42} (dynamic)
+  - about-member-photo-${login42} (dynamic)
 - Dashboard:
   - dashboard-page
   - dashboard-start-matchmaking

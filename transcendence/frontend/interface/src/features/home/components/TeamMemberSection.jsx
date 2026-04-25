@@ -39,13 +39,18 @@ export default function TeamMemberSection({
 	const scale = useTransform(scrollYProgress, [0, 0.5, 1], reduceMotion ? [1, 1, 1] : depth.scale)
 
 	return (
-		<section ref={ref} className={`about-member about-member--${coalitionSlug}`}>
+		<section ref={ref} className={`about-member about-member--${coalitionSlug}`} data-testid={`about-member-${login42}`}>
 			<Motion.div className="about-member-card" style={{ y, scale }}>
 				<div className="about-member-card__inner">
 					<div className="about-member-portrait-wrap">
 						{photoSrc ? (
 							<div className="about-member-portrait about-member-portrait--photo">
-								<img src={photoSrc} alt={photoAlt || displayName} className="about-member-portrait__img" />
+								<img
+									src={photoSrc}
+									alt={photoAlt || displayName}
+									className="about-member-portrait__img"
+									data-testid={`about-member-photo-${login42}`}
+								/>
 								<span className="about-member-portrait__login">{login42}</span>
 							</div>
 						) : (
