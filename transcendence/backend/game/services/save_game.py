@@ -140,7 +140,7 @@ def save_game_data_atomically(game_data: dict) -> bool:
             Move.objects.bulk_create(moves_to_create)
             
             # 4. Appel au service externe pour l'indexation
-            index_game_result(game_data)
+            index_game_result(game_data, game_id=game.id)
             
         return True, {
             'white_delta': white_delta if game.is_competitive else 0,

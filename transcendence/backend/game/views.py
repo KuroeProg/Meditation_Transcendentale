@@ -6,6 +6,8 @@ from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
 from game.models import Game, Move
+from game.services.elasticsearch_service import get_player_stats
+from transcendence_backend.celery import app as celery_app
 
 HISTORY_FILTERS = {
     'formats': [
@@ -399,3 +401,54 @@ def game_detail_view(request, game_id):
             'moves': moves_data,
         }
     )
+
+
+@require_GET
+def export_stats_pdf(request):
+    """Déclenche la génération asynchrone du rapport PDF des statistiques."""
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    # On rassemble les données pour les 3 catégories
+    payload = {
+        'username': user.username,
+        'stats': {
+            'bullet': get_player_stats(user.id, 'bullet'),
+            'blitz': get_player_stats(user.id, 'blitz'),
+            'rapid': get_player_stats(user.id, 'rapid'),
+        }
+    }
+
+    # On envoie la tâche au worker (indépendant de Django)
+    # On utilise send_task car la tâche n'est pas définie localement dans le code Django
+    try:
+        task = celery_app.send_task('tasks_config.generate_stats_pdf', args=[payload])
+        return JsonResponse({
+            'status': 'success',
+            'task_id': task.id,
+            'message': 'Génération du PDF lancée. Vous recevrez le lien de téléchargement sous peu.'
+        })
+    except Exception as e:
+        return JsonResponse({'error': f'Erreur lors du lancement de la tâche : {str(e)}'}, status=500)
+
+
+@require_GET
+def export_status(request, task_id):
+    """Vérifie le statut d'une tâche de génération de PDF."""
+    from celery.result import AsyncResult
+    res = AsyncResult(task_id, app=celery_app)
+    
+    if res.ready():
+        if res.successful():
+            return JsonResponse({
+                'status': 'SUCCESS',
+                'result': res.result # Contient le JSON retourné par le worker
+            })
+        else:
+            return JsonResponse({
+                'status': 'FAILURE',
+                'error': str(res.result)
+            })
+    
+    return JsonResponse({'status': 'PENDING'})

@@ -278,6 +278,11 @@ seed-e2e-users: ## Créer ou rafraîchir les comptes E2E en base
 	@$(COMPOSE) exec -T backend python manage.py seed_e2e_users
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Comptes E2E prêts."
 
+check-db-integrity: ## Vérifier l'intégrité de l'index Elasticsearch (games/moves) et réparer si besoin
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Vérification de l'intégrité Elasticsearch (Postgres -> ES)…"
+	@$(COMPOSE) exec -T backend python manage.py check_db_integrity --cleanup
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Vérification terminée."
+
 test-e2e-list: ## Lister les tests E2E Playwright détectés
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Découverte des tests E2E…"
 	@cd $(INTERFACE_DIR) && E2E_BASE_URL="$(E2E_BASE_URL)" npm run test:e2e:list
