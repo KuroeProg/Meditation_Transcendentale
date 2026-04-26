@@ -253,21 +253,21 @@ function PerfChart({ theme, chartAnim, moveSpeedHistory = [], gameAdvantageHisto
 									fill: 'rgba(255,255,255,0.35)',
 									fontSize: 9,
 								}
-								: isSpeed 
-								? {
-									value: 'sec / coup',
-									angle: -90,
-									position: 'insideLeft',
-									fill: 'rgba(255,255,255,0.35)',
-									fontSize: 9,
-								}
-								: {
-									value: 'ELO',
-									angle: -90,
-									position: 'insideLeft',
-									fill: 'rgba(255,255,255,0.35)',
-									fontSize: 9,
-								}
+								: isSpeed
+									? {
+										value: 'sec / coup',
+										angle: -90,
+										position: 'insideLeft',
+										fill: 'rgba(255,255,255,0.35)',
+										fontSize: 9,
+									}
+									: {
+										value: 'ELO',
+										angle: -90,
+										position: 'insideLeft',
+										fill: 'rgba(255,255,255,0.35)',
+										fontSize: 9,
+									}
 						}
 					/>
 					<Tooltip
@@ -405,7 +405,7 @@ function MetricsTable({ realStats }) {
 		"Favorite Final Square (Coordinate)": formatSq(advanced.killing_zone),
 		"Avg Moves per Victory": formatNum(advanced.win_len),
 		"Avg Moves per Defeat": formatNum(advanced.loss_len),
-		"Peak ELO Achieved": advanced.peak_elo !== undefined && advanced.peak_elo !== null ? advanced.peak_elo : '1500',
+		"Peak ELO Achieved": advanced.peak_elo !== undefined && advanced.peak_elo !== null ? advanced.peak_elo : '1200',
 		"Highest ELO Defeated": advanced.highest_elo_defeated !== undefined && advanced.highest_elo_defeated !== null ? advanced.highest_elo_defeated : 'N/A',
 		"Performance at Tilt (Winrate)": formatPct(advanced.tilt_winrate),
 		"Blunder Ratio": formatPct(advanced.blunder_ratio),
@@ -460,7 +460,7 @@ function MetricsTable({ realStats }) {
 						<div className="pstats-metrics__key-wrapper">
 							<i className="ri-information-line pstats-metrics__help-trigger" />
 							<span className="pstats-metrics__key">{m.key}</span>
-							
+
 							<div className="pstats-help-tooltip">
 								<span className="pstats-help-tooltip__title">{m.displayKey}</span>
 								<span className="pstats-help-tooltip__desc">{m.help}</span>
@@ -479,6 +479,52 @@ export default function Statistics() {
 	const { isConnected, lastMessage, sendMove } = useChessSocket('matchmaking')
 	const [esStats, setEsStats] = useState(null)
 	const [category, setCategory] = useState('rapid')
+	const [isExporting, setIsExporting] = useState(false)
+
+	const handleExportPDF = async () => {
+		if (isExporting) return
+		try {
+			setIsExporting(true)
+			const res = await fetch('/api/game/stats/export/')
+			const data = await res.json()
+			
+			if (data.status === 'success') {
+				const taskId = data.task_id
+				const checkStatus = async () => {
+					try {
+						const sRes = await fetch(`/api/game/stats/export-status/${taskId}/`)
+						const sData = await sRes.json()
+						if (sData.status === 'SUCCESS') {
+							setIsExporting(false)
+							// Déclenche le téléchargement
+							const link = document.createElement('a')
+							link.href = sData.result.url
+							link.download = sData.result.filename
+							document.body.appendChild(link)
+							link.click()
+							document.body.removeChild(link)
+						} else if (sData.status === 'FAILURE') {
+							setIsExporting(false)
+							alert("Erreur lors de la génération du PDF")
+						} else {
+							// On continue de poller
+							setTimeout(checkStatus, 2000)
+						}
+					} catch (e) {
+						setIsExporting(false)
+						console.error("Status check failed", e)
+					}
+				}
+				setTimeout(checkStatus, 2000)
+			} else {
+				setIsExporting(false)
+				alert(data.error || "Erreur lors du lancement de l'export")
+			}
+		} catch (err) {
+			setIsExporting(false)
+			console.error("Export PDF failed:", err)
+		}
+	}
 
 	// On s'assure de récupérer le bon format d'ID (selon votre backend)
 	const userId = user?.id ?? user?.user_id ?? user?.pk ?? user?.sub ?? null
@@ -555,6 +601,30 @@ export default function Statistics() {
 							{cat}
 						</button>
 					))}
+					<button
+						onClick={handleExportPDF}
+						style={{
+							padding: '0.4rem 1.2rem',
+							border: `1px solid ${theme.accent}`,
+							borderRadius: '6px',
+							background: isExporting ? 'rgba(255,255,255,0.1)' : `${theme.accent}44`,
+							color: '#fff',
+							fontSize: '0.65rem',
+							fontWeight: 'bold',
+							textTransform: 'uppercase',
+							letterSpacing: '0.05em',
+							cursor: isExporting ? 'not-allowed' : 'pointer',
+							marginLeft: 'auto',
+							display: 'flex',
+							alignItems: 'center',
+							gap: '6px',
+							opacity: isExporting ? 0.7 : 1
+						}}
+						disabled={isExporting}
+					>
+						<i className={isExporting ? "ri-loader-4-line ri-spin" : "ri-file-pdf-line"} />
+						{isExporting ? 'Génération...' : 'Export PDF'}
+					</button>
 				</div>
 				<div className="pstats-winrates">
 					<WinrateGroup
@@ -594,17 +664,17 @@ export default function Statistics() {
 						chartAnim={chartAnim}
 					/>
 				</div>
-				<PerfChart 
-					theme={theme} 
-					chartAnim={chartAnim} 
-					moveSpeedHistory={esStats?.performance_history?.move_speed_history} 
+				<PerfChart
+					theme={theme}
+					chartAnim={chartAnim}
+					moveSpeedHistory={esStats?.performance_history?.move_speed_history}
 					gameAdvantageHistory={esStats?.performance_history?.game_advantage_history}
 					eloHistory={esStats?.performance_history?.elo_history}
 					isMock={!esStats}
 				/>
-				<PieceUsageChart 
-					theme={theme} 
-					chartAnim={chartAnim} 
+				<PieceUsageChart
+					theme={theme}
+					chartAnim={chartAnim}
 					pieceUsage={esStats?.piece_usage}
 					allPieceUsage={esStats?.all_players_piece_usage}
 				/>

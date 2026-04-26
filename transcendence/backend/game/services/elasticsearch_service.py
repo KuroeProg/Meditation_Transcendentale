@@ -11,10 +11,11 @@ es = Elasticsearch(
     basic_auth=("elastic", settings.ELASTIC_PASSWORD),
 )
 
-def index_game_result(game_data):
+def index_game_result(game_data, game_id=None):
     """
     Envoie les statistiques d'une partie terminée vers Elasticsearch.
     C'est le côté 'Query' de notre architecture CQRS.
+    Si game_id est fourni, il est utilisé comme ID de document pour permettre l'idempotence.
     """
     try:
         # On crée un document "propre" pour l'analyse
@@ -50,11 +51,49 @@ def index_game_result(game_data):
         }
         
         # On indexe dans 'chess-games'
-        response = es.index(index="chess-games", document=doc)
-        print(f"Propagé vers Elasticsearch : {response['result']}")
+        # Si game_id est fourni, on l'utilise comme ID de document
+        if game_id:
+            response = es.index(index="chess-games", id=str(game_id), document=doc)
+        else:
+            response = es.index(index="chess-games", document=doc)
+            
+        print(f"Propagé vers Elasticsearch : {response['result']} (ID: {response.get('_id')})")
         return True
     except Exception as e:
         print(f"Erreur d'indexation Elasticsearch : {e}")
+        return False
+
+def index_game_instance(game_instance):
+    """
+    Sérialise une instance de modèle Game (Django) et l'envoie vers Elasticsearch.
+    Utile pour la resynchronisation et la vérification d'intégrité.
+    """
+    try:
+        moves = list(game_instance.moves.all().order_by('move_number'))
+        game_data = {
+            'player_white_id': game_instance.player_white.id if game_instance.player_white else None,
+            'player_black_id': game_instance.player_black.id if game_instance.player_black else None,
+            'winner_id': game_instance.winner.id if game_instance.winner else None,
+            'duration_seconds': game_instance.duration_seconds,
+            'time_control': game_instance.time_control,
+            'increment': game_instance.increment,
+            'time_category': game_instance.time_category,
+            'start_timestamp': game_instance.started_at.timestamp(),
+            'moves': [
+                {
+                    'player_id': move.player.id if move.player else None,
+                    'move_number': move.move_number,
+                    'san_notation': move.san_notation,
+                    'piece_played': move.piece_played,
+                    'time_taken_ms': move.time_taken_ms,
+                    'material_advantage': move.material_advantage
+                }
+                for move in moves
+            ]
+        }
+        return index_game_result(game_data, game_id=game_instance.id)
+    except Exception as e:
+        print(f"Erreur lors de la sérialisation de la partie {game_instance.id} pour ES : {e}")
         return False
 
 def get_player_stats(player_id, category='rapid'):

@@ -13,4 +13,6 @@ def with_optional_trailing_slash(route, view_callable, name=None):
 urlpatterns = [
     *with_optional_trailing_slash('history', views.game_history, name='game_history'),
     *with_optional_trailing_slash('history/<int:pk>', views.game_replay, name='game_replay'),
+    *with_optional_trailing_slash('stats/export', views.export_stats_pdf, name='export_stats_pdf'),
+    *with_optional_trailing_slash('stats/export-status/<str:task_id>', views.export_status, name='export_status'),
 ]
