@@ -3,6 +3,7 @@ import time
 
 import chess
 
+from game.services.clock import is_clock_running
 from game.services.game_state import (
 	clear_draw_offer,
 	ensure_draw_fields,
@@ -40,11 +41,14 @@ def apply_play_move(game_state, sender_id, attempted_move):
 	if move not in board.legal_moves:
 		return False, 'Coup illégal'
 
-	increment = game_state.get('increment', 0)
-	if board.turn == chess.WHITE:
-		game_state['white_time_left'] += increment
-	else:
-		game_state['black_time_left'] += increment
+	# Incrément seulement quand le chrono « principal » tourne (après 2 demi-coups),
+	# sinon le 2e coup (ex. …d5) ajoute +inc aux noirs sans décompte → affichage > temps de base.
+	increment = int(game_state.get('increment_seconds', game_state.get('increment', 0)) or 0)
+	if increment and is_clock_running(game_state):
+		if board.turn == chess.WHITE:
+			game_state['white_time_left'] += increment
+		else:
+			game_state['black_time_left'] += increment
 
 	board.push(move)
 	game_state['fen'] = board.fen()

@@ -5,6 +5,7 @@ import chess
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_clock_running,
 	mark_timeout_if_needed,
 )
 from game.services.game_state import ensure_draw_fields
@@ -34,7 +35,9 @@ async def synchronize_reconnecting_player(redis_client, game_id, game_state_json
 	board = chess.Board(game_state['fen'])
 	before_white = float(game_state.get('white_time_left', 0))
 	before_black = float(game_state.get('black_time_left', 0))
-	apply_elapsed_for_active_turn(game_state, board, now_ts)
+	# Aligné sur clock_tick / handle_play_move : pas de décompte avant 2 demi-coups
+	if is_clock_running(game_state):
+		apply_elapsed_for_active_turn(game_state, board, now_ts)
 	if mark_timeout_if_needed(game_state, board):
 		updated = True
 	if before_white != float(game_state.get('white_time_left', 0)):
