@@ -368,6 +368,11 @@ La liste inbox (`GET /api/chat/conversations`) **exclut désormais** les convers
 
 **Stratégie de fusion** : au chargement de `Settings.jsx`, les préférences serveur **remplacent** les valeurs locales pour les clés connues (le serveur est source de vérité cross-device). Sur changement côté client, un `PATCH` debounced (800ms) est envoyé.
 
+### 9.5bis Finalisation d’une partie (idempotence & concurrence)
+
+- Chaque `game_id` ne doit produire qu’**une** ligne `Game` + mise à jour Elo : la finalisation côté `GameConsumer` est protégée par une clé Redis `chessgame_db_done:{game_id}` (SETNX) + écriture de l’état terminal dans Redis **avant** l’appel BDD, pour que le tick d’horloge ne voit plus un état `active` après un abandon, et qu’un second chemin (ex. timeout) ne fasse pas une seconde persistance.
+- Les actions joueur rechargent l’état **depuis Redis** au moment du handler (re-fetch), pas l’instantané passé par `receive`, pour limiter l’obsolescence sur concurrence `asyncio` (tick d’horloge vs `resign`).
+
 ### 9.6 Revanche (WebSocket — même channel de partie)
 
 Protocole **full-duplex** sur la connexion `WS /ws/chess/<game_id>/`, déclenché après fin de partie.

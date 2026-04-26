@@ -40,6 +40,15 @@ async def tick_game_clock(redis_client, game_id, channel_name, channel_layer, ro
 	apply_elapsed_for_active_turn(game_state, board, now_ts)
 	timed_out = mark_timeout_if_needed(game_state, board)
 
+	# Re-read Redis before persisting: évite d'écraser un abandon (ou autre fin) arrivé
+	# en concurrence (tick vs resign sur deux tâches asyncio).
+	if timed_out:
+		reread = await redis_client.get(game_id)
+		if reread is not None:
+			cur = json.loads(reread)
+			if cur.get('status') != 'active':
+				return False, None
+
 	await redis_client.set(game_id, json.dumps(game_state))
 	await channel_layer.group_send(room_group_name, build_event_fn(game_state))
 	return True, game_state if timed_out else None

@@ -47,6 +47,8 @@ logger = logging.getLogger('transcendence')
 
 ACTIVE_GAME_KEY_PREFIX = 'active_game:'
 ACTIVE_GAME_TTL = 7200  # 2 h safety TTL
+# Une seule persistance BDD ELO par `game_id` (évite double fin abandon+timeout, etc.)
+GAME_DB_PERSISTED_KEY_PREFIX = 'chessgame_db_done:'
 
 
 class GameConsumer(AsyncWebsocketConsumer):
@@ -264,7 +266,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 			return
 
 		if action == 'reset_game':
-			await self.get_redis().delete(self.game_id)
+			r = self.get_redis()
+			await r.delete(self.game_id)
+			await r.delete(f'{GAME_DB_PERSISTED_KEY_PREFIX}{self.game_id}')
 			await self.handle_create_game(data)
 			return
 
@@ -327,34 +331,65 @@ class GameConsumer(AsyncWebsocketConsumer):
 		}
 
 	async def _save_and_broadcast_final_state(self, game_state, winner_id, termination_reason):
-		"""Save game to DB, broadcast final state with Elo deltas, clear presence and invites."""
+		"""Save game to DB, broadcast final state with Elo deltas, clear presence and invites.
+
+		Idempotent: seul le premier finalisateur exécute la persistance BDD (SETNX) pour
+		éviter double Elo / deux lignes Game si timeout et resign arrivent en course.
+		L'état terminal est enregistré dans Redis *avant* l'appel BDD long pour que le tick
+		d'horloge et l'autre joueur voient tout de suite une partie non active.
+		"""
+		r = self.get_redis()
+		persist_key = f'{GAME_DB_PERSISTED_KEY_PREFIX}{self.game_id}'
+		got_persist = await r.set(
+			persist_key,
+			json.dumps({'reason': termination_reason, 't': time.time()}),
+			nx=True,
+			ex=ACTIVE_GAME_TTL,
+		)
+		if not got_persist:
+			# Une autre tâche a déjà finalisé (abandon, mat, nulle, timeout…)
+			existing = await r.get(self.game_id)
+			if existing is not None:
+				parsed = json.loads(existing)
+				await self._broadcast_current_game_state(parsed)
+			return
+
+		# Pinner l'état terminal immédiatement (avant la BDD) pour l'horloge et l'autre client WS
+		await r.set(self.game_id, json.dumps(game_state))
+
 		final_game_data = self._build_final_game_data(game_state, winner_id, termination_reason)
-		success, deltas = await async_save_full_game(final_game_data)
+		try:
+			success, deltas = await async_save_full_game(final_game_data)
+		except Exception:
+			await r.delete(persist_key)
+			raise
+		if not success:
+			await r.delete(persist_key)
+			logger.warning(
+				"Game finalization: DB save failed, persist lock released for retry",
+				extra={"game_id": self.game_id, "termination_reason": termination_reason},
+			)
+			return
+
 		game_state['elo_deltas'] = deltas if isinstance(deltas, dict) else {}
-		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await r.set(self.game_id, json.dumps(game_state))
 		await self._broadcast_current_game_state(game_state)
 		await self._close_invite_joinability('game_finished')
 		for pid_key in ('white_player_id', 'black_player_id'):
 			pid = game_state.get(pid_key)
 			if pid is not None:
 				await _clear_active_game(str(pid), self.game_id)
-		if success:
-			logger.info(
-				"Game finished",
-				extra={
-					"action": "game_finished",
-					"game_id": self.game_id,
-					"termination_reason": termination_reason,
-					"winner_id": winner_id,
-					"player_white_id": game_state['white_player_id'],
-					"player_black_id": game_state['black_player_id'],
-				},
-			)
-		else:
-			logger.warning(
-				"Game finished but DB save failed",
-				extra={"game_id": self.game_id, "termination_reason": termination_reason},
-			)
+		logger.info(
+			"Game finished",
+			extra={
+				"action": "game_finished",
+				"game_id": self.game_id,
+				"termination_reason": termination_reason,
+				"winner_id": winner_id,
+				"player_white_id": game_state['white_player_id'],
+				"player_black_id": game_state['black_player_id'],
+			},
+		)
 
 	# ─── action handlers ────────────────────────────────────────────────────────
 
@@ -366,8 +401,12 @@ class GameConsumer(AsyncWebsocketConsumer):
 		increment = data.get('increment', 0)
 		competitive = bool(data.get('competitive', False))
 
+		r = self.get_redis()
+		# Repartir de zéro : même `game_id` = nouvelle partie (souvent `reset_game` a déjà nettoyé)
+		await r.delete(f'{GAME_DB_PERSISTED_KEY_PREFIX}{self.game_id}')
+
 		new_game_state = await build_new_game_state(white_id, black_id, time_control, increment, competitive)
-		await self.get_redis().set(self.game_id, json.dumps(new_game_state))
+		await r.set(self.game_id, json.dumps(new_game_state))
 
 		# Register the connecting player's active game
 		if self.auth_user_id:
@@ -391,6 +430,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_play_move(self, game_state_json, data):
 		"""Process a chess move: validate, apply, check timeout, broadcast."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -454,6 +494,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_resign(self, game_state_json, data):
 		"""Process player resignation and end game."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -468,6 +509,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_draw_offer(self, game_state_json, data):
 		"""Process draw offer from a player."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -482,6 +524,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_draw_response(self, game_state_json, data):
 		"""Process accept/reject of draw offer."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -525,6 +568,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_rematch_offer(self, game_state_json, data):
 		"""Process rematch offer from a player after game ends."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
@@ -550,6 +594,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
 	async def handle_rematch_response(self, game_state_json, data):
 		"""Accept or decline a rematch offer; create new game on acceptance."""
+		game_state_json = await self.get_redis().get(self.game_id)
 		game_state = await self._load_game_state_or_send_error(game_state_json)
 		if game_state is None:
 			return
