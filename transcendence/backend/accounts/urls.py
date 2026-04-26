@@ -32,6 +32,7 @@ urlpatterns = [
     *with_optional_trailing_slash('me/presence', views.presence_ping, name='presence_ping'),
     *with_optional_trailing_slash('me/avatar', views.upload_avatar, name='upload_avatar'),
     *with_optional_trailing_slash('me/client-settings', views.client_settings, name='client_settings'),
+    *with_optional_trailing_slash('me/delete-data', views.delete_account_data, name='delete_account_data'),
     *with_optional_trailing_slash('leaderboard', views.leaderboard, name='leaderboard'),
     *with_optional_trailing_slash('search', views.search_users, name='search_users'),
 

@@ -8,6 +8,7 @@ import json
 import logging
 import asyncio
 import contextlib
+import secrets
 import chess
 import time
 import redis.asyncio as redis
@@ -73,10 +74,15 @@ class GameConsumer(AsyncWebsocketConsumer):
 		'respond_draw': 'draw_response',
 		'accept_draw': 'draw_response',
 		'refuse_draw': 'draw_response',
+		'rematch': 'rematch_offer',
+		'offer_rematch': 'rematch_offer',
+		'respond_rematch': 'rematch_response',
+		'accept_rematch': 'rematch_response',
+		'refuse_rematch': 'rematch_response',
 	}
 
 	# Actions only players may send
-	PLAYER_ONLY_ACTIONS = {'play_move', 'resign', 'draw_offer', 'draw_response', 'create_game', 'reset_game'}
+	PLAYER_ONLY_ACTIONS = {'play_move', 'resign', 'draw_offer', 'draw_response', 'create_game', 'reset_game', 'rematch_offer', 'rematch_response'}
 
 	@classmethod
 	def get_redis(cls):
@@ -187,8 +193,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 			await self._tick_game_clock()
 
 	async def _tick_game_clock(self):
-		"""Apply one second of time decay and detect timeouts."""
-		await tick_game_clock(
+		"""Apply one second of time decay and detect timeouts; trigger DB save on timeout."""
+		_, timed_out_state = await tick_game_clock(
 			self.get_redis(),
 			self.game_id,
 			self.channel_name,
@@ -196,6 +202,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 			self.room_group_name,
 			build_group_game_state_event,
 		)
+		if timed_out_state is not None:
+			winner_id = timed_out_state.get('winner_player_id')
+			await self._save_and_broadcast_final_state(timed_out_state, winner_id, 'timeout')
 
 	# ─── broadcast helpers ──────────────────────────────────────────────────────
 
@@ -264,6 +273,8 @@ class GameConsumer(AsyncWebsocketConsumer):
 			'resign': self.handle_resign,
 			'draw_offer': self.handle_draw_offer,
 			'draw_response': self.handle_draw_response,
+			'rematch_offer': self.handle_rematch_offer,
+			'rematch_response': self.handle_rematch_response,
 			'reconnect': self.handle_reconnect,
 		}
 
@@ -509,6 +520,107 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if getattr(self, 'role', None) == 'spectator':
 			payload['spectator'] = True
 		await self.send(text_data=json.dumps(payload))
+
+	# ─── rematch handlers ────────────────────────────────────────────────────────
+
+	async def handle_rematch_offer(self, game_state_json, data):
+		"""Process rematch offer from a player after game ends."""
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
+			return
+
+		if game_state.get('status') == 'active':
+			await self.send(text_data=json.dumps({'error': 'La partie est encore en cours'}))
+			return
+
+		sender_id = str(data.get('player_id', ''))
+		white_id = str(game_state.get('white_player_id', ''))
+		black_id = str(game_state.get('black_player_id', ''))
+		if sender_id not in (white_id, black_id):
+			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
+			return
+
+		if game_state.get('rematch_offer_from_player_id') is not None:
+			await self.send(text_data=json.dumps({'error': 'Une proposition de revanche est déjà en cours'}))
+			return
+
+		game_state['rematch_offer_from_player_id'] = sender_id
+		await self.get_redis().set(self.game_id, json.dumps(game_state))
+		await self._broadcast_current_game_state(game_state)
+
+	async def handle_rematch_response(self, game_state_json, data):
+		"""Accept or decline a rematch offer; create new game on acceptance."""
+		game_state = await self._load_game_state_or_send_error(game_state_json)
+		if game_state is None:
+			return
+
+		offer_from = game_state.get('rematch_offer_from_player_id')
+		if offer_from is None:
+			await self.send(text_data=json.dumps({'error': 'Aucune proposition de revanche en cours'}))
+			return
+
+		sender_id = str(data.get('player_id', ''))
+		white_id = str(game_state.get('white_player_id', ''))
+		black_id = str(game_state.get('black_player_id', ''))
+		if sender_id not in (white_id, black_id):
+			await self.send(text_data=json.dumps({'error': 'Joueur invalide pour cette partie'}))
+			return
+
+		if sender_id == str(offer_from):
+			await self.send(text_data=json.dumps({'error': 'Vous ne pouvez pas accepter votre propre proposition de revanche'}))
+			return
+
+		accept = data.get('accept', False)
+		if isinstance(accept, str):
+			accept = accept.lower() in ('true', '1', 'yes', 'accept', 'accepted')
+
+		if not accept:
+			game_state['rematch_offer_from_player_id'] = None
+			await self.get_redis().set(self.game_id, json.dumps(game_state))
+			await self._broadcast_current_game_state(game_state)
+			return
+
+		# Both accepted — create a new game with swapped colors
+		new_game_id = f"rematch_{int(time.time() * 1000)}_{secrets.token_hex(4)}"
+		# Loser (original black) gets white in the rematch; winners swap sides
+		new_white_id = black_id
+		new_black_id = white_id
+		time_control = int(game_state.get('time_control_seconds', 600))
+		increment = int(game_state.get('increment_seconds', game_state.get('increment', 0)))
+		competitive = bool(game_state.get('is_competitive', False))
+
+		new_game_state = await build_new_game_state(new_white_id, new_black_id, time_control, increment, competitive)
+		await self.get_redis().set(new_game_id, json.dumps(new_game_state))
+
+		logger.info(
+			"Rematch started",
+			extra={
+				"action": "rematch_started",
+				"original_game_id": self.game_id,
+				"new_game_id": new_game_id,
+				"new_white_player_id": new_white_id,
+				"new_black_player_id": new_black_id,
+			},
+		)
+
+		await self.channel_layer.group_send(
+			self.room_group_name,
+			{
+				'type': 'rematch_started_event',
+				'new_game_id': new_game_id,
+				'white_player_id': new_white_id,
+				'black_player_id': new_black_id,
+			},
+		)
+
+	async def rematch_started_event(self, event):
+		"""Send rematch_started notification to this WebSocket client."""
+		await self.send(text_data=json.dumps({
+			'action': 'rematch_started',
+			'new_game_id': event['new_game_id'],
+			'white_player_id': event['white_player_id'],
+			'black_player_id': event['black_player_id'],
+		}))
 
 
 # ─── Redis active-game helpers ───────────────────────────────────────────────

@@ -138,6 +138,20 @@ Current stable selectors:
 - In-game chat tab badge:
   - .stats-nav-chat-badge (unread messages when chat tab not active)
 
+- Post-match actions (ResultBanner + RematchOfferBanner):
+  - result-new-game (bouton "Nouvelle partie" en fin de partie online)
+  - result-rematch (bouton "Proposer une revanche")
+  - result-rematch-waiting (message d'attente revanche sortante)
+  - rematch-banner-incoming (bannière revanche reçue)
+  - rematch-banner-outgoing (bannière revanche en attente)
+  - rematch-accept (bouton accepter revanche)
+  - rematch-decline (bouton refuser revanche)
+- Settings — RGPD serveur:
+  - settings-delete-server-data (bouton supprimer données serveur, étape 0 ou 1)
+  - settings-delete-server-cancel (bouton annuler suppression serveur)
+  - settings-delete-server-done (message confirmation suppression)
+  - settings-delete-server-error (message d'erreur)
+
 Notes:
 - Some tests still rely on non-testid selectors for legacy areas (example: auth form ids, typing indicator classes).
 - When touching these areas, prefer adding a stable `data-testid` and update this file.

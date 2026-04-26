@@ -368,6 +368,32 @@ La liste inbox (`GET /api/chat/conversations`) **exclut désormais** les convers
 
 **Stratégie de fusion** : au chargement de `Settings.jsx`, les préférences serveur **remplacent** les valeurs locales pour les clés connues (le serveur est source de vérité cross-device). Sur changement côté client, un `PATCH` debounced (800ms) est envoyé.
 
+### 9.6 Revanche (WebSocket — même channel de partie)
+
+Protocole **full-duplex** sur la connexion `WS /ws/chess/<game_id>/`, déclenché après fin de partie.
+
+| Action envoyée (client → serveur) | Payload | Rôle |
+|------------------------------------|---------|------|
+| `rematch_offer` | `{ action, player_id }` | Propose une revanche. Rejeté si la partie est encore `active` ou si une offre est déjà en cours. |
+| `rematch_response` | `{ action, player_id, accept: bool }` | Accepte ou refuse la proposition. Si `accept=true`, crée une nouvelle partie Redis (couleurs inversées) et diffuse `rematch_started`. |
+
+| Événement reçu (serveur → client) | Description |
+|------------------------------------|-------------|
+| `game_state` (avec `rematch_offer_from_player_id`) | Diffusé après une offre ; le champ `rematch_offer_from_player_id` permet au client de différencier offer entrante/sortante. |
+| `rematch_started` (`action`, `new_game_id`, `white_player_id`, `black_player_id`) | Diffusé à tous les clients du groupe quand les deux joueurs acceptent. Le client navigue vers `/game/<new_game_id>`. |
+
+**Comportement côté client** : `useChessEngine` expose `handleOfferRematch()`, `handleRespondRematch(accept)`, `rematchOfferIncoming`, `rematchOfferOutgoing`. Sur `rematch_started`, le callback `onRematchStarted(newGameId)` déclenche `navigate('/game/<newGameId>')` dans `Game.jsx`.
+
+### 9.7 RGPD — suppression données serveur
+
+| Méthode | Route | Rôle |
+|---------|--------|------|
+| `DELETE` | `/api/auth/me/delete-data` | Anonymise le compte (supprime PII : username → `deleted_<12hex>`, email, nom, bio, avatar, mot de passe, préférences). Supprime explicitement : messages envoyés, amitiés, invitations de partie. Les lignes `Game`/`Move` sont conservées (FK `SET_NULL`) pour l'intégrité de l'historique. Invalide la session (déconnexion immédiate). Répond `{ ok: true, message }` ou `{ error }`. |
+
+**Stratégie hybride** (conserve les parties anonymisées) : contrairement à un hard-delete, le `LocalUser` n'est pas supprimé — les FK `Game.player_white/black/winner` restent valides (elles pointent vers le compte anonymisé), évitant toute corruption d'historique. Le `Friendship.CASCADE` et le `Message.CASCADE` seraient automatiques sur un DELETE Django, mais puisqu'on anonymise sans supprimer la ligne, la suppression est effectuée explicitement.
+
+**Côté client** (`Settings.jsx`) : section « Données personnelles (RGPD) » avec double confirmation (étape 0 → 1 → 2 `in-progress` → 3 `done`) et logout automatique après 2,5 s.
+
 ---
 
-*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles + page Paramètres étendue + spectateur, historique, chat ingame, préférences hybrides).*
+*Mis à jour pour synchronisation backend — avril 2026 (mocks + routes Django réelles + page Paramètres étendue + spectateur, historique, chat ingame, préférences hybrides, revanche WS, RGPD delete).*

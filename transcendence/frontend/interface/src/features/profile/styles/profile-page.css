@@ -408,6 +408,10 @@
 	margin-top: 0.65rem;
 }
 
+.settings-feedback--error {
+	color: #ff6b6b;
+}
+
 .profile-avatar-overlay {
 	position: absolute;
 	inset: 0;

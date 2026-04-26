@@ -1,4 +1,5 @@
 import json
+import uuid
 
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -227,3 +228,64 @@ def client_settings(request):
         return JsonResponse({'prefs': current})
 
     return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+
+@csrf_exempt
+def delete_account_data(request):
+    """RGPD — anonymise the account, delete personal data, invalidate the session.
+
+    Keeps the LocalUser row (and Game rows pointing to it via SET_NULL-compatible FKs)
+    to preserve match history integrity. Removes: avatar file, personal fields,
+    preferences, sent messages, friendships, and game invites.
+    The session is flushed so the user is logged out immediately.
+    """
+    if request.method != 'DELETE':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    anon_tag = uuid.uuid4().hex[:12]
+
+    # Delete avatar file from storage
+    if user.avatar:
+        try:
+            user.avatar.delete(save=False)
+        except Exception:
+            pass
+
+    # Anonymise personal fields in-place (keep same PK so Game FKs stay valid)
+    user.username = f'deleted_{anon_tag}'
+    user.email = f'deleted_{anon_tag}@invalid.local'
+    user.first_name = ''
+    user.last_name = ''
+    user.bio = ''
+    user.avatar = None
+    user.image_url = ''
+    user.password_hash = ''
+    user.client_prefs = {}
+    user.is_online = False
+    user.save(update_fields=[
+        'username', 'email', 'first_name', 'last_name', 'bio',
+        'avatar', 'image_url', 'password_hash', 'client_prefs', 'is_online',
+    ])
+
+    # Delete sent messages (lazy import to avoid circular dependency)
+    try:
+        from chat.models import Message, GameInvite  # noqa: PLC0415
+        Message.objects.filter(sender=user).delete()
+        GameInvite.objects.filter(sender=user).delete()
+        GameInvite.objects.filter(receiver=user).delete()
+    except Exception:
+        pass
+
+    # Delete friendships explicitly (CASCADE fires only on row delete, not anonymise)
+    from accounts.models import Friendship  # noqa: PLC0415
+    from django.db.models import Q
+    Friendship.objects.filter(Q(from_user=user) | Q(to_user=user)).delete()
+
+    # Flush session → user is logged out
+    request.session.flush()
+
+    return JsonResponse({'ok': True, 'message': 'Données supprimées et compte anonymisé. Vous avez été déconnecté.'})

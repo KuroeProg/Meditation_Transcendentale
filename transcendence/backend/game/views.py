@@ -134,7 +134,7 @@ def _game_to_list_item(game: Game, user: LocalUser) -> dict:
     fmt_val, _, elo_attr = _clock_format_meta(game, user)
     is_white = game.player_white_id == user.id
     elo_change = game.elo_delta_white if is_white else game.elo_delta_black
-    player_elo = getattr(user, elo_attr, 1500)
+    player_elo = getattr(user, elo_attr, 1200)
 
     opp_dict = {
         'id': opponent.id if opponent else None,

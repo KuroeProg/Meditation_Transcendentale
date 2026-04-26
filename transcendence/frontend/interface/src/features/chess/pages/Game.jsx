@@ -2,7 +2,7 @@ import Board from "../components/Board.jsx";
 import { CapturedPiecesBar } from "../components/CapturedPieces.jsx";
 import { useEffect, useCallback, useMemo, useState } from "react";
 import { useSynchronizedChessTimers } from "../components/Chrono.jsx";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "../../auth/index.js";
 import { useChessSocket } from "../hooks/useChessSocket.js";
 import { get42AvatarUrl, getDisplayTitle } from "../../../utils/sessionUser.js";
@@ -21,6 +21,7 @@ function App() {
   }, []);
 
   const { gameId } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const mode = useMemo(() => {
     const id = String(gameId ?? "").toLowerCase();
@@ -32,6 +33,10 @@ function App() {
 
   const { isConnected, socketError, lastMessage, sendMove } =
     useChessSocket(mode === "online" ? gameId : null);
+
+  const handleRematchStarted = useCallback((newGameId) => {
+    navigate(`/game/${newGameId}`);
+  }, [navigate]);
 
   // Track spectator flag from WS server payload
   const [isSpectator, setIsSpectator] = useState(false);
@@ -49,6 +54,10 @@ function App() {
     handleResign,
     handleOfferDraw,
     handleRespondDraw,
+    handleOfferRematch,
+    handleRespondRematch,
+    rematchOfferIncoming,
+    rematchOfferOutgoing,
     startNewMatch,
     setViewPlies,
     drawOfferIncoming,
@@ -63,6 +72,7 @@ function App() {
     user,
     lastMessage,
     sendMove,
+    onRematchStarted: handleRematchStarted,
   });
 
   const {
@@ -88,6 +98,16 @@ function App() {
   const handleResetGame = useCallback(() => {
     startNewMatch();
   }, [startNewMatch]);
+
+  // "Nouvelle partie" : rejoindre la file matchmaking avec les params de la partie terminée
+  const handleNewGame = useCallback(() => {
+    const tc = gameState?.time_control_seconds ?? 600;
+    const inc = gameState?.increment_seconds ?? gameState?.increment ?? 0;
+    const competitive = gameState?.is_competitive ?? false;
+    navigate('/dashboard', {
+      state: { autoQueue: true, timeControl: tc, increment: inc, competitive },
+    });
+  }, [gameState, navigate]);
 
   // Sync timers from server state
   const onlineTimers = useSynchronizedChessTimers(
@@ -290,7 +310,12 @@ function App() {
           <GameStatsPanel
             moveLog={moveLog}
             winner={winner}
-            onPlayAgain={startNewMatch}
+            onPlayAgain={mode === 'online' ? handleNewGame : startNewMatch}
+            onRematch={handleOfferRematch}
+            onRespondRematch={handleRespondRematch}
+            rematchOfferIncoming={rematchOfferIncoming}
+            rematchOfferOutgoing={rematchOfferOutgoing}
+            mode={mode}
             viewPlies={viewPlies}
             onViewPlies={setViewPlies}
             onResign={handleResign}

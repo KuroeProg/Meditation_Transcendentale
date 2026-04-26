@@ -291,6 +291,145 @@ export async function installOnlineGameWebSocketMock(page, gameId = 'e2e-game') 
 	}, gameId)
 }
 
+/**
+ * Mock WS for a finished game that exposes rematch flow.
+ * The initial reconnect delivers a finished game state.
+ * Sending `rematch_offer` triggers an incoming offer broadcast.
+ * Sending `rematch_response` with accept=true triggers `rematch_started`.
+ */
+export async function installRematchWebSocketMock(page, gameId = 'rematch-game-1') {
+	await page.addInitScript((targetGameId) => {
+		const NativeWebSocket = window.WebSocket
+
+		function createListenerStore() {
+			return { open: new Set(), message: new Set(), error: new Set(), close: new Set() }
+		}
+
+		function emitMockEvent(socket, type, event) {
+			const listeners = socket._listeners?.[type]
+			if (!listeners) return
+			for (const listener of listeners) {
+				try { listener.call(socket, event) } catch {}
+			}
+		}
+
+		function wireEvent(socket, type, event) {
+			if (type === 'open') socket.onopen?.(event)
+			if (type === 'message') socket.onmessage?.(event)
+			if (type === 'error') socket.onerror?.(event)
+			if (type === 'close') socket.onclose?.(event)
+			emitMockEvent(socket, type, event)
+		}
+
+		const FINISHED_STATE = {
+			fen: 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1',
+			status: 'resigned',
+			winner_player_id: 202,
+			white_player_id: 202,
+			black_player_id: 101,
+			draw_offer_from_player_id: null,
+			rematch_offer_from_player_id: null,
+			time_control_seconds: 600,
+			increment_seconds: 0,
+			is_competitive: false,
+		}
+
+		class MockWebSocket {
+			static CONNECTING = 0
+			static OPEN = 1
+			static CLOSING = 2
+			static CLOSED = 3
+
+			constructor(url) {
+				this.url = String(url)
+				this.readyState = MockWebSocket.CONNECTING
+				this.onopen = null; this.onmessage = null; this.onerror = null; this.onclose = null
+				this._listeners = createListenerStore()
+				this._mocked = this.url.includes(`/ws/chess/${targetGameId}/`)
+				this._state = JSON.parse(JSON.stringify(FINISHED_STATE))
+
+				if (this._mocked) {
+					window.__e2eRematchMock = window.__e2eRematchMock || {}
+					window.__e2eRematchMock.socket = this
+					setTimeout(() => {
+						this.readyState = MockWebSocket.OPEN
+						wireEvent(this, 'open', { type: 'open' })
+					}, 0)
+					return
+				}
+
+				this._native = new NativeWebSocket(url)
+				this._native.onopen = (e) => { this.readyState = MockWebSocket.OPEN; wireEvent(this, 'open', e) }
+				this._native.onmessage = (e) => wireEvent(this, 'message', e)
+				this._native.onerror = (e) => wireEvent(this, 'error', e)
+				this._native.onclose = (e) => { this.readyState = MockWebSocket.CLOSED; wireEvent(this, 'close', e) }
+			}
+
+			addEventListener(t, l) {
+				if (!this._mocked) { this._native?.addEventListener?.(t, l); return }
+				this._listeners?.[t]?.add(l)
+			}
+
+			removeEventListener(t, l) {
+				if (!this._mocked) { this._native?.removeEventListener?.(t, l); return }
+				this._listeners?.[t]?.delete(l)
+			}
+
+			send(raw) {
+				if (!this._mocked) { this._native?.send(raw); return }
+				let data = null
+				try { data = JSON.parse(raw) } catch {}
+				if (!data) return
+
+				if (data.action === 'reconnect') {
+					setTimeout(() => {
+						wireEvent(this, 'message', { data: JSON.stringify({ action: 'game_state', game_state: this._state }) })
+					}, 10)
+					return
+				}
+
+				// Simule une offre sortante puis une réception côté adversaire
+				if (data.action === 'rematch_offer') {
+					this._state = { ...this._state, rematch_offer_from_player_id: String(data.player_id) }
+					setTimeout(() => {
+						wireEvent(this, 'message', { data: JSON.stringify({ action: 'game_state', game_state: this._state }) })
+					}, 20)
+					return
+				}
+
+				if (data.action === 'rematch_response' && data.accept === true) {
+					setTimeout(() => {
+						wireEvent(this, 'message', {
+							data: JSON.stringify({
+								action: 'rematch_started',
+								new_game_id: 'rematch-new-999',
+								white_player_id: 101,
+								black_player_id: 202,
+							}),
+						})
+					}, 20)
+					return
+				}
+
+				if (data.action === 'rematch_response' && data.accept === false) {
+					this._state = { ...this._state, rematch_offer_from_player_id: null }
+					setTimeout(() => {
+						wireEvent(this, 'message', { data: JSON.stringify({ action: 'game_state', game_state: this._state }) })
+					}, 20)
+				}
+			}
+
+			close() {
+				if (!this._mocked) { this._native?.close(); return }
+				this.readyState = MockWebSocket.CLOSED
+				wireEvent(this, 'close', { type: 'close' })
+			}
+		}
+
+		window.WebSocket = MockWebSocket
+	}, gameId)
+}
+
 export async function installChatWebSocketMock(page, conversationId = 1) {
 	await page.addInitScript((targetConversationId) => {
 		const NativeWebSocket = window.WebSocket

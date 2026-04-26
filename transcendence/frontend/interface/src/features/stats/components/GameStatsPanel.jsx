@@ -15,6 +15,7 @@ import { ResultBanner } from './ResultBanner.jsx'
 import { SummaryCards } from './SummaryCards.jsx'
 import { ControlBar } from './ControlBar.jsx'
 import { DrawOfferBanners } from './DrawOfferBanners.jsx'
+import { RematchOfferBanner } from './RematchOfferBanner.jsx'
 import { ResignConfirmModal } from './ResignConfirmModal.jsx'
 import { DrawOfferModal } from './DrawOfferModal.jsx'
 import { StatsTabsNav } from './StatsTabsNav.jsx'
@@ -38,6 +39,11 @@ export default function GameStatsPanel({
   moveLog = [],
   winner,
   onPlayAgain,
+  onRematch,
+  onRespondRematch,
+  rematchOfferIncoming = false,
+  rematchOfferOutgoing = false,
+  mode,
   viewPlies = null,
   onViewPlies,
   onResign,
@@ -52,7 +58,7 @@ export default function GameStatsPanel({
   onReplayLast,
   opponentUsername,
   gameId,
-  gameState = null, // Added gameState prop
+  gameState = null,
   /** libellés barres joueurs — affichés sous « Coups » (même style Annales) */
   whiteLabel = "Joueur blancs",
   blackLabel = "Joueur noirs",
@@ -81,7 +87,7 @@ export default function GameStatsPanel({
     return {
       gamesPlayed: user?.games_played || 0,
       winrate: user?.games_played ? Math.round((user.games_won / user.games_played) * 100) : 0,
-      eloRating: myEloNew ?? initialElo ?? 1500,
+      eloRating: myEloNew ?? initialElo ?? 1200,
       eloChange: myEloChange ?? 0
     };
   }, [user, myEloNew, myEloChange, gameState, isWhite, ratingField]);
@@ -225,6 +231,14 @@ export default function GameStatsPanel({
             onRespondDraw={onRespondDraw}
           />
 
+          {gameEnded && (
+            <RematchOfferBanner
+              rematchOfferIncoming={rematchOfferIncoming}
+              rematchOfferOutgoing={rematchOfferOutgoing}
+              onRespondRematch={onRespondRematch}
+            />
+          )}
+
           <MoveListView
             moveLog={moveLog}
             viewPlies={viewPlies}
@@ -235,7 +249,15 @@ export default function GameStatsPanel({
             blackLabel={blackLabel}
           />
 
-          {gameEnded && <ResultBanner result={result} onPlayAgain={onPlayAgain} />}
+          {gameEnded && (
+            <ResultBanner
+              result={result}
+              onPlayAgain={onPlayAgain}
+              onRematch={onRematch}
+              rematchOfferOutgoing={rematchOfferOutgoing}
+              mode={mode}
+            />
+          )}
 
           {gameEnded && <SummaryCards stats={currentStats} />}
 

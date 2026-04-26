@@ -34,6 +34,37 @@ function Settings() {
 	const [confirmErase, setConfirmErase] = useState(false)
 	const syncDebounce = useRef(null)
 
+	// RGPD — suppression données serveur
+	const [deleteStep, setDeleteStep] = useState(0) // 0=idle 1=confirm 2=in-progress 3=done
+	const [deleteError, setDeleteError] = useState(null)
+
+	async function handleDeleteServerData() {
+		if (deleteStep === 0) {
+			setDeleteStep(1)
+			return
+		}
+		if (deleteStep !== 1) return
+		setDeleteStep(2)
+		setDeleteError(null)
+		try {
+			const res = await fetch('/api/auth/me/delete-data', {
+				method: 'DELETE',
+				credentials: 'include',
+			})
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}))
+				throw new Error(body.error || `Erreur ${res.status}`)
+			}
+			setDeleteStep(3)
+			setTimeout(() => {
+				logout({ redirectTo: '/auth' })
+			}, 2500)
+		} catch (e) {
+			setDeleteError(e.message || 'Erreur lors de la suppression')
+			setDeleteStep(1)
+		}
+	}
+
 	// On mount: merge server prefs into local (server wins for keys it has)
 	useEffect(() => {
 		if (!user) return
@@ -238,6 +269,63 @@ function Settings() {
 									<i className="ri-logout-box-r-line" aria-hidden /> Se déconnecter
 								</button>
 							</div>
+						</section>
+					)}
+
+					{user && (
+						<section className="surface-card">
+							<h2 className="card-title">
+								<i className="ri-shield-user-line" aria-hidden />
+								Données personnelles (RGPD)
+							</h2>
+							<p className="muted small card-hint">
+								Supprime définitivement tes données personnelles côté serveur : messages, amitiés,
+								avatar, préférences, nom et adresse e-mail. Les statistiques de parties sont
+								conservées mais anonymisées. Cette action est <strong>irréversible</strong> et
+								entraîne une déconnexion immédiate.
+							</p>
+
+							{deleteStep === 3 ? (
+								<p className="muted small settings-feedback" data-testid="settings-delete-server-done">
+									Données supprimées. Déconnexion en cours…
+								</p>
+							) : (
+								<div className="settings-local-actions">
+									<button
+										type="button"
+										className={`btn ${deleteStep === 1 ? 'btn-danger' : 'btn-secondary'}`}
+										data-testid="settings-delete-server-data"
+										onClick={handleDeleteServerData}
+										disabled={deleteStep === 2}
+									>
+										{deleteStep === 0 && (
+											<><i className="ri-delete-bin-2-line" aria-hidden /> Supprimer mes données serveur</>
+										)}
+										{deleteStep === 1 && (
+											<><i className="ri-alert-line" aria-hidden /> Confirmer la suppression définitive</>
+										)}
+										{deleteStep === 2 && (
+											<><i className="ri-loader-4-line" aria-hidden /> Suppression en cours…</>
+										)}
+									</button>
+									{deleteStep === 1 && (
+										<button
+											type="button"
+											className="btn btn-secondary"
+											data-testid="settings-delete-server-cancel"
+											onClick={() => setDeleteStep(0)}
+										>
+											Annuler
+										</button>
+									)}
+								</div>
+							)}
+
+							{deleteError && (
+								<p className="muted small settings-feedback settings-feedback--error" data-testid="settings-delete-server-error">
+									{deleteError}
+								</p>
+							)}
 						</section>
 					)}
 

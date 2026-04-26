@@ -1,6 +1,6 @@
 import '../styles/Dashboard.css'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import { useFriendInvite } from '../../chat/index.js'
 import { TimeControlSection } from '../../chess/components/TimeControlPicker.jsx'
@@ -49,6 +49,7 @@ function LeaderboardRow({ entry, isCurrentUser }) {
 
 export default function Dashboard() {
 	const navigate = useNavigate()
+	const location = useLocation()
 	const { openFriendInvite } = useFriendInvite()
 	const { user, isAuthenticated, resolveUserOnline } = useAuth()
 	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID)
@@ -56,9 +57,23 @@ export default function Dashboard() {
 	const [searching, setSearching] = useState(false)
 	const [statusMessage, setStatusMessage] = useState('')
 	const hasJoinedQueueRef = useRef(false)
+	const autoQueueTriggeredRef = useRef(false)
 
-	const [selectedTC, setSelectedTC] = useState(TIME_CONTROLS.rapid[0])
-	const [isCompetitive, setIsCompetitive] = useState(false)
+	// Resolve initial time control from navigation state (sent by "Nouvelle partie" post-match)
+	const autoQueueState = location.state?.autoQueue ? location.state : null
+	const initialTC = useMemo(() => {
+		if (!autoQueueState) return TIME_CONTROLS.rapid[0]
+		const tc = autoQueueState.timeControl
+		const inc = autoQueueState.increment ?? 0
+		for (const controls of Object.values(TIME_CONTROLS)) {
+			const match = controls.find((c) => c.time === tc && c.increment === inc)
+			if (match) return match
+		}
+		return TIME_CONTROLS.rapid[0]
+	}, []) // eslint-disable-line react-hooks/exhaustive-deps
+
+	const [selectedTC, setSelectedTC] = useState(initialTC)
+	const [isCompetitive, setIsCompetitive] = useState(autoQueueState?.competitive ?? false)
 	const [showMoreTC, setShowMoreTC] = useState(false)
 	const [friends, setFriends] = useState([])
 	const [leaderboard, setLeaderboard] = useState([])
@@ -125,6 +140,14 @@ export default function Dashboard() {
 			window.removeEventListener('focus', onFocus)
 		}
 	}, [user, fetchFriends])
+
+	// Auto-join queue when coming from post-game "Nouvelle partie"
+	useEffect(() => {
+		if (!autoQueueState || autoQueueTriggeredRef.current || !user) return
+		autoQueueTriggeredRef.current = true
+		setSearching(true)
+		setStatusMessage('Mise en file...')
+	}, [user, autoQueueState])
 
 	useEffect(() => {
 		if (!searching || !isConnected || !userId || hasJoinedQueueRef.current) return

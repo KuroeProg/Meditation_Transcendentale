@@ -723,6 +723,14 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	margin: 0;
 }
 
+.stats-result-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 0.4rem;
+	justify-content: center;
+	margin-top: 0.25rem;
+}
+
 .stats-play-again {
 	margin-top: 0.5rem;
 	padding: 0.45rem 1rem;
@@ -733,6 +741,16 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	border: none;
 	border-radius: 8px;
 	cursor: pointer;
+}
+
+.stats-play-again--secondary {
+	background: rgba(240, 217, 181, 0.15);
+	color: #f0d9b5;
+	border: 1px solid rgba(240, 217, 181, 0.4);
+}
+
+.stats-play-again--secondary:hover {
+	background: rgba(240, 217, 181, 0.25);
 }
 
 .stats-play-again:hover {

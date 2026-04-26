@@ -88,7 +88,7 @@ function buildMoveLogFromServerState(incomingState) {
   return hydrated;
 }
 
-export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
+export function useChessEngine({ mode, gameId, user, lastMessage, sendMove, onRematchStarted }) {
   const [state, dispatch] = useReducer(
     chessReducer,
     undefined,
@@ -298,7 +298,13 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
     if (lastMessage.action === "move_response") {
       dispatch({ type: CHESS_ACTIONS.CLEAR_MOVE_FEEDBACK });
     }
-  }, [lastMessage, logMoveFromServerState, mode]);
+
+    if (lastMessage.action === "rematch_started") {
+      if (typeof onRematchStarted === "function") {
+        onRematchStarted(lastMessage.new_game_id);
+      }
+    }
+  }, [lastMessage, logMoveFromServerState, mode, onRematchStarted]);
 
   const handleMoveRequest = useCallback((payload) => {
     if (winner) return;
@@ -435,6 +441,33 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
     [mode, sendMove, userId, winner],
   );
 
+  const handleOfferRematch = useCallback(() => {
+    if (mode !== "online" || userId == null) return;
+    sendMove({ action: "rematch_offer", player_id: userId });
+  }, [mode, sendMove, userId]);
+
+  const handleRespondRematch = useCallback(
+    (accept) => {
+      if (mode !== "online" || userId == null) return;
+      sendMove({ action: "rematch_response", player_id: userId, accept });
+    },
+    [mode, sendMove, userId],
+  );
+
+  const rematchOfferIncoming = useMemo(() => {
+    if (mode !== "online" || !gameState) return false;
+    const offerId = gameState.rematch_offer_from_player_id;
+    if (!offerId) return false;
+    return String(offerId) !== String(normalizedUserId);
+  }, [gameState, mode, normalizedUserId]);
+
+  const rematchOfferOutgoing = useMemo(() => {
+    if (mode !== "online" || !gameState) return false;
+    const offerId = gameState.rematch_offer_from_player_id;
+    if (!offerId) return false;
+    return String(offerId) === String(normalizedUserId);
+  }, [gameState, mode, normalizedUserId]);
+
   const startNewMatch = useCallback(() => {
     dispatch({ type: CHESS_ACTIONS.RESET_MATCH });
     lastLoggedFenRef.current = new Chess().fen();
@@ -470,9 +503,13 @@ export function useChessEngine({ mode, gameId, user, lastMessage, sendMove }) {
     handleResign,
     handleOfferDraw,
     handleRespondDraw,
+    handleOfferRematch,
+    handleRespondRematch,
     startNewMatch,
     drawOfferIncoming: drawOffer.drawOfferIncoming,
     drawOfferOutgoing: drawOffer.drawOfferOutgoing,
+    rematchOfferIncoming,
+    rematchOfferOutgoing,
     ...replay,
   };
 }
