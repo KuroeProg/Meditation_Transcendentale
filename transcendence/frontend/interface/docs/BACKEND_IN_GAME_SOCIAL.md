@@ -383,7 +383,8 @@ La liste inbox (`GET /api/chat/conversations`) **exclut désormais** les convers
 
 ### 9.5ter Chrono temps réel (ouverture sur 2 demi-coups)
 
-- Tant que `len(game_state['moves']) < 2`, le tick serveur (`clock_tick`) et le handler `play_move` **n’appliquent pas** `apply_elapsed_for_active_turn` / timeout : les deux joueurs peuvent jouer leur premier coup sans décompte.
+- Tant que `len(game_state['moves']) < 2`, le tick serveur (`clock_tick`), le handler `play_move` et la **resynchro WebSocket** (`synchronize_reconnecting_player`) **n’appliquent pas** `apply_elapsed_for_active_turn` / timeout : évite de griller du temps blanc entre la création de la partie et le chargement du client.
+- L’**incrément** n’est ajouté au joueur qui joue le coup (`apply_play_move`) que lorsque `is_clock_running` est vrai ; sinon le 2e demi-coup (ex. …d5) ajoutait +inc sans décompte → affichage > temps de base pour les noirs.
 - Dès que **deux demi-coups** sont enregistrés dans `moves` (`len(moves) >= 2`), le chrono se comporte comme avant (décompte du joueur au trait, etc.). La fonction utilitaire est `is_clock_running` dans `game/services/clock.py`.
 - Côté client, `useSynchronizedChessTimers` (dans `Chrono.jsx`) fige l’`elapsed` tant que `moveLog.length < 2`. La BGM de partie (`useChessAudio`) démarre également après **2** nouveaux coups dans le journal.
 
