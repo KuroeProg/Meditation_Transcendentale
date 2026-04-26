@@ -102,6 +102,10 @@ export default function GameInviteCard({ msg, isOwn }) {
 		} catch (err) {
 			const msg = err?.message || 'Une erreur est survenue'
 			setErrorMsg(msg)
+			const declined = err?.payload?.invite?.status
+			if (declined === 'declined' || declined === 'expired' || declined === 'cancelled') {
+				setLocalStatus(declined)
+			}
 		} finally {
 			setBusyAction(null)
 		}

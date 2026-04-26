@@ -34,7 +34,10 @@ async function jsonFetch(url, opts = {}) {
 	const res = await fetch(url, { credentials: 'include', ...opts, headers })
 	if (!res.ok) {
 		const data = await res.json().catch(() => ({}))
-		throw new Error(data.error || `HTTP ${res.status}`)
+		const err = new Error(data.error || `HTTP ${res.status}`)
+		err.status = res.status
+		err.payload = data
+		throw err
 	}
 	return res.json()
 }

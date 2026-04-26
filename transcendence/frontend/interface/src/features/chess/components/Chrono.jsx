@@ -97,7 +97,9 @@ export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed =
 	const lastMoveTs = toNumber(gameState?.last_move_timestamp, nowMs / 1000)
 	let elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
 	// Avant 2 demi-coups, chrono figé (aligné serveur : is_clock_running).
-	if (movesPlayed < 2) {
+	// Garde-fou : si movesPlayed est undefined/NaN, `undefined < 2` est false en JS → décompte fantôme au chargement.
+	const plyCount = Number.isFinite(Number(movesPlayed)) ? Math.max(0, Math.floor(Number(movesPlayed))) : 0
+	if (plyCount < 2) {
 		elapsed = 0
 	}
 

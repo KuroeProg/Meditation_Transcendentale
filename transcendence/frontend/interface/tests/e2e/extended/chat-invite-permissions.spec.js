@@ -181,4 +181,82 @@ test.describe('permissions sur les invitations de jeu', () => {
 			await expect(page.getByText('Invitation acceptee')).toHaveCount(0)
 		})
 	})
+
+	// Accept bloqué (déjà en partie) : 409 + invite declined — message d’erreur, pas de navigation.
+	test('accept invite 409 in-game declines card and does not navigate', async ({ browser }) => {
+		await withRoleSessions(browser, ['SMOKE_USER'], async ({ SMOKE_USER }) => {
+			const { page } = SMOKE_USER
+			await installChatWebSocketMock(page, 1)
+			await mockBaseShell(page)
+
+			const incomingInvitePayload = {
+				invite_id: 303,
+				time_control: '3+2',
+				competitive: false,
+				invite_status: 'pending',
+				status: 'pending',
+				sender_id: 202,
+				receiver_id: 101,
+			}
+
+			await page.route('**/api/chat/conversations', async (route) => {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						conversations: [
+							{
+								id: 1,
+								participants: [{ id: 202, username: 'USER_B', avatar: '', coalition: 'water', is_online: true }],
+								last_message: { id: 7003, content: JSON.stringify(incomingInvitePayload), message_type: 'game_invite' },
+								unread_count: 0,
+								unread_text_count: 0,
+								unread_invite_count: 0,
+							},
+						],
+					}),
+				})
+			})
+			await page.route('**/api/chat/conversations/1/messages**', async (route) => {
+				await route.fulfill({
+					status: 200,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						messages: [
+							{
+								id: 7003,
+								content: JSON.stringify(incomingInvitePayload),
+								message_type: 'game_invite',
+								created_at: new Date().toISOString(),
+								sender: { id: 202, username: 'USER_B', avatar: '' },
+								read_by: [101],
+							},
+						],
+					}),
+				})
+			})
+
+			await page.route('**/api/chat/invites/303/respond', async (route) => {
+				await route.fulfill({
+					status: 409,
+					contentType: 'application/json',
+					body: JSON.stringify({
+						error: 'Tu es déjà en partie. L’invitation a été annulée.',
+						code: 'receiver_in_game',
+						invite: { id: 303, status: 'declined', game_id: null, cancel_reason: 'receiver_in_game' },
+					}),
+				})
+			})
+
+			await page.goto('/dashboard')
+			await waitForDashboardReady(page)
+			await page.getByTestId('chat-open-button').click()
+			await openConversationThread(page, 1)
+
+			await page.getByRole('button', { name: 'Accepter', exact: true }).click()
+			await expect(page.getByRole('alert')).toContainText('déjà en partie')
+			await expect(page.getByText('Invitation refusée')).toBeVisible()
+			await expect(page).toHaveURL(/\/dashboard/)
+		})
+	})
 })

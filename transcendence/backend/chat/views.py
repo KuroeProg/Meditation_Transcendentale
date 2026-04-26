@@ -487,6 +487,7 @@ def respond_game_invite(request, invite_id):
     if action not in {'accept', 'decline'}:
         return JsonResponse({'error': 'Action invalide'}, status=400)
 
+    accept_blocked = None
     with transaction.atomic():
         try:
             invite = GameInvite.objects.select_for_update().select_related('conversation', 'sender', 'receiver').get(id=invite_id)
@@ -515,34 +516,46 @@ def respond_game_invite(request, invite_id):
 
         if action == 'accept':
             if get_active_game_sync(invite.sender_id):
-                return JsonResponse(
-                    {
-                        'error': 'L’expéditeur est déjà en partie. Impossible d’accepter pour l’instant.',
-                        'code': 'sender_in_game',
-                    },
-                    status=409,
-                )
-            if get_active_game_sync(invite.receiver_id):
-                return JsonResponse(
-                    {
-                        'error': 'Tu es déjà en partie. Termine ou quitte la partie avant d’accepter.',
-                        'code': 'receiver_in_game',
-                    },
-                    status=409,
-                )
+                accept_blocked = 'sender_in_game'
+            elif get_active_game_sync(invite.receiver_id):
+                accept_blocked = 'receiver_in_game'
+
+        if action == 'accept' and not accept_blocked:
             invite.status = GameInvite.STATUS_ACCEPTED
             invite.game_id = _create_online_game_for_invite(invite)
+            invite.responded_at = now
+            invite.cancel_reason = None
+        elif action == 'accept' and accept_blocked:
+            invite.status = GameInvite.STATUS_DECLINED
+            invite.game_id = None
+            invite.responded_at = now
+            invite.cancel_reason = accept_blocked
         else:
             invite.status = GameInvite.STATUS_DECLINED
             invite.game_id = None
-        invite.responded_at = now
-        invite.cancel_reason = None
+            invite.responded_at = now
+            invite.cancel_reason = None
         invite.save(update_fields=['status', 'game_id', 'responded_at', 'cancel_reason', 'updated_at'])
         _sync_source_message_status(invite)
 
     _broadcast_invite_event('invite_updated', invite)
     if invite.status == GameInvite.STATUS_ACCEPTED:
         _broadcast_game_ready(invite)
+
+    if action == 'accept' and accept_blocked:
+        err_msg = (
+            'L’expéditeur est déjà en partie. L’invitation a été annulée.'
+            if accept_blocked == 'sender_in_game'
+            else 'Tu es déjà en partie. L’invitation a été annulée.'
+        )
+        return JsonResponse(
+            {
+                'error': err_msg,
+                'code': accept_blocked,
+                'invite': invite.to_dict(),
+            },
+            status=409,
+        )
 
     return JsonResponse({'invite': invite.to_dict()}, status=200)
 

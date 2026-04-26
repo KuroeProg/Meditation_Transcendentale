@@ -148,9 +148,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 		if hasattr(self, 'room_group_name'):
 			await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
 		await self._stop_clock_task()
-		# Clear active presence when a player disconnects
-		if getattr(self, 'role', None) == 'player' and getattr(self, 'auth_user_id', None):
-			await _clear_active_game(self.auth_user_id, self.game_id)
+		# Ne pas effacer active_game ici : une fermeture WS (refresh, 2e onglet, navigation)
+		# laissait la clé Redis vide alors que la partie est toujours en cours → invites acceptées
+		# à tort. La clé est supprimée à la fin de partie (_save_and_broadcast_final_state) et
+		# expire au TTL (2 h).
 
 	# ─── role resolution ────────────────────────────────────────────────────────
 

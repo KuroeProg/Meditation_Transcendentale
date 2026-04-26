@@ -293,7 +293,7 @@ La page propose deux actions :
 }
 ```
 
-**Redis active-game keys** : `active_game:<user_id>` → `game_id` (TTL 2h). Gestion par `game_consumer.py` (`_set_active_game` / `_clear_active_game`).
+**Redis active-game keys** : `active_game:<user_id>` → `game_id` (TTL 2h). `_set_active_game` à la connexion joueur sur `WS /ws/chess/…` ; `_clear_active_game` à la **fin de partie** uniquement (plus à la simple fermeture WS, pour éviter qu’un refresh ne vide la clé pendant qu’une partie est encore en cours).
 
 ### 9.2 Supprimer un ami accepté
 
@@ -347,7 +347,7 @@ La liste inbox (`GET /api/chat/conversations`) **exclut désormais** les convers
 | Méthode | Route | Erreur | Rôle |
 |---------|--------|--------|------|
 | `POST` | `/api/chat/conversations/<id>/invite` | **409** `sender_in_game` / `receiver_in_game` | Refus si l’expéditeur ou le destinataire a une entrée Redis `active_game:<user_id>`. |
-| `POST` | `/api/chat/invites/<invite_id>/respond` (`accept`) | **409** idem | Refus d’accepter si l’expéditeur ou le receveur est déjà marqué en partie (évite double partie). |
+| `POST` | `/api/chat/invites/<invite_id>/respond` (`accept`) | **409** idem | Refus d’accepter si l’expéditeur ou le receveur est déjà marqué en partie. L’invitation passe en **declined**, `cancel_reason` = `sender_in_game` \| `receiver_in_game`, corps JSON `{ error, code, invite }` (le client met à jour la carte sans naviguer). |
 | `WS` | `/ws/chat/<conv_id>/` action `game_invite` | JSON `{ error, code }` | Même règle côté consumer avant création du message. |
 
 ### 9.5 Paramètres — préférences hybrides (serveur + local)
