@@ -7,7 +7,7 @@ from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
 from game.services.rating import get_rating_field, normalize_time_category
-from utils.presence import mark_user_presence_heartbeat
+from utils.presence import get_effective_online_for_user, mark_user_presence_heartbeat
 
 
 def _get_authenticated_user(request):
@@ -119,7 +119,7 @@ def leaderboard(request):
             'elo_bullet': player.elo_bullet,
             'games_played': player.games_played,
             'games_won': player.games_won,
-            'is_online': player.is_online,
+            'is_online': get_effective_online_for_user(player),
             'rating_field': rating_field,
             'selected_rating': getattr(player, rating_field),
         })
@@ -239,12 +239,20 @@ def delete_account_data(request):
     preferences, sent messages, friendships, and game invites.
     The session is flushed so the user is logged out immediately.
     """
-    if request.method != 'DELETE':
+    if request.method not in ('DELETE', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     user, err = _get_authenticated_user(request)
     if err:
         return err
+
+    if request.method == 'POST':
+        try:
+            body = json.loads(request.body.decode('utf-8') or '{}')
+        except (json.JSONDecodeError, UnicodeDecodeError):
+            return JsonResponse({'error': 'Invalid JSON'}, status=400)
+        if not body.get('confirm'):
+            return JsonResponse({'error': 'Requiert {"confirm": true}'}, status=400)
 
     anon_tag = uuid.uuid4().hex[:12]
 

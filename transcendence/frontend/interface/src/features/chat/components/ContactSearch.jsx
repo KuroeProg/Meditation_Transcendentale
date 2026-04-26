@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
 import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
@@ -11,9 +12,10 @@ import {
 	createConversation,
 } from '../services/chatApi.js'
 
-function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
+function ContactItem({ contact, onAction, onStartChat, onWatchGame, isBusy, error }) {
 	const u = contact.user
 	const online = Boolean(u.is_online)
+	const inGameId = u.active_game_id != null && String(u.active_game_id) !== '' ? u.active_game_id : null
 	const coalSlug = coalitionToSlug(u?.coalition)
 	const isPending = contact.status === 'pending' && !contact.is_sender
 	const isBlockedByMe = Boolean(contact.blocked_by_me)
@@ -23,10 +25,16 @@ function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
 			<div className="chat-contact-info">
 				<span className="chat-contact-name">{u.username}</span>
-				<span className={`chat-contact-status ${online ? 'online' : ''}`}>
+				<span
+					className={`chat-contact-status ${inGameId ? 'in-game' : ''} ${!inGameId && online ? 'online' : ''}`}
+				>
 					{contact.status === 'blocked'
 						? (isBlockedByMe ? 'Bloqué par vous' : 'Bloqué par cet utilisateur')
-						: (online ? 'En ligne' : 'Hors ligne')}
+						: (inGameId
+						? 'En partie'
+						: online
+							? 'En ligne'
+							: 'Hors ligne')}
 					<span className="chat-contact-name-row">
 						<span className="chat-contact-name">{u.username}</span>
 						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
@@ -78,6 +86,18 @@ function ContactItem({ contact, onAction, onStartChat, isBusy, error }) {
 				)}
 				{contact.status === 'accepted' && (
 					<>
+						{inGameId && (
+							<button
+								type="button"
+								className="chat-ca-btn chat-ca-chat"
+								onClick={() => onWatchGame(inGameId)}
+								aria-label="Regarder la partie de cet ami"
+								title="Regarder"
+								data-testid={`contact-watch-${u.id}`}
+							>
+								<i className="ri-eye-line" aria-hidden="true" />
+							</button>
+						)}
 						<button
 							type="button"
 							className="chat-ca-btn chat-ca-chat"
@@ -153,6 +173,7 @@ function SearchResultItem({ user, onAdd }) {
 }
 
 export default function ContactSearch({ onOpenConversation }) {
+	const navigate = useNavigate()
 	const { resolveUserOnline, isAuthenticated, isLoading } = useAuth()
 	const [tab, setTab] = useState('friends')
 	const [contacts, setContacts] = useState([])
@@ -235,6 +256,14 @@ export default function ContactSearch({ onOpenConversation }) {
 		}
 	}
 
+	const handleWatchGame = useCallback(
+		(gameId) => {
+			if (gameId == null) return
+			navigate(`/game/${encodeURIComponent(String(gameId))}`)
+		},
+		[navigate]
+	)
+
 	const accepted = contacts.filter((c) => c.status === 'accepted')
 	const pending = contacts.filter((c) => c.status === 'pending')
 	const blocked = contacts.filter((c) => c.status === 'blocked')
@@ -294,6 +323,7 @@ export default function ContactSearch({ onOpenConversation }) {
 						contact={c}
 						onAction={handleAction}
 						onStartChat={handleStartChat}
+						onWatchGame={handleWatchGame}
 						isBusy={actionBusy === c.friendship_id}
 						error={actionError?.id === c.friendship_id ? actionError.msg : null}
 					/>
@@ -304,6 +334,7 @@ export default function ContactSearch({ onOpenConversation }) {
 						contact={c}
 						onAction={handleAction}
 						onStartChat={handleStartChat}
+						onWatchGame={handleWatchGame}
 						isBusy={actionBusy === c.friendship_id}
 						error={actionError?.id === c.friendship_id ? actionError.msg : null}
 					/>
@@ -314,6 +345,7 @@ export default function ContactSearch({ onOpenConversation }) {
 						contact={c}
 						onAction={handleAction}
 						onStartChat={handleStartChat}
+						onWatchGame={handleWatchGame}
 						isBusy={actionBusy === c.friendship_id}
 						error={actionError?.id === c.friendship_id ? actionError.msg : null}
 					/>

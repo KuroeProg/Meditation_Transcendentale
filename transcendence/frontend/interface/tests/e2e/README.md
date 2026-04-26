@@ -22,6 +22,9 @@ Current stable selectors:
   - matchmaking-modal
   - matchmaking-queue-size
   - matchmaking-cancel
+  - dash-friend-chip-${userId} (dynamic, optionnel)
+  - friend-watch-${userId} (même clé qu’en panneau amis in-game, bouton spéc. depuis le dashboard)
+  - dash-friend-challenge-${userId} (défi)
 - Game:
   - game-page
   - game-shell
@@ -48,7 +51,10 @@ Current stable selectors:
   - chat-game-invite-card
   - chat-invite-accept
   - friend-invite-modal
+  - friend-invite-target-in-game (bannière si l’ami est en partie)
+  - friend-invite-watch (ouvrir la partie en spéc. depuis la modale défi)
   - friend-invite-send
+  - contact-watch-${userId} (onglet Amis, regarder)
   - chat-conversation-item-${conversationId} (dynamic)
 - Settings (`/settings`):
   - settings-page

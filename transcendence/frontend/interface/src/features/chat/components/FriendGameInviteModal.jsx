@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { TimeControlSection, defaultSelectedControl } from '../../chess/components/TimeControlPicker.jsx'
 import { TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useAuth } from '../../auth/index.js'
@@ -19,9 +20,11 @@ export default function FriendGameInviteModal({
 	friendUserId,
 	conversationId: existingConversationId,
 	friendLabel,
+	activeGameId = null,
 	onClose,
 	onSent,
 }) {
+	const navigate = useNavigate()
 	const { registerOutgoingPendingInvite } = useAuth()
 	const [selectedTC, setSelectedTC] = useState(defaultSelectedControl)
 	const [isCompetitive, setIsCompetitive] = useState(false)
@@ -29,7 +32,16 @@ export default function FriendGameInviteModal({
 	const [sending, setSending] = useState(false)
 	const [error, setError] = useState(null)
 
+	const handleWatch = useCallback(() => {
+		if (!activeGameId) return
+		navigate(`/game/${encodeURIComponent(String(activeGameId))}`)
+		onClose()
+	}, [activeGameId, navigate, onClose])
+
 	const handleSubmit = useCallback(async () => {
+		if (activeGameId) {
+			return
+		}
 		if (!friendUserId) return
 		setError(null)
 		setSending(true)
@@ -49,7 +61,7 @@ export default function FriendGameInviteModal({
 		} finally {
 			setSending(false)
 		}
-	}, [friendUserId, existingConversationId, selectedTC, isCompetitive, onClose, onSent, registerOutgoingPendingInvite])
+	}, [activeGameId, friendUserId, existingConversationId, selectedTC, isCompetitive, onClose, onSent, registerOutgoingPendingInvite])
 
 	const title = friendLabel ? `Defier ${friendLabel}` : 'Defier un ami'
 
@@ -72,7 +84,32 @@ export default function FriendGameInviteModal({
 
 				<p className="friend-invite-hint">Cadence et mode de la partie proposee.</p>
 
-				<div className="dash-competitive-toggle">
+				{activeGameId && (
+					<div
+						className="friend-invite-in-game"
+						role="status"
+						data-testid="friend-invite-target-in-game"
+					>
+						<p>
+							<strong>{friendLabel || 'Ce joueur'}</strong> est deja en partie. Tu peux
+							{' '}regarder le match ou attendre la fin de la partie pour lancer un defi.
+						</p>
+						<button
+							type="button"
+							className="friend-invite-btn friend-invite-btn--primary"
+							data-testid="friend-invite-watch"
+							onClick={handleWatch}
+						>
+							<i className="ri-eye-line" aria-hidden="true" /> Regarder la partie
+						</button>
+					</div>
+				)}
+
+				<div
+					className="dash-competitive-toggle"
+					style={activeGameId ? { pointerEvents: 'none', opacity: 0.45 } : undefined}
+					aria-hidden={activeGameId || undefined}
+				>
 					<span className={!isCompetitive ? 'active' : ''}>Amicale</span>
 					<button
 						className={`dash-toggle ${isCompetitive ? 'dash-toggle--on' : ''}`}
@@ -85,7 +122,11 @@ export default function FriendGameInviteModal({
 					<span className={isCompetitive ? 'active' : ''}>Classée</span>
 				</div>
 
-				<div className="friend-invite-scroll">
+				<div
+					className="friend-invite-scroll"
+					style={activeGameId ? { pointerEvents: 'none', opacity: 0.45 } : undefined}
+					aria-hidden={activeGameId || undefined}
+				>
 					<TimeControlSection category="bullet" controls={TIME_CONTROLS.bullet} selected={selectedTC} onSelect={setSelectedTC} />
 					<TimeControlSection category="blitz" controls={TIME_CONTROLS.blitz} selected={selectedTC} onSelect={setSelectedTC} />
 					<TimeControlSection category="rapid" controls={TIME_CONTROLS.rapid} selected={selectedTC} onSelect={setSelectedTC} />
@@ -104,7 +145,7 @@ export default function FriendGameInviteModal({
 					<button type="button" className="friend-invite-btn friend-invite-btn--ghost" onClick={onClose} disabled={sending}>
 						Annuler
 					</button>
-					<button type="button" className="friend-invite-btn friend-invite-btn--primary" data-testid="friend-invite-send" onClick={handleSubmit} disabled={sending}>
+					<button type="button" className="friend-invite-btn friend-invite-btn--primary" data-testid="friend-invite-send" onClick={handleSubmit} disabled={sending || Boolean(activeGameId)}>
 						{sending ? 'Envoi…' : 'Envoyer l’invitation'}
 					</button>
 				</footer>

@@ -18,13 +18,37 @@ function normalizeWirePlayerId(value) {
 	return legacyBytesMatch ? legacyBytesMatch[1] : raw
 }
 
-function FriendChip({ friend, isOnline, onChallenge }) {
+function FriendChip({ friend, isOnline, activeGameId, onChallenge, onWatch }) {
+	const inGame = Boolean(activeGameId)
 	return (
-		<div className="dash-friend-chip">
-			<span className={`dash-friend-dot ${isOnline ? 'online' : ''}`} />
+		<div className="dash-friend-chip" data-testid={friend.user?.id != null ? `dash-friend-chip-${friend.user.id}` : undefined}>
+			<span
+				className={`dash-friend-dot ${
+					inGame ? 'in-game' : isOnline ? 'online' : ''
+				}`}
+			/>
 			<span className="dash-friend-name">{friend.user?.username}</span>
-			{isOnline && (
-				<button className="dash-friend-action" type="button" onClick={() => onChallenge(friend.user)}>
+			{inGame && (
+				<button
+					className="dash-friend-action dash-friend-action--watch"
+					type="button"
+					onClick={() => onWatch(activeGameId)}
+					aria-label="Regarder la partie"
+					title="Regarder"
+					data-testid={`friend-watch-${friend.user?.id}`}
+				>
+					<i className="ri-eye-line" aria-hidden="true" />
+				</button>
+			)}
+			{!inGame && isOnline && (
+				<button
+					className="dash-friend-action"
+					type="button"
+					onClick={() => onChallenge(friend.user)}
+					aria-label="Defier"
+					title="Defier"
+					data-testid={friend.user?.id != null ? `dash-friend-challenge-${friend.user.id}` : undefined}
+				>
 					<i className="ri-sword-line" />
 				</button>
 			)}
@@ -214,9 +238,20 @@ export default function Dashboard() {
 			},
 		}))
 	}, [friends, resolveUserOnline])
-	const onlineFriends = useMemo(
-		() => friendsWithLivePresence.filter((friend) => Boolean(friend.user?.is_online)),
+	const friendsInScope = useMemo(
+		() =>
+			friendsWithLivePresence.filter(
+				(friend) => Boolean(friend.user?.is_online) || Boolean(friend.user?.active_game_id)
+			),
 		[friendsWithLivePresence]
+	)
+
+	const handleWatchFriendGame = useCallback(
+		(gameId) => {
+			if (gameId == null) return
+			navigate(`/game/${encodeURIComponent(String(gameId))}`)
+		},
+		[navigate]
 	)
 
 	return (
@@ -299,25 +334,28 @@ export default function Dashboard() {
 				<div className="dash-side-col">
 					{/* Friends Online */}
 					<section className="dash-panel dash-panel-friends">
-						<h2><i className="ri-group-line" /> Amis en ligne</h2>
-						{onlineFriends.length > 0 ? (
+						<h2><i className="ri-group-line" /> Amis (en ligne ou en partie)</h2>
+						{friendsInScope.length > 0 ? (
 							<div className="dash-friends-chips">
-								{onlineFriends.map((f) => (
+								{friendsInScope.map((f) => (
 									<FriendChip
 										key={f.friendship_id}
 										friend={f}
 										isOnline={Boolean(f.user?.is_online)}
+										activeGameId={f.user?.active_game_id}
+										onWatch={handleWatchFriendGame}
 										onChallenge={(u) =>
 											openFriendInvite({
 												friendUserId: u.id,
 												friendLabel: u.username,
+												activeGameId: u?.active_game_id ?? null,
 											})
 										}
 									/>
 								))}
 							</div>
 						) : (
-							<p className="dash-empty-msg">Aucun ami en ligne</p>
+							<p className="dash-empty-msg">Aucun ami en ligne ni en partie visible</p>
 						)}
 					</section>
 

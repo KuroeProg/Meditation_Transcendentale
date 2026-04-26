@@ -7,6 +7,7 @@ from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import Friendship, LocalUser
+from utils.presence import get_effective_online_for_user
 
 
 def _notify_user(user_id, payload):
@@ -44,7 +45,7 @@ def _friendship_to_contact(friendship, current_user, active_games=None):
             'username': other.username,
             'avatar': other.get_avatar_url(),
             'coalition': other.coalition,
-            'is_online': other.is_online,
+            'is_online': get_effective_online_for_user(other),
             'elo_rapid': other.elo_rapid,
             'elo_blitz': other.elo_blitz,
             'active_game_id': active_game_id,

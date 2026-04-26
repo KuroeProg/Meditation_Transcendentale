@@ -920,6 +920,10 @@ html[data-reduce-motion='true'] .chat-fab-cluster--toast .chat-fab-toast {
 	color: rgba(255, 255, 255, 0.35);
 }
 
+.chat-contact-status.in-game {
+	color: #e8b44c;
+}
+
 .chat-contact-status.online {
 	color: #4cbb5f;
 }

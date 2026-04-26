@@ -413,6 +413,11 @@
 	flex-shrink: 0;
 }
 
+.dash-friend-dot.in-game {
+	background: #e8a838;
+	box-shadow: 0 0 6px rgba(232, 168, 56, 0.45);
+}
+
 .dash-friend-dot.online {
 	background: #4cbb5f;
 	box-shadow: 0 0 6px rgba(76, 187, 95, 0.4);
@@ -438,6 +443,11 @@
 
 .dash-friend-action:hover {
 	background: rgba(100, 200, 255, 0.15);
+}
+
+.dash-friend-action--watch {
+	border-color: rgba(240, 195, 91, 0.35);
+	color: #ffe3a0;
 }
 
 .dash-empty-msg {

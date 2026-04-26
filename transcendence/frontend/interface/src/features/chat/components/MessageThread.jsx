@@ -114,6 +114,7 @@ export default function MessageThread({ conversation, userId, username }) {
 			friendUserId: other.id,
 			conversationId: conversation.id,
 			friendLabel: other.username,
+			activeGameId: other.active_game_id ?? other.activeGameId ?? null,
 		})
 	}, [conversation, openFriendInvite, hasOutgoingPendingInvite])
 

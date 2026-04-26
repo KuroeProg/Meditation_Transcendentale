@@ -27,6 +27,26 @@ def _get_redis_connection_safe():
         return None
 
 
+def user_has_active_presence_heartbeat(user_id: int) -> bool:
+    """Client a récemment pingé (clé Redis TTL) — plus fiable que seul is_online en BDD."""
+    redis_conn = _get_redis_connection_safe()
+    if redis_conn is None:
+        return False
+    try:
+        return redis_conn.exists(_heartbeat_key(int(user_id))) > 0
+    except (TypeError, ValueError, Exception):
+        return False
+
+
+def get_effective_online_for_user(user: LocalUser) -> bool:
+    """Préfère Redis (heartbeat ~90s) ; si Redis dispo et pas de heartbeat, hors ligne (évite is_online BDD collé)."""
+    if user_has_active_presence_heartbeat(user.id):
+        return True
+    if _get_redis_connection_safe() is not None:
+        return False
+    return bool(getattr(user, 'is_online', False))
+
+
 def _set_presence_in_db(user_id: int, online: bool, now=None) -> bool:
     now = now or timezone.now()
     previous_online = LocalUser.objects.filter(id=user_id).values_list('is_online', flat=True).first()

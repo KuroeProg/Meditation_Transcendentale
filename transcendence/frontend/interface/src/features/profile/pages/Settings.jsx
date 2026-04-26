@@ -1,6 +1,19 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
+
+function readCookie(name) {
+	const m = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`))
+	return m ? decodeURIComponent(m[1]) : null
+}
+
+async function ensureCsrfForDelete() {
+	await fetch('/api/auth/csrf', {
+		method: 'GET',
+		credentials: 'include',
+		headers: { Accept: 'application/json' },
+	})
+}
 import {
 	PREFS_STORAGE_KEY,
 	loadUiPrefs,
@@ -47,9 +60,16 @@ function Settings() {
 		setDeleteStep(2)
 		setDeleteError(null)
 		try {
+			await ensureCsrfForDelete()
+			const csrf = readCookie('csrftoken')
+			const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
+			if (csrf) headers['X-CSRFToken'] = csrf
+			// POST contourne un 403 éventuel sur DELETE (proxy / WAF) avec le même traitement côté Django
 			const res = await fetch('/api/auth/me/delete-data', {
-				method: 'DELETE',
+				method: 'POST',
 				credentials: 'include',
+				headers,
+				body: JSON.stringify({ confirm: true }),
 			})
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}))

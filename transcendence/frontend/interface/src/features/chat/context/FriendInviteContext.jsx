@@ -9,10 +9,13 @@ export function FriendInviteProvider({ children, onInviteSent }) {
 	const openFriendInvite = useCallback((payload) => {
 		const friendUserId = payload?.friendUserId ?? payload?.userId
 		if (friendUserId == null) return
+		const rawGame = payload?.activeGameId ?? payload?.active_game_id
+		const activeGameId = rawGame != null && String(rawGame).length ? String(rawGame) : null
 		setModal({
 			friendUserId,
 			conversationId: payload.conversationId ?? null,
 			friendLabel: payload.friendLabel ?? payload.username ?? '',
+			activeGameId,
 		})
 	}, [])
 
@@ -31,6 +34,7 @@ export function FriendInviteProvider({ children, onInviteSent }) {
 					friendUserId={modal.friendUserId}
 					conversationId={modal.conversationId}
 					friendLabel={modal.friendLabel}
+					activeGameId={modal.activeGameId}
 					onClose={closeFriendInvite}
 					onSent={onInviteSent}
 				/>

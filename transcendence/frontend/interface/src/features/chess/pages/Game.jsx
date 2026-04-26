@@ -38,10 +38,15 @@ function App() {
     navigate(`/game/${newGameId}`);
   }, [navigate]);
 
-  // Track spectator flag from WS server payload
+  // Rôle spectateur (renvoyé par le serveur) — ne pas conserver un true d'une autre visite
   const [isSpectator, setIsSpectator] = useState(false);
   useEffect(() => {
-    if (lastMessage?.spectator === true) setIsSpectator(true);
+    setIsSpectator(false);
+  }, [gameId]);
+  useEffect(() => {
+    if (lastMessage?.spectator === true) {
+      setIsSpectator(true);
+    }
   }, [lastMessage]);
 
   const {
