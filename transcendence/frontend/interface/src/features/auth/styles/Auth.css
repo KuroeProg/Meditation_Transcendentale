@@ -739,10 +739,19 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   text-align: center;
 }
 
+/* h2 sans classe = couleur UA (~noir) → illisible sur panneau sombre */
+.verify-form h2 {
+  margin: 0 0 0.35rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #f0f4ff;
+}
+
 .verify-subtitle {
-  color: #aaa;
-  margin: -10px 0 20px 0;
+  color: rgba(240, 244, 255, 0.78);
+  margin: 0 0 1.15rem;
   font-size: 0.95rem;
+  line-height: 1.45;
 }
 
 .code-input-group {
@@ -791,7 +800,7 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
   display: flex;
   align-items: center;
   gap: 10px;
-  color: #bbb;
+  color: rgba(240, 244, 255, 0.82);
   font-size: 0.9rem;
   margin: 10px 0 14px;
   justify-content: center;
@@ -804,7 +813,7 @@ html[data-reduce-motion='true'] .auth-btn-42-wrap {
 .btn-back {
   background: none;
   border: none;
-  color: #999;
+  color: rgba(240, 244, 255, 0.55);
   font-size: 0.95rem;
   cursor: pointer;
   margin-top: 15px;
