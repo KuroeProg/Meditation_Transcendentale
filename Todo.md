@@ -132,9 +132,9 @@ Document de pilotage aligné sur le sujet **ft_transcendence v20** (`transcendan
 ### IV.5 Cybersécurité
 
 
-| Module (PDF)                                                                  | Type  | Pts | Statut   | Owner | Notes                                        |
-| ----------------------------------------------------------------------------- | ----- | --- | -------- | ----- | -------------------------------------------- |
-| **WAF ModSecurity** (durci) + **HashiCorp Vault** (secrets chiffrés / isolés) | Major | 2   | En cours | Cloé  | Démontrer règles actives + secrets via Vault |
+| Module (PDF)                                                                  | Type  | Pts | Statut | Owner | Notes                                        |
+| ----------------------------------------------------------------------------- | ----- | --- | ------ | ----- | -------------------------------------------- |
+| **WAF ModSecurity** (durci) + **HashiCorp Vault** (secrets chiffrés / isolés) | Major | 2   | Fait   | Cloé  | Démontrer règles actives + secrets via Vault |
 
 
 ---
