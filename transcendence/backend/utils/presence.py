@@ -106,3 +106,14 @@ def mark_user_presence_logged_out(user_id: int):
 
     changed = _set_presence_in_db(user_id, online=False, now=now)
     return {'online': False, 'changed': changed}
+
+
+def clear_user_presence_redis(user_id: int) -> None:
+    """Supprime les clés Redis de présence pour un utilisateur (RGPD / reset)."""
+    redis_conn = _get_redis_connection_safe()
+    if redis_conn is None:
+        return
+    try:
+        redis_conn.delete(_connections_key(int(user_id)), _heartbeat_key(int(user_id)))
+    except (TypeError, ValueError, Exception):
+        pass

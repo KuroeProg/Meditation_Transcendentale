@@ -35,7 +35,7 @@ function nextGameBgmSrc() {
 	return `${import.meta.env.BASE_URL}sounds/game/${encodeURIComponent(file)}`.replace(/([^:]\/)\/+/g, '$1')
 }
 
-/** Musique de partie : route jeu uniquement ; la lecture démarre au premier coup (voir useChessAudio). */
+/** Musique de partie : route jeu uniquement ; la lecture démarre après 2 demi-coups (voir useChessAudio). */
 export function GameAmbientBgm() {
 	const audioRef = useRef(null)
 

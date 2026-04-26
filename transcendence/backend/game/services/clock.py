@@ -1,6 +1,16 @@
 """Chess clock management: time tracking, elapsed time application, timeout detection."""
 
 
+def is_clock_running(game_state):
+	"""True once both sides have played their first move (2 half-moves / plies). Until then, no time decay."""
+	moves = game_state.get('moves') or []
+	try:
+		n = len(moves)
+	except TypeError:
+		n = 0
+	return n >= 2
+
+
 def is_realtime_clock_enabled(game_state):
 	"""Return True when game should run a per-second clock loop."""
 	if game_state.get('time_category') == 'correspondence':

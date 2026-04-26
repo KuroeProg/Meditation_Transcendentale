@@ -153,6 +153,9 @@ Current stable selectors:
   - rematch-accept (bouton accepter revanche)
   - rematch-decline (bouton refuser revanche)
 - Settings — RGPD serveur:
+  - settings-export-server-data (bouton télécharger export JSON RGPD)
+  - settings-export-server-done (message après lancement du téléchargement)
+  - settings-export-server-error (erreur export)
   - settings-delete-server-data (bouton supprimer données serveur, étape 0 ou 1)
   - settings-delete-server-cancel (bouton annuler suppression serveur)
   - settings-delete-server-done (message confirmation suppression)

@@ -81,7 +81,7 @@ def friends_list(request):
     # Enrich accepted friends with active-game info from Redis
     active_games = {}
     try:
-        from game.game_consumer import get_active_game_sync
+        from game.services.active_game import get_active_game_sync
         for f in friendships:
             if f.status == 'accepted':
                 other = f.to_user if f.from_user_id == user.id else f.from_user

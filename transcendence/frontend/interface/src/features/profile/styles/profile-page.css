@@ -412,6 +412,26 @@
 	color: #ff6b6b;
 }
 
+.settings-rgpd-list {
+	margin: 0.35rem 0 1rem 1.1rem;
+	padding: 0;
+	line-height: 1.45;
+}
+
+.settings-rgpd-list li {
+	margin-bottom: 0.45rem;
+}
+
+.settings-privacy-link {
+	color: #a5b4fc;
+	text-decoration: underline;
+	text-underline-offset: 2px;
+}
+
+.settings-privacy-link:hover {
+	color: #c7d2fe;
+}
+
 .profile-avatar-overlay {
 	position: absolute;
 	inset: 0;

@@ -75,8 +75,8 @@ function toNumber(value, fallback = 0) {
 }
 
 /**
- * @param {number} movesPlayed — nombre de demi-coups joués dans la partie (ex. moveLog.length).
- *   Tant qu’il est 0 et que c’est aux blancs, le chrono blanc ne décompte pas (avant le 1er coup).
+ * @param {number} movesPlayed — nombre de demi-coups joués (ex. moveLog.length).
+ *   Tant que movesPlayed est strictement inférieur à 2, aucun décompte (ouverture).
  */
 export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed = 0) {
 	const [nowMs, setNowMs] = useState(() => Date.now())
@@ -96,8 +96,8 @@ export function useSynchronizedChessTimers(gameState, currentTurn, movesPlayed =
 	const blackBase = toNumber(gameState?.black_time_left, fallbackClock)
 	const lastMoveTs = toNumber(gameState?.last_move_timestamp, nowMs / 1000)
 	let elapsed = Math.max(0, nowMs / 1000 - lastMoveTs)
-	// Avant le premier coup des blancs, pas de décompte du temps blanc (le chrono « démarre » au 1er coup).
-	if (movesPlayed === 0 && currentTurn === 'w') {
+	// Avant 2 demi-coups, chrono figé (aligné serveur : is_clock_running).
+	if (movesPlayed < 2) {
 		elapsed = 0
 	}
 

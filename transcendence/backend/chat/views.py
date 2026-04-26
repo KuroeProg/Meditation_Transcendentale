@@ -18,6 +18,7 @@ from django.views.decorators.http import require_GET
 from accounts.models import Friendship, LocalUser
 from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, GameInvite, Message
+from game.services.active_game import get_active_game_sync
 
 
 INVITE_TTL_MINUTES = 5
@@ -355,6 +356,23 @@ def send_game_invite(request, conversation_id):
     if receiver is None:
         return JsonResponse({'error': 'Conversation invalide pour invitation'}, status=400)
 
+    if get_active_game_sync(user.id):
+        return JsonResponse(
+            {
+                'error': 'Tu es déjà en partie. Termine ou quitte la partie avant d’inviter.',
+                'code': 'sender_in_game',
+            },
+            status=409,
+        )
+    if get_active_game_sync(receiver.id):
+        return JsonResponse(
+            {
+                'error': 'Ce joueur est déjà en partie.',
+                'code': 'receiver_in_game',
+            },
+            status=409,
+        )
+
     try:
         time_seconds = int(payload.get('time_seconds', 600) or 600)
     except (TypeError, ValueError):
@@ -496,6 +514,22 @@ def respond_game_invite(request, invite_id):
             )
 
         if action == 'accept':
+            if get_active_game_sync(invite.sender_id):
+                return JsonResponse(
+                    {
+                        'error': 'L’expéditeur est déjà en partie. Impossible d’accepter pour l’instant.',
+                        'code': 'sender_in_game',
+                    },
+                    status=409,
+                )
+            if get_active_game_sync(invite.receiver_id):
+                return JsonResponse(
+                    {
+                        'error': 'Tu es déjà en partie. Termine ou quitte la partie avant d’accepter.',
+                        'code': 'receiver_in_game',
+                    },
+                    status=409,
+                )
             invite.status = GameInvite.STATUS_ACCEPTED
             invite.game_id = _create_online_game_for_invite(invite)
         else:

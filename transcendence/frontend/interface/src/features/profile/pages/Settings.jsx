@@ -50,6 +50,45 @@ function Settings() {
 	// RGPD — suppression données serveur
 	const [deleteStep, setDeleteStep] = useState(0) // 0=idle 1=confirm 2=in-progress 3=done
 	const [deleteError, setDeleteError] = useState(null)
+	const [exportBusy, setExportBusy] = useState(false)
+	const [exportError, setExportError] = useState(null)
+	const [exportDone, setExportDone] = useState(false)
+
+	async function handleExportData() {
+		setExportError(null)
+		setExportDone(false)
+		setExportBusy(true)
+		try {
+			const res = await fetch('/api/auth/me/export-data', {
+				method: 'GET',
+				credentials: 'include',
+				headers: { Accept: 'application/json' },
+			})
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}))
+				throw new Error(body.error || `Erreur ${res.status}`)
+			}
+			const blob = await res.blob()
+			const cd = res.headers.get('Content-Disposition') || ''
+			const m = cd.match(/filename="([^"]+)"/)
+			const filename = m ? m[1] : 'transcendence-export.json'
+			const url = URL.createObjectURL(blob)
+			const a = document.createElement('a')
+			a.href = url
+			a.download = filename
+			a.rel = 'noopener'
+			document.body.appendChild(a)
+			a.click()
+			a.remove()
+			URL.revokeObjectURL(url)
+			setExportDone(true)
+			setTimeout(() => setExportDone(false), 4000)
+		} catch (e) {
+			setExportError(e.message || 'Erreur lors de l’export')
+		} finally {
+			setExportBusy(false)
+		}
+	}
 
 	async function handleDeleteServerData() {
 		if (deleteStep === 0) {
@@ -299,10 +338,57 @@ function Settings() {
 								Données personnelles (RGPD)
 							</h2>
 							<p className="muted small card-hint">
-								Supprime définitivement tes données personnelles côté serveur : messages, amitiés,
-								avatar, préférences, nom et adresse e-mail. Les statistiques de parties sont
-								conservées mais anonymisées. Cette action est <strong>irréversible</strong> et
-								entraîne une déconnexion immédiate.
+								<a
+									className="settings-privacy-link"
+									href={`${import.meta.env.BASE_URL}PRIVACY_RETENTION.md`}
+									target="_blank"
+									rel="noreferrer"
+								>
+									Durées de conservation et traitements (fichier public)
+								</a>
+							</p>
+							<ul className="muted small card-hint settings-rgpd-list">
+								<li>
+									<strong>Export</strong> : profil, préférences, parties en base, invitations, conversations
+									dont tu es membre et messages associés (limite de volume côté serveur si besoin).
+								</li>
+								<li>
+									<strong>Suppression</strong> : anonymisation du compte, suppression des messages envoyés,
+									retrait des accusés de lecture, sortie des conversations privées, suppression amitiés et
+									invitations, effacement des marqueurs présence / partie active en cache. Les lignes de
+									parties restent en base liées au compte anonymisé.
+								</li>
+							</ul>
+
+							<div className="settings-local-actions" style={{ marginBottom: '0.75rem' }}>
+								<button
+									type="button"
+									className="btn btn-secondary"
+									data-testid="settings-export-server-data"
+									onClick={handleExportData}
+									disabled={exportBusy}
+								>
+									{exportBusy ? (
+										<><i className="ri-loader-4-line" aria-hidden /> Préparation du fichier…</>
+									) : (
+										<><i className="ri-download-cloud-2-line" aria-hidden /> Télécharger mes données (JSON)</>
+									)}
+								</button>
+							</div>
+							{exportDone && (
+								<p className="muted small settings-feedback" data-testid="settings-export-server-done">
+									Téléchargement lancé. Vérifie le dossier de téléchargements du navigateur.
+								</p>
+							)}
+							{exportError && (
+								<p className="muted small settings-feedback settings-feedback--error" data-testid="settings-export-server-error">
+									{exportError}
+								</p>
+							)}
+
+							<p className="muted small card-hint">
+								La suppression définitive retire tes données personnelles côté serveur comme décrit ci-dessus.
+								Cette action est <strong>irréversible</strong> et entraîne une déconnexion immédiate.
 							</p>
 
 							{deleteStep === 3 ? (

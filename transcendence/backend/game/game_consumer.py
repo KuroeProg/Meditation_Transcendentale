@@ -24,6 +24,7 @@ from game.services.actions import (
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_clock_running,
 	is_realtime_clock_enabled,
 	mark_timeout_if_needed,
 )
@@ -41,12 +42,14 @@ from game.services.reconnect import synchronize_reconnecting_player
 from game.services.errors import json_invalid, action_unknown
 
 from game.services.save_game import async_save_full_game
+from game.services.active_game import (
+	ACTIVE_GAME_KEY_PREFIX,
+	ACTIVE_GAME_TTL,
+)
 
 
 logger = logging.getLogger('transcendence')
 
-ACTIVE_GAME_KEY_PREFIX = 'active_game:'
-ACTIVE_GAME_TTL = 7200  # 2 h safety TTL
 # Une seule persistance BDD ELO par `game_id` (évite double fin abandon+timeout, etc.)
 GAME_DB_PERSISTED_KEY_PREFIX = 'chessgame_db_done:'
 
@@ -444,12 +447,13 @@ class GameConsumer(AsyncWebsocketConsumer):
 		ensure_draw_fields(game_state)
 		await ensure_player_metadata(game_state)
 
-		apply_elapsed_for_active_turn(game_state, board, now_ts)
-		if mark_timeout_if_needed(game_state, board):
-			await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
-			winner_id = game_state.get('winner_player_id')
-			await self._save_and_broadcast_final_state(game_state, winner_id, 'timeout')
-			return
+		if is_clock_running(game_state):
+			apply_elapsed_for_active_turn(game_state, board, now_ts)
+			if mark_timeout_if_needed(game_state, board):
+				await self.send(text_data=json.dumps({'error': 'Temps ecoule. La partie est terminee.'}))
+				winner_id = game_state.get('winner_player_id')
+				await self._save_and_broadcast_final_state(game_state, winner_id, 'timeout')
+				return
 
 		if game_state.get('status') != 'active':
 			await self.send(text_data=json.dumps({'error': 'Partie terminee'}))
@@ -690,17 +694,6 @@ async def _clear_active_game(user_id: str, game_id: str):
 			await r.delete(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}')
 	except Exception:
 		pass
-
-
-def get_active_game_sync(user_id: int) -> str | None:
-	"""Synchronous helper used by HTTP views to read a user's active game."""
-	try:
-		import redis as _redis_sync
-		r = _redis_sync.from_url(settings.CACHES['default']['LOCATION'])
-		val = r.get(f'{ACTIVE_GAME_KEY_PREFIX}{user_id}')
-		return val.decode() if val else None
-	except Exception:
-		return None
 
 
 # ─── DB helpers ──────────────────────────────────────────────────────────────

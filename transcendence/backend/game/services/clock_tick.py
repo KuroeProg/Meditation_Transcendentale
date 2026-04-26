@@ -5,6 +5,7 @@ import chess
 from game.services.clock import (
 	apply_elapsed_for_active_turn,
 	ensure_clock_fields,
+	is_clock_running,
 	is_realtime_clock_enabled,
 	mark_timeout_if_needed,
 )
@@ -37,8 +38,11 @@ async def tick_game_clock(redis_client, game_id, channel_name, channel_layer, ro
 	now_ts = time.time()
 	ensure_clock_fields(game_state, now_ts)
 	board = chess.Board(game_state['fen'])
-	apply_elapsed_for_active_turn(game_state, board, now_ts)
-	timed_out = mark_timeout_if_needed(game_state, board)
+	if is_clock_running(game_state):
+		apply_elapsed_for_active_turn(game_state, board, now_ts)
+		timed_out = mark_timeout_if_needed(game_state, board)
+	else:
+		timed_out = False
 
 	# Re-read Redis before persisting: évite d'écraser un abandon (ou autre fin) arrivé
 	# en concurrence (tick vs resign sur deux tâches asyncio).

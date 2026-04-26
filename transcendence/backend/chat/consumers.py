@@ -118,6 +118,11 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not self.user_id:
             return
 
+        blocked = await self._game_invite_blocked_by_active_game()
+        if blocked:
+            await self.send(text_data=json.dumps(blocked))
+            return
+
         content = json.dumps(build_game_invite_content_dict(data))
 
         message = await self._save_message(
@@ -207,6 +212,32 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 msg.read_by.add(user)
         except LocalUser.DoesNotExist:
             pass
+
+    @database_sync_to_async
+    def _game_invite_blocked_by_active_game(self):
+        from game.services.active_game import get_active_game_sync
+
+        try:
+            conversation = Conversation.objects.get(id=int(self.conversation_id))
+        except (Conversation.DoesNotExist, TypeError, ValueError):
+            return None
+        participant_ids = list(conversation.participants.values_list('id', flat=True))
+        other_ids = [pid for pid in participant_ids if int(pid) != int(self.user_id)]
+        if not other_ids:
+            return None
+        other_id = int(other_ids[0])
+        sender_id = int(self.user_id)
+        if get_active_game_sync(sender_id):
+            return {
+                'error': 'Tu es déjà en partie. Impossible d’envoyer une invitation.',
+                'code': 'sender_in_game',
+            }
+        if get_active_game_sync(other_id):
+            return {
+                'error': 'L’autre joueur est déjà en partie.',
+                'code': 'receiver_in_game',
+            }
+        return None
 
     @database_sync_to_async
     def _is_blocked(self, user_id, conversation_id):

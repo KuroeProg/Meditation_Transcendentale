@@ -12,7 +12,16 @@ from .auth import (
     auth_user_by_id,
 )
 from .oauth import Auth42View, Callback42View
-from .profile import client_settings, delete_account_data, leaderboard, presence_ping, search_users, update_profile, upload_avatar
+from .profile import (
+    client_settings,
+    delete_account_data,
+    export_account_data,
+    leaderboard,
+    presence_ping,
+    search_users,
+    update_profile,
+    upload_avatar,
+)
 from .friends import friend_action, friend_request, friends_list
 
 __all__ = [
@@ -31,6 +40,7 @@ __all__ = [
     'auth_user_by_id',
     'client_settings',
     'delete_account_data',
+    'export_account_data',
     'update_profile',
     'upload_avatar',
     'leaderboard',

@@ -84,8 +84,8 @@ export function useChessAudio({
     }
 
     unlockGameAudio();
-    // BGM partie : uniquement une fois la partie « lancée » (≥1 coup), comme le chrono côté blancs.
-    if (!gameBgmStartedRef.current && nextCount >= 1) {
+    // BGM partie : après 2 demi-coups (blancs + noirs ont chacun joué), comme le chrono serveur.
+    if (!gameBgmStartedRef.current && nextCount >= 2) {
       gameBgmStartedRef.current = true;
       void tryPlayGameBgm();
     }

@@ -1,7 +1,10 @@
 import json
+import logging
 import uuid
 
-from django.http import JsonResponse
+from django.db.models import Q
+from django.http import HttpResponse, JsonResponse
+from django.utils import timezone
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
@@ -230,14 +233,88 @@ def client_settings(request):
     return JsonResponse({'error': 'Method not allowed'}, status=405)
 
 
+@require_GET
+def export_account_data(request):
+    """RGPD — export JSON des données personnelles (portabilité)."""
+    from game.models import Game
+
+    from chat.models import Conversation, GameInvite, Message
+
+    log = logging.getLogger('transcendence')
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    log.info('rgpd_export', extra={'action': 'rgpd_export', 'user_id': user.id})
+
+    profile = user.to_public_dict()
+    games = []
+    for g in Game.objects.filter(Q(player_white=user) | Q(player_black=user)).order_by('-started_at')[:800]:
+        games.append({
+            'id': g.id,
+            'player_white_id': g.player_white_id,
+            'player_black_id': g.player_black_id,
+            'winner_id': g.winner_id,
+            'termination_reason': g.termination_reason,
+            'time_category': g.time_category,
+            'is_competitive': g.is_competitive,
+            'started_at': g.started_at.isoformat() if g.started_at else None,
+            'duration_seconds': g.duration_seconds,
+        })
+
+    invites = [inv.to_dict() for inv in GameInvite.objects.filter(Q(sender=user) | Q(receiver=user)).order_by('-created_at')[:500]]
+
+    conversations_out = []
+    max_messages = 4000
+    msg_count = 0
+    messages_truncated = False
+    for conv in Conversation.objects.filter(participants=user).order_by('-updated_at'):
+        other_ids = list(conv.participants.exclude(id=user.id).values_list('id', flat=True))
+        entry = {
+            'id': conv.id,
+            'type': conv.type,
+            'game_id': conv.game_id,
+            'other_participant_ids': other_ids,
+            'messages': [],
+        }
+        for msg in Message.objects.filter(conversation=conv).order_by('created_at'):
+            if msg_count >= max_messages:
+                messages_truncated = True
+                break
+            entry['messages'].append(msg.to_dict())
+            msg_count += 1
+        conversations_out.append(entry)
+        if msg_count >= max_messages:
+            break
+
+    body = {
+        'export_version': 1,
+        'exported_at': timezone.now().isoformat(),
+        'profile': profile,
+        'client_prefs': user.client_prefs or {},
+        'games': games,
+        'game_invites': invites,
+        'conversations': conversations_out,
+        'messages_truncated': messages_truncated,
+    }
+
+    response = HttpResponse(
+        json.dumps(body, ensure_ascii=False, indent=2),
+        content_type='application/json; charset=utf-8',
+    )
+    response['Content-Disposition'] = f'attachment; filename="transcendence-export-user-{user.id}.json"'
+    return response
+
+
 @csrf_exempt
 def delete_account_data(request):
     """RGPD — anonymise the account, delete personal data, invalidate the session.
 
     Keeps the LocalUser row (and Game rows pointing to it via SET_NULL-compatible FKs)
-    to preserve match history integrity. Removes: avatar file, personal fields,
-    preferences, sent messages, friendships, and game invites.
-    The session is flushed so the user is logged out immediately.
+    to preserve match history integrity. Also clears Redis presence / active_game markers,
+    removes read_by rows for this user, removes the user from conversation participants,
+    then removes avatar, PII fields, sent messages, game invites, and friendships.
+    The session is flushed so the user is logged out immediately. Logged as rgpd_delete.
     """
     if request.method not in ('DELETE', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -253,6 +330,24 @@ def delete_account_data(request):
             return JsonResponse({'error': 'Invalid JSON'}, status=400)
         if not body.get('confirm'):
             return JsonResponse({'error': 'Requiert {"confirm": true}'}, status=400)
+
+    log = logging.getLogger('transcendence')
+    log.info('rgpd_delete', extra={'action': 'rgpd_delete', 'user_id': user.id})
+
+    from chat.models import Conversation, Message, GameInvite
+    from game.services.active_game import delete_active_game_marker_sync
+    from utils.presence import clear_user_presence_redis
+
+    delete_active_game_marker_sync(user.id)
+    clear_user_presence_redis(user.id)
+
+    try:
+        Message.read_by.through.objects.filter(localuser=user).delete()
+    except Exception:
+        pass
+
+    for conv in Conversation.objects.filter(participants=user):
+        conv.participants.remove(user)
 
     anon_tag = uuid.uuid4().hex[:12]
 
@@ -279,9 +374,8 @@ def delete_account_data(request):
         'avatar', 'image_url', 'password_hash', 'client_prefs', 'is_online',
     ])
 
-    # Delete sent messages (lazy import to avoid circular dependency)
+    # Delete sent messages and invites
     try:
-        from chat.models import Message, GameInvite  # noqa: PLC0415
         Message.objects.filter(sender=user).delete()
         GameInvite.objects.filter(sender=user).delete()
         GameInvite.objects.filter(receiver=user).delete()
@@ -290,7 +384,7 @@ def delete_account_data(request):
 
     # Delete friendships explicitly (CASCADE fires only on row delete, not anonymise)
     from accounts.models import Friendship  # noqa: PLC0415
-    from django.db.models import Q
+
     Friendship.objects.filter(Q(from_user=user) | Q(to_user=user)).delete()
 
     # Flush session → user is logged out
