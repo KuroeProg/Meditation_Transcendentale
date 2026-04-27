@@ -180,11 +180,9 @@ def generate_stats_pdf(payload):
             pdf.image(donut, x=130, y=Y_GRID['top'] + 10, w=38, h=32)
 
         # 2. MIDDLE ROW: ELO Chart
-        # H=65 gives plenty of room for Title(18) + Image(40) + Padding(7)
         pdf.draw_card(20, Y_GRID['mid'], 170, 65, "Rating Evolution", "Historical ELO progression")
         elo_img = create_elo_path(data.get('performance_history', {}).get('elo_history', []))
         if elo_img:
-            # On commence l'image plus bas (18mm) pour éviter le titre
             pdf.image(elo_img, x=25, y=Y_GRID['mid'] + 18, w=160, h=40)
 
         # 3. BOTTOM ROW: Strategic Profile
