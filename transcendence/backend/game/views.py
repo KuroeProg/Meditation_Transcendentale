@@ -106,21 +106,49 @@ def _clock_format_meta(game: Game, user: LocalUser):
     return 'rapid', 'Rapide', 'elo_rapid'
 
 
-def _short_pgn_preview(game: Game) -> str:
-    moves = list(game.moves.all().order_by('move_number')[:10])
+def _get_game_extended_stats(game: Game, user_is_white: bool):
+    """Replays the game to extract advantage curve and captured pieces."""
+    import chess
+    board = chess.Board()
+    curve = [0]
+    captured_by_white = {"p": 0, "n": 0, "b": 0, "r": 0, "q": 0}
+    captured_by_black = {"p": 0, "n": 0, "b": 0, "r": 0, "q": 0}
+    
+    moves = list(game.moves.all().order_by('move_number'))
+    for m in moves:
+        san = m.san_notation
+        try:
+            # On détecte la pièce capturée avant de pousser le coup
+            move_obj = board.parse_san(san)
+            captured_piece = board.piece_at(move_obj.to_square)
+            if captured_piece:
+                p_type = captured_piece.symbol().lower()
+                if captured_piece.color == chess.WHITE:
+                    captured_by_black[p_type] = captured_by_black.get(p_type, 0) + 1
+                else:
+                    captured_by_white[p_type] = captured_by_white.get(p_type, 0) + 1
+            
+            board.push(move_obj)
+        except Exception:
+            pass
+        curve.append(m.material_advantage)
+    
+    if user_is_white:
+        return curve, captured_by_white, captured_by_black
+    else:
+        # Si le joueur est noir, son avantage est l'opposé du mat_adv (qui est blanc-noir)
+        inverted_curve = [-v for v in curve]
+        return inverted_curve, captured_by_black, captured_by_white
+
+def _full_pgn(game: Game) -> str:
+    moves = list(game.moves.all().order_by('move_number'))
     parts = []
-    try:
-        for i in range(0, len(moves), 2):
-            turn_num = (i // 2) + 1
-            white_san = moves[i].san_notation
-            black_san = moves[i + 1].san_notation if i + 1 < len(moves) else ''
-            if black_san:
-                parts.append(f'{turn_num}.{white_san} {black_san}')
-            else:
-                parts.append(f'{turn_num}.{white_san}')
-    except (IndexError, AttributeError):
-        return '…'
-    return ' '.join(parts) if parts else '…'
+    for i in range(0, len(moves), 2):
+        turn_num = (i // 2) + 1
+        w = moves[i].san_notation
+        b = moves[i + 1].san_notation if i + 1 < len(moves) else ''
+        parts.append(f"{turn_num}.{w} {b}".strip())
+    return ' '.join(parts)
 
 
 def _duration_display(game: Game) -> str:
@@ -149,6 +177,8 @@ def _game_to_list_item(game: Game, user: LocalUser) -> dict:
 
     seconds = game.time_control_seconds or game.time_control or 0
     inc = game.increment_seconds or game.increment or 0
+    
+    curve, my_caps, opp_caps = _get_game_extended_stats(game, is_white)
 
     return {
         'id': game.id,
@@ -168,7 +198,10 @@ def _game_to_list_item(game: Game, user: LocalUser) -> dict:
         'time_control_seconds': game.time_control_seconds,
         'increment_seconds': game.increment_seconds,
         'timeControl': f'{seconds}+{inc}',
-        'shortPgn': _short_pgn_preview(game),
+        'pgn': _full_pgn(game),
+        'advantage_curve': curve,
+        'capturedByMe': my_caps,
+        'capturedByOpponent': opp_caps,
         'analysisStatus': 'pending',
         'player': {
             'username': user.username,
@@ -212,7 +245,7 @@ def game_history(request):
 
     qs = Game.objects.filter(
         Q(player_white=user) | Q(player_black=user)
-    ).select_related('player_white', 'player_black', 'winner')
+    ).select_related('player_white', 'player_black', 'winner').prefetch_related('moves')
 
     result_filter = request.GET.get('result')
     format_filter = request.GET.get('format')
