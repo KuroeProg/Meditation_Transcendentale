@@ -357,6 +357,7 @@ services:
       - ES_JAVA_OPTS=-Xms384m -Xmx384m
       - xpack.ml.enabled=false
       - xpack.graph.enabled=false
+      - node.roles=[master,data,data_content,data_hot]
       - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
     volumes:
@@ -391,6 +392,11 @@ services:
       - XPACK_GRAPH_ENABLED=false
       - XPACK_CANVAS_ENABLED=false
       - XPACK_MAPS_ENABLED=false
+      - XPACK_FLEET_ENABLED=false
+      - XPACK_TELEMETRY_ENABLED=false
+      - XPACK_REPORTING_ENABLED=false
+      - XPACK_SECURITYSOLUTION_ENABLED=false
+      - XPACK_ENTERPRISESEARCH_ENABLED=false
     depends_on:
       - elasticsearch
     restart: always

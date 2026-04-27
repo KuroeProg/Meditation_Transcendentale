@@ -59,21 +59,67 @@ function CoalitionBadge({ coalition }) {
 }
 
 /* ── Courbe d'évaluation mini ── */
+/* ── Courbe d'évaluation mini ── */
 function EvalMiniChart({ trend = [] }) {
-	if (!trend.length) return <div className="phistory-eval-chart" />
-	const max = Math.max(...trend.map(Math.abs), 1)
+	if (!trend || trend.length < 2) return <div className="phistory-eval-chart" />
+	
+	const width = 200
+	const height = 48
+	const maxVal = Math.max(...trend.map(Math.abs), 2)
+	
+	// Calcul des points
+	const points = trend.map((v, i) => {
+		const x = (i / (trend.length - 1)) * width
+		const y = (height / 2) - (v / maxVal) * (height / 2)
+		return { x, y }
+	})
+
+	const pathData = points.map((p, i) => `${i === 0 ? 'M' : 'L'} ${p.x} ${p.y}`).join(' ')
+	const areaData = `${pathData} L ${width} ${height / 2} L 0 ${height / 2} Z`
+
 	return (
 		<div className="phistory-eval-chart" aria-hidden="true">
-			{trend.map((v, i) => {
-				const pct = Math.min(Math.abs(v) / max, 1) * 100
-				return (
-					<div
-						key={i}
-						className={`phistory-eval-bar ${v >= 0 ? 'phistory-eval-bar--pos' : 'phistory-eval-bar--neg'}`}
-						style={{ height: `${Math.max(pct, 8)}%` }}
-					/>
-				)
-			})}
+			<svg width="100%" height="100%" viewBox={`0 0 ${width} ${height}`} preserveAspectRatio="none">
+				<defs>
+					<linearGradient id="evalGradient" x1="0" y1="0" x2="0" y2="1">
+						<stop offset="0%" stopColor="var(--phistory-win)" stopOpacity="0.3" />
+						<stop offset="50%" stopColor="var(--phistory-win)" stopOpacity="0" />
+						<stop offset="50%" stopColor="var(--phistory-loss)" stopOpacity="0" />
+						<stop offset="100%" stopColor="var(--phistory-loss)" stopOpacity="0.3" />
+					</linearGradient>
+				</defs>
+				<line x1="0" y1={height/2} x2={width} y2={height/2} stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+				<path d={areaData} fill="url(#evalGradient)" />
+				<path d={pathData} fill="none" stroke="var(--phistory-accent)" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+			</svg>
+		</div>
+	)
+}
+
+/* ── Liste de coups ── */
+function MovesList({ pgn = '' }) {
+	if (!pgn) return <p className="phistory-pgn-preview">Aucun coup enregistré</p>
+
+	// Split basique du PGN pour l'affichage
+	const moves = pgn.split(/\s+/).filter(m => m && !m.includes('.'))
+	const pairs = []
+	for (let i = 0; i < moves.length; i += 2) {
+		pairs.push({
+			num: Math.floor(i / 2) + 1,
+			w: moves[i],
+			b: moves[i + 1]
+		})
+	}
+
+	return (
+		<div className="phistory-move-list">
+			{pairs.map((p, idx) => (
+				<div key={idx} className="phistory-move-row">
+					<span className="phistory-move-num">{p.num}.</span>
+					<span className="phistory-move-san">{p.w}</span>
+					{p.b && <span className="phistory-move-san">{p.b}</span>}
+				</div>
+			))}
 		</div>
 	)
 }
@@ -81,13 +127,14 @@ function EvalMiniChart({ trend = [] }) {
 /* ── Pièces capturées mini ── */
 function CapturesPreview({ capturedByMe = {}, capturedByOpponent = {} }) {
 	const renderPieces = (caps, colorKey) =>
-		Object.entries(caps).flatMap(([type, count]) =>
-			Array.from({ length: count }, (_, i) => (
+		Object.entries(caps).flatMap(([type, count]) => {
+			const lowerType = type.toLowerCase()
+			return Array.from({ length: count }, (_, i) => (
 				<span key={`${type}-${i}`} className="phistory-piece-icon" aria-hidden="true">
-					{PIECE_SYMBOLS[colorKey]?.[type] ?? ''}
+					{PIECE_SYMBOLS[colorKey]?.[lowerType] ?? ''}
 				</span>
 			))
-		)
+		})
 
 	return (
 		<div className="phistory-captures-preview">
@@ -213,9 +260,9 @@ function HistoryRow({ game, isSelected, onSelect }) {
 					{/* PGN */}
 					<div className="phistory-preview-block">
 						<p className="phistory-preview-title">
-							<i className="ri-file-list-3-line" aria-hidden="true" /> Coups notables
+							<i className="ri-file-list-3-line" aria-hidden="true" /> Liste des coups
 						</p>
-						<p className="phistory-pgn-preview">{game.shortPgn}</p>
+						<MovesList pgn={game.pgn || game.shortPgn} />
 					</div>
 
 					{/* Captures */}
@@ -231,10 +278,10 @@ function HistoryRow({ game, isSelected, onSelect }) {
 							<i className="ri-play-circle-line" aria-hidden="true" />
 							Revoir la partie
 						</button>
-						<button type="button" className="phistory-cta-btn">
+						{/* <button type="button" className="phistory-cta-btn">
 							<i className="ri-bar-chart-2-line" aria-hidden="true" />
 							Analyse complète
-						</button>
+						</button> */}
 					</div>
 				</div>
 			)}
@@ -293,11 +340,27 @@ function AnalysisPanel({ game }) {
 				)}
 
 				{/* Courbe éval */}
-				<div>
+				<div className="phistory-analysis-block">
 					<p className="phistory-preview-title">
 						<i className="ri-line-chart-line" aria-hidden="true" /> Courbe d'évaluation
 					</p>
 					<EvalMiniChart trend={game.evalTrend} />
+				</div>
+
+				{/* Prises */}
+				<div className="phistory-analysis-block">
+					<p className="phistory-preview-title">
+						<i className="ri-chess-line" aria-hidden="true" /> Prises
+					</p>
+					<CapturesPreview capturedByMe={game.capturedByMe} capturedByOpponent={game.capturedByOpponent} />
+				</div>
+
+				{/* Liste des coups */}
+				<div className="phistory-analysis-block" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+					<p className="phistory-preview-title">
+						<i className="ri-file-list-3-line" aria-hidden="true" /> Liste des coups
+					</p>
+					<MovesList pgn={game.pgn || game.shortPgn} />
 				</div>
 
 				{/* Stats rapides */}
@@ -317,106 +380,106 @@ function AnalysisPanel({ game }) {
 				</div>
 
 				{/* CTA analyse complète */}
-				<button type="button" className="phistory-cta-btn phistory-cta-btn--primary" style={{ width: '100%', justifyContent: 'center' }}>
+				{/* <button type="button" className="phistory-cta-btn phistory-cta-btn--primary" style={{ width: '100%', justifyContent: 'center' }}>
 					<i className="ri-bar-chart-box-line" aria-hidden="true" />
 					Voir l'analyse complète
-				</button>
+				</button> */}
 			</div>
 		</div>
 	)
 }
 
-/* ── Panneau communauté ── */
-function CommunityPanel({ community }) {
-	const FEED_TYPE_ICONS = {
-		win: 'ri-trophy-line',
-		challenge: 'ri-sword-line',
-		trophy: 'ri-medal-line',
-		default: 'ri-notification-line',
-	}
+// /* ── Panneau communauté ── */
+// function CommunityPanel({ community }) {
+// 	const FEED_TYPE_ICONS = {
+// 		win: 'ri-trophy-line',
+// 		challenge: 'ri-sword-line',
+// 		trophy: 'ri-medal-line',
+// 		default: 'ri-notification-line',
+// 	}
 
-	return (
-		<div className="phistory-panel">
-			<div className="phistory-panel-header">
-				<i className="phistory-panel-icon ri-group-line" aria-hidden="true" />
-				<h2 className="phistory-panel-title">Le Grand Tournoi</h2>
-			</div>
-			<div className="phistory-panel-body">
-				{/* Classements */}
-				<div className="phistory-rank-grid" role="list" aria-label="Classements">
-					<div className="phistory-rank-card" role="listitem">
-						<div className="phistory-rank-num">#{community.coalitionRank}</div>
-						<div className="phistory-rank-label">Dans ta coalition</div>
-					</div>
-					<div className="phistory-rank-card" role="listitem">
-						<div className="phistory-rank-num">#{community.globalRank}</div>
-						<div className="phistory-rank-label">Classement mondial</div>
-					</div>
-				</div>
+// 	return (
+// 		<div className="phistory-panel">
+// 			<div className="phistory-panel-header">
+// 				<i className="phistory-panel-icon ri-group-line" aria-hidden="true" />
+// 				<h2 className="phistory-panel-title">Le Grand Tournoi</h2>
+// 			</div>
+// 			<div className="phistory-panel-body">
+// 				{/* Classements */}
+// 				<div className="phistory-rank-grid" role="list" aria-label="Classements">
+// 					<div className="phistory-rank-card" role="listitem">
+// 						<div className="phistory-rank-num">#{community.coalitionRank}</div>
+// 						<div className="phistory-rank-label">Dans ta coalition</div>
+// 					</div>
+// 					<div className="phistory-rank-card" role="listitem">
+// 						<div className="phistory-rank-num">#{community.globalRank}</div>
+// 						<div className="phistory-rank-label">Classement mondial</div>
+// 					</div>
+// 				</div>
 
-				{/* Rivalité */}
-				{community.rivalryRank && (
-					<div className="phistory-rivalry">
-						<div className="phistory-rivalry-title">
-							<i className="ri-sword-line" aria-hidden="true" /> Rivalité vs{' '}
-							<CoalitionBadge coalition={community.rivalryRank.enemyCoalition} />
-						</div>
-						<div className="phistory-rivalry-row">
-							<span>#{community.rivalryRank.position}</span>
-							<div className="phistory-rivalry-score">
-								<span className="phistory-rivalry-w">{community.rivalryRank.wins}V</span>
-								<span className="phistory-rivalry-d">{community.rivalryRank.draws}N</span>
-								<span className="phistory-rivalry-l">{community.rivalryRank.losses}D</span>
-							</div>
-						</div>
-					</div>
-				)}
+// 				{/* Rivalité */}
+// 				{community.rivalryRank && (
+// 					<div className="phistory-rivalry">
+// 						<div className="phistory-rivalry-title">
+// 							<i className="ri-sword-line" aria-hidden="true" /> Rivalité vs{' '}
+// 							<CoalitionBadge coalition={community.rivalryRank.enemyCoalition} />
+// 						</div>
+// 						<div className="phistory-rivalry-row">
+// 							<span>#{community.rivalryRank.position}</span>
+// 							<div className="phistory-rivalry-score">
+// 								<span className="phistory-rivalry-w">{community.rivalryRank.wins}V</span>
+// 								<span className="phistory-rivalry-d">{community.rivalryRank.draws}N</span>
+// 								<span className="phistory-rivalry-l">{community.rivalryRank.losses}D</span>
+// 							</div>
+// 						</div>
+// 					</div>
+// 				)}
 
-				{/* Trophées */}
-				<div>
-					<p className="phistory-preview-title">
-						<i className="ri-medal-line" aria-hidden="true" /> Trophées
-					</p>
-					<div className="phistory-trophies" role="list" aria-label="Trophées">
-						{community.trophies.map((t) => (
-							<span
-								key={t.id}
-								className={`phistory-trophy${t.earned ? ' phistory-trophy--earned' : ''}`}
-								role="listitem"
-								title={t.label}
-								aria-label={`${t.label}${t.earned ? ' — obtenu' : ' — non obtenu'}`}
-							>
-								<i className={t.icon} aria-hidden="true" />
-								<span className="visually-hidden">{t.label}</span>
-							</span>
-						))}
-					</div>
-				</div>
+// 				{/* Trophées */}
+// 				<div>
+// 					<p className="phistory-preview-title">
+// 						<i className="ri-medal-line" aria-hidden="true" /> Trophées
+// 					</p>
+// 					<div className="phistory-trophies" role="list" aria-label="Trophées">
+// 						{community.trophies.map((t) => (
+// 							<span
+// 								key={t.id}
+// 								className={`phistory-trophy${t.earned ? ' phistory-trophy--earned' : ''}`}
+// 								role="listitem"
+// 								title={t.label}
+// 								aria-label={`${t.label}${t.earned ? ' — obtenu' : ' — non obtenu'}`}
+// 							>
+// 								<i className={t.icon} aria-hidden="true" />
+// 								<span className="visually-hidden">{t.label}</span>
+// 							</span>
+// 						))}
+// 					</div>
+// 				</div>
 
-				{/* Flux activité */}
-				<div>
-					<p className="phistory-preview-title">
-						<i className="ri-pulse-line" aria-hidden="true" /> Activité coalition
-					</p>
-					<ul className="phistory-feed" aria-label="Activités récentes de la coalition">
-						{community.activityFeed.map((item) => (
-							<li key={item.id} className="phistory-feed-item">
-								<div className="phistory-feed-icon" aria-hidden="true">
-									<i className={FEED_TYPE_ICONS[item.type] ?? FEED_TYPE_ICONS.default} />
-								</div>
-								<div className="phistory-feed-text">
-									<span className="phistory-feed-username">{item.username}</span>{' '}
-									{item.text}
-									<time className="phistory-feed-time">{item.time}</time>
-								</div>
-							</li>
-						))}
-					</ul>
-				</div>
-			</div>
-		</div>
-	)
-}
+// 				{/* Flux activité */}
+// 				<div>
+// 					<p className="phistory-preview-title">
+// 						<i className="ri-pulse-line" aria-hidden="true" /> Activité coalition
+// 					</p>
+// 					<ul className="phistory-feed" aria-label="Activités récentes de la coalition">
+// 						{community.activityFeed.map((item) => (
+// 							<li key={item.id} className="phistory-feed-item">
+// 								<div className="phistory-feed-icon" aria-hidden="true">
+// 									<i className={FEED_TYPE_ICONS[item.type] ?? FEED_TYPE_ICONS.default} />
+// 								</div>
+// 								<div className="phistory-feed-text">
+// 									<span className="phistory-feed-username">{item.username}</span>{' '}
+// 									{item.text}
+// 									<time className="phistory-feed-time">{item.time}</time>
+// 								</div>
+// 							</li>
+// 						))}
+// 					</ul>
+// 				</div>
+// 			</div>
+// 		</div>
+// 	)
+// }
 
 /* ══════════════════════════════════════════════════
    Page principale
