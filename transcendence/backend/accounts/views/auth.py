@@ -369,7 +369,7 @@ class RegisterView(View):
                 email=email,
                 first_name=first_name,
                 last_name=last_name,
-                coalition='feu',
+                coalition='',
                 is_2fa_enabled=True,
                 is_2fa_verified=False,
             )

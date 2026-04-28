@@ -10,7 +10,7 @@ class LocalUser(models.Model):
     last_name = models.CharField(max_length=150, blank=True)
     email = models.EmailField(blank=True)
     image_url = models.URLField(blank=True, default='')
-    coalition = models.CharField(max_length=50, blank=True, default='feu')
+    coalition = models.CharField(max_length=50, blank=True, default='')
     level = models.FloatField(null=True, blank=True, default=None)
     bio = models.TextField(blank=True, default='')
     avatar = models.ImageField(upload_to='avatars/', null=True, blank=True)

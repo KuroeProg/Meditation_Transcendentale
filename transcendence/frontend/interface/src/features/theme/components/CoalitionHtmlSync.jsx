@@ -9,8 +9,11 @@ export default function CoalitionHtmlSync() {
 	const { pathname } = useLocation()
 
 	useEffect(() => {
+		const raw = user?.coalition ?? user?.coalition_name
 		const slug = user
-			? coalitionToSlug(user?.coalition ?? user?.coalition_name)
+			? raw != null && String(raw).trim() !== ''
+				? coalitionToSlug(raw)
+				: 'neutral'
 			: shouldUseNeutralGuestTheme(pathname, Boolean(user), loading)
 				? 'neutral'
 				: coalitionToSlug(null)
