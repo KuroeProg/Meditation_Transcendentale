@@ -85,11 +85,10 @@ mock-help: ## Vite : rappel .env.local pour user fictif + choixpeau (voir interf
 	@printf '%b\n' "  $(C_GREEN)VITE_DEV_MOCK_USER=true$(C_RESET)"
 	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_COALITION=eau$(C_RESET)          $(C_DIM)# feu | eau | terre | air$(C_RESET)"
 	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_AUTH_PROVIDER=local$(C_RESET)   $(C_DIM)# pour tester le choixpeau$(C_RESET)"
-	@printf '%b\n' "  $(C_GREEN)VITE_SORTING_HAT_COALITION=true$(C_RESET)"
 	@printf '%b\n' "  $(C_GREEN)VITE_MOCK_RESET_SORTING_HAT=true$(C_RESET) $(C_DIM)# efface le flag choixpeau à chaque reload$(C_RESET)"
 	@printf '%b\n' "  $(C_DIM)# optionnel : VITE_MOCK_USER_ID=42$(C_RESET)"
 	@printf '%b\n' ""
-	@printf '%b\n' "$(C_DIM)Compte réel : choixpeau si auth_provider=local (API), variable ci-dessus, et pas de clé localStorage transcendance_sorting_hat_v1_<id>.$(C_RESET)"
+	@printf '%b\n' "$(C_DIM)Compte réel : choixpeau si auth_provider=local (API), coalition vide, et pas de clé localStorage transcendance_sorting_hat_v1_<id>.$(C_RESET)"
 	@printf '%b\n' ""
 
 all: certs build up-bg migrations ## Certificats + build + démarrage en arrière-plan

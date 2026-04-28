@@ -10,7 +10,7 @@
  * Variables :
  * - VITE_DEV_MOCK_USER=true        → active le mock (session auto au chargement)
  * - VITE_MOCK_COALITION=feu|eau|terre|air
- * - VITE_MOCK_AUTH_PROVIDER=local  → compte « local » (choixpeau si VITE_SORTING_HAT_COALITION=true)
+ * - VITE_MOCK_AUTH_PROVIDER=local  → compte « local » (cérémonie choixpeau si coalition non fixée)
  * - VITE_MOCK_AUTH_PROVIDER=oauth42 → évite le choixpeau (défaut)
  * - VITE_MOCK_USER_ID=42           → fixe l’id (sinon 42 ou 999 aléatoire par onglet)
  * - VITE_MOCK_RESET_SORTING_HAT=true → au chargement mock, efface le stockage choixpeau pour cet id (retester l’anim)

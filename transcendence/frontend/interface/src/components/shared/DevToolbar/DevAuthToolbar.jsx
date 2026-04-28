@@ -11,7 +11,6 @@ import {
 	goToGuestHome,
 	isDevGuestPreviewActive,
 } from '../../../utils/devGuestPreview.js'
-import { SORTING_HAT_COALITION_ENABLED } from '../../../config/featureFlags.js'
 import './DevAuthToolbar.css'
 
 function readStoredMode() {
@@ -156,7 +155,7 @@ export default function DevAuthToolbar() {
 							Type de compte (mock)
 							<select value={authProvider} onChange={(e) => setAuthProvider(e.target.value)}>
 								<option value="">— .env —</option>
-								<option value="local">local (choixpeau si VITE_SORTING_HAT…)</option>
+								<option value="local">local (choixpeau)</option>
 								<option value="oauth42">oauth42 (pas de choixpeau)</option>
 							</select>
 						</label>
@@ -192,17 +191,9 @@ export default function DevAuthToolbar() {
 						</button>
 					</div>
 					<p className="dev-auth-toolbar__hint">
-						Choixpeau : variable <code>VITE_SORTING_HAT_COALITION</code> dans le dossier{' '}
-						<code>interface/</code> (Vite n’utilise pas <code>transcendence/.env</code>). Le bouton ci‑dessous
-						force le mock local, coalition « en attente », déconnecte puis recharge la session.
+						Choixpeau : le bouton ci‑dessous force le mock local, coalition « en attente », déconnecte puis
+						recharge la session pour rejouer la cérémonie.
 					</p>
-					{!SORTING_HAT_COALITION_ENABLED ? (
-						<p className="dev-auth-toolbar__hint dev-auth-toolbar__hint--warn" role="status">
-							<strong>Popup absente ?</strong> Ajoute <code>VITE_SORTING_HAT_COALITION=true</code> dans{' '}
-							<code>interface/.env.development</code> ou <code>interface/.env.local</code>, puis{' '}
-							<strong>redémarre</strong> le serveur Vite (<code>npm run dev</code>).
-						</p>
-					) : null}
 
 					<div className="dev-auth-toolbar__actions">
 						<button type="button" className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent" onClick={applySettings}>
@@ -212,12 +203,8 @@ export default function DevAuthToolbar() {
 							type="button"
 							className="dev-auth-toolbar__btn dev-auth-toolbar__btn--accent"
 							onClick={() => void replaySortingHatCeremony()}
-							disabled={hatReplayBusy || !SORTING_HAT_COALITION_ENABLED}
-							title={
-								!SORTING_HAT_COALITION_ENABLED
-									? 'Active VITE_SORTING_HAT_COALITION dans interface/.env puis redémarre Vite'
-									: 'Déconnexion puis session mock locale sans coalition — relance la cérémonie'
-							}
+							disabled={hatReplayBusy}
+							title="Déconnexion puis session mock locale sans coalition — relance la cérémonie"
 						>
 							{hatReplayBusy ? 'Préparation…' : '▶ Lancer l’animation choixpeau'}
 						</button>

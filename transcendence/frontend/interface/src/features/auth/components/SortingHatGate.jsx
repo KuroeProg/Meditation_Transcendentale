@@ -1,16 +1,13 @@
 /**
  * Feature optionnelle « choixpeau » : attribution aléatoire de coalition pour les comptes locaux.
  *
- * Pour supprimer complètement :
- * 1) Retirer <SortingHatGate /> de App.jsx
- * 2) Mettre VITE_SORTING_HAT_COALITION=false (voir featureFlags.js)
- * 3) Optionnel : supprimer ce fichier + la clé .env.example
+ * Pour supprimer complètement : retirer <SortingHatGate /> de App.jsx
+ * (et optionnellement ce fichier + styles / assets liés).
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth.js'
 import { useReduceMotionPref, coalitionSlugToLabel } from '../../theme/index.js'
-import { SORTING_HAT_COALITION_ENABLED } from '../../../config/featureFlags.js'
 import { DEV_MOCK_STORAGE, SORTING_HAT_DEV_RETRY_EVENT } from '../../../mock/mockSessionUser.js'
 import choixpeauUrl from '../assets/choixpeau.png'
 import '../styles/SortingHatGate.css'
@@ -114,7 +111,7 @@ export default function SortingHatGate() {
 	}, [user?.id, user?.coalition])
 
 	useEffect(() => {
-		if (!SORTING_HAT_COALITION_ENABLED || !isAuthenticated || !user?.id) return
+		if (!isAuthenticated || !user?.id) return
 		const authProv = String(user.auth_provider ?? '')
 			.toLowerCase()
 			.trim()
@@ -284,8 +281,6 @@ export default function SortingHatGate() {
 			}
 		}
 	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion, replayTick, isDevMockAuth])
-
-	if (!SORTING_HAT_COALITION_ENABLED) return null
 
 	const showHat = open && phase !== 'done' && phase !== 'idle'
 	const title = 'La cérémonie de Transcendance'

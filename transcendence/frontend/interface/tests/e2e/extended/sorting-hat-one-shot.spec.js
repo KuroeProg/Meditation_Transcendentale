@@ -91,11 +91,7 @@ test('dismiss button closes the ceremony and persists completion key', async ({ 
 			is_online: true,
 		}
 
-		// Simulate ceremony open state by NOT pre-setting localStorage,
-		// but mock the user as already having coalition so the overlay would be dismissed
-		// We specifically test the dismiss button behavior on the component level.
-		// Because SORTING_HAT_COALITION_ENABLED may be false in non-dev builds,
-		// we check that if the overlay is somehow shown, dismissing it persists the key.
+		// Test dismiss : si l’overlay apparaît, fermeture + clé localStorage ; sinon OK (coalition déjà connue).
 		await BASE_ROUTES(page, userWithCoalition)
 		await page.goto('/dashboard')
 		await waitForDashboardReady(page)
@@ -111,7 +107,7 @@ test('dismiss button closes the ceremony and persists completion key', async ({ 
 			const key = await page.evaluate(() => window.localStorage.getItem('transcendance_sorting_hat_v1_101'))
 			expect(key).toBe('1')
 		} else {
-			// Feature disabled or coalition already present — overlay correctly absent
+			// Overlay absent (coalition déjà connue ou pas de cérémonie pour ce mock)
 			expect(isVisible).toBe(false)
 		}
 	})
