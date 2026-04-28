@@ -3,8 +3,8 @@
  *
  * Pour supprimer complètement :
  * 1) Retirer <SortingHatGate /> de App.jsx
- * 2) Ne pas activer VITE_SORTING_HAT_COALITION (ou false)
- * 3) Optionnel : supprimer ce fichier + featureFlags.js + la clé .env.example
+ * 2) Mettre VITE_SORTING_HAT_COALITION=false (voir featureFlags.js)
+ * 3) Optionnel : supprimer ce fichier + la clé .env.example
  */
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
