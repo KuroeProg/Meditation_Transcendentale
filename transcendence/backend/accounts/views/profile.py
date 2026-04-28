@@ -27,7 +27,7 @@ def _get_authenticated_user(request):
 
 @csrf_exempt
 def update_profile(request):
-    if request.method != 'PUT':
+    if request.method not in ('PUT', 'POST'):
         return JsonResponse({'error': 'Method not allowed'}, status=405)
 
     user, err = _get_authenticated_user(request)

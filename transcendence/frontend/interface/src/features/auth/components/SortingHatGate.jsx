@@ -4,7 +4,7 @@
  * Pour supprimer complètement : retirer <SortingHatGate /> de App.jsx
  * (et optionnellement ce fichier + styles / assets liés).
  */
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion as Motion, AnimatePresence } from 'framer-motion'
 import { useAuth } from '../hooks/useAuth.js'
 import { useReduceMotionPref, coalitionSlugToLabel } from '../../theme/index.js'
@@ -13,6 +13,8 @@ import choixpeauUrl from '../assets/choixpeau.png'
 import '../styles/SortingHatGate.css'
 
 const STORAGE_PREFIX = 'transcendance_sorting_hat_v1_'
+export const SORTING_HAT_STARTED_EVENT = 'transcendance-sorting-hat-started'
+export const SORTING_HAT_COMPLETED_EVENT = 'transcendance-sorting-hat-completed'
 const SLUGS = ['feu', 'eau', 'terre', 'air']
 
 const INTRO_LINES = [
@@ -31,48 +33,8 @@ function pickRandomSlug() {
 	return SLUGS[Math.floor(Math.random() * SLUGS.length)]
 }
 
-/** Ancien format `pending` = "1" pouvait bloquer l’anim après crash ; timestamp = fenêtre anti-doublon courte. */
-/** Au-delà, un `pending` orphelin (crash / onglet fermé) est purgé au prochain montage. */
-const PENDING_MAX_AGE_MS = 90_000
-
-/**
- * @returns {'absent' | 'recent'}
- */
-function normalizeSortingHatPending(pendingKey) {
-	try {
-		const raw = window.localStorage.getItem(pendingKey)
-		if (!raw) return 'absent'
-		if (raw === '1') {
-			window.localStorage.removeItem(pendingKey)
-			return 'absent'
-		}
-		const ts = parseInt(raw, 10)
-		if (Number.isNaN(ts)) {
-			window.localStorage.removeItem(pendingKey)
-			return 'absent'
-		}
-		const age = Date.now() - ts
-		if (age > PENDING_MAX_AGE_MS || age < -120_000) {
-			window.localStorage.removeItem(pendingKey)
-			return 'absent'
-		}
-		return 'recent'
-	} catch {
-		return 'absent'
-	}
-}
-
-function clearPendingOnly(userId) {
-	if (typeof window === 'undefined' || userId == null) return
-	try {
-		window.localStorage.removeItem(`${STORAGE_PREFIX}${userId}_pending`)
-	} catch {
-		/* ignore */
-	}
-}
-
 export default function SortingHatGate() {
-	const { user, refetch, isAuthenticated, isDevMockAuth } = useAuth()
+	const { user, refetch, isAuthenticated, isDevMockAuth, logout } = useAuth()
 	const reduceMotion = useReduceMotionPref()
 	const [open, setOpen] = useState(false)
 	const [phase, setPhase] = useState('idle')
@@ -80,35 +42,30 @@ export default function SortingHatGate() {
 	const [finalSlug, setFinalSlug] = useState(null)
 	const [introIndex, setIntroIndex] = useState(0)
 	const [countdownN, setCountdownN] = useState(null)
+	const [saveError, setSaveError] = useState('')
 	const cancelledRef = useRef(false)
 	const [replayTick, setReplayTick] = useState(0)
+	const refetchRef = useRef(refetch)
+	const isDevMockAuthRef = useRef(isDevMockAuth)
+	const logoutRef = useRef(logout)
+
+	useEffect(() => {
+		refetchRef.current = refetch
+	}, [refetch])
+
+	useEffect(() => {
+		isDevMockAuthRef.current = isDevMockAuth
+	}, [isDevMockAuth])
+
+	useEffect(() => {
+		logoutRef.current = logout
+	}, [logout])
 
 	useEffect(() => {
 		const bump = () => setReplayTick((n) => n + 1)
 		window.addEventListener(SORTING_HAT_DEV_RETRY_EVENT, bump)
 		return () => window.removeEventListener(SORTING_HAT_DEV_RETRY_EVENT, bump)
 	}, [])
-
-	const handleDismiss = useCallback(() => {
-		cancelledRef.current = true
-		clearPendingOnly(user?.id)
-
-		/*
-		 * Fix one-shot : si la coalition est déjà persistée côté serveur
-		 * (user.coalition renseignée), on marque la cérémonie comme terminée
-		 * même si l'utilisateur ferme manuellement.
-		 * Evite la boucle de réapparition après dismiss + refresh.
-		 */
-		if (user?.id && user?.coalition) {
-			try {
-				window.localStorage.setItem(`${STORAGE_PREFIX}${user.id}`, '1')
-			} catch { /* ignore */ }
-		}
-
-		setOpen(false)
-		setPhase('idle')
-		setCountdownN(null)
-	}, [user?.id, user?.coalition])
 
 	useEffect(() => {
 		if (!isAuthenticated || !user?.id) return
@@ -138,8 +95,6 @@ export default function SortingHatGate() {
 
 		const key = `${STORAGE_PREFIX}${user.id}`
 		const pendingKey = `${key}_pending`
-		if (window.localStorage.getItem(key)) return
-		if (normalizeSortingHatPending(pendingKey) === 'recent') return
 		window.localStorage.setItem(pendingKey, String(Date.now()))
 
 		cancelledRef.current = false
@@ -153,74 +108,66 @@ export default function SortingHatGate() {
 		}
 
 		const run = async () => {
+			setSaveError('')
 			const target = pickRandomSlug()
 			const devReplay = import.meta.env.DEV === true && replayTick > 0
 
-			if (reduceMotion) {
-				setIntroIndex(0)
-				setCountdownN(null)
-				setDisplaySlug(target)
-				setFinalSlug(target)
-				setPhase('reveal')
-				await sleep(400)
-			} else {
-				setPhase('intro')
-				setIntroIndex(0)
-				setCountdownN(null)
-				for (let i = 0; i < INTRO_LINES.length; i++) {
-					if (cancelledRef.current) {
-						clearPending()
-						return
-					}
-					setIntroIndex(i)
-					await sleep(1450)
-				}
+			setPhase('intro')
+			setIntroIndex(0)
+			setCountdownN(null)
+			for (let i = 0; i < INTRO_LINES.length; i++) {
 				if (cancelledRef.current) {
 					clearPending()
 					return
 				}
-
-				setPhase('countdown')
-				for (let n = 3; n >= 1; n--) {
-					if (cancelledRef.current) {
-						clearPending()
-						return
-					}
-					setCountdownN(n)
-					await sleep(880)
-				}
-				setCountdownN(null)
-
-				if (cancelledRef.current) {
-					clearPending()
-					return
-				}
-
-				setPhase('suspense')
-				await sleep(1700)
-				if (cancelledRef.current) {
-					clearPending()
-					return
-				}
-
-				setPhase('thinking')
-				let i = 0
-				let delay = 70
-				while (i < 18 && !cancelledRef.current) {
-					setDisplaySlug(SLUGS[i % SLUGS.length])
-					await sleep(delay)
-					delay = Math.min(delay + 22, 200)
-					i++
-				}
-				if (cancelledRef.current) {
-					clearPending()
-					return
-				}
-				setDisplaySlug(target)
-				setFinalSlug(target)
-				setPhase('reveal')
-				await sleep(900)
+				setIntroIndex(i)
+				await sleep(reduceMotion ? 950 : 1450)
 			}
+			if (cancelledRef.current) {
+				clearPending()
+				return
+			}
+
+			setPhase('countdown')
+			for (let n = 3; n >= 1; n--) {
+				if (cancelledRef.current) {
+					clearPending()
+					return
+				}
+				setCountdownN(n)
+				await sleep(reduceMotion ? 620 : 880)
+			}
+			setCountdownN(null)
+
+			if (cancelledRef.current) {
+				clearPending()
+				return
+			}
+
+			setPhase('suspense')
+			await sleep(reduceMotion ? 1100 : 1700)
+			if (cancelledRef.current) {
+				clearPending()
+				return
+			}
+
+			setPhase('thinking')
+			let i = 0
+			let delay = reduceMotion ? 60 : 70
+			while (i < 18 && !cancelledRef.current) {
+				setDisplaySlug(SLUGS[i % SLUGS.length])
+				await sleep(delay)
+				delay = Math.min(delay + (reduceMotion ? 14 : 22), reduceMotion ? 140 : 200)
+				i++
+			}
+			if (cancelledRef.current) {
+				clearPending()
+				return
+			}
+			setDisplaySlug(target)
+			setFinalSlug(target)
+			setPhase('reveal')
+			await sleep(reduceMotion ? 1200 : 900)
 
 			if (cancelledRef.current) {
 				clearPending()
@@ -228,43 +175,68 @@ export default function SortingHatGate() {
 			}
 
 			let persisted = false
+			let statusCode = 0
 			try {
 				const res = await fetch('/api/auth/me/update', {
-					method: 'PUT',
+					method: 'POST',
 					credentials: 'include',
 					headers: { 'Content-Type': 'application/json' },
 					body: JSON.stringify({ coalition: target }),
 				})
+				statusCode = res.status
 				persisted = res.ok
 			} catch {
 				persisted = false
 			}
+			if (!persisted && (statusCode === 401 || statusCode === 403)) {
+				clearPending()
+				await logoutRef.current({ redirectTo: '/auth?mode=login' })
+				return
+			}
 			/* Mock sans cookie API : éviter la boucle infinie si le PUT échoue ; dev replay OAuth idem */
-			if (persisted || (import.meta.env.DEV && (isDevMockAuth || devReplay))) {
-				if (import.meta.env.DEV === true && isDevMockAuth) {
+			const shouldPersistAsSuccess = persisted || (import.meta.env.DEV && (isDevMockAuthRef.current || devReplay))
+			if (shouldPersistAsSuccess) {
+				if (import.meta.env.DEV === true && isDevMockAuthRef.current) {
 					try {
 						window.localStorage.setItem(DEV_MOCK_STORAGE.COALITION, target)
 					} catch {
 						/* ignore */
 					}
 				}
-				await refetch()
+				await refetchRef.current()
 				try {
 					window.localStorage.setItem(key, '1')
 				} catch {
 					/* ignore */
 				}
+				window.dispatchEvent(
+					new CustomEvent(SORTING_HAT_COMPLETED_EVENT, {
+						detail: { userId: user.id, coalition: target },
+					})
+				)
+				clearPending()
+				if (!cancelledRef.current) {
+					setPhase('done')
+					setOpen(false)
+				}
+				return
 			}
-			clearPending()
 
+			clearPending()
 			if (!cancelledRef.current) {
-				setPhase('done')
-				setOpen(false)
+				setPhase('reveal')
+				const suffix = statusCode ? ` (API ${statusCode})` : ''
+				setSaveError(`Impossible d'attribuer ta coalition${suffix}. Vérifie la connexion puis réessaie.`)
 			}
 		}
 
 		queueMicrotask(() => {
 			if (cancelledRef.current) return
+			window.dispatchEvent(
+				new CustomEvent(SORTING_HAT_STARTED_EVENT, {
+					detail: { userId: user.id },
+				})
+			)
 			setOpen(true)
 			setFinalSlug(null)
 			void run()
@@ -280,7 +252,7 @@ export default function SortingHatGate() {
 				/* ignore */
 			}
 		}
-	}, [user?.id, user?.auth_provider, isAuthenticated, refetch, reduceMotion, replayTick, isDevMockAuth])
+	}, [user?.id, user?.auth_provider, isAuthenticated, reduceMotion, replayTick])
 
 	const showHat = open && phase !== 'done' && phase !== 'idle'
 	const title = 'La cérémonie de Transcendance'
@@ -301,15 +273,6 @@ export default function SortingHatGate() {
 					exit={{ opacity: 0 }}
 					transition={{ duration: reduceMotion ? 0 : 0.35 }}
 				>
-					<button
-						type="button"
-						className="sorting-hat-dismiss"
-						onClick={handleDismiss}
-						aria-label="Fermer la cérémonie"
-						data-testid="sorting-hat-dismiss"
-					>
-						<i className="ri-close-line" aria-hidden="true" />
-					</button>
 					<Motion.div
 						className="sorting-hat-frame"
 						initial={reduceMotion ? false : { scale: 0.94, y: 20 }}
@@ -408,6 +371,19 @@ export default function SortingHatGate() {
 							<p className="sorting-hat-hint">
 								Compte local (ou aperçu dev) — attribution symbolique hors coalition Intra 42.
 							</p>
+							{saveError ? (
+								<div className="sorting-hat-error" role="status" aria-live="assertive">
+									<p>{saveError}</p>
+									<button
+										type="button"
+										className="sorting-hat-retry-btn"
+										onClick={() => setReplayTick((n) => n + 1)}
+										data-testid="sorting-hat-retry"
+									>
+										Réessayer
+									</button>
+								</div>
+							) : null}
 						</div>
 					</Motion.div>
 				</Motion.div>

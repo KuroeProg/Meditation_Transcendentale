@@ -12,7 +12,7 @@
  * - GET  /api/auth/42/login → redirection OAuth 42
  * - POST /api/auth/logout → 204 / 200, CSRF si activé
  *   (appelé depuis Profile.jsx et Settings.jsx via AuthContext.logout())
- * - PUT  /api/auth/me/update → mise à jour profil (username, bio…)
+ * - POST (ou PUT) /api/auth/me/update → mise à jour profil (username, bio…)
  * - POST /api/auth/me/avatar → upload avatar (multipart/form-data)
  *
  * Note : les préférences audio/interface (son, animations, scrollbars, toasts) sont

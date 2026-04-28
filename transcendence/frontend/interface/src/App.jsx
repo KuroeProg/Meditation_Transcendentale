@@ -24,7 +24,10 @@ import {
 	ChatUiProvider,
 	useAuth,
 } from './features/index.js'
-import SortingHatGate from './features/auth/components/SortingHatGate.jsx'
+import SortingHatGate, {
+	SORTING_HAT_STARTED_EVENT,
+	SORTING_HAT_COMPLETED_EVENT,
+} from './features/auth/components/SortingHatGate.jsx'
 import ChatFabCluster from './features/chat/components/ChatFabCluster.jsx'
 import { useChatInbox } from './features/chat/hooks/useChatInbox.js'
 import { cancelGameInviteHttp, presencePing } from './features/chat/services/chatApi.js'
@@ -32,13 +35,14 @@ import { cancelGameInviteHttp, presencePing } from './features/chat/services/cha
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
 function AppContent() {
-	const { isAuthenticated, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite, friendSignalCount } = useAuth()
+	const { isAuthenticated, user, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite, friendSignalCount } = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const navigate = useNavigate()
 	const isAuthRoute = location.pathname.startsWith('/auth')
 	const [chatOpen, setChatOpen] = useState(false)
 	const [chatInitialConversation, setChatInitialConversation] = useState(null)
+	const [sortingHatBlocking, setSortingHatBlocking] = useState(false)
 	const inboxEnabled = isAuthenticated && !isAuthRoute
 	const { textUnread, inviteUnread, friendUnread, toast, clearToast, refresh: refreshInbox } = useChatInbox(inboxEnabled)
 	const clearChatInitial = useCallback(() => setChatInitialConversation(null), [])
@@ -88,6 +92,43 @@ function AppContent() {
 		void refreshInbox()
 	}, [friendSignalCount, inboxEnabled, refreshInbox])
 
+	useEffect(() => {
+		if (!isAuthenticated || !user?.id) {
+			setSortingHatBlocking(false)
+			return
+		}
+		const authProv = String(user.auth_provider ?? '')
+			.toLowerCase()
+			.trim()
+		const hasCoalition = String(user?.coalition ?? user?.coalition_name ?? '').trim() !== ''
+		if (authProv !== 'local' || hasCoalition) {
+			setSortingHatBlocking(false)
+			return
+		}
+		setSortingHatBlocking(true)
+	}, [isAuthenticated, user?.id, user?.auth_provider, user?.coalition, user?.coalition_name])
+
+	useEffect(() => {
+		const onStarted = (event) => {
+			const eventUserId = Number(event?.detail?.userId)
+			const currentUserId = Number(user?.id)
+			if (!Number.isFinite(eventUserId) || !Number.isFinite(currentUserId)) return
+			if (eventUserId === currentUserId) setSortingHatBlocking(true)
+		}
+		const onCompleted = (event) => {
+			const eventUserId = Number(event?.detail?.userId)
+			const currentUserId = Number(user?.id)
+			if (!Number.isFinite(eventUserId) || !Number.isFinite(currentUserId)) return
+			if (eventUserId === currentUserId) setSortingHatBlocking(false)
+		}
+		window.addEventListener(SORTING_HAT_STARTED_EVENT, onStarted)
+		window.addEventListener(SORTING_HAT_COMPLETED_EVENT, onCompleted)
+		return () => {
+			window.removeEventListener(SORTING_HAT_STARTED_EVENT, onStarted)
+			window.removeEventListener(SORTING_HAT_COMPLETED_EVENT, onCompleted)
+		}
+	}, [user?.id])
+
 	if (mustRedirectToActiveGame) {
 		return <Navigate to={`/game/${activeGameId}`} replace />
 	}
@@ -103,11 +144,12 @@ function AppContent() {
 			<HomeAmbientBgm />
 			<div className="aurora-bg" />
 			<CoalitionAmbient />
-			{!isAuthRoute && isAuthenticated && (isMobile ? <BottomNav /> : <Sidebar />)}
-			<div
-				className={`main-content ${isAuthRoute ? 'full-width' : ''} ${!isAuthenticated && !isAuthRoute ? 'main-content--guest' : ''}`}
-			>
-				<Routes>
+			{!sortingHatBlocking && !isAuthRoute && isAuthenticated && (isMobile ? <BottomNav /> : <Sidebar />)}
+			{!sortingHatBlocking ? (
+				<div
+					className={`main-content ${isAuthRoute ? 'full-width' : ''} ${!isAuthenticated && !isAuthRoute ? 'main-content--guest' : ''}`}
+				>
+					<Routes>
 					<Route path="/auth" element={<AuthPage />} />
 					<Route path="/auth/reset-password" element={<ResetPasswordPage />} />
 					<Route
@@ -183,12 +225,13 @@ function AppContent() {
 			<Route path="/contact" element={<ContactPage />} />
 				<Route path="/about" element={<AboutPage />} />
 				<Route path="*" element={<Navigate to="/" replace />} />
-				</Routes>
-			</div>
+					</Routes>
+				</div>
+			) : null}
 
-			<SiteFooter sidewallOffset={footerSidewallOffset} />
+			{!sortingHatBlocking ? <SiteFooter sidewallOffset={footerSidewallOffset} /> : null}
 
-			{isAuthenticated && !isAuthRoute && (
+			{!sortingHatBlocking && isAuthenticated && !isAuthRoute && (
 				<>
 					{priorityGameReady?.gameId && (
 						<div className="priority-game-cta" role="status" aria-live="polite">

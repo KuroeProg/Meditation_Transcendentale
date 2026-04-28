@@ -95,7 +95,7 @@ def _set_trusted_2fa_cookie(response, user):
         token,
         max_age=TRUSTED_2FA_MAX_AGE_SECONDS,
         httponly=True,
-        secure=not settings.DEBUG,
+        secure=settings.SESSION_COOKIE_SECURE,
         samesite='Lax',
         path='/',
     )

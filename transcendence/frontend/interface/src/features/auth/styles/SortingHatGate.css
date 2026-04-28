@@ -11,34 +11,6 @@
 	backdrop-filter: blur(10px);
 }
 
-.sorting-hat-dismiss {
-	position: fixed;
-	top: max(0.75rem, env(safe-area-inset-top));
-	right: max(0.75rem, env(safe-area-inset-right));
-	z-index: 12002;
-	width: 2.5rem;
-	height: 2.5rem;
-	display: grid;
-	place-items: center;
-	border-radius: 10px;
-	border: 1px solid rgba(139, 115, 85, 0.45);
-	background: rgba(28, 22, 16, 0.92);
-	color: rgba(245, 240, 230, 0.85);
-	font-size: 1.35rem;
-	line-height: 1;
-	cursor: pointer;
-	transition:
-		background 0.2s,
-		color 0.2s,
-		transform 0.2s;
-}
-
-.sorting-hat-dismiss:hover {
-	background: rgba(45, 36, 26, 0.95);
-	color: #fff;
-	transform: scale(1.05);
-}
-
 .sorting-hat-frame {
 	position: relative;
 	width: min(480px, 100%);
@@ -227,6 +199,30 @@
 	color: rgba(200, 185, 165, 0.35);
 	line-height: 1.45;
 	text-align: center;
+}
+
+.sorting-hat-error {
+	margin-top: 0.8rem;
+	display: grid;
+	gap: 0.55rem;
+	justify-items: center;
+	text-align: center;
+	color: #ffd9d2;
+	font-size: 0.85rem;
+}
+
+.sorting-hat-retry-btn {
+	border: 1px solid rgba(255, 130, 110, 0.45);
+	background: rgba(60, 20, 16, 0.92);
+	color: #ffe6dd;
+	padding: 0.42rem 0.78rem;
+	border-radius: 10px;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.sorting-hat-retry-btn:hover {
+	background: rgba(84, 30, 24, 0.96);
 }
 
 html[data-reduce-motion='true'] .sorting-hat-overlay {

@@ -112,7 +112,6 @@ Current stable selectors:
   - captured-bar-bottom
 - Sorting Hat ceremony:
   - sorting-hat-overlay
-  - sorting-hat-dismiss
 - Friend requests:
   - friend-accept-${friendshipId} (dynamic)
 
