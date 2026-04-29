@@ -1,23 +1,49 @@
 #!/bin/bash
+
+echo "[Elasticsearch] Fetching secrets from Vault..."
+
+MAX_RETRIES=10
+RETRY_COUNT=0
+
+while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+    VAULT_RESPONSE=$(curl -s -k --header "X-Vault-Token: ${VAULT_TOKEN}" ${VAULT_ADDR}/v1/secret/data/database)
+    
+    ELASTIC_PW=$(echo "$VAULT_RESPONSE" | jq -r '.data.data.elastic_pass // empty')
+    KIBANA_PW=$(echo "$VAULT_RESPONSE" | jq -r '.data.data.kibana_pass // empty')
+
+    if [ -n "$ELASTIC_PW" ] && [ -n "$KIBANA_PW" ]; then
+        echo "[Elasticsearch] Passwords successfully retrieved from Vault!"
+        export ELASTIC_PASSWORD=$ELASTIC_PW
+        export KIBANA_PASSWORD=$KIBANA_PW
+        break
+    fi
+
+    echo "[Elasticsearch] Vault not ready... Retrying ($((RETRY_COUNT+1))/$MAX_RETRIES)"
+    sleep 3
+    RETRY_COUNT=$((RETRY_COUNT+1))
+done
+
+if [ -z "$ELASTIC_PASSWORD" ]; then
+    echo "[Elasticsearch] Failed to retrieve passwords. Using Fail-Secure defaults."
+    export ELASTIC_PASSWORD="VaultConnectionFailed"
+    export KIBANA_PASSWORD="VaultConnectionFailed"
+fi
+
 set -e
 
-# 1. Start Elasticsearch in the background
-# We use the official entrypoint to ensure all environment variables are loaded
+echo "[Elasticsearch] Starting Elasticsearch in the background..."
 /usr/local/bin/docker-entrypoint.sh elasticsearch &
 
-# 2. Wait for the Elasticsearch API to become responsive
 echo "Waiting for Elasticsearch API to be ready..."
 until curl -s -k -u "elastic:${ELASTIC_PASSWORD}" https://localhost:9200 > /dev/null; do
     echo "Elasticsearch is still starting up..."
     sleep 5
 done
 
-# 3. Check if the kibana_system password is already working
-# This makes the script "idempotent" (it won't fail if run twice)
 RESPONSE=$(curl -s -k -o /dev/null -w "%{http_code}" -u "kibana_system:${KIBANA_PASSWORD}" https://localhost:9200/_security/_authenticate)
 
 if [ "$RESPONSE" != "200" ]; then
-    echo "Initializing kibana_system password..."
+    echo "🔧 Initializing kibana_system password..."
     curl -s -k -u "elastic:${ELASTIC_PASSWORD}" \
         -X POST "https://localhost:9200/_security/user/kibana_system/_password" \
         -H "Content-Type: application/json" \
@@ -27,5 +53,4 @@ else
     echo "kibana_system user is already authenticated. Skipping initialization."
 fi
 
-# 4. Keep the container alive by waiting for the background process
 wait
