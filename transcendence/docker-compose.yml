@@ -19,7 +19,10 @@ services:
     container_name: transcendence_db
     volumes:
       - ./database/data:/var/lib/postgresql/data
-    env_file: .env # Les secrets ne sont pas sur Git 
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
     restart: always
     logging: *default-logging
     networks:
@@ -127,7 +130,7 @@ services:
       # - DB_PASSWORD=${POSTGRES_PASSWORD}
       - DB_HOST=db
       # - REDIS_PASSWORD=${REDIS_PASSWORD}
-      - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
+      # - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
       # - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
       # - FORTYTWO_CLIENT_ID=${FORTYTWO_CLIENT_ID}
       # - FORTYTWO_CLIENT_SECRET=${FORTYTWO_CLIENT_SECRET}
@@ -369,7 +372,8 @@ services:
       - node.roles=[master,data,data_content,data_hot]
       - xpack.security.http.ssl.certificate=/usr/share/elasticsearch/config/certs/elasticsearch.crt
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
-      - ELASTIC_PASSWORD=${ELASTIC_PASSWORD}
+      - VAULT_ADDR=https://vault:8202
+      - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
     volumes:
       - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
       - elastic_data:/usr/share/elasticsearch/data
@@ -388,7 +392,6 @@ services:
   kibana:
     image: docker.elastic.co/kibana/kibana:8.10.2
     container_name: kibana
-    env_file: .env
     environment:
       - ELASTICSEARCH_HOSTS=https://elasticsearch:9200/
       - ELASTICSEARCH_USERNAME=kibana_system
@@ -419,7 +422,6 @@ services:
   logstash:
     build: ./logstash
     container_name: logstash
-    env_file: .env
     volumes:
       - ./elasticsearch/certs/elasticsearch.crt:/usr/share/logstash/config/certs/elasticsearch.crt:ro
       - ./logs/nginx:/var/log/nginx:ro
@@ -430,8 +432,13 @@ services:
       - "LS_JAVA_OPTS=-Xms256m -Xmx256m"
       - PIPELINE_WORKERS=1
       - PIPELINE_BATCH_SIZE=50
+      - VAULT_ADDR=https://vault:8202
+      - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
     depends_on:
-      - elasticsearch
+      elasticsearch:
+        condition: service_healthy
+      vault-init:
+        condition: service_completed_successfully
     logging: *default-logging
     networks:
       - monitor_net
