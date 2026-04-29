@@ -6,11 +6,31 @@ import numpy as np
 from celery import Celery
 from fpdf import FPDF
 from datetime import datetime
+import hvac
 
-# Configuration Celery
 app = Celery("tasks_config")
-app.conf.broker_url = os.environ.get("CELERY_BROKER_URL", "redis://localhost:6379/0")
-app.conf.result_backend = os.environ.get("CELERY_RESULT_BACKEND", app.conf.broker_url)
+
+vault_url = os.environ.get('VAULT_ADDR', 'https://vault:8202')
+vault_token = os.environ.get('VAULT_TOKEN')
+
+redis_password = "UNAUTHORIZED"
+
+if vault_token:
+    try:
+        client = hvac.Client(url=vault_url, token=vault_token, verify=False)
+        read_response = client.secrets.kv.v2.read_secret_version(path='database')
+        secrets = read_response['data']['data']
+        
+        redis_password = secrets.get('redis_pass')
+        print("Worker: Redis secret successfully retrieved from Vault.")
+        
+    except Exception as e:
+        print(f"Worker: Connection error with Vault : {e}")
+
+broker_url = f"redis://:{redis_password}@redis:6379/0"
+
+app.conf.broker_url = broker_url
+app.conf.result_backend = broker_url
 app.conf.task_default_queue = "celery"
 app.conf.worker_prefetch_multiplier = 1
 
