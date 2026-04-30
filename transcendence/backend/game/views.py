@@ -377,7 +377,7 @@ def game_detail_view(request, game_id):
 
     db_id = str(game_id).replace('game-', '', 1)
     if not db_id.isdigit():
-        return JsonResponse({'error': 'Identifiant invalide'}, status=400)
+        return JsonResponse({'error': 'Identifiant invalide'}, status=404)
 
     try:
         game = Game.objects.prefetch_related('moves').get(id=int(db_id))

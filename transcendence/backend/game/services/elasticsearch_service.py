@@ -12,11 +12,6 @@ es = Elasticsearch(
 )
 
 def index_game_result(game_data, game_id=None):
-    """
-    Envoie les statistiques d'une partie terminée vers Elasticsearch.
-    C'est le côté 'Query' de notre architecture CQRS.
-    Si game_id est fourni, il est utilisé comme ID de document pour permettre l'idempotence.
-    """
     try:
         # On crée un document "propre" pour l'analyse
 
@@ -277,9 +272,7 @@ def get_player_stats(player_id, category='rapid'):
                     current_sum += val
                 else:
                     res[p] = 0
-            
-            # --- AJUSTEMENT DE PRÉCISION (100.0%) ---
-            # Si la somme fait 100.1 ou 99.9 à cause des arrondis, on ajuste le pion (la pièce la plus courante)
+
             if current_sum != 100.0 and current_sum > 0:
                 diff = round(100.0 - current_sum, 1)
                 res['pawn'] = round(res['pawn'] + diff, 1)
@@ -314,7 +307,6 @@ def get_player_stats(player_id, category='rapid'):
             "games_white": g_white,
             "games_black": g_black,
             
-            # Nouvelles stats globales
             "all_players_winrate_global": wr_global_all,
             "all_players_winrate_white": wr_white_all,
             "all_players_winrate_black": wr_black_all,
@@ -322,11 +314,9 @@ def get_player_stats(player_id, category='rapid'):
             "all_players_drawrate_white": dr_white_all,
             "all_players_drawrate_black": dr_black_all,
             
-            # --- PIECE USAGE ---
             "piece_usage": my_piece_usage,
             "all_players_piece_usage": all_piece_usage,
 
-            # --- NOUVELLE MÉTRIQUE : Historique de performance ---
             "performance_history": get_performance_history(player_id, global_avg_sec, category)
         }
     except Exception as e:
@@ -341,10 +331,9 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
     2. game_advantage_history : l'avantage final de chaque partie (pour le matériel).
     """
     pid_str = str(player_id)
-    print(f"[AUDIT] Récupération historique performance pour player_id={pid_str}")
-    
+
     query = {
-        "size": 50, # On prend un échantillon plus large pour l'ELO et le Tilt
+        "size": 50,
         "query": {
             "bool": {
                 "must": [
@@ -357,7 +346,7 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
                 "minimum_should_match": 1
             }
         },
-        "sort": [{"timestamp": "asc"}] # Chronologique pour les calculs cumulatifs
+        "sort": [{"timestamp": "asc"}]
     }
     try:
         response = es.search(index="chess-games", body=query)
@@ -369,7 +358,6 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
         speed_by_rank = {} # index -> {sum, count} pour la moyenne globale par coup
         game_advantage_history = []
         
-        # --- Variables pour les stats avancées ---
         opening_times = []
         comeback_potential_games = 0
         comeback_success_games = 0

@@ -49,7 +49,8 @@ export function HomeAmbientBgm() {
 			const p = audio.play()
 			if (p !== undefined) {
 				p.catch((err) => {
-					if (import.meta.env.DEV) {
+					const ignoredErrors = ['NotAllowedError', 'AbortError'];
+					if (import.meta.env.DEV && !ignoredErrors.includes(err.name)) {
 						console.warn('[HomeAmbientBgm] play()', err)
 					}
 				})
@@ -108,7 +109,9 @@ export function HomeAmbientBgm() {
 		const p = loadGameAudioPrefs()
 		if (!p.homeBgmMuted) {
 			void audio.play().catch((err) => {
-				if (import.meta.env.DEV) {
+				// On ignore NotAllowedError (auto-play) et AbortError (navigation rapide)
+				const ignoredErrors = ['NotAllowedError', 'AbortError'];
+				if (import.meta.env.DEV && !ignoredErrors.includes(err.name)) {
 					console.warn('[HomeAmbientBgm] play() après navigation', err)
 				}
 			})
