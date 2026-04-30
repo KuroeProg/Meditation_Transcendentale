@@ -5,3 +5,4 @@ matplotlib
 celery
 redis
 fpdf2
+hvac

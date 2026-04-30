@@ -14,3 +14,4 @@ Pillow>=10.0.0
 elasticsearch>=8.0.0,<9.0.0
 hvac==2.1.0
 celery
+argon2-cffi==23.1.0

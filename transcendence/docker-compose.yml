@@ -205,6 +205,7 @@ services:
     logging: *default-logging
     networks:
       - backend_net
+      - monitor_net
 
   # Alexis - frontend
   frontend:
