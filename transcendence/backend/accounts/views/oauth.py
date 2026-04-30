@@ -5,11 +5,19 @@ import unicodedata
 from urllib.parse import urlencode
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
 
 from accounts.models import LocalUser
+
+
+def _setting_or_env(name):
+    env_value = os.environ.get(name)
+    if env_value:
+        return env_value
+    return getattr(settings, name, '')
 
 
 def _normalize_label(value):
@@ -124,20 +132,20 @@ def _extract_42_avatar_url(user_data):
 
 
 def _oauth_redirect_uri(request):
-    env_uri = os.environ.get('FORTYTWO_REDIRECT_URI')
+    env_uri = _setting_or_env('FORTYTWO_REDIRECT_URI')
     if env_uri:
         return env_uri
-    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    app_origin = (_setting_or_env('APP_ORIGIN') or '').rstrip('/')
     if app_origin:
         return f'{app_origin}/api/auth/42/callback/'
     return request.build_absolute_uri('/api/auth/42/callback/')
 
 
 def _frontend_dashboard_url():
-    explicit = os.environ.get('FRONTEND_DASHBOARD_URL')
+    explicit = _setting_or_env('FRONTEND_DASHBOARD_URL')
     if explicit:
         return explicit
-    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    app_origin = (_setting_or_env('APP_ORIGIN') or '').rstrip('/')
     if app_origin:
         return f'{app_origin}/dashboard'
     return '/dashboard'
@@ -145,7 +153,7 @@ def _frontend_dashboard_url():
 
 class Auth42View(View):
     def get(self, request):
-        client_id = os.environ.get('FORTYTWO_CLIENT_ID')
+        client_id = _setting_or_env('FORTYTWO_CLIENT_ID')
         if not client_id:
             return JsonResponse({'error': 'FORTYTWO_CLIENT_ID manquant'}, status=500)
 
@@ -173,8 +181,8 @@ class Callback42View(View):
         if not code:
             return JsonResponse({'error': 'Code OAuth manquant'}, status=400)
 
-        client_id = os.environ.get('FORTYTWO_CLIENT_ID')
-        client_secret = os.environ.get('FORTYTWO_CLIENT_SECRET')
+        client_id = _setting_or_env('FORTYTWO_CLIENT_ID')
+        client_secret = _setting_or_env('FORTYTWO_CLIENT_SECRET')
         if not client_id or not client_secret:
             return JsonResponse({'error': 'Configuration OAuth 42 incomplete'}, status=500)
 

@@ -110,6 +110,8 @@ Current stable selectors:
 - Captured pieces HUD:
   - captured-bar-top
   - captured-bar-bottom
+  - captured-advantage-top
+  - captured-advantage-bottom
 - Sorting Hat ceremony:
   - sorting-hat-overlay
 - Friend requests:

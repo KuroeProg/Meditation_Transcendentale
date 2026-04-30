@@ -30,4 +30,24 @@ test.describe('captured pieces HUD', () => {
 		await expect(page.getByTestId('captured-bar-top')).toBeVisible()
 		await expect(page.getByTestId('captured-bar-bottom')).toBeVisible()
 	})
+
+	test('material advantage shows a single positive +x on the leading side', async ({ page }) => {
+		const board = page.getByTestId('chess-board')
+
+		// 1. e4
+		await board.locator('[data-square="e2"]').click()
+		await board.locator('[data-square="e4"]').click()
+		// ... d5
+		await board.locator('[data-square="d7"]').click()
+		await board.locator('[data-square="d5"]').click()
+		// 2. exd5 (white wins a pawn => +1 for white)
+		await board.locator('[data-square="e4"]').click()
+		await board.locator('[data-square="d5"]').click()
+
+		// Avec playerColor='w' en training :
+		// - le joueur du haut est noir, donc il ne doit pas avoir de +x ici
+		// - le joueur du bas est blanc et doit afficher +1
+		await expect(page.getByTestId('captured-advantage-top')).toHaveCount(0)
+		await expect(page.getByTestId('captured-advantage-bottom')).toHaveText('+1')
+	})
 })
