@@ -5,7 +5,7 @@
  *  - la cérémonie n'apparaît PAS si le localStorage marque la clé comme complétée
  *  - la cérémonie est bloquante quand la coalition n'est pas encore attribuée
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
 import { waitForDashboardReady } from '../helpers/waits.js'

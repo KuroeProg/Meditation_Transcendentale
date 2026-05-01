@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('auth 2fa resend code', () => {
 	// Vérifie qu'un renvoi 2FA valide déclenche le cooldown côté UI.

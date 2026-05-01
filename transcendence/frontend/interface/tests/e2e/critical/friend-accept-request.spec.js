@@ -9,7 +9,7 @@
  * Contrat API réel : PUT /api/auth/friends/:friendshipId + body { action: 'accept' }
  * (pas de suffixe /accept sur l’URL).
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
 import { openChatContactsPending, waitForDashboardReady } from '../helpers/waits.js'

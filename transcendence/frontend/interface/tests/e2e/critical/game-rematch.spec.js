@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
 import { installRematchWebSocketMock } from '../helpers/wsMocks.js'
 

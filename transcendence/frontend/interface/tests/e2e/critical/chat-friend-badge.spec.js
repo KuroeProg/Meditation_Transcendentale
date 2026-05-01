@@ -7,7 +7,7 @@
  *    une demande reçue (is_sender === false)
  *  - pastille absente quand la demande est envoyée par soi-même (is_sender === true)
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
@@ -76,7 +76,7 @@ async function setupPage(page, { pendingFriends = [] } = {}) {
 	await expect(page.getByTestId('chat-open-button')).toBeVisible({ timeout: 10_000 })
 }
 
-test.describe('badge demande d'ami sur le bouton chat', () => {
+test.describe("badge demande d'ami sur le bouton chat", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
 	test('aucun badge ami quand la liste de demandes en attente est vide', async ({ page }) => {
@@ -85,7 +85,7 @@ test.describe('badge demande d'ami sur le bouton chat', () => {
 		await expect(badge).not.toBeVisible()
 	})
 
-	test('badge ami visible quand une demande d'ami reçue est en attente', async ({ page }) => {
+	test("badge ami visible quand une demande d'ami reçue est en attente", async ({ page }) => {
 		await setupPage(page, { pendingFriends: [PENDING_FRIEND_RECEIVED] })
 		const badge = page.locator('.chat-fab-badge--friend')
 		await expect(badge).toBeVisible({ timeout: 5_000 })

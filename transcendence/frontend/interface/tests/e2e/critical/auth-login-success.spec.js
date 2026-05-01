@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { loginAndOpenDashboard } from '../helpers/auth.js'
 import { getE2ERoleCredentials, hasE2ERoleCredentials } from '../helpers/e2eEnv.js'

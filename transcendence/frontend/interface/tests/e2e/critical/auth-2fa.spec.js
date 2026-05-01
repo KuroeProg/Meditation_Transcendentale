@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 // Vérifie que le branchement 2FA demande le code puis termine la connexion.
 test('2FA required branch verifies code and completes login', async ({ page }) => {

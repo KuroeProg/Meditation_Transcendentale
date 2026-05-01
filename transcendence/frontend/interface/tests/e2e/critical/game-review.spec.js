@@ -8,7 +8,7 @@
  *  - transport controls (first, prev, play, next, last) work
  *  - advantage bar and move list are visible
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'
