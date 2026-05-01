@@ -9,6 +9,7 @@ from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
+from django.conf import settings
 
 from accounts.models import LocalUser
 
@@ -153,7 +154,7 @@ def _frontend_dashboard_url():
 
 class Auth42View(View):
     def get(self, request):
-        client_id = _setting_or_env('FORTYTWO_CLIENT_ID')
+        client_id = getattr(settings, 'FORTYTWO_CLIENT_ID', None)
         if not client_id:
             return JsonResponse({'error': 'FORTYTWO_CLIENT_ID manquant'}, status=500)
 
@@ -181,8 +182,8 @@ class Callback42View(View):
         if not code:
             return JsonResponse({'error': 'Code OAuth manquant'}, status=400)
 
-        client_id = _setting_or_env('FORTYTWO_CLIENT_ID')
-        client_secret = _setting_or_env('FORTYTWO_CLIENT_SECRET')
+        client_id = getattr(settings, 'FORTYTWO_CLIENT_ID', None)
+        client_secret = getattr(settings, 'FORTYTWO_CLIENT_SECRET', None)
         if not client_id or not client_secret:
             return JsonResponse({'error': 'Configuration OAuth 42 incomplete'}, status=500)
 

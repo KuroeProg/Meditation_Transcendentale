@@ -487,6 +487,11 @@
 }
 
 /* ── Preview survol (inline, accordéon sous la ligne) ── */
+@keyframes historyPreviewIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to   { opacity: 1; transform: translateY(0); }
+}
+
 .phistory-row-preview {
 	grid-column: 1 / -1;
 	display: grid;
@@ -496,11 +501,7 @@
 	border-top: 1px solid rgba(255, 255, 255, 0.06);
 	margin-top: 0.35rem;
 	animation: historyPreviewIn 0.2s ease-out both;
-}
-
-@keyframes historyPreviewIn {
-	from { opacity: 0; transform: translateY(-4px); }
-	to   { opacity: 1; transform: translateY(0); }
+	will-change: transform, opacity;
 }
 
 html[data-reduce-motion='true'] .phistory-row-preview {

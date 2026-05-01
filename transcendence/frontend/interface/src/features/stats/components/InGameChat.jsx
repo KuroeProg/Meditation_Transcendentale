@@ -70,7 +70,7 @@ export function InGameChat({
 
 	// Resolve conversation once game_id is known
 	useEffect(() => {
-		if (!gameId) return
+		if (!gameId || gameId === 'training') return
 		resolveGameConversation(gameId)
 			.then((id) => { if (id) setConvId(id) })
 			.catch(() => {})

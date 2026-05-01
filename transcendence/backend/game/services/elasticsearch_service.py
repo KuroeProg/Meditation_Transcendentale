@@ -12,11 +12,6 @@ es = Elasticsearch(
 )
 
 def index_game_result(game_data, game_id=None):
-    """
-    Envoie les statistiques d'une partie terminée vers Elasticsearch.
-    C'est le côté 'Query' de notre architecture CQRS.
-    Si game_id est fourni, il est utilisé comme ID de document pour permettre l'idempotence.
-    """
     try:
         # On crée un document "propre" pour l'analyse
 
@@ -46,6 +41,8 @@ def index_game_result(game_data, game_id=None):
             "increment": game_data.get('increment'),
             "time_category": game_data.get('time_category', 'rapid'),
             "timestamp": game_data.get('start_timestamp'),
+            "elo_white_before": game_data.get('elo_white_before', 1000),
+            "elo_black_before": game_data.get('elo_black_before', 1000),
             "total_moves": len(game_data.get('moves', [])),
             "moves": game_data.get('moves', [])
         }
@@ -79,6 +76,8 @@ def index_game_instance(game_instance):
             'increment': game_instance.increment,
             'time_category': game_instance.time_category,
             'start_timestamp': game_instance.started_at.timestamp(),
+            'elo_white_before': game_instance.elo_white_before,
+            'elo_black_before': game_instance.elo_black_before,
             'moves': [
                 {
                     'player_id': move.player.id if move.player else None,
@@ -96,21 +95,48 @@ def index_game_instance(game_instance):
         print(f"Erreur lors de la sérialisation de la partie {game_instance.id} pour ES : {e}")
         return False
 
-def get_player_stats(player_id, category='rapid'):
+def get_player_stats(player_id, category='rapid', limit='all'):
     """
     Récupère les statistiques agrégées pour un joueur depuis Elasticsearch.
     C'est le côté 'Read' (Query) de notre architecture CQRS.
     """
     pid_str = str(player_id)
+    
+    must_conditions = [{"term": {"time_category": category}}]
+    
+    if limit != 'all':
+        try:
+            limit_num = int(limit)
+            res = es.search(index="chess-games", body={
+                "size": limit_num,
+                "sort": [{"timestamp": "desc"}],
+                "_source": False,
+                "query": {
+                    "bool": {
+                        "must": [{"term": {"time_category": category}}],
+                        "should": [
+                            {"term": {"player_white_id": pid_str}},
+                            {"term": {"player_black_id": pid_str}}
+                        ],
+                        "minimum_should_match": 1
+                    }
+                }
+            })
+            recent_ids = [hit['_id'] for hit in res.get('hits', {}).get('hits', [])]
+            if recent_ids:
+                must_conditions.append({"ids": {"values": recent_ids}})
+            else:
+                must_conditions.append({"ids": {"values": ["none_existent"]}})
+        except ValueError:
+            pass
+
     query = {
         "size": 0,
         "aggs": {
             "mine": {
                 "filter": {
                     "bool": {
-                        "must": [
-                            {"term": {"time_category": category}}
-                        ],
+                        "must": must_conditions,
                         "should": [
                             {"term": {"player_white_id": pid_str}},
                             {"term": {"player_black_id": pid_str}}
@@ -277,9 +303,7 @@ def get_player_stats(player_id, category='rapid'):
                     current_sum += val
                 else:
                     res[p] = 0
-            
-            # --- AJUSTEMENT DE PRÉCISION (100.0%) ---
-            # Si la somme fait 100.1 ou 99.9 à cause des arrondis, on ajuste le pion (la pièce la plus courante)
+
             if current_sum != 100.0 and current_sum > 0:
                 diff = round(100.0 - current_sum, 1)
                 res['pawn'] = round(res['pawn'] + diff, 1)
@@ -314,7 +338,6 @@ def get_player_stats(player_id, category='rapid'):
             "games_white": g_white,
             "games_black": g_black,
             
-            # Nouvelles stats globales
             "all_players_winrate_global": wr_global_all,
             "all_players_winrate_white": wr_white_all,
             "all_players_winrate_black": wr_black_all,
@@ -322,29 +345,33 @@ def get_player_stats(player_id, category='rapid'):
             "all_players_drawrate_white": dr_white_all,
             "all_players_drawrate_black": dr_black_all,
             
-            # --- PIECE USAGE ---
             "piece_usage": my_piece_usage,
             "all_players_piece_usage": all_piece_usage,
 
-            # --- NOUVELLE MÉTRIQUE : Historique de performance ---
-            "performance_history": get_performance_history(player_id, global_avg_sec, category)
+            "performance_history": get_performance_history(player_id, global_avg_sec, category, limit)
         }
     except Exception as e:
         print(f"Erreur de lecture Elasticsearch (Stats) : {e}")
         return {}
 
 
-def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
+def get_performance_history(player_id, global_avg_sec=5.0, category='rapid', limit='all'):
     """
     Renvoie deux listes : 
     1. move_speed_history : tous les coups individuels (pour la vitesse).
     2. game_advantage_history : l'avantage final de chaque partie (pour le matériel).
     """
     pid_str = str(player_id)
-    print(f"[AUDIT] Récupération historique performance pour player_id={pid_str}")
-    
+
+    query_size = 50
+    if limit != 'all':
+        try:
+            query_size = int(limit)
+        except ValueError:
+            pass
+
     query = {
-        "size": 50, # On prend un échantillon plus large pour l'ELO et le Tilt
+        "size": query_size,
         "query": {
             "bool": {
                 "must": [
@@ -357,11 +384,12 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
                 "minimum_should_match": 1
             }
         },
-        "sort": [{"timestamp": "asc"}] # Chronologique pour les calculs cumulatifs
+        "sort": [{"timestamp": "desc"}]
     }
     try:
         response = es.search(index="chess-games", body=query)
         hits = response.get('hits', {}).get('hits', [])
+        hits.reverse() # On inverse pour avoir l'ordre chronologique (asc) sur le graphe
         
         print(f"[AUDIT] {len(hits)} parties trouvées pour l'analyse analytique complète.")
         
@@ -369,7 +397,6 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
         speed_by_rank = {} # index -> {sum, count} pour la moyenne globale par coup
         game_advantage_history = []
         
-        # --- Variables pour les stats avancées ---
         opening_times = []
         comeback_potential_games = 0
         comeback_success_games = 0
@@ -381,6 +408,7 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
         # --- Variables Intelligence (ELO, Tilt, Blunders) ---
         current_elo = 1000
         peak_elo = 1000
+        highest_elo_defeated = 0
         elo_history = []
         total_blunders = 0
         total_player_moves = 0
@@ -405,6 +433,8 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
             # 0. ELO Tracker
             if is_winner:
                 current_elo += 25
+                opponent_elo = game.get('elo_white_before', 1000) if player_is_black else game.get('elo_black_before', 1000)
+                highest_elo_defeated = max(highest_elo_defeated, opponent_elo)
             elif is_draw:
                 current_elo += 5
             else:
@@ -557,6 +587,7 @@ def get_performance_history(player_id, global_avg_sec=5.0, category='rapid'):
                 "loss_len": round(avg_loss_len, 1),
                 "elo": current_elo,
                 "peak_elo": peak_elo,
+                "highest_elo_defeated": highest_elo_defeated if highest_elo_defeated > 0 else "N/A",
                 "blunder_ratio": round(blunder_ratio, 1),
                 "tilt_winrate": round(tilt_winrate, 1),
                 "aggression_defensive": f"Agg: {aggro_score} / Def: {def_score}"
