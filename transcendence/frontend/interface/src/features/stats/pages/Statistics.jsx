@@ -479,6 +479,7 @@ export default function Statistics() {
 	const { isConnected, lastMessage, sendMove } = useChessSocket('matchmaking')
 	const [esStats, setEsStats] = useState(null)
 	const [category, setCategory] = useState('rapid')
+	const [limit, setLimit] = useState('all')
 	const [isExporting, setIsExporting] = useState(false)
 
 	const handleExportPDF = async () => {
@@ -563,10 +564,11 @@ export default function Statistics() {
 			sendMove({
 				action: 'get_stats',
 				player_id: userId,
-				category: category
+				category: category,
+				limit: limit
 			})
 		}
-	}, [isConnected, userId, category, sendMove])
+	}, [isConnected, userId, category, limit, sendMove])
 
 	useEffect(() => {
 		if (lastMessage?.action === 'player_stats') {
@@ -601,6 +603,31 @@ export default function Statistics() {
 							{cat}
 						</button>
 					))}
+
+					<div style={{ width: '2px', background: 'rgba(255,255,255,0.1)', margin: '0 8px', borderRadius: '2px' }} />
+
+					{['5', '10', '20', 'all'].map(lim => (
+						<button
+							key={lim}
+							onClick={() => setLimit(lim)}
+							style={{
+								padding: '0.4rem 0.8rem',
+								border: `1px solid ${limit === lim ? theme.accent : 'rgba(255,255,255,0.1)'}`,
+								borderRadius: '6px',
+								background: limit === lim ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
+								color: limit === lim ? theme.accent : 'rgba(255,255,255,0.5)',
+								fontSize: '0.65rem',
+								fontWeight: 'bold',
+								textTransform: 'uppercase',
+								letterSpacing: '0.05em',
+								cursor: 'pointer',
+								transition: 'all 0.2s'
+							}}
+						>
+							{lim === 'all' ? 'All' : `Last ${lim}`}
+						</button>
+					))}
+
 					<button
 						onClick={handleExportPDF}
 						style={{
