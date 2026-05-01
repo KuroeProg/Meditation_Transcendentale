@@ -6,7 +6,7 @@ const VIEW_TABS = [
 ]
 
 export function StatsTabsNav({ activeTab, setActiveTab, onPlayAgain, gameEnded, chatUnread = 0 }) {
-	const showNewGame = !gameEnded && typeof onPlayAgain === 'function'
+	const showNewGame = Boolean(gameEnded) && typeof onPlayAgain === 'function'
 
 	return (
 		<div className="stats-nav-shell">

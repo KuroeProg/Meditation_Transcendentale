@@ -49,6 +49,9 @@ export const AUTH_PATHS = {
 	login42: '/api/auth/42/login',
 	logout: `${API_PREFIX}/api/auth/logout`,
 	userByIdBase: `${API_PREFIX}/api/auth/users`,
+	publicProfileBase: `${API_PREFIX}/api/auth/public-profile`,
+	deleteDataRequest: `${API_PREFIX}/api/auth/me/delete-data/request`,
+	deleteDataConfirm: `${API_PREFIX}/api/auth/me/delete-data/confirm`,
 	seedUsers: `${API_PREFIX}/api/auth/seed-users`,
 }
 

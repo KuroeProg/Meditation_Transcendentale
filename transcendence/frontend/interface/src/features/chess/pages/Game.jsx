@@ -31,7 +31,7 @@ function App() {
     return "online";
   }, [gameId]);
 
-  const { isConnected, socketError, lastMessage, sendMove } =
+  const { lastMessage, sendMove } =
     useChessSocket(mode === "online" ? gameId : null);
 
   const handleRematchStarted = useCallback((newGameId) => {
@@ -51,10 +51,8 @@ function App() {
 
   const {
     state,
-    userId,
     playerColor,
     displayedGame,
-    toggleDebug,
     handleMoveRequest,
     handleResign,
     handleOfferDraw,
@@ -81,7 +79,6 @@ function App() {
   });
 
   const {
-    showDebug,
     game,
     gameState,
     winner,
@@ -99,10 +96,6 @@ function App() {
     moveFeedback,
     enabled: true,
   });
-
-  const handleResetGame = useCallback(() => {
-    startNewMatch();
-  }, [startNewMatch]);
 
   // "Nouvelle partie" : rejoindre la file matchmaking avec les params de la partie terminée
   const handleNewGame = useCallback(() => {
@@ -187,77 +180,6 @@ function App() {
 
   return (
     <div data-testid="game-page">
-      <div
-        className="game-debug-hud"
-        style={{
-          position: "fixed",
-          bottom: 10,
-          right: 10,
-          zIndex: 999,
-          background: showDebug ? "rgba(0,0,0,0.85)" : "rgba(0,0,0,0.6)",
-          color: "#0f0",
-          padding: "10px",
-          fontSize: "11px",
-          fontFamily: "monospace",
-          border: "1px solid #0f0",
-          cursor: "pointer",
-          maxWidth: "400px",
-          maxHeight: "300px",
-          overflow: "auto",
-        }}
-        onClick={toggleDebug}
-      >
-        {!showDebug ? (
-          <div>Debug v</div>
-        ) : (
-          <div
-            style={{
-              whiteSpace: "pre-wrap",
-              wordBreak: "break-word",
-              fontSize: "10px",
-            }}
-          >
-            User ID: {userId || "null"}
-            <br />
-            Auth: {user ? "OK" : "auth-err"}
-            <br />
-            WS: {isConnected ? "ok" : "ko"}
-            <br />
-            Error: {socketError || "none"}
-            <br />
-            Game: {gameId}
-            <br />
-            Color: {playerColor || "-"}
-            <br />
-            Status: {gameState?.status || "-"}
-            <br />
-            ---
-            <br />
-            user:{" "}
-            {JSON.stringify(user ? { id: user.id, login: user.login } : null)}
-            <br />
-            ---
-            <br />
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleResetGame();
-              }}
-              style={{
-                padding: "4px 8px",
-                marginTop: "5px",
-                background: "#0f0",
-                color: "#000",
-                border: "none",
-                cursor: "pointer",
-                width: "100%",
-              }}
-            >
-              Reset Game
-            </button>
-          </div>
-        )}
-      </div>
       <div className="header" />
 
       <div className="game-container chess-grid-pattern" data-testid="game-shell">

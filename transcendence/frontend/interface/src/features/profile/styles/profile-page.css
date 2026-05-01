@@ -527,6 +527,44 @@
 	gap: 0.5rem;
 }
 
+.profile-achievements-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.55rem;
+}
+
+.profile-achievement-item {
+	display: flex;
+	align-items: flex-start;
+	gap: 0.7rem;
+	padding: 0.6rem 0.7rem;
+	border-radius: 10px;
+	border: 1px solid rgba(255, 255, 255, 0.08);
+	background: rgba(255, 255, 255, 0.02);
+}
+
+.profile-achievement-icon {
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: #facc15;
+	background: rgba(250, 204, 21, 0.12);
+	border: 1px solid rgba(250, 204, 21, 0.25);
+	flex-shrink: 0;
+}
+
+.profile-achievement-content {
+	display: flex;
+	flex-direction: column;
+	gap: 0.15rem;
+}
+
 .profile-friend-item {
 	display: flex;
 	align-items: center;

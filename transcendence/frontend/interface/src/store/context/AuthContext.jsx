@@ -1,13 +1,23 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
+import React, { createContext, useContext, useState, useEffect, useRef } from 'react'
 import {
 	getMockSessionUser,
 	isDevMockAuthEnabled,
 	maybeClearSortingHatStorageForMock,
+	DEV_MOCK_STORAGE,
 } from '../../mock/mockSessionUser.js'
 import { disableDevGuestPreview, isDevGuestPreviewActive } from '../../utils/devGuestPreview.js'
 import { AUTH_PATHS } from '../../config/authEndpoints.js'
 
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
+
+function syncActiveGameStorage(userLike) {
+  const activeGameId = userLike?.active_game_id
+  if (activeGameId != null && String(activeGameId).trim() !== '') {
+    sessionStorage.setItem(ACTIVE_GAME_STORAGE_KEY, String(activeGameId))
+  } else {
+    sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
+  }
+}
 
 function readCookie(name) {
   const match = document.cookie.match(
@@ -58,6 +68,8 @@ export function AuthProvider({ children }) {
   const [priorityGameReady, setPriorityGameReady] = useState(null)
   const [inviteById, setInviteById] = useState({})
   const [friendSignalCount, setFriendSignalCount] = useState(0)
+  const [achievementToast, setAchievementToast] = useState(null)
+  const achievementToastTimerRef = useRef(null)
 
   // Check if user is already authenticated on mount
   useEffect(() => {
@@ -68,6 +80,7 @@ export function AuthProvider({ children }) {
     try {
       /* Aperçu invité dev : pas de session (ignore cookies / mock) */
       if (import.meta.env.DEV && isDevGuestPreviewActive()) {
+        sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
         setUser(null)
         setTwoFactorChallenge(null)
         return
@@ -79,6 +92,7 @@ export function AuthProvider({ children }) {
        */
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
+        syncActiveGameStorage(u)
         maybeClearSortingHatStorageForMock(u.id)
         disableDevGuestPreview()
         setUser(u)
@@ -93,14 +107,17 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const userData = await response.json()
+        syncActiveGameStorage(userData)
         setUser(userData)
         setTwoFactorChallenge(null)
       } else {
+        sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
         setUser(null)
         setTwoFactorChallenge(null)
       }
     } catch (err) {
       console.error('Auth check failed:', err)
+      sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
       setUser(null)
       setTwoFactorChallenge(null)
     } finally {
@@ -170,6 +187,18 @@ export function AuthProvider({ children }) {
 
         if (data?.action === 'friend_request' || data?.action === 'friend_accepted') {
           setFriendSignalCount((n) => n + 1)
+          return
+        }
+
+        if (data?.action === 'achievement_unlocked') {
+          const achievement = data?.achievement
+          if (!achievement?.id) return
+          setAchievementToast({
+            id: achievement.id,
+            title: achievement.title || 'Succès débloqué',
+            description: achievement.description || '',
+            receivedAt: Date.now(),
+          })
         }
       } catch {
         // ignore malformed websocket payloads
@@ -180,6 +209,21 @@ export function AuthProvider({ children }) {
       ws.close()
     }
   }, [user, twoFactorChallenge])
+
+  useEffect(() => {
+    if (!achievementToast) return undefined
+    if (achievementToastTimerRef.current) clearTimeout(achievementToastTimerRef.current)
+    achievementToastTimerRef.current = setTimeout(() => {
+      setAchievementToast(null)
+      achievementToastTimerRef.current = null
+    }, 4500)
+    return () => {
+      if (achievementToastTimerRef.current) {
+        clearTimeout(achievementToastTimerRef.current)
+        achievementToastTimerRef.current = null
+      }
+    }
+  }, [achievementToast])
 
   useEffect(() => {
     const userId = user?.id ?? user?.user_id ?? null
@@ -213,6 +257,7 @@ export function AuthProvider({ children }) {
     try {
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
+        syncActiveGameStorage(u)
         maybeClearSortingHatStorageForMock(u.id)
         disableDevGuestPreview()
         setUser(u)
@@ -259,6 +304,7 @@ export function AuthProvider({ children }) {
       }
 
       disableDevGuestPreview()
+      syncActiveGameStorage(data.user)
       setUser(data.user)
       setTwoFactorChallenge(null)
       return {
@@ -277,6 +323,7 @@ export function AuthProvider({ children }) {
     try {
       if (isDevMockAuthEnabled()) {
         const u = getMockSessionUser()
+        syncActiveGameStorage(u)
         maybeClearSortingHatStorageForMock(u.id)
         disableDevGuestPreview()
         setUser(u)
@@ -324,6 +371,7 @@ export function AuthProvider({ children }) {
 
       if (data?.user) {
         disableDevGuestPreview()
+        syncActiveGameStorage(data.user)
         setUser(data.user)
         setTwoFactorChallenge(null)
         return {
@@ -367,6 +415,7 @@ export function AuthProvider({ children }) {
       }
 
       disableDevGuestPreview()
+      syncActiveGameStorage(data.user)
       setUser(data.user)
       setTwoFactorChallenge(null)
       return { ok: true, status: 'authenticated', user: data.user }
@@ -390,6 +439,8 @@ export function AuthProvider({ children }) {
       typeof options?.redirectTo === 'string' && options.redirectTo.trim() !== ''
         ? options.redirectTo.trim()
         : null
+    const preserveDevMock =
+      options?.preserveDevMock === true
     try {
       if (!isDevMockAuthEnabled()) {
         await ensureCsrfCookie()
@@ -409,12 +460,25 @@ export function AuthProvider({ children }) {
       console.error('Logout failed:', err)
     } finally {
       sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
+      // For a user-facing logout (sidebar/profile/settings), disable dev mock overrides
+      // that can auto-reinject a fake session and instantly redirect back to dashboard.
+      if (!preserveDevMock) {
+        try {
+          localStorage.setItem(DEV_MOCK_STORAGE.MODE, 'force_off')
+          localStorage.removeItem(DEV_MOCK_STORAGE.COALITION)
+          localStorage.removeItem(DEV_MOCK_STORAGE.AUTH_PROVIDER)
+        } catch {
+          // ignore storage failures (private mode, quota, etc.)
+        }
+        disableDevGuestPreview()
+      }
       setUser(null)
       setTwoFactorChallenge(null)
       setPresenceByUserId({})
       setOutgoingPendingInvite(null)
       setPriorityGameReady(null)
       setInviteById({})
+      setAchievementToast(null)
     }
     if (redirectTo && typeof window !== 'undefined') {
       window.location.replace(redirectTo)
@@ -524,6 +588,14 @@ export function AuthProvider({ children }) {
     return loginLocal(email, password)
   }
 
+  function dismissAchievementToast() {
+    setAchievementToast(null)
+    if (achievementToastTimerRef.current) {
+      clearTimeout(achievementToastTimerRef.current)
+      achievementToastTimerRef.current = null
+    }
+  }
+
   const value = {
     user,
     isLoading,
@@ -553,6 +625,8 @@ export function AuthProvider({ children }) {
     isTwoFactorVerified: !!user && !twoFactorChallenge,
     isAuthenticated: !!user && !twoFactorChallenge,
     friendSignalCount,
+    achievementToast,
+    dismissAchievementToast,
   }
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

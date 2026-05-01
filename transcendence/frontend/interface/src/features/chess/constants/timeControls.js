@@ -17,9 +17,9 @@ export const TIME_CONTROLS = {
 		{ label: '30 min', time: 1800, increment: 0 },
 	],
 	correspondence: [
-		{ label: '1 jour', time: 86400, increment: 0 },
-		{ label: '3 jours', time: 259200, increment: 0 },
-		{ label: '7 jours', time: 604800, increment: 0 },
+		{ label: '1 jour', time: 86400, increment: 0, comingSoon: true },
+		{ label: '3 jours', time: 259200, increment: 0, comingSoon: true },
+		{ label: '7 jours', time: 604800, increment: 0, comingSoon: true },
 	],
 }
 

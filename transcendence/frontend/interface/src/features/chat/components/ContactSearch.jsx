@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import {
 	fetchFriends,
@@ -24,7 +25,7 @@ function ContactItem({ contact, onAction, onStartChat, onWatchGame, isBusy, erro
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={u.avatar} alt="" />
 			<div className="chat-contact-info">
-				<span className="chat-contact-name">{u.username}</span>
+				<UserProfileLink userId={u.id} username={u.username} className="chat-contact-name" />
 				<span
 					className={`chat-contact-status ${inGameId ? 'in-game' : ''} ${!inGameId && online ? 'online' : ''}`}
 				>
@@ -36,7 +37,7 @@ function ContactItem({ contact, onAction, onStartChat, onWatchGame, isBusy, erro
 							? 'En ligne'
 							: 'Hors ligne')}
 					<span className="chat-contact-name-row">
-						<span className="chat-contact-name">{u.username}</span>
+						<UserProfileLink userId={u.id} username={u.username} className="chat-contact-name" />
 						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
 							<ProfileCoalitionIcon slug={coalSlug} />
 						</span>
@@ -154,11 +155,11 @@ function SearchResultItem({ user, onAdd }) {
 		<li className="chat-contact-item">
 			<img className="chat-contact-avatar" src={user.avatar} alt="" />
 			<div className="chat-contact-info">
-				<span className="chat-contact-name">{user.username}</span>
+				<UserProfileLink userId={user.id} username={user.username} className="chat-contact-name" />
 				<span className={`chat-contact-status ${online ? 'online' : ''}`}>
 					{online ? 'En ligne' : 'Hors ligne'}
 					<span className="chat-contact-name-row">
-						<span className="chat-contact-name">{user.username}</span>
+						<UserProfileLink userId={user.id} username={user.username} className="chat-contact-name" />
 						<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
 							<ProfileCoalitionIcon slug={coalSlug} />
 						</span>

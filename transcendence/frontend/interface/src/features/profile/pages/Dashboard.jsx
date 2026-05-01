@@ -7,6 +7,7 @@ import { TimeControlSection } from '../../chess/components/TimeControlPicker.jsx
 import { CATEGORY_META, TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useChessSocket } from '../../chess/hooks/useChessSocket.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 
 const MATCHMAKING_ROOM_ID = 'matchmaking'
@@ -63,7 +64,7 @@ function LeaderboardRow({ entry, isCurrentUser }) {
 			<td className="leaderboard-rank">#{entry.rank}</td>
 			<td className="leaderboard-user">
 				<img className="leaderboard-avatar" src={entry.avatar} alt="" />
-				<span>{entry.username}</span>
+				<UserProfileLink userId={entry.id} username={entry.username} />
 			</td>
 			<td className="leaderboard-elo">{eloValue}</td>
 			<td className="leaderboard-games">{entry.games_played}</td>
@@ -76,7 +77,6 @@ export default function Dashboard() {
 	const location = useLocation()
 	const { openFriendInvite } = useFriendInvite()
 	const { user, isAuthenticated, resolveUserOnline } = useAuth()
-	const { isConnected, socketError, lastMessage, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID)
 	const [queueSize, setQueueSize] = useState(0)
 	const [searching, setSearching] = useState(false)
 	const [statusMessage, setStatusMessage] = useState('')
@@ -102,11 +102,44 @@ export default function Dashboard() {
 	const [friends, setFriends] = useState([])
 	const [leaderboard, setLeaderboard] = useState([])
 	const [currentRank, setCurrentRank] = useState(null)
+	const activeGameId = sessionStorage.getItem('activeGameId')
+	const hasActiveGame = Boolean(activeGameId)
 
 	const userId = useMemo(() => {
 		if (!user) return null
 		return user.id ?? user.user_id ?? user.pk ?? user.sub ?? null
 	}, [user])
+
+	const handleMatchmakingMessage = useCallback((message) => {
+		if (!message) return
+		if (message.error) {
+			hasJoinedQueueRef.current = false
+			setSearching(false)
+			setStatusMessage(message.error)
+			if (message.active_game_id) {
+				sessionStorage.setItem('activeGameId', String(message.active_game_id))
+			}
+			return
+		}
+		if (message.action === 'queue_status') {
+			setQueueSize(Number(message.queue_size) || 0)
+			return
+		}
+		if (message.action === 'match_found' && userId != null) {
+			const whiteId = normalizeWirePlayerId(message.white_player_id)
+			const blackId = normalizeWirePlayerId(message.black_player_id)
+			const currentId = normalizeWirePlayerId(userId)
+			if (currentId === whiteId || currentId === blackId) {
+				const gameId = String(message.game_id || '').trim()
+				if (gameId) sessionStorage.setItem('activeGameId', gameId)
+				setSearching(false)
+				hasJoinedQueueRef.current = false
+				navigate(`/game/${message.game_id}`)
+			}
+		}
+	}, [navigate, userId])
+
+	const { isConnected, socketError, sendMove } = useChessSocket(MATCHMAKING_ROOM_ID, { onMessage: handleMatchmakingMessage })
 
 	const coalitionSlug = useMemo(() => {
 		if (!user?.coalition) return 'feu'
@@ -187,22 +220,6 @@ export default function Dashboard() {
 	}, [searching, isConnected, userId, sendMove, selectedTC, isCompetitive])
 
 	useEffect(() => {
-		if (!lastMessage) return
-		if (lastMessage.error) { setStatusMessage(lastMessage.error); return }
-		if (lastMessage.action === 'queue_status') setQueueSize(Number(lastMessage.queue_size) || 0)
-		if (lastMessage.action === 'match_found' && userId != null) {
-			const whiteId = normalizeWirePlayerId(lastMessage.white_player_id)
-			const blackId = normalizeWirePlayerId(lastMessage.black_player_id)
-			const currentId = normalizeWirePlayerId(userId)
-			if (currentId === whiteId || currentId === blackId) {
-				setSearching(false)
-				hasJoinedQueueRef.current = false
-				navigate(`/game/${lastMessage.game_id}`)
-			}
-		}
-	}, [lastMessage, navigate, userId])
-
-	useEffect(() => {
 		return () => {
 			if (hasJoinedQueueRef.current && userId != null) {
 				sendMove({ action: 'leave_queue', player_id: userId })
@@ -211,6 +228,10 @@ export default function Dashboard() {
 	}, [sendMove, userId])
 
 	const startSearch = () => {
+		if (hasActiveGame) {
+			setStatusMessage('Partie en cours détectée. Termine-la ou reprends-la via Jouer.')
+			return
+		}
 		if (!isAuthenticated || userId == null) {
 			setStatusMessage('Connecte-toi pour lancer une recherche')
 			return
@@ -326,9 +347,14 @@ export default function Dashboard() {
 						</button>
 					</div>
 
-					<button className="dash-start-btn" type="button" onClick={startSearch} data-testid="dashboard-start-matchmaking">
-						Commencer la partie
+					<button className="dash-start-btn" type="button" onClick={startSearch} data-testid="dashboard-start-matchmaking" disabled={hasActiveGame}>
+						{hasActiveGame ? 'Partie en cours' : 'Commencer la partie'}
 					</button>
+					{hasActiveGame && (
+						<p className="dash-empty-msg" style={{ marginTop: '0.55rem' }}>
+							Tu as déjà une partie active. Clique sur <strong>Jouer</strong> dans la navigation pour la reprendre.
+						</p>
+					)}
 				</section>
 
 				<div className="dash-side-col">

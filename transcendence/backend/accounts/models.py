@@ -26,6 +26,7 @@ class LocalUser(models.Model):
     is_2fa_enabled = models.BooleanField(default=True)
     is_2fa_verified = models.BooleanField(default=True)
     client_prefs = models.JSONField(null=True, blank=True, default=None, help_text='Persistent UI/audio preferences.')
+    achievements = models.JSONField(default=list, blank=True, help_text='Unlocked achievement IDs.')
 
     class Meta:
         db_table = 'local_users'
@@ -75,6 +76,30 @@ class LocalUser(models.Model):
                 'link': image_link,
                 'versions': {'medium': image_link},
             },
+            'achievements': list(self.achievements or []),
+        }
+
+    def to_profile_public_dict(self):
+        image_link = self.get_avatar_url()
+        return {
+            'id': self.id,
+            'username': self.username,
+            'first_name': self.first_name,
+            'last_name': self.last_name,
+            'bio': self.bio,
+            'coalition': self.coalition,
+            'level': self.level,
+            'is_online': self.is_online,
+            'last_seen': self.last_seen.isoformat() if self.last_seen else None,
+            'elo_bullet': self.elo_bullet,
+            'elo_blitz': self.elo_blitz,
+            'elo_rapid': self.elo_rapid,
+            'games_played': self.games_played,
+            'games_won': self.games_won,
+            'games_lost': self.games_lost,
+            'games_draw': self.games_draw,
+            'avatar': image_link,
+            'achievements': list(self.achievements or []),
         }
 
 

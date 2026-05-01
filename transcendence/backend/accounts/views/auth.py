@@ -16,6 +16,8 @@ from django.views.decorators.http import require_GET, require_POST
 from django.utils.decorators import method_decorator
 
 from accounts.models import Friendship, LocalUser
+from accounts.services.achievements import evaluate_achievements
+from game.services.active_game import get_active_game_sync
 from utils.presence import mark_user_presence_logged_out
 from accounts.services.e2e_users import seed_e2e_users
 from utils.two_factor import (
@@ -141,6 +143,12 @@ def _send_password_reset_email(request, user):
     )
 
 
+def _serialize_user_session_payload(user):
+    payload = user.to_public_dict()
+    payload['active_game_id'] = get_active_game_sync(user.id)
+    return payload
+
+
 @require_GET
 @ensure_csrf_cookie
 def auth_csrf(request):
@@ -176,7 +184,8 @@ def auth_login_db(request):
         if _is_trusted_2fa_cookie_valid(request, user):
             request.session['local_user_id'] = user.id
             request.session.modified = True
-            return JsonResponse({'status': 'authenticated', 'user': user.to_public_dict()})
+            _evaluate_achievements_and_notify(user)
+            return JsonResponse({'status': 'authenticated', 'user': _serialize_user_session_payload(user)})
 
         if is_user_blocked(user.id, purpose='login'):
             return JsonResponse({
@@ -201,7 +210,8 @@ def auth_login_db(request):
         }, status=200)
 
     request.session['local_user_id'] = user.id
-    return JsonResponse({'user': user.to_public_dict()})
+    _evaluate_achievements_and_notify(user)
+    return JsonResponse({'user': _serialize_user_session_payload(user)})
 
 
 @require_GET
@@ -216,7 +226,8 @@ def auth_me(request):
         request.session.pop('local_user_id', None)
         return JsonResponse({'error': 'Session invalide'}, status=401)
 
-    return JsonResponse(user.to_public_dict())
+    _evaluate_achievements_and_notify(user)
+    return JsonResponse(_serialize_user_session_payload(user))
 
 
 @require_GET
@@ -241,8 +252,13 @@ def auth_logout(request):
         if presence_state.get('changed'):
             _broadcast_friend_presence_update(int(user_id), is_online=False)
 
-    request.session.pop('local_user_id', None)
-    return JsonResponse({'ok': True})
+    # Invalide complètement la session (rotation de clé + purge des données)
+    # pour éviter toute ré-authentification implicite après un logout.
+    request.session.flush()
+    response = JsonResponse({'ok': True})
+    response.delete_cookie(settings.SESSION_COOKIE_NAME, path='/')
+    response.delete_cookie(TRUSTED_2FA_COOKIE_NAME, path='/')
+    return response
 
 
 def _broadcast_friend_presence_update(user_id: int, is_online: bool):
@@ -274,6 +290,32 @@ def _broadcast_friend_presence_update(user_id: int, is_online: bool):
                 'data': payload,
             }
         )
+
+
+def _notify_user(user_id: int, payload: dict):
+    channel_layer = get_channel_layer()
+    if channel_layer is None:
+        return
+    async_to_sync(channel_layer.group_send)(
+        f'user_{int(user_id)}',
+        {
+            'type': 'notification',
+            'data': payload,
+        },
+    )
+
+
+def _evaluate_achievements_and_notify(user):
+    newly_unlocked = evaluate_achievements(user)
+    for achievement in newly_unlocked:
+        _notify_user(user.id, {
+            'action': 'achievement_unlocked',
+            'achievement': {
+                'id': achievement.id,
+                'title': achievement.title,
+                'description': achievement.description,
+            },
+        })
 
 
 @require_POST
@@ -464,13 +506,14 @@ class Verify2FAView(View):
 
         request.session['local_user_id'] = user.id
         request.session.modified = True
+        _evaluate_achievements_and_notify(user)
 
         logger = logging.getLogger(__name__)
         if is_login_flow:
             logger.info(f"User {user.id} ({user.username}) successfully completed 2FA login")
             response = JsonResponse({
                 'status': 'authenticated',
-                'user': user.to_public_dict(),
+                'user': _serialize_user_session_payload(user),
                 'message': 'Login complete.'
             }, status=200)
             if remember_device:
@@ -480,7 +523,7 @@ class Verify2FAView(View):
         logger.info(f"User {user.id} ({user.username}) successfully completed 2FA registration")
         return JsonResponse({
             'status': 'registered',
-            'user': user.to_public_dict(),
+            'user': _serialize_user_session_payload(user),
             'message': 'Registration complete. Welcome!'
         }, status=200)
 

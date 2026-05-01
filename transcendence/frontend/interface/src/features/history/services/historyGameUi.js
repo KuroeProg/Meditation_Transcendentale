@@ -37,6 +37,7 @@ export function enrichGameForUi(g) {
 		relativeDate,
 		duration,
 		opponent: {
+			id: g.opponent?.id ?? null,
 			username: g.opponent?.username ?? 'Inconnu',
 			coalition: g.opponent?.coalition ?? null,
 			elo: g.opponent?.elo ?? null,

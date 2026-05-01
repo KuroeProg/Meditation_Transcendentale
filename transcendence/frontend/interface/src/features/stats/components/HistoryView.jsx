@@ -1,12 +1,13 @@
 import { useState, useMemo } from 'react'
 import { useNavigate } from 'react-router-dom'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 
 /* ── Icônes par format ── */
 const FORMAT_ICONS = {
+	bullet:    'ri-dashboard-3-line',
 	blitz:     'ri-flashlight-line',
 	rapid:     'ri-time-line',
 	classical: 'ri-chess-line',
-	puzzle:    'ri-puzzle-line',
 }
 
 /* ── Symboles de pièces Unicode ── */
@@ -27,9 +28,9 @@ const FILTERS_RESULT = [
 
 const FILTERS_FORMAT = [
 	{ id: 'all',    label: 'Tous' },
+	{ id: 'bullet', label: 'Bullet' },
 	{ id: 'blitz',  label: 'Blitz' },
 	{ id: 'rapid',  label: 'Rapide' },
-	{ id: 'puzzle', label: 'Puzzle' },
 ]
 
 /* ── Mini courbe éval ── */
@@ -110,7 +111,11 @@ function GameRow({ game, isOpen, onToggle }) {
 							? <><i className="ri-robot-line" aria-hidden="true" />{' '}</>
 							: null
 						}
-						{game.opponent.username}
+						<UserProfileLink
+							userId={game.opponent.id}
+							username={game.opponent.username}
+							className="ghv-opponent-name"
+						/>
 					</span>
 					<CoalitionBadge coalition={game.opponent.coalition} />
 				</div>

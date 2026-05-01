@@ -577,76 +577,45 @@ export default function Statistics() {
 	}, [lastMessage])
 
 	const pageStyle = useMemo(() => buildStatsPageStyle(theme), [theme])
+	const categoryOptions = ['bullet', 'blitz', 'rapid']
+	const limitOptions = ['5', '10', '20', 'all']
 
 	return (
 		<div className="pstats-page chess-grid-pattern" style={pageStyle} data-pstats-coalition={slug}>
 			<div className="pstats-left">
-				<div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem', width: '100%', justifyContent: 'center' }}>
-					{['bullet', 'blitz', 'rapid'].map(cat => (
+				<div className="pstats-controls">
+					<div className="pstats-controls__group" role="group" aria-label="Catégorie de stats">
+					{categoryOptions.map(cat => (
 						<button
 							key={cat}
 							onClick={() => setCategory(cat)}
-							style={{
-								padding: '0.4rem 1.2rem',
-								border: `1px solid ${category === cat ? theme.accent : 'rgba(255,255,255,0.1)'}`,
-								borderRadius: '6px',
-								background: category === cat ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
-								color: category === cat ? theme.accent : 'rgba(255,255,255,0.5)',
-								fontSize: '0.65rem',
-								fontWeight: 'bold',
-								textTransform: 'uppercase',
-								letterSpacing: '0.05em',
-								cursor: 'pointer',
-								transition: 'all 0.2s'
-							}}
+							type="button"
+							className={`pstats-controls__btn ${category === cat ? 'is-active' : ''}`}
 						>
 							{cat}
 						</button>
 					))}
+					</div>
 
-					<div style={{ width: '2px', background: 'rgba(255,255,255,0.1)', margin: '0 8px', borderRadius: '2px' }} />
+					<div className="pstats-controls__separator" aria-hidden />
 
-					{['5', '10', '20', 'all'].map(lim => (
+					<div className="pstats-controls__group" role="group" aria-label="Période de stats">
+					{limitOptions.map(lim => (
 						<button
 							key={lim}
 							onClick={() => setLimit(lim)}
-							style={{
-								padding: '0.4rem 0.8rem',
-								border: `1px solid ${limit === lim ? theme.accent : 'rgba(255,255,255,0.1)'}`,
-								borderRadius: '6px',
-								background: limit === lim ? `${theme.accent}22` : 'rgba(255,255,255,0.03)',
-								color: limit === lim ? theme.accent : 'rgba(255,255,255,0.5)',
-								fontSize: '0.65rem',
-								fontWeight: 'bold',
-								textTransform: 'uppercase',
-								letterSpacing: '0.05em',
-								cursor: 'pointer',
-								transition: 'all 0.2s'
-							}}
+							type="button"
+							className={`pstats-controls__btn ${limit === lim ? 'is-active' : ''}`}
 						>
 							{lim === 'all' ? 'All' : `Last ${lim}`}
 						</button>
 					))}
+					</div>
 
 					<button
 						onClick={handleExportPDF}
-						style={{
-							padding: '0.4rem 1.2rem',
-							border: `1px solid ${theme.accent}`,
-							borderRadius: '6px',
-							background: isExporting ? 'rgba(255,255,255,0.1)' : `${theme.accent}44`,
-							color: '#fff',
-							fontSize: '0.65rem',
-							fontWeight: 'bold',
-							textTransform: 'uppercase',
-							letterSpacing: '0.05em',
-							cursor: isExporting ? 'not-allowed' : 'pointer',
-							marginLeft: 'auto',
-							display: 'flex',
-							alignItems: 'center',
-							gap: '6px',
-							opacity: isExporting ? 0.7 : 1
-						}}
+						type="button"
+						className={`pstats-controls__export ${isExporting ? 'is-exporting' : ''}`}
 						disabled={isExporting}
 					>
 						<i className={isExporting ? "ri-loader-4-line ri-spin" : "ri-file-pdf-line"} />

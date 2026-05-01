@@ -4,6 +4,7 @@ import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchHistory } from '../services/historyApi.js'
 import { enrichGameForUi } from '../services/historyGameUi.js'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 import '../styles/History.css'
 
 const FALLBACK_FILTERS = {
@@ -201,7 +202,11 @@ function HistoryRow({ game, isSelected, onSelect }) {
 				<div className="phistory-player">
 					<div className="phistory-player-info">
 						<span className="phistory-player-name">
-							{game.opponent.isBot ? <><i className="ri-robot-line" aria-hidden="true" /> {game.opponent.username}</> : game.opponent.username}
+							{game.opponent.isBot ? (
+								<><i className="ri-robot-line" aria-hidden="true" /> {game.opponent.username}</>
+							) : (
+								<UserProfileLink userId={game.opponent.id} username={game.opponent.username} className="phistory-player-name" />
+							)}
 						</span>
 						{game.opponent.elo && (
 							<span className="phistory-player-elo">{game.opponent.elo} ELO</span>

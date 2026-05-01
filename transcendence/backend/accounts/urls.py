@@ -33,9 +33,12 @@ urlpatterns = [
     *with_optional_trailing_slash('me/avatar', views.upload_avatar, name='upload_avatar'),
     *with_optional_trailing_slash('me/client-settings', views.client_settings, name='client_settings'),
     *with_optional_trailing_slash('me/delete-data', views.delete_account_data, name='delete_account_data'),
+    *with_optional_trailing_slash('me/delete-data/request', views.request_delete_account_email, name='request_delete_account_email'),
+    *with_optional_trailing_slash('me/delete-data/confirm', views.confirm_delete_account_email, name='confirm_delete_account_email'),
     *with_optional_trailing_slash('me/export-data', views.export_account_data, name='export_account_data'),
     *with_optional_trailing_slash('leaderboard', views.leaderboard, name='leaderboard'),
     *with_optional_trailing_slash('search', views.search_users, name='search_users'),
+    *with_optional_trailing_slash('public-profile/<int:user_id>', views.public_profile, name='public_profile'),
 
     # Friends
     *with_optional_trailing_slash('friends', views.friends_list, name='friends_list'),

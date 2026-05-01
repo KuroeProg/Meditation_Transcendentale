@@ -1,7 +1,11 @@
 import json
 import logging
+import os
 import uuid
 
+from django.conf import settings
+from django.core import signing
+from django.core.mail import send_mail
 from django.db.models import Q
 from django.http import HttpResponse, JsonResponse
 from django.utils import timezone
@@ -9,8 +13,12 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from accounts.models import LocalUser
+from accounts.services.achievements import get_achievement_payloads
 from game.services.rating import get_rating_field, normalize_time_category
 from utils.presence import get_effective_online_for_user, mark_user_presence_heartbeat
+
+DELETE_ACCOUNT_TOKEN_SALT = 'delete-account-confirm'
+DELETE_ACCOUNT_TOKEN_MAX_AGE_SECONDS = 1800
 
 
 def _get_authenticated_user(request):
@@ -23,6 +31,58 @@ def _get_authenticated_user(request):
     except LocalUser.DoesNotExist:
         request.session.pop('local_user_id', None)
         return None, JsonResponse({'error': 'Session invalide'}, status=401)
+
+
+def _build_public_friends_payload(user):
+    from accounts.models import Friendship
+
+    friends = Friendship.objects.filter(
+        status='accepted',
+    ).filter(
+        Q(from_user=user) | Q(to_user=user),
+    ).select_related('from_user', 'to_user').order_by('-updated_at')
+
+    payload = []
+    for friendship in friends:
+        other = friendship.to_user if friendship.from_user_id == user.id else friendship.from_user
+        payload.append({
+            'friendship_id': friendship.id,
+            'user': {
+                'id': other.id,
+                'username': other.username,
+                'avatar': other.get_avatar_url(),
+                'coalition': other.coalition,
+                'is_online': get_effective_online_for_user(other),
+                'elo_rapid': other.elo_rapid,
+                'elo_blitz': other.elo_blitz,
+            },
+            'status': friendship.status,
+        })
+    return payload
+
+
+@require_GET
+def public_profile(request, user_id):
+    current_user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    try:
+        target_user = LocalUser.objects.get(id=user_id)
+    except LocalUser.DoesNotExist:
+        return JsonResponse({'error': 'Utilisateur introuvable'}, status=404)
+
+    can_edit = int(current_user.id) == int(target_user.id)
+    profile = target_user.to_profile_public_dict()
+    profile['achievements'] = get_achievement_payloads(profile.get('achievements'))
+
+    response = {
+        'profile': profile,
+        'can_edit': can_edit,
+        'is_self': can_edit,
+        'friends': _build_public_friends_payload(target_user) if can_edit else [],
+    }
+    return JsonResponse(response)
 
 
 @csrf_exempt
@@ -306,6 +366,144 @@ def export_account_data(request):
     return response
 
 
+def _perform_account_data_deletion(request, user):
+    log = logging.getLogger('transcendence')
+    log.info('rgpd_delete', extra={'action': 'rgpd_delete', 'user_id': user.id})
+
+    from chat.models import Conversation, Message, GameInvite
+    from game.services.active_game import delete_active_game_marker_sync
+    from utils.presence import clear_user_presence_redis
+
+    delete_active_game_marker_sync(user.id)
+    clear_user_presence_redis(user.id)
+
+    try:
+        Message.read_by.through.objects.filter(localuser=user).delete()
+    except Exception:
+        pass
+
+    for conv in Conversation.objects.filter(participants=user):
+        conv.participants.remove(user)
+
+    anon_tag = uuid.uuid4().hex[:12]
+
+    if user.avatar:
+        try:
+            user.avatar.delete(save=False)
+        except Exception:
+            pass
+
+    user.username = f'deleted_{anon_tag}'
+    user.email = f'deleted_{anon_tag}@invalid.local'
+    user.first_name = ''
+    user.last_name = ''
+    user.bio = ''
+    user.avatar = None
+    user.image_url = ''
+    user.password_hash = ''
+    user.client_prefs = {}
+    user.is_online = False
+    user.achievements = []
+    user.save(update_fields=[
+        'username', 'email', 'first_name', 'last_name', 'bio',
+        'avatar', 'image_url', 'password_hash', 'client_prefs', 'is_online', 'achievements',
+    ])
+
+    try:
+        Message.objects.filter(sender=user).delete()
+        GameInvite.objects.filter(sender=user).delete()
+        GameInvite.objects.filter(receiver=user).delete()
+    except Exception:
+        pass
+
+    from accounts.models import Friendship  # noqa: PLC0415
+    Friendship.objects.filter(Q(from_user=user) | Q(to_user=user)).delete()
+
+    request.session.flush()
+
+
+def _issue_delete_account_token(user_id: int):
+    payload = {'user_id': int(user_id), 'flow': 'delete_account'}
+    return signing.dumps(payload, salt=DELETE_ACCOUNT_TOKEN_SALT)
+
+
+def _read_delete_account_token(token: str):
+    try:
+        payload = signing.loads(
+            str(token),
+            salt=DELETE_ACCOUNT_TOKEN_SALT,
+            max_age=DELETE_ACCOUNT_TOKEN_MAX_AGE_SECONDS,
+        )
+        if payload.get('flow') != 'delete_account':
+            return None
+        return payload
+    except signing.BadSignature:
+        return None
+
+
+@csrf_exempt
+def request_delete_account_email(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    token = _issue_delete_account_token(user.id)
+    frontend_origin = (os.environ.get('FRONTEND_ORIGIN') or '').strip().rstrip('/')
+    if frontend_origin:
+        confirm_url = f'{frontend_origin}/settings?deleteToken={token}'
+    else:
+        confirm_url = request.build_absolute_uri(f'/settings?deleteToken={token}')
+    subject = 'Confirmation de suppression de compte'
+    message = (
+        'Bonjour,\n\n'
+        'Vous avez demandé la suppression de votre compte Transcendence.\n'
+        f'Confirmez la suppression via ce lien : {confirm_url}\n\n'
+        'Ce lien expire dans 30 minutes.\n'
+        'Si vous n êtes pas à l origine de cette demande, ignorez cet email.'
+    )
+    send_mail(
+        subject=subject,
+        message=message,
+        from_email=settings.DEFAULT_FROM_EMAIL,
+        recipient_list=[user.email],
+        fail_silently=False,
+    )
+    return JsonResponse({'ok': True, 'message': 'Email de confirmation envoyé.'})
+
+
+@csrf_exempt
+def confirm_delete_account_email(request):
+    if request.method != 'POST':
+        return JsonResponse({'error': 'Method not allowed'}, status=405)
+
+    user, err = _get_authenticated_user(request)
+    if err:
+        return err
+
+    try:
+        body = json.loads(request.body.decode('utf-8') or '{}')
+    except (json.JSONDecodeError, UnicodeDecodeError):
+        return JsonResponse({'error': 'Invalid JSON'}, status=400)
+
+    token = str(body.get('token', '')).strip()
+    if not token:
+        return JsonResponse({'error': 'Token requis'}, status=400)
+
+    token_payload = _read_delete_account_token(token)
+    if not token_payload:
+        return JsonResponse({'error': 'Lien invalide ou expire'}, status=400)
+
+    token_user_id = int(token_payload.get('user_id') or 0)
+    if int(user.id) != token_user_id:
+        return JsonResponse({'error': 'Ce lien ne correspond pas à votre session.'}, status=403)
+
+    _perform_account_data_deletion(request, user)
+    return JsonResponse({'ok': True, 'message': 'Données supprimées et compte anonymisé. Vous avez été déconnecté.'})
+
+
 @csrf_exempt
 def delete_account_data(request):
     """RGPD — anonymise the account, delete personal data, invalidate the session.
@@ -331,63 +529,5 @@ def delete_account_data(request):
         if not body.get('confirm'):
             return JsonResponse({'error': 'Requiert {"confirm": true}'}, status=400)
 
-    log = logging.getLogger('transcendence')
-    log.info('rgpd_delete', extra={'action': 'rgpd_delete', 'user_id': user.id})
-
-    from chat.models import Conversation, Message, GameInvite
-    from game.services.active_game import delete_active_game_marker_sync
-    from utils.presence import clear_user_presence_redis
-
-    delete_active_game_marker_sync(user.id)
-    clear_user_presence_redis(user.id)
-
-    try:
-        Message.read_by.through.objects.filter(localuser=user).delete()
-    except Exception:
-        pass
-
-    for conv in Conversation.objects.filter(participants=user):
-        conv.participants.remove(user)
-
-    anon_tag = uuid.uuid4().hex[:12]
-
-    # Delete avatar file from storage
-    if user.avatar:
-        try:
-            user.avatar.delete(save=False)
-        except Exception:
-            pass
-
-    # Anonymise personal fields in-place (keep same PK so Game FKs stay valid)
-    user.username = f'deleted_{anon_tag}'
-    user.email = f'deleted_{anon_tag}@invalid.local'
-    user.first_name = ''
-    user.last_name = ''
-    user.bio = ''
-    user.avatar = None
-    user.image_url = ''
-    user.password_hash = ''
-    user.client_prefs = {}
-    user.is_online = False
-    user.save(update_fields=[
-        'username', 'email', 'first_name', 'last_name', 'bio',
-        'avatar', 'image_url', 'password_hash', 'client_prefs', 'is_online',
-    ])
-
-    # Delete sent messages and invites
-    try:
-        Message.objects.filter(sender=user).delete()
-        GameInvite.objects.filter(sender=user).delete()
-        GameInvite.objects.filter(receiver=user).delete()
-    except Exception:
-        pass
-
-    # Delete friendships explicitly (CASCADE fires only on row delete, not anonymise)
-    from accounts.models import Friendship  # noqa: PLC0415
-
-    Friendship.objects.filter(Q(from_user=user) | Q(to_user=user)).delete()
-
-    # Flush session → user is logged out
-    request.session.flush()
-
+    _perform_account_data_deletion(request, user)
     return JsonResponse({'ok': True, 'message': 'Données supprimées et compte anonymisé. Vous avez été déconnecté.'})

@@ -18,7 +18,7 @@ const MOCK_HISTORY_LIST = {
 			format: 'blitz',
 			formatLabel: 'Blitz',
 			date: new Date().toISOString(),
-			opponent: { username: 'INGAME_PANEL_OPP', coalition: 'eau', elo: 1500, isBot: false },
+			opponent: { id: 777, username: 'INGAME_PANEL_OPP', coalition: 'eau', elo: 1500, isBot: false },
 			moveCount: 24,
 			competitive: true,
 			duration_seconds: 334,
