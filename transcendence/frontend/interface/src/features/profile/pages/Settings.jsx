@@ -267,7 +267,7 @@ function Settings() {
 								/>
 								<span>
 									Réduire les animations{' '}
-									<span className="muted small">(accessibilité stricte)</span>
+									<span className="muted small">(activé par défaut, décoche pour réactiver les animations)</span>
 								</span>
 							</label>
 

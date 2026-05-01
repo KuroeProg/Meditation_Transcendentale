@@ -10,7 +10,9 @@ export const PREFS_STORAGE_KEY = 'transcendence_ui_prefs'
  *  - hideInviteToasts     : masque les toasts d'invitation de partie (badge chat conservé)
  */
 const defaultPrefs = {
-	reduceMotion: false,
+	// Par défaut, on privilégie le confort/perf: animations réduites.
+	// L'utilisateur peut les réactiver ensuite depuis Paramètres.
+	reduceMotion: true,
 	lightMode: false,
 	showScrollbars: false,
 	hideInviteToasts: false,
