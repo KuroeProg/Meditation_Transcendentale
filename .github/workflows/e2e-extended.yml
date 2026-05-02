@@ -32,6 +32,21 @@ jobs:
       - name: Start stack
         run: make up-bg
 
+      - name: Wait for Nginx to be healthy
+        run: |
+          echo "Waiting for Nginx to respond on https://localhost..."
+          for i in {1..30}; do
+            if curl -k -s https://localhost/ > /dev/null; then
+              echo "Nginx is UP!"
+              exit 0
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 2
+          done
+          echo "Nginx failed to start in time. Printing logs:"
+          docker compose logs nginx
+          exit 1
+
       - name: Apply database migrations
         run: make migrations
 
