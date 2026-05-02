@@ -45,7 +45,10 @@ import fs from 'fs'
 const certPath = '/app/certs/frontend.crt'
 const keyPath = '/app/certs/frontend.key'
 
-const httpsConfig = fs.existsSync(certPath) && fs.existsSync(keyPath) 
+const hasCerts = fs.existsSync(certPath) && fs.existsSync(keyPath)
+console.log(`[Vite Config] HTTPS Certs found: ${hasCerts} at ${certPath}`)
+
+const httpsConfig = hasCerts 
   ? {
       key: fs.readFileSync(keyPath),
       cert: fs.readFileSync(certPath),
