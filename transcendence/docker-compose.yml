@@ -209,6 +209,7 @@ services:
     volumes:
       - ./frontend:/app
       - /app/interface/node_modules
+      - ./frontend/certs:/app/certs:ro
     environment:
       - VITE_PORT=5173
       - VITE_APP_ORIGIN=${APP_ORIGIN}
@@ -262,6 +263,8 @@ services:
       - ./backend/certs:/etc/nginx/certs_backend:ro
       - ./monitoring/kibana/certs:/etc/nginx/certs_kibana:ro
       - ./monitoring/grafana/certs:/etc/nginx/certs_grafana:ro
+      - ./frontend/certs:/etc/nginx/certs_frontend:ro
+      - ./monitoring/prometheus/certs:/etc/nginx/certs_prometheus:ro
       - ./elasticsearch/certs/elasticsearch.crt:/etc/nginx/certs_elastic/elasticsearch.crt:ro
       - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
       - shared_assets:/var/www/html/shared:ro
@@ -280,9 +283,12 @@ services:
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
       - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml 
+      - ./monitoring/prometheus/web-config.yml:/etc/prometheus/web-config.yml:ro
+      - ./monitoring/prometheus/certs:/etc/prometheus/certs:ro
     restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--web.config.file=/etc/prometheus/web-config.yml'
       - '--web.external-url=https://localhost/prometheus'
     logging: *default-logging
     networks:
