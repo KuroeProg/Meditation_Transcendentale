@@ -216,7 +216,7 @@ services:
       - VITE_WS_ORIGIN=${VITE_WS_ORIGIN}
       - VITE_HMR_NGINX=1
       - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
-      - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://nginx:443}
+      - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://nginx:8443}
     expose:
       - "5173"
     healthcheck:
@@ -245,13 +245,13 @@ services:
       - SEC_PRINTERRORLOGS=On
       - NGINX_SERVER_NAME=${NGINX_SERVER_NAME:-localhost}
     healthcheck:
-      test: ["CMD", "curl", "-k", "https://localhost:443/"]
+      test: ["CMD", "curl", "-k", "https://localhost:8443/"]
       interval: 10s
       timeout: 5s
       retries: 3
     ports:
       - "80:80"
-      - "443:443"
+      - "8443:8443"
     depends_on:
       - backend
       - frontend

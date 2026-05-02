@@ -31,7 +31,7 @@ export function getOAuthOrigin() {
 		if (typeof window !== 'undefined' && window.location.protocol === 'https:') {
 			return window.location.origin
 		}
-		return 'https://localhost'
+		return 'https://localhost:8443'
 	}
 	if (typeof window !== 'undefined') return window.location.origin
 	return ''

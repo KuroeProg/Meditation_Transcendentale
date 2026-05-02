@@ -203,8 +203,11 @@ class Callback42View(View):
             )
             token_response.raise_for_status()
             token_payload = token_response.json()
-        except requests.RequestException:
-            return JsonResponse({'error': 'Impossible de recuperer le token OAuth 42'}, status=502)
+        except requests.RequestException as e:
+            err_msg = 'Impossible de recuperer le token OAuth 42'
+            if hasattr(e, 'response') and e.response is not None:
+                err_msg += f" - {e.response.text}"
+            return JsonResponse({'error': err_msg}, status=502)
         except ValueError:
             return JsonResponse({'error': 'Reponse token OAuth invalide'}, status=502)
 

@@ -37,8 +37,8 @@ function publicStaticCacheHeaders() {
 
 const hmrViaNginx = process.env.VITE_HMR_NGINX === '1'
 const hmrHost = process.env.VITE_HMR_HOST || 'localhost'
-// Hors Docker : nginx sur la machine hôte. Sous Docker, VITE_PROXY_TARGET=https://nginx:443 (compose).
-const proxyTarget = process.env.VITE_PROXY_TARGET || 'https://127.0.0.1:443'
+// Hors Docker : nginx sur la machine hôte. Sous Docker, VITE_PROXY_TARGET=https://nginx:8443 (compose).
+const proxyTarget = process.env.VITE_PROXY_TARGET || 'https://127.0.0.1:8443'
 
 // https://vite.dev/config/
 export default defineConfig({
@@ -53,7 +53,7 @@ export default defineConfig({
           hmr: {
             protocol: 'wss',
             host: hmrHost,
-            clientPort: 443,
+            clientPort: 8443,
           },
         }
       : {}),

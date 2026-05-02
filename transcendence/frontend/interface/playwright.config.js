@@ -1,7 +1,7 @@
 import { defineConfig, devices } from '@playwright/test'
 import { getE2EEnv } from './tests/e2e/helpers/e2eEnv.js'
 
-const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost')
+const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost:8443')
 const retriesEnvRaw = getE2EEnv('E2E_RETRIES', '')
 const retriesEnv = retriesEnvRaw === '' ? null : Number(retriesEnvRaw)
 const retries = Number.isInteger(retriesEnv) && retriesEnv >= 0 ? retriesEnv : (process.env.CI ? 1 : 0)

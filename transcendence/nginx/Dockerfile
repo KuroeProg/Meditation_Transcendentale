@@ -13,4 +13,4 @@ COPY legal/ /var/www/html/legal/
 COPY setup_ssl.sh /usr/local/bin/setup_ssl.sh
 RUN chmod +x /usr/local/bin/setup_ssl.sh
 
-EXPOSE 443
+EXPOSE 8443
