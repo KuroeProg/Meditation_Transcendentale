@@ -88,7 +88,7 @@ function App() {
     viewPlies,
   } = state;
 
-  const normalizedUserId = useMemo(() => normalizeId(userId), [userId]);
+  const normalizedUserId = useMemo(() => normalizeId(user?.id), [user?.id]);
 
   useChessAudio({
     moveLog,

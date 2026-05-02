@@ -22,10 +22,20 @@ LOGS_CORE := frontend backend nginx db redis worker
 
 CERT_NGINX_DIR   := $(COMPOSE_DIR)/nginx/certs
 CERT_ELASTIC_DIR := $(COMPOSE_DIR)/elasticsearch/certs
+CERT_BACKEND_DIR := $(COMPOSE_DIR)/backend/certs
+CERT_KIBANA_DIR  := $(COMPOSE_DIR)/monitoring/kibana/certs
+CERT_GRAFANA_DIR := $(COMPOSE_DIR)/monitoring/grafana/certs
+
 CERT_NGINX_FILE  := $(CERT_NGINX_DIR)/nginx.crt
 KEY_NGINX_FILE   := $(CERT_NGINX_DIR)/nginx.key
 CERT_ELASTIC_FILE := $(CERT_ELASTIC_DIR)/elasticsearch.crt
 KEY_ELASTIC_FILE  := $(CERT_ELASTIC_DIR)/elasticsearch.key
+CERT_BACKEND_FILE := $(CERT_BACKEND_DIR)/backend.crt
+KEY_BACKEND_FILE  := $(CERT_BACKEND_DIR)/backend.key
+CERT_KIBANA_FILE  := $(CERT_KIBANA_DIR)/kibana.crt
+KEY_KIBANA_FILE   := $(CERT_KIBANA_DIR)/kibana.key
+CERT_GRAFANA_FILE := $(CERT_GRAFANA_DIR)/grafana.crt
+KEY_GRAFANA_FILE  := $(CERT_GRAFANA_DIR)/grafana.key
 
 # Couleurs (NO_COLOR=1 pour tout désactiver)
 ifeq ($(strip $(NO_COLOR)),)
@@ -93,9 +103,9 @@ mock-help: ## Vite : rappel .env.local pour user fictif + choixpeau (voir interf
 
 all: certs build up-bg migrations ## Certificats + build + démarrage en arrière-plan
 
-certs: ## Générer les certificats TLS nginx / elasticsearch si absents
+certs: ## Générer les certificats TLS pour tous les services si absents
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Certificats TLS…"
-	@mkdir -p $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR)
+	@mkdir -p $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR) $(CERT_BACKEND_DIR) $(CERT_KIBANA_DIR) $(CERT_GRAFANA_DIR)
 	@if [ ! -f $(CERT_NGINX_FILE) ]; then \
 		printf '%b\n' "$(C_YELLOW)  → création nginx (localhost)$(C_RESET)"; \
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -112,9 +122,35 @@ certs: ## Générer les certificats TLS nginx / elasticsearch si absents
 	else \
 		printf '%b\n' "$(C_DIM)  elasticsearch : déjà présent$(C_RESET)"; \
 	fi
+	@if [ ! -f $(CERT_BACKEND_FILE) ]; then \
+		printf '%b\n' "$(C_YELLOW)  → création backend$(C_RESET)"; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(KEY_BACKEND_FILE) -out $(CERT_BACKEND_FILE) \
+			-subj "/C=FR/ST=Paris/L=Paris/O=42/CN=backend"; \
+	else \
+		printf '%b\n' "$(C_DIM)  backend : déjà présent$(C_RESET)"; \
+	fi
+	@if [ ! -f $(CERT_KIBANA_FILE) ]; then \
+		printf '%b\n' "$(C_YELLOW)  → création kibana$(C_RESET)"; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(KEY_KIBANA_FILE) -out $(CERT_KIBANA_FILE) \
+			-subj "/C=FR/ST=Paris/L=Paris/O=42/CN=kibana"; \
+	else \
+		printf '%b\n' "$(C_DIM)  kibana : déjà présent$(C_RESET)"; \
+	fi
+	@if [ ! -f $(CERT_GRAFANA_FILE) ]; then \
+		printf '%b\n' "$(C_YELLOW)  → création grafana$(C_RESET)"; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(KEY_GRAFANA_FILE) -out $(CERT_GRAFANA_FILE) \
+			-subj "/C=FR/ST=Paris/L=Paris/O=42/CN=grafana"; \
+	else \
+		printf '%b\n' "$(C_DIM)  grafana : déjà présent$(C_RESET)"; \
+	fi
 	# Les clés sont bind-mountées dans des conteneurs avec des UID différents en CI.
 	# On force des droits lisibles pour éviter des erreurs de lecture TLS au démarrage.
-	@chmod 644 $(CERT_NGINX_FILE) $(KEY_NGINX_FILE) $(CERT_ELASTIC_FILE) $(KEY_ELASTIC_FILE) 2>/dev/null || true
+	@chmod 644 $(CERT_NGINX_FILE) $(KEY_NGINX_FILE) $(CERT_ELASTIC_FILE) $(KEY_ELASTIC_FILE) \
+		$(CERT_BACKEND_FILE) $(KEY_BACKEND_FILE) $(CERT_KIBANA_FILE) $(KEY_KIBANA_FILE) \
+		$(CERT_GRAFANA_FILE) $(KEY_GRAFANA_FILE) 2>/dev/null || true
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Certificats OK."
 
 build: ## docker compose build
@@ -190,7 +226,7 @@ clean: ## down + --remove-orphans
 fclean: clean ## Supprimer volumes, images du projet, et dossiers certs
 	@printf '%b\n' "$(C_RED)▶$(C_RESET) Nettoyage profond (images + volumes + certs)…"
 	@$(COMPOSE) down --rmi all --volumes 2>/dev/null || true
-	@rm -rf $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR)
+	@rm -rf $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR) $(CERT_BACKEND_DIR) $(CERT_KIBANA_DIR) $(CERT_GRAFANA_DIR)
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) fclean terminé."
 
 reset-db-safe: ## Réinitialiser uniquement Postgres (purge bind-mount) puis relancer + migrations
