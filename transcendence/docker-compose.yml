@@ -121,7 +121,8 @@ services:
     volumes:
       - ./backend:/app
       - shared_assets:/app/shared_plots:ro
-      - ./nginx/certs:/app/certs:ro
+      - ./backend/certs:/app/certs:ro
+      - ./nginx/certs:/etc/nginx/certs_nginx:ro
       - ./elasticsearch/certs/elasticsearch.crt:/etc/certs_elastic/elasticsearch.crt:ro
       - ./logs/app:/app/logs
     environment:
@@ -146,12 +147,9 @@ services:
       - EMAIL_PORT=${EMAIL_PORT:-1025}
       - EMAIL_USE_TLS=${EMAIL_USE_TLS:-False}
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
-      # - EMAIL_HOST_PASSWORD=${EMAIL_HOST_PASSWORD:-}
       - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
-    # ports:
-    # A voir avec Cloe
-      # - "8000:8000"
+    command: ["daphne", "-e", "ssl:8000:privateKey=/app/certs/backend.key:certKey=/app/certs/backend.crt:interface=0.0.0.0", "transcendence_backend.asgi:application"]
     expose:
       - "8000"
     depends_on:
@@ -191,9 +189,6 @@ services:
       redis:
         condition: service_started
     environment:
-      # - DATABASE_URL=postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
-      # - CELERY_BROKER_URL=redis://:${REDIS_PASSWORD}@redis:6379/0
-      # - CELERY_RESULT_BACKEND=redis://:${REDIS_PASSWORD}@redis:6379/0
       - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
       - DB_HOST=db
@@ -219,14 +214,9 @@ services:
       - VITE_APP_ORIGIN=${APP_ORIGIN}
       - VITE_API_ORIGIN=${VITE_API_ORIGIN}
       - VITE_WS_ORIGIN=${VITE_WS_ORIGIN}
-      # HMR via https://localhost (nginx) — sans ça, le hot-reload vise :5173 depuis le navigateur
       - VITE_HMR_NGINX=1
       - VITE_HMR_HOST=${VITE_HMR_HOST:-localhost}
-      # Dans Docker, le proxy /api du dev server doit viser nginx (pas 127.0.0.1 du conteneur)
       - VITE_PROXY_TARGET=${VITE_PROXY_TARGET:-https://nginx:443}
-    # ports:
-      # Test direct sans nginx : http://localhost:5173 (si 502 sur :443, vérifie ici d’abord)
-      # - "5173:5173"
     expose:
       - "5173"
     healthcheck:
@@ -259,19 +249,20 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-      # start_period: 30s
     ports:
+      - "80:80"
       - "443:443"
     depends_on:
       - backend
       - frontend
     volumes:
       - ./logs/nginx:/var/log/nginx
-      # Dossier template pour ne pas effacer notre fichier de config
       - ./nginx/conf.d/default.conf:/etc/nginx/templates/conf.d/default.conf.template:ro
       - ./nginx/certs:/etc/nginx/certs:ro
+      - ./backend/certs:/etc/nginx/certs_backend:ro
+      - ./monitoring/kibana/certs:/etc/nginx/certs_kibana:ro
+      - ./monitoring/grafana/certs:/etc/nginx/certs_grafana:ro
       - ./elasticsearch/certs/elasticsearch.crt:/etc/nginx/certs_elastic/elasticsearch.crt:ro
-      # .htpasswd pour prometheus
       - ./nginx/conf.d/.htpasswd:/etc/nginx/conf.d/.htpasswd:ro
       - shared_assets:/var/www/html/shared:ro
       - ./nginx/modsec/api-rules.conf:/etc/modsecurity.d/owasp-crs/rules/RESPONSE-999-EXCLUSIONS.conf:ro
@@ -286,11 +277,9 @@ services:
   prometheus:
     image: prom/prometheus
     container_name: transcendence_prom
-    # ports:
-    #   - "127.0.0.1:9090:9090" #127.0.0.1 
     volumes:
       - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
-      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml # alerts_rules.yml is now visible for prometheus.
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml 
     restart: always
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
@@ -299,14 +288,12 @@ services:
     networks:
       - monitor_net
       - backend_net
-    # voir pour recevoir un email si alerte (?)
-    # voir pour passer par un autre port pour le côté site et administration
 
   nginx-exporter:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: transcendence_nginx_exporter
     command: 
-      - "--nginx.scrape-uri=http://nginx:80/statut" # On passe par le port 80 (Interne)
+      - "--nginx.scrape-uri=http://nginx:80/statut" 
     restart: always
     logging: *default-logging
     networks:
@@ -332,18 +319,19 @@ services:
   grafana:
     build: ./monitoring/grafana/provisioning/
     container_name: transcendence_grafana
-    # deleted port for security reason
     environment:
       - GF_SERVER_ROOT_URL=%(protocol)s://%(domain)s:%(http_port)s/grafana/
       - GF_SERVER_SERVE_FROM_SUB_PATH=true
       - GF_SECURITY_ADMIN_USER=${GRAFANA_ADMIN_USER}
-      # - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD}
       - GF_USERS_ALLOW_SIGN_UP=false
       - GF_SMTP_ENABLED=true
       - GF_SMTP_HOST=mailhog:1025
       - GF_SMTP_SKIP_VERIFY=true
       - GF_SMTP_FROM_ADDRESS=alertes@transcendence.com
       - GF_SMTP_FROM_NAME=Grafana
+      - GF_SERVER_PROTOCOL=https
+      - GF_SERVER_CERT_FILE=/etc/grafana/certs/grafana.crt
+      - GF_SERVER_CERT_KEY=/etc/grafana/certs/grafana.key
       - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
     depends_on:
@@ -354,6 +342,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
       - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/certs:/etc/grafana/certs:ro
     restart: always
     logging: *default-logging
     networks:
@@ -411,6 +400,11 @@ services:
       - XPACK_REPORTING_ENABLED=false
       - XPACK_SECURITYSOLUTION_ENABLED=false
       - XPACK_ENTERPRISESEARCH_ENABLED=false
+      - SERVER_SSL_ENABLED=true
+      - SERVER_SSL_CERTIFICATE=/usr/share/kibana/config/certs/kibana.crt
+      - SERVER_SSL_KEY=/usr/share/kibana/config/certs/kibana.key
+    volumes:
+      - ./monitoring/kibana/certs:/usr/share/kibana/config/certs:ro
     depends_on:
       - elasticsearch
     restart: always
