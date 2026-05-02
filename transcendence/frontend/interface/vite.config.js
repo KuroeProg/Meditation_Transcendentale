@@ -40,12 +40,25 @@ const hmrHost = process.env.VITE_HMR_HOST || 'localhost'
 // Hors Docker : nginx sur la machine hôte. Sous Docker, VITE_PROXY_TARGET=https://nginx:443 (compose).
 const proxyTarget = process.env.VITE_PROXY_TARGET || 'https://127.0.0.1:443'
 
+import fs from 'fs'
+
+const certPath = '/app/certs/frontend.crt'
+const keyPath = '/app/certs/frontend.key'
+
+const httpsConfig = fs.existsSync(certPath) && fs.existsSync(keyPath) 
+  ? {
+      key: fs.readFileSync(keyPath),
+      cert: fs.readFileSync(certPath),
+    }
+  : false
+
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react(), publicStaticCacheHeaders()],
   server: {
     host: '0.0.0.0',
     port: 5173,
+    https: httpsConfig,
     strictPort: true,
     allowedHosts: true,
     ...(hmrViaNginx

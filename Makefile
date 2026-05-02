@@ -25,6 +25,8 @@ CERT_ELASTIC_DIR := $(COMPOSE_DIR)/elasticsearch/certs
 CERT_BACKEND_DIR := $(COMPOSE_DIR)/backend/certs
 CERT_KIBANA_DIR  := $(COMPOSE_DIR)/monitoring/kibana/certs
 CERT_GRAFANA_DIR := $(COMPOSE_DIR)/monitoring/grafana/certs
+CERT_FRONTEND_DIR := $(COMPOSE_DIR)/frontend/certs
+CERT_PROMETHEUS_DIR := $(COMPOSE_DIR)/monitoring/prometheus/certs
 
 CERT_NGINX_FILE  := $(CERT_NGINX_DIR)/nginx.crt
 KEY_NGINX_FILE   := $(CERT_NGINX_DIR)/nginx.key
@@ -36,6 +38,10 @@ CERT_KIBANA_FILE  := $(CERT_KIBANA_DIR)/kibana.crt
 KEY_KIBANA_FILE   := $(CERT_KIBANA_DIR)/kibana.key
 CERT_GRAFANA_FILE := $(CERT_GRAFANA_DIR)/grafana.crt
 KEY_GRAFANA_FILE  := $(CERT_GRAFANA_DIR)/grafana.key
+CERT_FRONTEND_FILE := $(CERT_FRONTEND_DIR)/frontend.crt
+KEY_FRONTEND_FILE  := $(CERT_FRONTEND_DIR)/frontend.key
+CERT_PROMETHEUS_FILE := $(CERT_PROMETHEUS_DIR)/prometheus.crt
+KEY_PROMETHEUS_FILE  := $(CERT_PROMETHEUS_DIR)/prometheus.key
 
 # Couleurs (NO_COLOR=1 pour tout désactiver)
 ifeq ($(strip $(NO_COLOR)),)
@@ -105,7 +111,7 @@ all: certs build up-bg migrations ## Certificats + build + démarrage en arrièr
 
 certs: ## Générer les certificats TLS pour tous les services si absents
 	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Certificats TLS…"
-	@mkdir -p $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR) $(CERT_BACKEND_DIR) $(CERT_KIBANA_DIR) $(CERT_GRAFANA_DIR)
+	@mkdir -p $(CERT_NGINX_DIR) $(CERT_ELASTIC_DIR) $(CERT_BACKEND_DIR) $(CERT_KIBANA_DIR) $(CERT_GRAFANA_DIR) $(CERT_FRONTEND_DIR) $(CERT_PROMETHEUS_DIR)
 	@if [ ! -f $(CERT_NGINX_FILE) ]; then \
 		printf '%b\n' "$(C_YELLOW)  → création nginx (localhost)$(C_RESET)"; \
 		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
@@ -146,11 +152,28 @@ certs: ## Générer les certificats TLS pour tous les services si absents
 	else \
 		printf '%b\n' "$(C_DIM)  grafana : déjà présent$(C_RESET)"; \
 	fi
+	@if [ ! -f $(CERT_FRONTEND_FILE) ]; then \
+		printf '%b\n' "$(C_YELLOW)  → création frontend$(C_RESET)"; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(KEY_FRONTEND_FILE) -out $(CERT_FRONTEND_FILE) \
+			-subj "/C=FR/ST=Paris/L=Paris/O=42/CN=frontend"; \
+	else \
+		printf '%b\n' "$(C_DIM)  frontend : déjà présent$(C_RESET)"; \
+	fi
+	@if [ ! -f $(CERT_PROMETHEUS_FILE) ]; then \
+		printf '%b\n' "$(C_YELLOW)  → création prometheus$(C_RESET)"; \
+		openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+			-keyout $(KEY_PROMETHEUS_FILE) -out $(CERT_PROMETHEUS_FILE) \
+			-subj "/C=FR/ST=Paris/L=Paris/O=42/CN=prometheus"; \
+	else \
+		printf '%b\n' "$(C_DIM)  prometheus : déjà présent$(C_RESET)"; \
+	fi
 	# Les clés sont bind-mountées dans des conteneurs avec des UID différents en CI.
 	# On force des droits lisibles pour éviter des erreurs de lecture TLS au démarrage.
 	@chmod 644 $(CERT_NGINX_FILE) $(KEY_NGINX_FILE) $(CERT_ELASTIC_FILE) $(KEY_ELASTIC_FILE) \
 		$(CERT_BACKEND_FILE) $(KEY_BACKEND_FILE) $(CERT_KIBANA_FILE) $(KEY_KIBANA_FILE) \
-		$(CERT_GRAFANA_FILE) $(KEY_GRAFANA_FILE) 2>/dev/null || true
+		$(CERT_GRAFANA_FILE) $(KEY_GRAFANA_FILE) $(CERT_FRONTEND_FILE) $(KEY_FRONTEND_FILE) \
+		$(CERT_PROMETHEUS_FILE) $(KEY_PROMETHEUS_FILE) 2>/dev/null || true
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Certificats OK."
 
 build: ## docker compose build
