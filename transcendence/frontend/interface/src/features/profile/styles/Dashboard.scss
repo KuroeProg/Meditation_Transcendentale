@@ -294,11 +294,29 @@
 	cursor: pointer;
 	transition: all 0.2s;
 	text-align: center;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.35rem;
+	min-height: 44px;
 }
 
 .dash-tc-btn:hover {
 	background: rgba(255, 255, 255, 0.08);
 	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dash-tc-btn--soon {
+	opacity: 0.72;
+	cursor: not-allowed;
+	background: rgba(255, 255, 255, 0.02);
+	border-color: rgba(255, 255, 255, 0.08);
+	color: rgba(208, 216, 239, 0.6);
+}
+
+.dash-tc-btn--soon:hover {
+	background: rgba(255, 255, 255, 0.02);
+	border-color: rgba(255, 255, 255, 0.08);
 }
 
 .dash-more-tc {
@@ -334,6 +352,12 @@
 	text-transform: uppercase;
 	letter-spacing: 0.04em;
 	/* Dégradé & hover coalition : coalition-ui.css */
+}
+
+.dash-start-btn:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+	filter: grayscale(0.15);
 }
 
 /* Entraînement / IA (fusionné dans le panneau cadences) */

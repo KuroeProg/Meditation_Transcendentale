@@ -35,7 +35,16 @@ import { cancelGameInviteHttp, presencePing } from './features/chat/services/cha
 const ACTIVE_GAME_STORAGE_KEY = 'activeGameId'
 
 function AppContent() {
-	const { isAuthenticated, user, priorityGameReady, dismissPriorityGameReady, outgoingPendingInvite, friendSignalCount } = useAuth()
+	const {
+		isAuthenticated,
+		user,
+		priorityGameReady,
+		dismissPriorityGameReady,
+		outgoingPendingInvite,
+		friendSignalCount,
+		achievementToast,
+		dismissAchievementToast,
+	} = useAuth()
 	const { isMobile } = useBreakpoint()
 	const location = useLocation()
 	const navigate = useNavigate()
@@ -56,8 +65,6 @@ function AppContent() {
 		currentGameId !== 'local' &&
 		!String(currentGameId).startsWith('training_')
 	)
-	const mustRedirectToActiveGame =
-		isAuthenticated && activeGameId && (!isOnGameRoute || currentGameId !== activeGameId)
 	const footerSidewallOffset = isAuthenticated && !isAuthRoute && !isMobile
 
 	const handleJoinReadyGame = useCallback(() => {
@@ -129,10 +136,6 @@ function AppContent() {
 		}
 	}, [user?.id])
 
-	if (mustRedirectToActiveGame) {
-		return <Navigate to={`/game/${activeGameId}`} replace />
-	}
-
 	return (
 		<FriendInviteProvider onInviteSent={() => void refreshInbox()}>
 		<ChatUiProvider openChat={() => setChatOpen(true)}>
@@ -162,7 +165,7 @@ function AppContent() {
 						path="/game"
 						element={
 							<ProtectedRoute>
-								<Navigate to="/game/training" replace />
+								<Navigate to={activeGameId ? `/game/${activeGameId}` : '/game/training'} replace />
 							</ProtectedRoute>
 						}
 					/>
@@ -178,12 +181,20 @@ function AppContent() {
 						path="/dashboard"
 						element={
 							<ProtectedRoute>
-								<DashboardPage />
+								{activeGameId ? <Navigate to={`/game/${activeGameId}`} replace /> : <DashboardPage />}
 							</ProtectedRoute>
 						}
 					/>
 					<Route
 						path="/profile"
+						element={
+							<ProtectedRoute>
+								<ProfilePage />
+							</ProtectedRoute>
+						}
+					/>
+					<Route
+						path="/profile/:userId"
 						element={
 							<ProtectedRoute>
 								<ProfilePage />
@@ -233,6 +244,22 @@ function AppContent() {
 
 			{!sortingHatBlocking && isAuthenticated && !isAuthRoute && (
 				<>
+					{achievementToast?.id && (
+						<button
+							type="button"
+							className="achievement-toast"
+							onClick={dismissAchievementToast}
+							aria-label="Masquer la notification de succès"
+						>
+							<span className="achievement-toast__icon" aria-hidden="true">
+								<i className="ri-trophy-line" />
+							</span>
+							<span className="achievement-toast__text">
+								<strong>Succès débloqué</strong>
+								<span>{achievementToast.title}</span>
+							</span>
+						</button>
+					)}
 					{priorityGameReady?.gameId && (
 						<div className="priority-game-cta" role="status" aria-live="polite">
 							<div className="priority-game-cta__text">

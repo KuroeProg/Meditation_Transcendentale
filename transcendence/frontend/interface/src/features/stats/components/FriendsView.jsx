@@ -1,6 +1,7 @@
 import { useMemo, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 import { coalitionToSlug, coalitionSlugToLabel } from '../../theme/services/coalitionTheme.js'
 
 function inferStatusKey(u) {
@@ -114,7 +115,12 @@ export function FriendsView({
 									</div>
 								</div>
 								<div className="gfv-card__col gfv-card__col--main">
-									<span className="gfv-username">@{u?.username ?? '—'}</span>
+									<UserProfileLink
+										userId={u?.id}
+										username={u?.username ?? '—'}
+										showAt
+										className="gfv-username"
+									/>
 									<p className={`gfv-status gfv-status--${sk}`}>
 										<span className="gfv-status-dot" aria-hidden="true" />
 										{getStatusLabel(sk)}

@@ -24,32 +24,26 @@ async function setupBaseRoutes(page) {
 	)
 }
 
-// Vérifie que la section RGPD serveur est visible et que la double confirmation fonctionne.
-test('server data deletion section is visible and requires double confirmation', async ({ page }) => {
+// Vérifie que la section RGPD serveur envoie un email de confirmation.
+test('server data deletion requests confirmation email', async ({ page }) => {
 	await setupBaseRoutes(page)
+	await page.route('**/api/auth/me/delete-data/request', (route) =>
+		route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
+	)
 	await page.goto('/settings')
 
 	const deleteBtn = page.getByTestId('settings-delete-server-data')
 	await expect(deleteBtn).toBeVisible({ timeout: 5000 })
-
-	// Premier clic : passe à l'état de confirmation
 	await deleteBtn.click()
-	await expect(deleteBtn).toBeVisible()
-	await expect(deleteBtn).toContainText('Confirmer')
-
-	// Bouton Annuler doit apparaître
-	await expect(page.getByTestId('settings-delete-server-cancel')).toBeVisible()
-	await page.getByTestId('settings-delete-server-cancel').click()
-
-	// Retour à l'état initial
-	await expect(deleteBtn).toContainText('Supprimer')
+	await expect(page.getByTestId('settings-delete-server-email-sent')).toBeVisible({ timeout: 5000 })
+	await expect(deleteBtn).toContainText('Email envoyé')
 })
 
-// Vérifie que la suppression réussie affiche le message de confirmation.
-test('successful server data deletion shows confirmation message', async ({ page }) => {
+// Vérifie que la confirmation par token supprime et affiche le message final.
+test('successful server data deletion via token shows confirmation message', async ({ page }) => {
 	await setupBaseRoutes(page)
 
-	await page.route('**/api/auth/me/delete-data', (route) =>
+	await page.route('**/api/auth/me/delete-data/confirm', (route) =>
 		route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
 	)
 	// Après déconnexion logout appellera /api/auth/logout
@@ -57,27 +51,22 @@ test('successful server data deletion shows confirmation message', async ({ page
 		route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true }) }),
 	)
 
-	await page.goto('/settings')
-
-	const deleteBtn = page.getByTestId('settings-delete-server-data')
-	await deleteBtn.click() // étape 1 → confirm
-	await deleteBtn.click() // étape 2 → in-progress → done
+	await page.goto('/settings?deleteToken=abc123')
 
 	await expect(page.getByTestId('settings-delete-server-done')).toBeVisible({ timeout: 5000 })
 })
 
 // Vérifie que si le serveur renvoie une erreur, elle est affichée.
-test('server data deletion error is shown to user', async ({ page }) => {
+test('server data deletion request error is shown to user', async ({ page }) => {
 	await setupBaseRoutes(page)
 
-	await page.route('**/api/auth/me/delete-data', (route) =>
+	await page.route('**/api/auth/me/delete-data/request', (route) =>
 		route.fulfill({ status: 500, contentType: 'application/json', body: JSON.stringify({ error: 'Erreur serveur' }) }),
 	)
 
 	await page.goto('/settings')
 
 	const deleteBtn = page.getByTestId('settings-delete-server-data')
-	await deleteBtn.click()
 	await deleteBtn.click()
 
 	await expect(page.getByTestId('settings-delete-server-error')).toBeVisible({ timeout: 5000 })

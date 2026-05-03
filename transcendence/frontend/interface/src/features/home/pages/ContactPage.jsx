@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/index.js'
 import { useReduceMotionPref, coalitionToSlug, coalitionSlugToLabel } from '../../theme/index.js'
 import { getLogin42 } from '../../../utils/sessionUser.js'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
-import '../styles/ContactPage.css'
+import '../styles/ContactPage.scss'
 
 const GITHUB_PROJECT = 'https://github.com/KuroeProg/Meditation_Transcendentale'
 const DISCORD_42 = '/'

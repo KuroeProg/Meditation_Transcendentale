@@ -11,13 +11,24 @@ test.use({
 test.describe("restauration d'une partie active", () => {
 	test.skip(!hasE2ERoleCredentials('SMOKE_USER'), 'Set SMOKE_USER credentials in .env.e2e to run this suite.')
 
-	// Vérifie que le dashboard redirige vers l'identifiant de partie active conservé.
-	test('redirects from dashboard to stored active game id', async ({ page }) => {
+	// Vérifie qu'une page protégée reste accessible même si une game active est en session.
+	test('keeps profile route accessible with stored active game id', async ({ page }) => {
 		await page.addInitScript(() => {
 			sessionStorage.setItem('activeGameId', 'training')
 		})
 
-		await page.goto('/dashboard')
+		await page.goto('/profile')
+		await expect(page).toHaveURL(/\/profile/)
+		await expect(page.getByTestId('profile-page')).toBeVisible()
+	})
+
+	// Vérifie que la route /game sert de retour explicite vers la partie active.
+	test('route /game redirects to stored active game id', async ({ page }) => {
+		await page.addInitScript(() => {
+			sessionStorage.setItem('activeGameId', 'training')
+		})
+
+		await page.goto('/game')
 		await expect(page).toHaveURL(/\/game\/training/)
 		await waitForGameShellReady(page)
 	})

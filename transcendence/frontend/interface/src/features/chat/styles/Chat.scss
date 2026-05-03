@@ -50,10 +50,10 @@
 	cursor: pointer;
 	padding: 0.2rem;
 	transition: color 0.2s;
-}
 
-.chat-drawer-back:hover {
-	color: #fff;
+	&:hover {
+		color: #fff;
+	}
 }
 
 .chat-drawer-title {
@@ -78,11 +78,11 @@
 	padding: 0.3rem;
 	border-radius: 6px;
 	transition: all 0.2s;
-}
 
-.chat-drawer-action-btn:hover {
-	background: rgba(255, 255, 255, 0.06);
-	color: #fff;
+	&:hover {
+		background: rgba(255, 255, 255, 0.06);
+		color: #fff;
+	}
 }
 
 /* --- Body --- */
@@ -126,6 +126,51 @@
 	box-shadow: 0 10px 24px rgba(0, 0, 0, 0.35);
 	-webkit-backdrop-filter: blur(4px);
 	backdrop-filter: blur(4px);
+}
+
+.achievement-toast {
+	position: fixed;
+	right: 1.5rem;
+	bottom: 10.75rem;
+	z-index: 806;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.65rem;
+	max-width: min(92vw, 340px);
+	padding: 0.65rem 0.8rem;
+	border-radius: 12px;
+	border: 1px solid rgba(250, 204, 21, 0.45);
+	background: linear-gradient(145deg, rgba(30, 23, 5, 0.94), rgba(52, 39, 9, 0.95));
+	color: #fef3c7;
+	cursor: pointer;
+}
+
+.achievement-toast__icon {
+	width: 30px;
+	height: 30px;
+	border-radius: 8px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(250, 204, 21, 0.15);
+	color: #facc15;
+	flex-shrink: 0;
+}
+
+.achievement-toast__text {
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+	text-align: left;
+}
+
+.achievement-toast__text strong {
+	font-size: 0.8rem;
+}
+
+.achievement-toast__text span {
+	font-size: 0.72rem;
+	color: rgba(254, 243, 199, 0.9);
 }
 
 .priority-game-cta__text {
@@ -180,6 +225,13 @@
 
 	.priority-game-cta__actions {
 		justify-content: flex-end;
+	}
+
+	.achievement-toast {
+		left: 1rem;
+		right: 1rem;
+		bottom: 9.5rem;
+		max-width: unset;
 	}
 }
 

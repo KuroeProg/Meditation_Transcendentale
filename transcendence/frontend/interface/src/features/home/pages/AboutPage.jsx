@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import TeamMemberSection from '../components/TeamMemberSection.jsx'
 import PantheonConstellation from '../components/PantheonConstellation.jsx'
 import AboutAmbientParticles from '../components/AboutAmbientParticles.jsx'
-import '../styles/AboutPage.css'
+import '../styles/AboutPage.scss'
 
 const GITHUB_URL_VINCENT = 'https://github.com/Corgidev42'
 const GITHUB_URL_ALEXIE = 'https://github.com/FeyNey'

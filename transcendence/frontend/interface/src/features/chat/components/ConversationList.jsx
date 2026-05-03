@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import ProfileCoalitionIcon from '../../../components/common/ProfileCoalitionIcon.jsx'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 import { coalitionSlugToLabel, coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchConversations } from '../services/chatApi.js'
 import { useAuth } from '../../auth/index.js'
@@ -61,7 +62,11 @@ export default function ConversationList({ onSelect, activeId }) {
 						<div className="chat-conv-info">
 							<div className="chat-conv-top">
 								<div className="chat-conv-name-line">
-									<span className="chat-conv-name">{other?.username || 'Inconnu'}</span>
+									<UserProfileLink
+										userId={other?.id}
+										username={other?.username || 'Inconnu'}
+										className="chat-conv-name"
+									/>
 									<span className="chat-coalition-mini" title={coalitionSlugToLabel(coalSlug)}>
 										<ProfileCoalitionIcon slug={coalSlug} />
 									</span>

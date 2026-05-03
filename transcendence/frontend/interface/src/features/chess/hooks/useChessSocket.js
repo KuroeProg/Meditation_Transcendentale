@@ -21,11 +21,18 @@ function getWebSocketOrigin() {
 	return `${protocol}://${window.location.host}`;
 }
 
-export function useChessSocket(gameId) {
+export function useChessSocket(gameId, options = {}) {
 	const socketRef = useRef(null);
+	const onMessageRef = useRef(
+		typeof options?.onMessage === 'function' ? options.onMessage : null,
+	);
 	const [isConnected, setIsConnected] = useState(false);
 	const [lastMessage, setLastMessage] = useState(null);
 	const [socketError, setSocketError] = useState(null);
+
+	useEffect(() => {
+		onMessageRef.current = typeof options?.onMessage === 'function' ? options.onMessage : null;
+	}, [options?.onMessage]);
 
 	useEffect(() => {
 		if (!gameId) {
@@ -55,6 +62,9 @@ export function useChessSocket(gameId) {
 			if (isDisposed) return;
 			try {
 				const data = JSON.parse(event.data);
+				if (typeof onMessageRef.current === 'function') {
+					onMessageRef.current(data);
+				}
 				setLastMessage(data);
 			} catch {
 				setSocketError('Message WebSocket invalide');

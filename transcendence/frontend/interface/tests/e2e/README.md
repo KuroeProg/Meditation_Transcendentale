@@ -75,6 +75,7 @@ Current stable selectors:
   - settings-logout
 - Profile:
   - profile-page
+  - profile-achievements
   - profile-username-display
   - profile-username-input
   - profile-bio-display
@@ -110,6 +111,8 @@ Current stable selectors:
 - Captured pieces HUD:
   - captured-bar-top
   - captured-bar-bottom
+  - captured-advantage-top
+  - captured-advantage-bottom
 - Sorting Hat ceremony:
   - sorting-hat-overlay
 - Friend requests:
@@ -155,8 +158,8 @@ Current stable selectors:
   - settings-export-server-data (bouton télécharger export JSON RGPD)
   - settings-export-server-done (message après lancement du téléchargement)
   - settings-export-server-error (erreur export)
-  - settings-delete-server-data (bouton supprimer données serveur, étape 0 ou 1)
-  - settings-delete-server-cancel (bouton annuler suppression serveur)
+  - settings-delete-server-data (bouton demande email / état attente confirmation)
+  - settings-delete-server-email-sent (message email de confirmation envoyé)
   - settings-delete-server-done (message confirmation suppression)
   - settings-delete-server-error (message d'erreur)
 

@@ -1,4 +1,4 @@
-import '../styles/Chat.css'
+import '../styles/Chat.scss'
 
 export default function ChatFabCluster({
 	onOpenChat,

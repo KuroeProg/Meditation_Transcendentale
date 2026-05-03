@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'
+import { AUTH_PATHS } from '../../../config/authEndpoints.js'
 
 function readCookie(name) {
 	const m = document.cookie.match(new RegExp(`(?:^|; )${name.replace(/[.$?*|{}()[\]\\/+^]/g, '\\$&')}=([^;]*)`))
@@ -40,6 +41,7 @@ async function patchServerPrefs(delta) {
 }
 
 function Settings() {
+	const [searchParams, setSearchParams] = useSearchParams()
 	const { user, loading, loginWith42, logout } = useAuth()
 	const [prefs, setPrefsRaw] = useState(loadUiPrefs)
 	const [resetDone, setResetDone] = useState(false)
@@ -50,6 +52,7 @@ function Settings() {
 	// RGPD — suppression données serveur
 	const [deleteStep, setDeleteStep] = useState(0) // 0=idle 1=confirm 2=in-progress 3=done
 	const [deleteError, setDeleteError] = useState(null)
+	const [deleteEmailSent, setDeleteEmailSent] = useState(false)
 	const [exportBusy, setExportBusy] = useState(false)
 	const [exportError, setExportError] = useState(null)
 	const [exportDone, setExportDone] = useState(false)
@@ -90,12 +93,7 @@ function Settings() {
 		}
 	}
 
-	async function handleDeleteServerData() {
-		if (deleteStep === 0) {
-			setDeleteStep(1)
-			return
-		}
-		if (deleteStep !== 1) return
+	async function handleRequestDeleteEmail() {
 		setDeleteStep(2)
 		setDeleteError(null)
 		try {
@@ -103,26 +101,60 @@ function Settings() {
 			const csrf = readCookie('csrftoken')
 			const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
 			if (csrf) headers['X-CSRFToken'] = csrf
-			// POST contourne un 403 éventuel sur DELETE (proxy / WAF) avec le même traitement côté Django
-			const res = await fetch('/api/auth/me/delete-data', {
+			const res = await fetch(AUTH_PATHS.deleteDataRequest, {
 				method: 'POST',
 				credentials: 'include',
 				headers,
-				body: JSON.stringify({ confirm: true }),
+			})
+			if (!res.ok) {
+				const body = await res.json().catch(() => ({}))
+				throw new Error(body.error || `Erreur ${res.status}`)
+			}
+			setDeleteEmailSent(true)
+			setDeleteStep(1)
+		} catch (e) {
+			setDeleteError(e.message || 'Erreur lors de l’envoi de l’email de confirmation')
+			setDeleteStep(0)
+		}
+	}
+
+	const confirmDeleteWithToken = useCallback(async (token) => {
+		if (!token) return
+		setDeleteStep(2)
+		setDeleteError(null)
+		try {
+			await ensureCsrfForDelete()
+			const csrf = readCookie('csrftoken')
+			const headers = { Accept: 'application/json', 'Content-Type': 'application/json' }
+			if (csrf) headers['X-CSRFToken'] = csrf
+			const res = await fetch(AUTH_PATHS.deleteDataConfirm, {
+				method: 'POST',
+				credentials: 'include',
+				headers,
+				body: JSON.stringify({ token }),
 			})
 			if (!res.ok) {
 				const body = await res.json().catch(() => ({}))
 				throw new Error(body.error || `Erreur ${res.status}`)
 			}
 			setDeleteStep(3)
+			const nextParams = new URLSearchParams(searchParams)
+			nextParams.delete('deleteToken')
+			setSearchParams(nextParams, { replace: true })
 			setTimeout(() => {
 				logout({ redirectTo: '/auth' })
 			}, 2500)
 		} catch (e) {
 			setDeleteError(e.message || 'Erreur lors de la suppression')
-			setDeleteStep(1)
+			setDeleteStep(0)
 		}
-	}
+	}, [logout, searchParams, setSearchParams])
+
+	useEffect(() => {
+		const deleteToken = searchParams.get('deleteToken')
+		if (!deleteToken || !user) return
+		confirmDeleteWithToken(deleteToken)
+	}, [searchParams, user, confirmDeleteWithToken])
 
 	// On mount: merge server prefs into local (server wins for keys it has)
 	useEffect(() => {
@@ -235,7 +267,7 @@ function Settings() {
 								/>
 								<span>
 									Réduire les animations{' '}
-									<span className="muted small">(accessibilité stricte)</span>
+									<span className="muted small">(activé par défaut, décoche pour réactiver les animations)</span>
 								</span>
 							</label>
 
@@ -388,7 +420,7 @@ function Settings() {
 
 							<p className="muted small card-hint">
 								La suppression définitive retire tes données personnelles côté serveur comme décrit ci-dessus.
-								Cette action est <strong>irréversible</strong> et entraîne une déconnexion immédiate.
+								Cette action est <strong>irréversible</strong> et nécessite un lien de confirmation reçu par email.
 							</p>
 
 							{deleteStep === 3 ? (
@@ -401,30 +433,25 @@ function Settings() {
 										type="button"
 										className={`btn ${deleteStep === 1 ? 'btn-danger' : 'btn-secondary'}`}
 										data-testid="settings-delete-server-data"
-										onClick={handleDeleteServerData}
+										onClick={handleRequestDeleteEmail}
 										disabled={deleteStep === 2}
 									>
 										{deleteStep === 0 && (
-											<><i className="ri-delete-bin-2-line" aria-hidden /> Supprimer mes données serveur</>
+											<><i className="ri-mail-send-line" aria-hidden /> Envoyer l’email de confirmation</>
 										)}
 										{deleteStep === 1 && (
-											<><i className="ri-alert-line" aria-hidden /> Confirmer la suppression définitive</>
+											<><i className="ri-mail-check-line" aria-hidden /> Email envoyé — confirme via le lien reçu</>
 										)}
 										{deleteStep === 2 && (
-											<><i className="ri-loader-4-line" aria-hidden /> Suppression en cours…</>
+											<><i className="ri-loader-4-line" aria-hidden /> Traitement en cours…</>
 										)}
 									</button>
-									{deleteStep === 1 && (
-										<button
-											type="button"
-											className="btn btn-secondary"
-											data-testid="settings-delete-server-cancel"
-											onClick={() => setDeleteStep(0)}
-										>
-											Annuler
-										</button>
-									)}
 								</div>
+							)}
+							{deleteEmailSent && deleteStep === 1 && (
+								<p className="muted small settings-feedback" data-testid="settings-delete-server-email-sent">
+									Un email de confirmation a été envoyé. Ouvre le lien reçu pour finaliser la suppression.
+								</p>
 							)}
 
 							{deleteError && (

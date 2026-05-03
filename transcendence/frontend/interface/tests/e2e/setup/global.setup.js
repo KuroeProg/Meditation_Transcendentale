@@ -44,7 +44,7 @@ export default async function globalSetup() {
 	await fs.promises.mkdir(getAuthStateDirectory(), { recursive: true })
 
 	const browser = await chromium.launch()
-	const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost')
+	const baseURL = getE2EEnv('E2E_BASE_URL', 'https://localhost:8443')
 
 	try {
 		for (const roleName of ROLES) {

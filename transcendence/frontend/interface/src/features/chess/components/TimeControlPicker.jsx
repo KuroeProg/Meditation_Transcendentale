@@ -2,13 +2,16 @@ import { CATEGORY_META, CATEGORY_RATING_FIELD, TIME_CONTROLS } from '../constant
 
 export function TimeControlButton({ control, selected, onSelect }) {
 	const isSelected = selected?.label === control.label
+	const isComingSoon = control?.comingSoon === true
 	return (
 		<button
-			className={`dash-tc-btn ${isSelected ? 'dash-tc-btn--selected' : ''}`}
+			className={`dash-tc-btn ${isSelected ? 'dash-tc-btn--selected' : ''} ${isComingSoon ? 'dash-tc-btn--soon' : ''}`}
 			type="button"
-			onClick={() => onSelect(control)}
+			onClick={() => { if (!isComingSoon) onSelect(control) }}
+			disabled={isComingSoon}
 		>
 			{control.label}
+			{isComingSoon ? <span className="dash-soon-badge">Bientôt</span> : null}
 		</button>
 	)
 }

@@ -24,22 +24,22 @@
 		0 0 0 2px rgba(20, 14, 10, 0.95),
 		0 28px 80px rgba(0, 0, 0, 0.55),
 		inset 0 1px 0 rgba(255, 255, 255, 0.06);
-}
 
-.sorting-hat-frame::before {
-	content: '';
-	position: absolute;
-	inset: 4px;
-	border-radius: 2px;
-	pointer-events: none;
-	opacity: 0.22;
-	background: repeating-linear-gradient(
-		90deg,
-		transparent,
-		transparent 18px,
-		rgba(0, 0, 0, 0.12) 18px,
-		rgba(0, 0, 0, 0.12) 19px
-	);
+	&::before {
+		content: '';
+		position: absolute;
+		inset: 4px;
+		border-radius: 2px;
+		pointer-events: none;
+		opacity: 0.22;
+		background: repeating-linear-gradient(
+			90deg,
+			transparent,
+			transparent 18px,
+			rgba(0, 0, 0, 0.12) 18px,
+			rgba(0, 0, 0, 0.12) 19px
+		);
+	}
 }
 
 .sorting-hat-banner {
@@ -82,17 +82,17 @@
 	justify-content: center;
 	margin: 0 auto 1rem;
 	max-width: 220px;
-}
 
-.sorting-hat-pedestal::after {
-	content: '';
-	display: block;
-	width: min(200px, 70%);
-	height: 10px;
-	margin: -6px auto 0;
-	border-radius: 50%;
-	background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
-	filter: blur(4px);
+	&::after {
+		content: '';
+		display: block;
+		width: min(200px, 70%);
+		height: 10px;
+		margin: -6px auto 0;
+		border-radius: 50%;
+		background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.55), transparent 70%);
+		filter: blur(4px);
+	}
 }
 
 .sorting-hat-asset {

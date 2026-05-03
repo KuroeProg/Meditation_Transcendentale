@@ -1,14 +1,13 @@
 /* Point d’entrée — polices, thème coalition, layout, jeu (échiquier), responsive */
+@use './styles/coalition-ui.scss';
+@use './styles/brand-logo.scss';
+@use './styles/sidebar.scss';
+@use './styles/game-audio.scss';
+@use './features/profile/styles/profile-page.scss';
+@use './styles/game-board.scss';
+@use './styles/layout-main.scss';
+@use './styles/responsive.scss';
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
-@import './styles/coalition-ui.css';
-@import './styles/brand-logo.css';
-@import './styles/sidebar.css';
-@import './styles/game-audio.css';
-@import './features/profile/styles/profile-page.css';
-@import './styles/game-board.css';
-@import './styles/layout-main.css';
-@import './styles/responsive.css';
-
 /* Défilement inchangé, barres de scroll masquées par défaut (Firefox / WebKit) */
 * {
 	margin: 0;
@@ -40,4 +39,20 @@ h1 {
 
 body {
 	/* background réservé aux pages qui définissent leur propre fond */
+}
+
+.user-profile-link {
+	color: inherit;
+	text-decoration: none;
+	cursor: pointer;
+	transition: color 0.18s ease, text-decoration-color 0.18s ease, text-decoration-line 0.18s ease;
+	text-underline-offset: 2px;
+}
+
+.user-profile-link:hover,
+.user-profile-link:focus-visible {
+	color: #a5b4fc;
+	text-decoration-line: underline;
+	text-decoration-style: dashed;
+	text-decoration-color: currentColor;
 }

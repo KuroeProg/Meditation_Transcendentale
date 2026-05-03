@@ -4,6 +4,7 @@ import { useFriendInvite } from '../context/FriendInviteContext.jsx'
 import { useChatSocket } from '../hooks/useChatSocket.js'
 import { useAuth } from '../../auth/index.js'
 import GameInviteCard from './GameInviteCard.jsx'
+import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
 
 function MessageBubble({ msg, isOwn, currentUserId }) {
 	if (msg.message_type === 'game_invite') {
@@ -20,7 +21,13 @@ function MessageBubble({ msg, isOwn, currentUserId }) {
 		<div className={`chat-msg ${isOwn ? 'chat-msg--own' : 'chat-msg--other'}`}>
 			{!isOwn && <img className="chat-msg-avatar" src={msg.sender?.avatar || ''} alt="" />}
 			<div className="chat-msg-body">
-				{!isOwn && <span className="chat-msg-sender">{msg.sender?.username}</span>}
+				{!isOwn && (
+					<UserProfileLink
+						userId={msg.sender?.id}
+						username={msg.sender?.username}
+						className="chat-msg-sender"
+					/>
+				)}
 				<div className="chat-msg-bubble">
 					<p className="chat-msg-text">{msg.content}</p>
 				</div>
@@ -128,7 +135,11 @@ export default function MessageThread({ conversation, userId, username }) {
 			<div className="chat-thread-header">
 				<img className="chat-thread-avatar" src={other?.avatar || ''} alt="" />
 				<div className="chat-thread-info">
-					<span className="chat-thread-name">{other?.username || 'Inconnu'}</span>
+					<UserProfileLink
+						userId={other?.id}
+						username={other?.username || 'Inconnu'}
+						className="chat-thread-name"
+					/>
 					<span className={`chat-thread-status ${otherOnline ? 'online' : ''}`}>
 						{otherOnline ? 'En ligne' : 'Hors ligne'}
 					</span>

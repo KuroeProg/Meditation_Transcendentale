@@ -27,6 +27,7 @@ from game.services.player_profiles import (
 	fetch_user_public_profile,
 )
 from game.services.payloads import build_ws_matchmaking_payload
+from game.services.active_game import get_active_game_sync
 
 
 ERROR_PLAYER_ID_REQUIRED = {'error': 'Player ID required'}
@@ -123,6 +124,15 @@ class MatchmakingConsumer(AsyncWebsocketConsumer):
 			self.queue_key = f"{self.MATCHMAKING_QUEUE_KEY}:{self.time_control}:{self.increment}:{int(self.competitive)}"
 			if player_id is None:
 				await self.send(text_data=json.dumps(ERROR_PLAYER_ID_REQUIRED))
+				return
+
+			active_game_id = await sync_to_async(get_active_game_sync)(int(player_id))
+			if active_game_id:
+				await self.send(text_data=json.dumps({
+					'action': 'queue_rejected',
+					'error': 'Impossible de lancer une file: partie deja active.',
+					'active_game_id': active_game_id,
+				}))
 				return
 	
 			self.matchmaking_player_id = player_id

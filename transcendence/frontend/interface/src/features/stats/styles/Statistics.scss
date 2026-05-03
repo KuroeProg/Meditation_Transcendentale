@@ -55,6 +55,75 @@ html[data-reduce-motion='true'] .pstats-page {
 	box-sizing: border-box;
 }
 
+.pstats-controls {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+	width: 100%;
+	justify-content: center;
+	flex-wrap: wrap;
+
+	&__group {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+
+	&__separator {
+		width: 2px;
+		min-height: 24px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 2px;
+	}
+}
+
+.pstats-controls__btn {
+	padding: 0.4rem 0.8rem;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.03);
+	color: rgba(255, 255, 255, 0.5);
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	cursor: pointer;
+	transition: all 0.2s;
+}
+
+.pstats-controls__btn.is-active {
+	border-color: var(--pstats-accent-border);
+	background: var(--pstats-accent-soft);
+	color: var(--pstats-accent);
+}
+
+.pstats-controls__export {
+	padding: 0.4rem 1rem;
+	border: 1px solid var(--pstats-accent-border);
+	border-radius: 6px;
+	background: color-mix(in srgb, var(--pstats-accent, #7dd3fc) 28%, rgba(255, 255, 255, 0.09));
+	color: #fff;
+	font-size: 0.65rem;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	opacity: 1;
+	margin-left: auto;
+}
+
+.pstats-controls__export.is-exporting,
+.pstats-controls__export:disabled {
+	opacity: 0.7;
+	cursor: not-allowed;
+}
+
 /* ── Right column (metrics) : largeur fixe, bord droit du viewport ── */
 .pstats-right {
 	flex: 0 0 clamp(260px, 22vw, 340px);
@@ -475,6 +544,31 @@ html[data-reduce-motion='true'] .pstats-page {
 
 	.pstats-winrates {
 		flex-direction: column;
+	}
+
+	.pstats-controls {
+		justify-content: flex-start;
+	}
+
+	.pstats-controls__separator {
+		display: none;
+	}
+
+	.pstats-controls__group {
+		width: 100%;
+		justify-content: flex-start;
+	}
+
+	.pstats-controls__btn {
+		min-height: 40px;
+		padding: 0.45rem 0.75rem;
+	}
+
+	.pstats-controls__export {
+		margin-left: 0;
+		width: 100%;
+		justify-content: center;
+		min-height: 42px;
 	}
 
 	.pstats-wr-group {

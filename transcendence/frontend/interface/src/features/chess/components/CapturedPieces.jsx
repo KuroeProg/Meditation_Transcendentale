@@ -9,7 +9,7 @@
  *   Si disponible, ce champ peut remplacer le calcul local via le prop `serverAdvantage`.
  */
 import { useMemo } from 'react'
-import './CapturedPieces.css'
+import './CapturedPieces.scss'
 
 const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 }
 const INITIAL_COUNTS = { p: 8, n: 2, b: 2, r: 2, q: 1 }
@@ -27,7 +27,7 @@ const DISPLAY_ORDER = ['p', 'n', 'b', 'r', 'q']
  * Calcule depuis une instance chess.js :
  *  - capturedByWhite : pièces noires capturées par les blancs
  *  - capturedByBlack : pièces blanches capturées par les noirs
- *  - advantage       : valeur positive si blancs sont devant
+ *  - advantage       : somme(blanc) - somme(noir), positive si blancs sont devant
  */
 export function computeCapturedPieces(game) {
 	if (!game) return { capturedByWhite: {}, capturedByBlack: {}, advantage: 0 }
@@ -45,32 +45,38 @@ export function computeCapturedPieces(game) {
 	const capturedByWhite = {} // pièces noires manquantes = prises par les blancs
 	const capturedByBlack = {} // pièces blanches manquantes = prises par les noirs
 
-	let whitePoints = 0
-	let blackPoints = 0
-
 	for (const type of DISPLAY_ORDER) {
 		const bMissing = INITIAL_COUNTS[type] - (onBoard.b[type] || 0)
 		const wMissing = INITIAL_COUNTS[type] - (onBoard.w[type] || 0)
 
 		if (bMissing > 0) {
 			capturedByWhite[type] = bMissing
-			whitePoints += bMissing * PIECE_VALUES[type]
 		}
 		if (wMissing > 0) {
 			capturedByBlack[type] = wMissing
-			blackPoints += wMissing * PIECE_VALUES[type]
 		}
 	}
+
+	// Calcul type chess.com : somme des pièces présentes pour chaque camp,
+	// puis différence (blanc - noir). Gère correctement les promotions.
+	const whiteMaterial = DISPLAY_ORDER.reduce(
+		(total, type) => total + (onBoard.w[type] || 0) * PIECE_VALUES[type],
+		0
+	)
+	const blackMaterial = DISPLAY_ORDER.reduce(
+		(total, type) => total + (onBoard.b[type] || 0) * PIECE_VALUES[type],
+		0
+	)
 
 	return {
 		capturedByWhite,
 		capturedByBlack,
-		advantage: whitePoints - blackPoints,
+		advantage: whiteMaterial - blackMaterial,
 	}
 }
 
 /** Rangée de pièces capturées pour un camp donné */
-function PiecesRow({ captured, pieceColor, advantage }) {
+function PiecesRow({ captured, pieceColor, advantage, advantageTestId }) {
 	const pieces = []
 
 	for (const type of DISPLAY_ORDER) {
@@ -90,7 +96,11 @@ function PiecesRow({ captured, pieceColor, advantage }) {
 		<div className="cp-row">
 			<span className="cp-pieces" aria-hidden="true">{pieces}</span>
 			{advantage > 0 && (
-				<span className="cp-advantage" aria-label={`Avantage de ${advantage} points`}>
+				<span
+					className="cp-advantage"
+					aria-label={`Avantage de ${advantage} points`}
+					data-testid={advantageTestId}
+				>
 					+{advantage}
 				</span>
 			)}
@@ -123,6 +133,7 @@ export function CapturedPiecesBar({ game, playerColor, position, serverAdvantage
 					captured={topCaptured}
 					pieceColor={topColor === 'w' ? 'b' : 'w'}
 					advantage={topAdv}
+					advantageTestId="captured-advantage-top"
 				/>
 			</div>
 		)
@@ -139,6 +150,7 @@ export function CapturedPiecesBar({ game, playerColor, position, serverAdvantage
 				captured={bottomCaptured}
 				pieceColor={playerColor === 'w' ? 'b' : 'w'}
 				advantage={bottomAdv}
+				advantageTestId="captured-advantage-bottom"
 			/>
 		</div>
 	)

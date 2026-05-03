@@ -1,5 +1,5 @@
 import { useEffect } from 'react'
-import '../styles/Home.css'
+import '../styles/Home.scss'
 import MenuHome from '../components/MenuHome'
 import { SiteBrandLogo } from '../../../components/common/index.js'
 import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'

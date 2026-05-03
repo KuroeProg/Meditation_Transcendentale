@@ -5,12 +5,20 @@ import unicodedata
 from urllib.parse import urlencode
 
 import requests
+from django.conf import settings
 from django.http import JsonResponse
 from django.shortcuts import redirect
 from django.views import View
 from django.conf import settings
 
 from accounts.models import LocalUser
+
+
+def _setting_or_env(name):
+    env_value = os.environ.get(name)
+    if env_value:
+        return env_value
+    return getattr(settings, name, '')
 
 
 def _normalize_label(value):
@@ -125,20 +133,20 @@ def _extract_42_avatar_url(user_data):
 
 
 def _oauth_redirect_uri(request):
-    env_uri = os.environ.get('FORTYTWO_REDIRECT_URI')
+    env_uri = _setting_or_env('FORTYTWO_REDIRECT_URI')
     if env_uri:
         return env_uri
-    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    app_origin = (_setting_or_env('APP_ORIGIN') or '').rstrip('/')
     if app_origin:
         return f'{app_origin}/api/auth/42/callback/'
     return request.build_absolute_uri('/api/auth/42/callback/')
 
 
 def _frontend_dashboard_url():
-    explicit = os.environ.get('FRONTEND_DASHBOARD_URL')
+    explicit = _setting_or_env('FRONTEND_DASHBOARD_URL')
     if explicit:
         return explicit
-    app_origin = (os.environ.get('APP_ORIGIN') or '').rstrip('/')
+    app_origin = (_setting_or_env('APP_ORIGIN') or '').rstrip('/')
     if app_origin:
         return f'{app_origin}/dashboard'
     return '/dashboard'
@@ -195,8 +203,11 @@ class Callback42View(View):
             )
             token_response.raise_for_status()
             token_payload = token_response.json()
-        except requests.RequestException:
-            return JsonResponse({'error': 'Impossible de recuperer le token OAuth 42'}, status=502)
+        except requests.RequestException as e:
+            err_msg = 'Impossible de recuperer le token OAuth 42'
+            if hasattr(e, 'response') and e.response is not None:
+                err_msg += f" - {e.response.text}"
+            return JsonResponse({'error': err_msg}, status=502)
         except ValueError:
             return JsonResponse({'error': 'Reponse token OAuth invalide'}, status=502)
 

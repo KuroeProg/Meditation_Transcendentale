@@ -53,4 +53,32 @@ else
     echo "kibana_system user is already authenticated. Skipping initialization."
 fi
 
+echo "⚙️  Configuring ILM (Index Lifecycle Management) Policy (7 days retention)..."
+# Update the existing transcendence_logs_policy
+curl -s -k -u "elastic:${ELASTIC_PASSWORD}" \
+    -X PUT "https://localhost:9200/_ilm/policy/transcendence_logs_policy" \
+    -H "Content-Type: application/json" \
+    -d '{
+          "policy": {
+            "phases": {
+              "hot": {
+                "min_age": "0ms",
+                "actions": {
+                  "rollover": {
+                    "max_age": "7d",
+                    "max_primary_shard_size": "500mb"
+                  }
+                }
+              },
+              "delete": {
+                "min_age": "7d",
+                "actions": {
+                  "delete": {}
+                }
+              }
+            }
+          }
+        }' > /dev/null
+echo "ILM Policy 'transcendence_logs_policy' updated to 7 days retention."
+
 wait

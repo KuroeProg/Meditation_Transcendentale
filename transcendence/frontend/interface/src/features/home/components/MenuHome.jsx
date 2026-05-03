@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import '../styles/MenuHome.css'
+import '../styles/MenuHome.scss'
 import { tryPlayHomeBgm } from '../../audio/services/homeBgm.js'
 import { useAuth } from '../../auth/index.js'
 

@@ -26,6 +26,8 @@ test.describe('in-game history panel', () => {
 	test('clicking "Parties" tab shows the in-game history panel', async ({ page }) => {
 		await page.getByRole('tab', { name: /parties/i }).click()
 		await expect(page.getByTestId('ingame-history-panel')).toBeVisible()
+		await expect(page.getByRole('button', { name: /^Bullet$/i })).toBeVisible()
+		await expect(page.getByRole('button', { name: /^Puzzle$/i })).toHaveCount(0)
 	})
 
 	test('in-game history panel displays at least one game row', async ({ page }) => {
