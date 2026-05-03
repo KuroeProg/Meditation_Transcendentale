@@ -251,7 +251,6 @@ services:
       timeout: 5s
       retries: 3
     ports:
-      - "80:80"
       - "8443:8443"
     depends_on:
       - backend
@@ -289,7 +288,7 @@ services:
     command:
       - '--config.file=/etc/prometheus/prometheus.yml'
       - '--web.config.file=/etc/prometheus/web-config.yml'
-      - '--web.external-url=https://localhost/prometheus'
+      - '--web.external-url=https://localhost:8443/prometheus'
     logging: *default-logging
     networks:
       - monitor_net
@@ -299,7 +298,8 @@ services:
     image: nginx/nginx-prometheus-exporter:latest
     container_name: transcendence_nginx_exporter
     command: 
-      - "--nginx.scrape-uri=http://nginx:80/statut" 
+      - "--nginx.scrape-uri=https://nginx:8443/statut" 
+      - "--no-nginx.ssl-verify"
     restart: always
     logging: *default-logging
     networks:
