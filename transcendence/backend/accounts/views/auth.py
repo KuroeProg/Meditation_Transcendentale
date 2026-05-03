@@ -218,13 +218,13 @@ def auth_login_db(request):
 def auth_me(request):
     user_id = request.session.get('local_user_id')
     if not user_id:
-        return JsonResponse({'error': 'Non authentifie'}, status=401)
+        return JsonResponse({'error': 'Non authentifie', 'authenticated': False}, status=200)
 
     try:
         user = LocalUser.objects.get(id=user_id)
     except LocalUser.DoesNotExist:
         request.session.pop('local_user_id', None)
-        return JsonResponse({'error': 'Session invalide'}, status=401)
+        return JsonResponse({'error': 'Session invalide', 'authenticated': False}, status=200)
 
     _evaluate_achievements_and_notify(user)
     return JsonResponse(_serialize_user_session_payload(user))

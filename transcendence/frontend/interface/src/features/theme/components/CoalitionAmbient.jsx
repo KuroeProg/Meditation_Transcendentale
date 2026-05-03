@@ -159,9 +159,8 @@ export default function CoalitionAmbient() {
 	const deepTfCoalition = staticLayout ? 'scale(1.14)' : 'scale(1.18)'
 	const deepStyle = isNeutral
 		? {
-				backgroundImage: 'none',
 				backgroundColor: '#060814',
-				background:
+				backgroundImage:
 					'radial-gradient(ellipse 95% 70% at 50% 18%, rgba(72, 96, 150, 0.28) 0%, transparent 52%), radial-gradient(ellipse 80% 55% at 80% 90%, rgba(30, 45, 88, 0.22) 0%, transparent 45%), linear-gradient(168deg, #070a14 0%, #0c1226 42%, #080a12 100%)',
 				backgroundSize: 'cover',
 				backgroundRepeat: 'no-repeat',

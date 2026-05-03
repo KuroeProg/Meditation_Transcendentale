@@ -190,8 +190,8 @@ function Profile() {
 		}
 	}
 
-	const handleLogout = async () => {
-		await logout({ redirectTo: '/auth' })
+	async function handleLogout() {
+		await logout()
 	}
 
 	const handleAvatarUpload = async (e) => {
