@@ -4,7 +4,6 @@ from asgiref.sync import async_to_sync
 from channels.layers import get_channel_layer
 from django.db.models import Q
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
 
 from accounts.models import Friendship, LocalUser
 from utils.presence import get_effective_online_for_user
@@ -58,7 +57,6 @@ def _friendship_to_contact(friendship, current_user, active_games=None):
     }
 
 
-@csrf_exempt
 def friends_list(request):
     if request.method != 'GET':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -95,7 +93,6 @@ def friends_list(request):
     return JsonResponse({'friends': contacts})
 
 
-@csrf_exempt
 def friend_request(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -149,7 +146,6 @@ def friend_request(request):
     return JsonResponse(_friendship_to_contact(friendship, user), status=201)
 
 
-@csrf_exempt
 def friend_action(request, friendship_id):
     user, err = _get_authenticated_user(request)
     if err:
@@ -189,6 +185,24 @@ def friend_action(request, friendship_id):
             friendship.status = 'blocked'
             friendship.blocked_by = user
             friendship.save(update_fields=['status', 'blocked_by_id', 'updated_at'])
+
+            # Cancel any pending game invites between these two users
+            try:
+                from chat.models import GameInvite
+                from chat.views import _sync_source_message_status, _broadcast_invite_event
+                pending_invites = GameInvite.objects.filter(
+                    Q(sender=friendship.from_user, receiver=friendship.to_user) |
+                    Q(sender=friendship.to_user, receiver=friendship.from_user),
+                    status=GameInvite.STATUS_PENDING
+                )
+                for invite in pending_invites:
+                    invite.status = GameInvite.STATUS_CANCELLED
+                    invite.cancel_reason = 'user_blocked'
+                    invite.save(update_fields=['status', 'cancel_reason', 'updated_at'])
+                    _sync_source_message_status(invite)
+                    _broadcast_invite_event('invite_updated', invite)
+            except Exception:
+                pass
 
         elif action == 'unblock':
             if friendship.status != 'blocked' or friendship.blocked_by_id != user.id:
