@@ -5,6 +5,9 @@
 - **`npm run dev` / `npm run build`** — `predev` / `prebuild` lancent **`generate:tiles-manifest`** (`scripts/generate-board-tiles-manifest.mjs`), qui régénère `src/chess/boardTilesManifest.json` à partir des tuiles dans `public/chess/tiles/`. **Indispensable au build.**
 
 - **`npm run lint`**, **`npm run preview`** — qualité et prévisualisation du bundle.
+- **`npm run migrate:css-to-scss`** — renomme les fichiers `.css` en `.scss` sous `src/`.
+- **`npm run migrate:css-imports-to-scss`** — remplace les imports locaux `.css` par `.scss` dans les fichiers source.
+- **`npm install -D sass`** — ajoute le compilateur Sass requis par Vite pour lire les `.scss`.
 
 Les environnements Python locaux pour outils graphiques (ex. **`.venv-sprites`**) ne sont **pas** utilisés par npm ; le dossier est ignoré par Git (voir `.gitignore` du package interface).
 

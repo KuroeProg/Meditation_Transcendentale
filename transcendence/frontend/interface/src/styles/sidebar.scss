@@ -1,0 +1,140 @@
+/* Barre latérale */
+
+.sidebar {
+	position: fixed;
+	top: 0;
+	left: 0;
+	height: 100%;
+	width: 75px;
+	z-index: 10;
+	background: #2f2b2b;
+	overflow-x: hidden;
+	padding-top: 10px;
+	transition: width 0.6s ease;
+	box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+
+	&:hover {
+		width: 250px;
+	}
+
+	ul {
+		position: relative;
+		height: 97vh;
+
+		li {
+			list-style: none;
+			margin: 5px 0;
+
+			&:hover {
+				background-color: color-mix(in srgb, var(--coalition-accent, #165da8) 28%, #165da8);
+				transition: background-color 0.3s ease;
+			}
+
+			/* État actif (NavLink) */
+			&:has(.sidebar-navlink--active) {
+				background-color: color-mix(in srgb, var(--coalition-accent, #165da8) 45%, #0e3870);
+			}
+
+			&:has(.sidebar-btn--logout):hover {
+				background-color: rgba(180, 60, 60, 0.22);
+			}
+
+			&:last-child {
+				position: absolute;
+				bottom: 0;
+				width: 100%;
+			}
+
+			a {
+				position: relative;
+				display: flex;
+				white-space: nowrap;
+				color: #fff;
+				text-decoration: none;
+
+				&:focus-visible {
+					outline: 2px solid var(--coalition-accent, #7dd3fc);
+					outline-offset: -2px;
+				}
+
+				.icon {
+					position: relative;
+					display: flex;
+					justify-content: center;
+					align-items: center;
+					min-width: 75px;
+					height: 60px;
+					font-size: 22px;
+				}
+
+				.text {
+					position: relative;
+					display: flex;
+					align-items: center;
+					height: 60px;
+					font-size: 16px;
+					letter-spacing: 0.6px;
+					font-weight: 500;
+				}
+			}
+
+			.logo {
+				margin-bottom: 80px;
+
+				.text {
+					font-size: 18px;
+					font-weight: 600;
+				}
+			}
+
+			.sidebar-btn--logout,
+			.sidebar-btn--logout .icon,
+			.sidebar-btn--logout .text {
+				color: #e57373;
+			}
+		}
+	}
+}
+
+.sidebar-navlink {
+	position: relative;
+	display: flex;
+	white-space: nowrap;
+	color: #fff;
+	text-decoration: none;
+
+	&:focus-visible {
+		outline: 2px solid var(--coalition-accent, #7dd3fc);
+		outline-offset: -2px;
+	}
+
+	/* État actif */
+	&--active {
+		color: var(--coalition-accent, #7dd3fc);
+
+		.icon {
+			color: var(--coalition-accent, #7dd3fc);
+		}
+
+		/* Barre verticale accent pour l'élément actif */
+		&::before {
+			content: '';
+			position: absolute;
+			left: 0;
+			top: 50%;
+			transform: translateY(-50%);
+			width: 3px;
+			height: 60%;
+			background: var(--coalition-accent, #7dd3fc);
+			border-radius: 0 3px 3px 0;
+		}
+	}
+}
+
+.Profile-logo {
+	width: 60px;
+	height: 60px;
+	object-fit: contain;
+	border-radius: 8px;
+}
+

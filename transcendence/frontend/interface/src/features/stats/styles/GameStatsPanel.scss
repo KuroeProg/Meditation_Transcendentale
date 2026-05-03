@@ -19,11 +19,15 @@
 	scrollbar-color: rgba(255, 255, 255, 0.12) transparent;
 	animation: statsSlideIn 0.35s ease-out both;
 	box-sizing: border-box;
-}
-.game-stats-panel::-webkit-scrollbar { width: 4px; }
-.game-stats-panel::-webkit-scrollbar-thumb {
-	background: rgba(255, 255, 255, 0.12);
-	border-radius: 4px;
+
+	&::-webkit-scrollbar {
+		width: 4px;
+	}
+
+	&::-webkit-scrollbar-thumb {
+		background: rgba(255, 255, 255, 0.12);
+		border-radius: 4px;
+	}
 }
 
 @keyframes statsSlideIn {
@@ -67,42 +71,42 @@ html[data-reduce-motion='true'] .game-stats-panel {
 	border-radius: 10px;
 	padding: 0.6rem 0.5rem;
 	text-align: center;
-}
 
-.stats-card__label {
-	display: block;
-	font-size: 0.6rem;
-	font-weight: 600;
-	letter-spacing: 0.06em;
-	text-transform: uppercase;
-	color: rgba(255, 255, 255, 0.45);
-	margin-bottom: 0.25rem;
-}
+	&__label {
+		display: block;
+		font-size: 0.6rem;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: rgba(255, 255, 255, 0.45);
+		margin-bottom: 0.25rem;
+	}
 
-.stats-card__value {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	gap: 0.35rem;
-	font-family: 'Georgia', serif;
-	font-size: 1.35rem;
-	font-weight: 700;
-	color: #fff;
-}
+	&__value {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 0.35rem;
+		font-family: 'Georgia', serif;
+		font-size: 1.35rem;
+		font-weight: 700;
+		color: #fff;
+	}
 
-.stats-card__change {
-	font-size: 0.75rem;
-	font-weight: 600;
-	color: #4ade80;
-}
+	&__change {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: #4ade80;
 
-.stats-card__change--negative {
-	color: #f87171;
-}
+		&--negative {
+			color: #f87171;
+		}
+	}
 
-.stats-card__icon {
-	font-size: 0.9rem;
-	opacity: 0.6;
+	&__icon {
+		font-size: 0.9rem;
+		opacity: 0.6;
+	}
 }
 
 /* ── Chart sections ── */

@@ -25,38 +25,37 @@
 .gr-header {
 	width: 100%;
 	flex-shrink: 0;
-}
 
-.gr-header--arena {
-	position: relative;
-	overflow: hidden;
-	border-radius: 12px;
-	border: 1px solid var(--gr-border);
-	background: linear-gradient(
-		135deg,
-		color-mix(in srgb, var(--coalition-accent, #7dd3fc) 16%, rgba(8, 12, 22, 0.95)),
-		rgba(6, 8, 14, 0.92)
-	);
-	padding: 1.15rem 1.4rem 1rem;
-}
+	&--arena {
+		position: relative;
+		overflow: hidden;
+		border-radius: 12px;
+		border: 1px solid var(--gr-border);
+		background: linear-gradient(
+			135deg,
+			color-mix(in srgb, var(--coalition-accent, #7dd3fc) 16%, rgba(8, 12, 22, 0.95)),
+			rgba(6, 8, 14, 0.92)
+		);
+		padding: 1.15rem 1.4rem 1rem;
 
-.gr-header--arena::before {
-	content: '';
-	position: absolute;
-	inset: 0;
-	background-image:
-		linear-gradient(45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-		linear-gradient(-45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-		linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
-		linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.024) 75%);
-	background-size: 48px 48px;
-	background-position: 0 0, 0 24px, 24px -24px, -24px 0px;
-	-webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
-	mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
-	pointer-events: none;
-	z-index: 0;
+		&::before {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background-image:
+				linear-gradient(45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
+				linear-gradient(-45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
+				linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
+				linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.024) 75%);
+			background-size: 48px 48px;
+			background-position: 0 0, 0 24px, 24px -24px, -24px 0px;
+			-webkit-mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+			mask-image: linear-gradient(to bottom, black 55%, transparent 100%);
+			pointer-events: none;
+			z-index: 0;
+		}
+	}
 }
-
 .gr-header-top {
 	position: relative;
 	z-index: 1;

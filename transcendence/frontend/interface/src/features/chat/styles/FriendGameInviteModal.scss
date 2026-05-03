@@ -54,11 +54,11 @@
 	justify-content: center;
 	font-size: 1.25rem;
 	transition: background 0.2s, color 0.2s;
-}
 
-.friend-invite-close:hover {
-	background: rgba(255, 255, 255, 0.1);
-	color: #fff;
+	&:hover {
+		background: rgba(255, 255, 255, 0.1);
+		color: rgba(240, 245, 255, 0.92);
+	}
 }
 
 .friend-invite-hint {

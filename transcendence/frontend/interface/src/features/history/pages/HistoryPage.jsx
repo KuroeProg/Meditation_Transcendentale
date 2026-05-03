@@ -5,7 +5,7 @@ import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchHistory } from '../services/historyApi.js'
 import { enrichGameForUi } from '../services/historyGameUi.js'
 import UserProfileLink from '../../../components/common/UserProfileLink.jsx'
-import '../styles/History.css'
+import '../styles/History.scss'
 
 const FALLBACK_FILTERS = {
 	results: [
