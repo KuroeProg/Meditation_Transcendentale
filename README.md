@@ -103,7 +103,6 @@ Typical entry points (exact URLs depend on your Nginx routing and `.env`):
 | Kibana      | `https://localhost/kibana/`                                  |
 | Prometheus  | `https://localhost/prometheus/` (may require auth via Nginx) |
 
-
 ---
 
 ## Features (honest scope)

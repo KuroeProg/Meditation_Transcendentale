@@ -257,7 +257,7 @@ reset-db-safe: ## Réinitialiser uniquement Postgres (purge bind-mount) puis rel
 	@$(COMPOSE) down
 	@docker run --rm -v "$(COMPOSE_DIR)/database/data:/data" alpine:3.20 sh -c 'rm -rf /data/*'
 	@$(COMPOSE) up -d
-	@$(MAKE) migrations
+	@$(MAKE) -f "$(REPO_ROOT)Makefile" migrations
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Base PostgreSQL réinitialisée et migrations appliquées."
 
 re: fclean all ## fclean puis all (repartir de zéro)
