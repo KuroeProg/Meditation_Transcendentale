@@ -25,7 +25,7 @@ import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { fetchHistory } from '../../history/services/historyApi.js'
 import { enrichGameForUi } from '../../history/services/historyGameUi.js'
-import '../styles/GameStatsPanel.css'
+import '../styles/GameStatsPanel.scss'
 
 /**
  * Panneau droit en partie : onglet « Parties » charge l’historique via GET /api/game/history

@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
-import './SiteFooter.css'
+import './SiteFooter.scss'
 
 /**
  * Pied de page global : liens discrets sur le fond (pas de bandeau opaque).

@@ -21,7 +21,7 @@ import { coalitionToSlug } from '../../theme/services/coalitionTheme.js'
 import { getPstatsTheme } from '../services/coalitionPstatsTheme.js'
 import { formatPieceUsageData, buildPieceUsageRows, buildStatsPageStyle } from '../services/statsCalculator.js'
 import data from '../assets/mockPersonalStats.json'
-import '../styles/Statistics.css'
+import '../styles/Statistics.scss'
 
 function WinrateDonut({ pct, drawPct = 0, size = 110, label, strokeWidth = 10, accent, drawColor, track, chartAnim }) {
 	const losses = Math.max(0, 100 - pct - drawPct)

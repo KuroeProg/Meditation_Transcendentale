@@ -1,13 +1,13 @@
 /* Point d’entrée — polices, thème coalition, layout, jeu (échiquier), responsive */
 @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap');
-@import './styles/coalition-ui.css';
-@import './styles/brand-logo.css';
-@import './styles/sidebar.css';
-@import './styles/game-audio.css';
-@import './features/profile/styles/profile-page.css';
-@import './styles/game-board.css';
-@import './styles/layout-main.css';
-@import './styles/responsive.css';
+@import './styles/coalition-ui.scss';
+@import './styles/brand-logo.scss';
+@import './styles/sidebar.scss';
+@import './styles/game-audio.scss';
+@import './features/profile/styles/profile-page.scss';
+@import './styles/game-board.scss';
+@import './styles/layout-main.scss';
+@import './styles/responsive.scss';
 
 /* Défilement inchangé, barres de scroll masquées par défaut (Firefox / WebKit) */
 * {

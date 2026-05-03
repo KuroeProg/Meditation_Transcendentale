@@ -3,8 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { TimeControlSection, defaultSelectedControl } from '../../chess/components/TimeControlPicker.jsx'
 import { TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useAuth } from '../../auth/index.js'
-import '../../profile/styles/Dashboard.css'
-import './FriendGameInviteModal.css'
+import '../../profile/styles/Dashboard.scss'
+import './FriendGameInviteModal.scss'
 import { createConversation, sendGameInviteHttp } from '../services/chatApi.js'
 
 function buildInviteBody(selectedTC, competitive) {

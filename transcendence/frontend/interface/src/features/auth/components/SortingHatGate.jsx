@@ -10,7 +10,7 @@ import { useAuth } from '../hooks/useAuth.js'
 import { useReduceMotionPref, coalitionSlugToLabel } from '../../theme/index.js'
 import { DEV_MOCK_STORAGE, SORTING_HAT_DEV_RETRY_EVENT } from '../../../mock/mockSessionUser.js'
 import choixpeauUrl from '../assets/choixpeau.png'
-import '../styles/SortingHatGate.css'
+import '../styles/SortingHatGate.scss'
 
 const STORAGE_PREFIX = 'transcendance_sorting_hat_v1_'
 export const SORTING_HAT_STARTED_EVENT = 'transcendance-sorting-hat-started'

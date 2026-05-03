@@ -8,7 +8,7 @@ import CoalitionFire from '../../theme/components/CoalitionSymbols/Coalition_Fir
 import CoalitionWater from '../../theme/components/CoalitionSymbols/Coalition_Water.jsx'
 import CoalitionWind from '../../theme/components/CoalitionSymbols/Coalition_Wind.jsx'
 import CoalitionEarth from '../../theme/components/CoalitionSymbols/Coalition_Earth.jsx'
-import '../styles/Auth.css'
+import '../styles/Auth.scss'
 import AuthChessFloat from '../components/AuthChessFloat.jsx'
 import { LEGAL_COOKIES_URL, LEGAL_PRIVACY_URL, LEGAL_TOS_URL } from '../../../config/legalPages.js'
 import { getPostAuthDestination } from '../../../utils/postLoginRedirect.js'
