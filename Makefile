@@ -10,7 +10,7 @@ COMPOSE        := cd $(COMPOSE_DIR) && docker compose
 INTERFACE_DIR  := $(COMPOSE_DIR)/frontend/interface
 
 # E2E test controls
-E2E_BASE_URL ?= https://localhost
+E2E_BASE_URL ?= https://localhost:8443
 PROJECT ?= chromium
 WORKERS ?=
 FILE ?=
