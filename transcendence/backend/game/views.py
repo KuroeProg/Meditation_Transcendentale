@@ -67,13 +67,13 @@ PUZZLE_RECOMMENDATIONS = [
 def _get_authenticated_user(request):
     user_id = request.session.get('local_user_id')
     if not user_id:
-        return None, JsonResponse({'error': 'Non authentifie'}, status=401)
+        return None, JsonResponse({'error': 'Non authentifie', 'authenticated': False}, status=200)
     try:
         user = LocalUser.objects.get(id=user_id)
         return user, None
     except LocalUser.DoesNotExist:
         request.session.pop('local_user_id', None)
-        return None, JsonResponse({'error': 'Session invalide'}, status=401)
+        return None, JsonResponse({'error': 'Session invalide', 'authenticated': False}, status=200)
 
 
 def _result_for_user(game: Game, user: LocalUser) -> str:

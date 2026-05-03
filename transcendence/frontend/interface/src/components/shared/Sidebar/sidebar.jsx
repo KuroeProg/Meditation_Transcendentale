@@ -7,7 +7,7 @@ function Sidebar() {
 	const { logout, isAuthenticated } = useAuth()
 
 	const handleLogout = async () => {
-		await logout({ redirectTo: '/auth' })
+		await logout()
 	}
 
 	return (

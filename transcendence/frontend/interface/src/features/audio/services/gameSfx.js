@@ -8,6 +8,22 @@ import { loadGameAudioPrefs, effectiveSfxGain } from '../../../config/gameAudioP
 
 let audioCtx = null
 let sfxMasterGain = null
+let hasUserInteracted = false
+
+function initInteractionListeners() {
+	if (typeof window === 'undefined') return
+	const unlock = () => {
+		hasUserInteracted = true
+		window.removeEventListener('pointerdown', unlock)
+		window.removeEventListener('keydown', unlock)
+		if (audioCtx && audioCtx.state === 'suspended') {
+			void audioCtx.resume().catch(() => {})
+		}
+	}
+	window.addEventListener('pointerdown', unlock, { once: true })
+	window.addEventListener('keydown', unlock, { once: true })
+}
+initInteractionListeners()
 
 function applyMasterGain() {
 	if (!sfxMasterGain) return
@@ -30,7 +46,7 @@ export function unlockGameAudio() {
 			applyMasterGain()
 			window.addEventListener('transcendence-game-audio-changed', applyMasterGain)
 		}
-		if (audioCtx.state === 'suspended') {
+		if (hasUserInteracted && audioCtx.state === 'suspended') {
 			void audioCtx.resume().catch(() => {})
 		}
 	} catch {

@@ -107,7 +107,7 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const userData = await response.json()
-        if (userData && userData.authenticated === false) {
+        if (userData.authenticated === false || userData.error) {
           sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
           setUser(null)
           setTwoFactorChallenge(null)
@@ -212,7 +212,11 @@ export function AuthProvider({ children }) {
     }
 
     return () => {
-      ws.close()
+      if (ws.readyState === WebSocket.CONNECTING) {
+        ws.addEventListener('open', () => ws.close())
+      } else {
+        ws.close()
+      }
     }
   }, [user, twoFactorChallenge])
 

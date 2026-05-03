@@ -32,10 +32,15 @@ async function fetchServerPrefs() {
 }
 
 async function patchServerPrefs(delta) {
+	await ensureCsrfForDelete()
+	const csrf = readCookie('csrftoken')
+	const headers = { 'Content-Type': 'application/json' }
+	if (csrf) headers['X-CSRFToken'] = csrf
+
 	await fetch('/api/auth/me/client-settings', {
 		method: 'PATCH',
 		credentials: 'include',
-		headers: { 'Content-Type': 'application/json' },
+		headers,
 		body: JSON.stringify(delta),
 	})
 }
@@ -142,7 +147,7 @@ function Settings() {
 			nextParams.delete('deleteToken')
 			setSearchParams(nextParams, { replace: true })
 			setTimeout(() => {
-				logout({ redirectTo: '/auth' })
+				logout()
 			}, 2500)
 		} catch (e) {
 			setDeleteError(e.message || 'Erreur lors de la suppression')
@@ -150,18 +155,30 @@ function Settings() {
 		}
 	}, [logout, searchParams, setSearchParams])
 
+	const deleteAttemptedRef = useRef(false)
 	useEffect(() => {
 		const deleteToken = searchParams.get('deleteToken')
 		if (!deleteToken || !user) return
-		confirmDeleteWithToken(deleteToken)
-	}, [searchParams, user, confirmDeleteWithToken])
+
+		if (deleteStep === 0 && !deleteAttemptedRef.current) {
+			deleteAttemptedRef.current = true
+			setDeleteStep(2)
+			confirmDeleteWithToken(deleteToken)
+		}
+	}, [searchParams, user, deleteStep, confirmDeleteWithToken])
 
 	// On mount: merge server prefs into local (server wins for keys it has)
 	useEffect(() => {
 		if (!user) return
 		fetchServerPrefs().then((serverPrefs) => {
 			if (!serverPrefs || !Object.keys(serverPrefs).length) return
-			setPrefsRaw((local) => ({ ...local, ...serverPrefs }))
+			setPrefsRaw((local) => {
+				const merged = { ...local, ...serverPrefs }
+				localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(merged))
+				applyDocumentUiPrefs()
+				setTimeout(() => notifyPrefsChanged(), 0) // Delay to avoid updating other components during render
+				return merged
+			})
 		}).catch(() => {})
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user?.id])
@@ -180,8 +197,17 @@ function Settings() {
 	}, [prefs, user])
 
 	const setPrefs = useCallback((updater) => {
-		setPrefsRaw(updater)
-	}, [])
+		const next = typeof updater === 'function' ? updater(prefs) : updater
+		setPrefsRaw(next)
+		localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(next))
+		applyDocumentUiPrefs()
+		notifyPrefsChanged()
+		// Debounced server sync
+		if (syncDebounce.current) clearTimeout(syncDebounce.current)
+		syncDebounce.current = setTimeout(() => {
+			if (user) patchServerPrefs(next).catch(() => {})
+		}, 800)
+	}, [user, prefs])
 
 	useEffect(() => {
 		return () => { if (syncDebounce.current) clearTimeout(syncDebounce.current) }
@@ -211,7 +237,7 @@ function Settings() {
 	}
 
 	function handleLogout() {
-		logout({ redirectTo: '/auth' })
+		logout()
 	}
 
 	return (

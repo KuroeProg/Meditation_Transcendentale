@@ -55,7 +55,7 @@ DEBUG = _env_bool('DJANGO_DEBUG', True)
 ALLOWED_HOSTS = _env_list('DJANGO_ALLOWED_HOSTS', ['backend', 'localhost', '127.0.0.1', '0.0.0.0'])
 
 # CSRF_TRUSTED_ORIGINS : trust domain
-CSRF_TRUSTED_ORIGINS = _env_list('DJANGO_CSRF_TRUSTED_ORIGINS', ['https://localhost', 'https://127.0.0.1'])
+CSRF_TRUSTED_ORIGINS = _env_list('DJANGO_CSRF_TRUSTED_ORIGINS', ['https://localhost:8443', 'https://127.0.0.1:8443'])
 
 # SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 
@@ -111,7 +111,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'transcendence_backend.urls'
 
-CORS_ALLOWED_ORIGINS = _env_list('DJANGO_CORS_ALLOWED_ORIGINS', ["https://localhost", "http://localhost:5173"])
+CORS_ALLOWED_ORIGINS = _env_list('DJANGO_CORS_ALLOWED_ORIGINS', ["https://localhost:8443", "http://localhost:5173"])
 
 TEMPLATES = [
     {
