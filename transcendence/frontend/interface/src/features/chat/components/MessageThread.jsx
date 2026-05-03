@@ -19,7 +19,7 @@ function MessageBubble({ msg, isOwn, currentUserId }) {
 
 	return (
 		<div className={`chat-msg ${isOwn ? 'chat-msg--own' : 'chat-msg--other'}`}>
-			{!isOwn && <img className="chat-msg-avatar" src={msg.sender?.avatar || ''} alt="" />}
+			{!isOwn && <img className="chat-msg-avatar" src={msg.sender?.avatar || undefined} alt="" />}
 			<div className="chat-msg-body">
 				{!isOwn && (
 					<UserProfileLink
@@ -133,7 +133,7 @@ export default function MessageThread({ conversation, userId, username }) {
 	return (
 		<div className="chat-thread" data-testid="chat-thread">
 			<div className="chat-thread-header">
-				<img className="chat-thread-avatar" src={other?.avatar || ''} alt="" />
+				<img className="chat-thread-avatar" src={other?.avatar || undefined} alt="" />
 				<div className="chat-thread-info">
 					<UserProfileLink
 						userId={other?.id}

@@ -58,7 +58,7 @@ export default function ConversationList({ onSelect, activeId }) {
 						data-testid={`chat-conversation-item-${c.id}`}
 						onClick={() => onSelect(c)}
 					>
-						<img className="chat-conv-avatar" src={other?.avatar || ''} alt="" />
+						<img className="chat-conv-avatar" src={other?.avatar || undefined} alt="" />
 						<div className="chat-conv-info">
 							<div className="chat-conv-top">
 								<div className="chat-conv-name-line">

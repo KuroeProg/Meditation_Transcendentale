@@ -13,6 +13,7 @@ export function get42AvatarUrl(user) {
 	if (user.image?.versions?.medium) return user.image.versions.medium
 	if (typeof user.image_url === 'string' && user.image_url) return user.image_url
 	if (typeof user.avatar_url === 'string' && user.avatar_url) return user.avatar_url
+	if (typeof user.avatar === 'string' && user.avatar) return user.avatar
 	return FALLBACK_AVATAR
 }
 

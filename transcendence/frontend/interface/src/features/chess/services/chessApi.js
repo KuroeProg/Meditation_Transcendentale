@@ -17,5 +17,8 @@ export async function fetchGameDetails(gameId) {
 	// The backend route is api/history/detail/<game_id>/
     // We strip 'game-' prefix if it's there
     const cleanId = String(gameId).replace('game-', '');
+	if (!/^\d+$/.test(cleanId)) {
+		return Promise.reject(new Error('Invalid numeric game ID for backend fetch'));
+	}
 	return jsonFetch(`/api/history/detail/${cleanId}/`);
 }

@@ -107,9 +107,15 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const userData = await response.json()
-        syncActiveGameStorage(userData)
-        setUser(userData)
-        setTwoFactorChallenge(null)
+        if (userData.authenticated === false || userData.error) {
+          sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
+          setUser(null)
+          setTwoFactorChallenge(null)
+        } else {
+          syncActiveGameStorage(userData)
+          setUser(userData)
+          setTwoFactorChallenge(null)
+        }
       } else {
         sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
         setUser(null)
@@ -206,7 +212,11 @@ export function AuthProvider({ children }) {
     }
 
     return () => {
-      ws.close()
+      if (ws.readyState === WebSocket.CONNECTING) {
+        ws.addEventListener('open', () => ws.close())
+      } else {
+        ws.close()
+      }
     }
   }, [user, twoFactorChallenge])
 
