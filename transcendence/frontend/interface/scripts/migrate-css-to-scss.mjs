@@ -45,8 +45,9 @@ function replaceCssImports() {
 	const importPatterns = [
 		/(\bfrom\s+['"][^'"]+?)\.css(['"])/g,
 		/(\bimport\s+['"][^'"]+?)\.css(['"])/g,
-		/(@import\s+['"][^'"]+?)\.css(['"])/g,
 	]
+
+	const sassImportPattern = /^\s*@import\s+(['"])([^'"]+?)\.scss\1\s*;\s*$/gm
 
 	let changedFiles = 0
 	walkFiles(srcRoot, (filePath) => {
@@ -57,6 +58,10 @@ function replaceCssImports() {
 
 		for (const pattern of importPatterns) {
 			updated = updated.replace(pattern, '$1.scss$2')
+		}
+
+		if (path.extname(filePath) === '.scss') {
+			updated = updated.replace(sassImportPattern, "@use '$2.scss';")
 		}
 
 		if (updated === original) return
