@@ -9,6 +9,9 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
+    "migrate:css-to-scss": "node scripts/migrate-css-to-scss.mjs files",
+    "migrate:css-imports-to-scss": "node scripts/migrate-css-to-scss.mjs imports",
+    "migrate:css-to-scss:all": "node scripts/migrate-css-to-scss.mjs all",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed",
     "test:e2e:list": "playwright test --list",
@@ -44,6 +47,7 @@
     "eslint-plugin-react-refresh": "^0.4.24",
     "globals": "^16.5.0",
     "postcss": "^8.5.10",
+    "sass": "^1.99.0",
     "sharp": "^0.34.5",
     "vite": "^7.3.1"
   }
