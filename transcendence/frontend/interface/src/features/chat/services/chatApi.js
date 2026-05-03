@@ -32,14 +32,18 @@ async function jsonFetch(url, opts = {}) {
 		...opts.headers,
 	}
 	const res = await fetch(url, { credentials: 'include', ...opts, headers })
-	if (!res.ok) {
-		const data = await res.json().catch(() => ({}))
+	let data = {}
+	try {
+		data = await res.json()
+	} catch {}
+
+	if (!res.ok || data.error) {
 		const err = new Error(data.error || `HTTP ${res.status}`)
 		err.status = res.status
 		err.payload = data
 		throw err
 	}
-	return res.json()
+	return data
 }
 
 export function fetchConversations() {

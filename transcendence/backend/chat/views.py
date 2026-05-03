@@ -12,13 +12,13 @@ from django.db import IntegrityError, transaction
 from django.db.models import Q
 from django.http import JsonResponse
 from django.utils import timezone
-from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_GET
 
 from accounts.models import Friendship, LocalUser
 from chat.invite_payload import build_game_invite_content_dict
 from chat.models import Conversation, GameInvite, Message
 from game.services.active_game import get_active_game_sync
+from chat.services.invitation import create_game_invite
 
 
 INVITE_TTL_MINUTES = 5
@@ -54,6 +54,20 @@ def _infer_time_category(time_control, increment=0):
     if seconds >= 86400:
         return 'correspondence'
     return 'rapid'
+def _check_blocked(user, other_user):
+    """Returns an error message (str) if blocked, else None."""
+    if not other_user:
+        return None
+    from accounts.models import Friendship
+    friendship = Friendship.objects.filter(
+        Q(from_user=user, to_user=other_user, status='blocked') |
+        Q(from_user=other_user, to_user=user, status='blocked')
+    ).first()
+    if friendship:
+        if friendship.blocked_by_id == user.id:
+            return "Tu as bloque ce joueur."
+        return "Ce joueur t'a bloque."
+    return None
 
 
 def _create_online_game_for_invite(invite):
@@ -208,7 +222,6 @@ def pending_outgoing_invite(request):
     return JsonResponse({'invite': pending.to_dict() if pending else None})
 
 
-@csrf_exempt
 def create_conversation(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -234,12 +247,9 @@ def create_conversation(request):
     except LocalUser.DoesNotExist:
         return JsonResponse({'error': 'Utilisateur introuvable'}, status=404)
 
-    is_blocked = Friendship.objects.filter(
-        Q(from_user=user, to_user=other_user, status='blocked') |
-        Q(from_user=other_user, to_user=user, status='blocked')
-    ).exists()
-    if is_blocked:
-        return JsonResponse({'error': 'Relation bloquee'}, status=403)
+    block_err = _check_blocked(user, other_user)
+    if block_err:
+        return JsonResponse({'error': block_err}, status=200)
 
     if conv_type == 'private':
         existing = Conversation.objects.filter(
@@ -292,7 +302,6 @@ def conversation_messages(request, conversation_id):
     })
 
 
-@csrf_exempt
 def send_message(request, conversation_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -319,6 +328,11 @@ def send_message(request, conversation_id):
     if not content:
         return JsonResponse({'error': 'Contenu requis'}, status=400)
 
+    other_user = _get_other_participant(conversation, user)
+    block_err = _check_blocked(user, other_user)
+    if block_err:
+        return JsonResponse({'error': block_err}, status=200)
+
     msg = Message.objects.create(
         conversation=conversation,
         sender=user,
@@ -331,7 +345,6 @@ def send_message(request, conversation_id):
     return JsonResponse(msg.to_dict(), status=201)
 
 
-@csrf_exempt
 def send_game_invite(request, conversation_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -352,125 +365,25 @@ def send_game_invite(request, conversation_id):
     if parse_err:
         return parse_err
 
-    receiver = _get_other_participant(conversation, user)
-    if receiver is None:
-        return JsonResponse({'error': 'Conversation invalide pour invitation'}, status=400)
+    result = create_game_invite(user, conversation, payload)
+    
+    if 'error' in result:
+        status = result.pop('status', 400)
+        return JsonResponse(result, status=status)
 
-    if get_active_game_sync(user.id):
-        return JsonResponse(
-            {
-                'error': 'Tu es déjà en partie. Termine ou quitte la partie avant d’inviter.',
-                'code': 'sender_in_game',
-            },
-            status=409,
-        )
-    if get_active_game_sync(receiver.id):
-        return JsonResponse(
-            {
-                'error': 'Ce joueur est déjà en partie.',
-                'code': 'receiver_in_game',
-            },
-            status=409,
-        )
-
+    # Note: the service already created the invite and message.
+    # We broadcast events here as in the original view.
+    from chat.models import GameInvite
     try:
-        time_seconds = int(payload.get('time_seconds', 600) or 600)
-    except (TypeError, ValueError):
-        time_seconds = 600
-    try:
-        increment = int(payload.get('increment', 0) or 0)
-    except (TypeError, ValueError):
-        increment = 0
+        invite = GameInvite.objects.get(id=result['invite']['id'])
+        _broadcast_invite_event('invite_created', invite)
+        _broadcast_chat_message(conversation.id, result['message'])
+    except GameInvite.DoesNotExist:
+        pass
 
-    if time_seconds < 60:
-        time_seconds = 60
-    if increment < 0:
-        increment = 0
-
-    competitive = bool(payload.get('competitive', False))
-
-    existing_pending = GameInvite.objects.filter(
-        sender=user,
-        status=GameInvite.STATUS_PENDING,
-    ).select_related('conversation').first()
-    if existing_pending:
-        return JsonResponse(
-            {
-                'error': 'Une invitation est deja en attente',
-                'code': 'sender_already_has_pending',
-                'invite': existing_pending.to_dict(),
-            },
-            status=409,
-        )
-
-    expires_at = timezone.now() + timedelta(minutes=INVITE_TTL_MINUTES)
-
-    invite_obj = build_game_invite_content_dict(
-        {
-            'time_control': payload.get('time_control') or _format_time_control_label(time_seconds),
-            'competitive': competitive,
-            'time_seconds': time_seconds,
-            'increment': increment,
-        }
-    )
-    invite_obj['sender_username'] = user.username
-    invite_obj['invite_status'] = GameInvite.STATUS_PENDING
-    invite_obj['expires_at'] = expires_at.isoformat()
-
-    try:
-        with transaction.atomic():
-            msg = Message.objects.create(
-                conversation=conversation,
-                sender=user,
-                content=json.dumps(invite_obj),
-                message_type='game_invite',
-            )
-            msg.read_by.add(user)
-
-            invite = GameInvite.objects.create(
-                conversation=conversation,
-                source_message=msg,
-                sender=user,
-                receiver=receiver,
-                time_control_seconds=time_seconds,
-                increment_seconds=increment,
-                competitive=competitive,
-                status=GameInvite.STATUS_PENDING,
-                expires_at=expires_at,
-            )
-
-            invite_obj['invite_id'] = invite.id
-            msg.content = json.dumps(invite_obj)
-            msg.save(update_fields=['content'])
-
-            conversation.save()
-    except IntegrityError:
-        pending = GameInvite.objects.filter(
-            sender=user,
-            status=GameInvite.STATUS_PENDING,
-        ).first()
-        return JsonResponse(
-            {
-                'error': 'Une invitation est deja en attente',
-                'code': 'sender_already_has_pending',
-                'invite': pending.to_dict() if pending else None,
-            },
-            status=409,
-        )
-
-    _broadcast_invite_event('invite_created', invite)
-    _broadcast_chat_message(conversation.id, msg.to_dict())
-
-    return JsonResponse(
-        {
-            'message': msg.to_dict(),
-            'invite': invite.to_dict(),
-        },
-        status=201,
-    )
+    return JsonResponse(result, status=201)
 
 
-@csrf_exempt
 def respond_game_invite(request, invite_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -496,6 +409,10 @@ def respond_game_invite(request, invite_id):
 
         if invite.receiver_id != user.id:
             return JsonResponse({'error': 'Operation non autorisee'}, status=403)
+
+        block_err = _check_blocked(user, invite.sender)
+        if block_err:
+            return JsonResponse({'error': block_err}, status=200)
 
         now = timezone.now()
         if invite.status == GameInvite.STATUS_PENDING and invite.expires_at and invite.expires_at <= now:
@@ -560,7 +477,6 @@ def respond_game_invite(request, invite_id):
     return JsonResponse({'invite': invite.to_dict()}, status=200)
 
 
-@csrf_exempt
 def cancel_game_invite(request, invite_id):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)

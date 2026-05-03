@@ -20,6 +20,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
         self.user_id = None
         self.user_group_name = None
 
+        # Secure connection: only participants can join the room
+        session = self.scope.get('session')
+        user_id_from_session = session.get('local_user_id') if session else None
+        
+        if not user_id_from_session:
+            await self.close(code=4001) # Unauthorized
+            return
+
+        is_participant = await self._is_participant(user_id_from_session, self.conversation_id)
+        if not is_participant:
+            await self.close(code=4003) # Forbidden
+            return
+
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
@@ -42,15 +55,23 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         if action == 'authenticate':
             try:
-                self.user_id = int(data.get('user_id'))
+                provided_user_id = int(data.get('user_id'))
             except (TypeError, ValueError):
-                self.user_id = None
+                provided_user_id = None
 
-            if self.user_id:
+            # Validate against session to prevent impersonation
+            session = self.scope.get('session')
+            session_user_id = session.get('local_user_id') if session else None
+
+            if provided_user_id and provided_user_id == session_user_id:
+                self.user_id = provided_user_id
                 presence_state = await self._presence_connect(self.user_id)
                 self.user_group_name = f'user_{self.user_id}'
                 await self.channel_layer.group_add(self.user_group_name, self.channel_name)
                 await self._broadcast_presence_if_changed(self.user_id, presence_state)
+            else:
+                await self.send(text_data=json.dumps({'error': 'Authentication failed'}))
+                await self.close(code=4001)
             return
 
         if action == 'send_message':
@@ -73,7 +94,8 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         is_blocked = await self._is_blocked(self.user_id, self.conversation_id)
         if is_blocked:
-            await self.send(text_data=json.dumps({'error': 'Relation bloquee'}))
+            error_msg = is_blocked if isinstance(is_blocked, str) else "Relation bloquee"
+            await self.send(text_data=json.dumps({'error': error_msg}))
             return
 
         message = await self._save_message(self.user_id, self.conversation_id, content, 'text')
@@ -118,24 +140,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if not self.user_id:
             return
 
-        blocked = await self._game_invite_blocked_by_active_game()
-        if blocked:
-            await self.send(text_data=json.dumps(blocked))
+        is_blocked = await self._is_blocked(self.user_id, self.conversation_id)
+        if is_blocked:
+            error_msg = is_blocked if isinstance(is_blocked, str) else "Relation bloquee"
+            await self.send(text_data=json.dumps({'error': error_msg}))
             return
 
-        content = json.dumps(build_game_invite_content_dict(data))
+        result = await self._create_game_invite_async(self.user_id, self.conversation_id, data)
+        
+        if 'error' in result:
+            await self.send(text_data=json.dumps(result))
+            return
 
-        message = await self._save_message(
-            self.user_id, self.conversation_id, content, 'game_invite'
+        # Broadcast the new message to the room
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type': 'chat_message',
+                'message': result['message'],
+            }
         )
-        if message:
-            await self.channel_layer.group_send(
-                self.room_group_name,
-                {
-                    'type': 'chat_message',
-                    'message': message,
-                }
-            )
+
+        # Broadcast invite event to both participants
+        from chat.models import GameInvite
+        try:
+            invite_id = result['invite']['id']
+            # We need to fetch the model instance to use the broadcast helper if possible,
+            # but since we are in an async consumer, we can just send the events directly
+            # or rely on the fact that _notify_user is used in views.
+            # Actually, the view uses _broadcast_invite_event which uses _notify_user.
+            # Let's just do it here too or move it to the service.
+            
+            # For simplicity, we'll use a sync helper to broadcast
+            await self._broadcast_invite_created(invite_id)
+        except Exception:
+            pass
 
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
@@ -188,6 +227,16 @@ class ChatConsumer(AsyncWebsocketConsumer):
             conversation = Conversation.objects.get(id=conversation_id)
             if not conversation.participants.filter(id=user_id).exists():
                 return None
+            
+            # Extra safety block check if called from elsewhere
+            other = conversation.participants.exclude(id=user_id).first()
+            if other:
+                if Friendship.objects.filter(
+                    Q(from_user=user, to_user=other, status='blocked') |
+                    Q(from_user=other, to_user=user, status='blocked')
+                ).exists():
+                    return None
+
             msg = Message.objects.create(
                 conversation=conversation,
                 sender=user,
@@ -199,6 +248,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return msg.to_dict()
         except (LocalUser.DoesNotExist, Conversation.DoesNotExist):
             return None
+
+    @database_sync_to_async
+    def _create_game_invite_async(self, user_id, conversation_id, data):
+        try:
+            user = LocalUser.objects.get(id=user_id)
+            conversation = Conversation.objects.get(id=conversation_id)
+            from chat.services.invitation import create_game_invite
+            return create_game_invite(user, conversation, data)
+        except (LocalUser.DoesNotExist, Conversation.DoesNotExist):
+            return {'error': 'User or Conversation not found', 'status': 404}
+
+    @database_sync_to_async
+    def _broadcast_invite_created(self, invite_id):
+        from chat.models import GameInvite
+        from chat.views import _broadcast_invite_event
+        try:
+            invite = GameInvite.objects.get(id=invite_id)
+            _broadcast_invite_event('invite_created', invite)
+        except Exception:
+            pass
 
     @database_sync_to_async
     def _mark_messages_read(self, user_id, message_ids):
@@ -247,12 +316,29 @@ class ChatConsumer(AsyncWebsocketConsumer):
             other_ids = [pid for pid in participants if pid != user_id]
             if not other_ids:
                 return False
-            return Friendship.objects.filter(
+            
+            # Check if WE are blocked by them, or if WE blocked them
+            friendship = Friendship.objects.filter(
                 Q(from_user_id=user_id, to_user_id__in=other_ids, status='blocked') |
                 Q(from_user_id__in=other_ids, to_user_id=user_id, status='blocked')
-            ).exists()
+            ).first()
+            
+            if friendship:
+                if friendship.blocked_by_id == user_id:
+                    return "Tu as bloque ce joueur."
+                else:
+                    return "Ce joueur t'a bloque."
+            return False
         except Conversation.DoesNotExist:
-            return True
+            return "Conversation introuvable."
+
+    @database_sync_to_async
+    def _is_participant(self, user_id, conversation_id):
+        try:
+            conversation = Conversation.objects.get(id=conversation_id)
+            return conversation.participants.filter(id=user_id).exists()
+        except (Conversation.DoesNotExist, TypeError, ValueError):
+            return False
 
     @database_sync_to_async
     def _presence_connect(self, user_id):

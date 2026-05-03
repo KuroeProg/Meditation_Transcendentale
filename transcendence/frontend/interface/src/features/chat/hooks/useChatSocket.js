@@ -57,15 +57,25 @@ export function useChatSocket(conversationId, userId) {
 						)
 					)
 				}
-			} catch {}
+			} catch { }
 		}
 
 		ws.onclose = () => setIsConnected(false)
 		ws.onerror = () => setIsConnected(false)
 
 		return () => {
-			ws.close()
-			wsRef.current = null
+			const state = ws.readyState
+			if (state === WebSocket.CONNECTING) {
+				ws.onopen = () => {
+					setTimeout(() => ws.close(), 100)
+				}
+			} else if (state === WebSocket.OPEN) {
+				ws.close()
+			}
+
+			if (wsRef.current === ws) {
+				wsRef.current = null
+			}
 			setIsConnected(false)
 			Object.values(typingTimeoutsRef.current).forEach(clearTimeout)
 		}
