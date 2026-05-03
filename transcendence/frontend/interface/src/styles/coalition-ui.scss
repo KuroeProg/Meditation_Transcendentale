@@ -53,55 +53,59 @@ html[data-coalition='neutral'] {
 }
 
 /* —— Profil & Paramètres : cartes et titres —— */
-.page-shell .surface-card {
-	border-color: var(--coalition-accent-border);
-	box-shadow:
-		0 8px 32px rgba(0, 0, 0, 0.25),
-		0 0 0 1px var(--coalition-accent-soft);
-	transition: border-color 0.3s ease, box-shadow 0.3s ease;
-}
+.page-shell {
+	.surface-card {
+		border-color: var(--coalition-accent-border);
+		box-shadow:
+			0 8px 32px rgba(0, 0, 0, 0.25),
+			0 0 0 1px var(--coalition-accent-soft);
+		transition: border-color 0.3s ease, box-shadow 0.3s ease;
 
-.page-shell .surface-card--42 {
-	border-color: color-mix(in srgb, var(--coalition-accent) 45%, transparent);
-	background: linear-gradient(
-		135deg,
-		rgba(20, 28, 42, 0.92),
-		color-mix(in srgb, var(--coalition-accent-soft) 40%, rgba(15, 40, 50, 0.75))
-	);
-}
+		&--42 {
+			border-color: color-mix(in srgb, var(--coalition-accent) 45%, transparent);
+			background: linear-gradient(
+				135deg,
+				rgba(20, 28, 42, 0.92),
+				color-mix(in srgb, var(--coalition-accent-soft) 40%, rgba(15, 40, 50, 0.75))
+			);
+		}
+	}
 
-.page-shell .page-title {
-	color: #f4f6fb;
-	text-shadow: 0 0 28px var(--coalition-accent-soft);
-}
+	.page-title {
+		color: #f4f6fb;
+		text-shadow: 0 0 28px var(--coalition-accent-soft);
+	}
 
-.page-shell .accent {
-	color: var(--coalition-accent);
-}
+	.accent {
+		color: var(--coalition-accent);
+	}
 
-.page-shell .card-title {
-	color: #f0f4ff;
-}
+	.card-title {
+		color: #f0f4ff;
+	}
 
-.page-shell .profile-editable:hover,
-.page-shell .profile-editable:hover .profile-edit-icon {
-	color: var(--coalition-accent);
-}
+	.profile-editable {
+		&:hover,
+		&:hover .profile-edit-icon {
+			color: var(--coalition-accent);
+		}
+	}
 
-.page-shell .profile-edit-input:focus {
-	border-color: var(--coalition-accent-border);
-	box-shadow: 0 0 0 2px var(--coalition-accent-soft);
-}
+	.profile-edit-input:focus {
+		border-color: var(--coalition-accent-border);
+		box-shadow: 0 0 0 2px var(--coalition-accent-soft);
+	}
 
-.page-shell .profile-friend-challenge {
-	border-color: var(--coalition-accent-border);
-	background: var(--coalition-accent-soft);
-	color: var(--coalition-accent);
-}
+	.profile-friend-challenge {
+		border-color: var(--coalition-accent-border);
+		background: var(--coalition-accent-soft);
+		color: var(--coalition-accent);
+	}
 
-.page-shell .leaderboard-current td {
-	background: var(--coalition-accent-soft);
-	color: var(--coalition-accent);
+	.leaderboard-current td {
+		background: var(--coalition-accent-soft);
+		color: var(--coalition-accent);
+	}
 }
 
 /* —— ELO Row in Stats Section —— */
@@ -125,17 +129,17 @@ html[data-coalition='neutral'] {
 	border-radius: 10px;
 	border: 1px solid rgba(255, 255, 255, 0.06);
 	transition: transform 0.2s ease, border-color 0.2s ease;
-}
 
-.stat-elo-item:hover {
-	transform: translateY(-2px);
-	border-color: var(--coalition-accent-border);
-}
+	&:hover {
+		transform: translateY(-2px);
+		border-color: var(--coalition-accent-border);
+	}
 
-.stat-elo-item i {
-	font-size: 1.5rem;
-	color: var(--coalition-accent);
-    opacity: 0.85;
+	i {
+		font-size: 1.5rem;
+		color: var(--coalition-accent);
+		opacity: 0.85;
+	}
 }
 
 .stat-elo-details {
@@ -157,7 +161,7 @@ html[data-coalition='neutral'] {
 	font-weight: 800;
 	color: #fff;
 	font-family: ui-monospace, monospace;
-    text-shadow: 0 0 15px var(--coalition-accent-soft);
+	text-shadow: 0 0 15px var(--coalition-accent-soft);
 }
 
 .profile-coalition-row {
