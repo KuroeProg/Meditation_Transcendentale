@@ -4,7 +4,7 @@ import { useAuth } from '../../auth/index.js'
 import { coalitionToSlug, shouldUseNeutralGuestTheme } from '../services/coalitionTheme.js'
 import { COALITION_ACCENTS, COALITION_BACKGROUNDS } from '../services/coalitionAmbience.js'
 import CoalitionParticleCanvas from './CoalitionParticleCanvas.jsx'
-import '../styles/CoalitionAmbient.css'
+import '../styles/CoalitionAmbient.scss'
 
 /** Fond coalition : `/` exclus, masqué tant que la session ou le PNG ne sont pas prêts. */
 export default function CoalitionAmbient() {

@@ -9,7 +9,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { Chess } from 'chess.js'
 import Board from '../../chess/components/Board.jsx'
 import { CapturedPiecesBar } from '../../chess/components/CapturedPieces.jsx'
-import '../styles/GameReview.css'
+import '../styles/GameReview.scss'
 
 const API_BASE = '/api/game'
 

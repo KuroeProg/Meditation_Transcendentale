@@ -3,92 +3,90 @@
 .about-page {
 	min-height: min(100vh, 100dvh);
 	padding-bottom: 3rem;
-}
 
-/* —— Panthéon : cosmos + particules —— */
-.about-page--pantheon {
-	--pantheon-terre: #a3d636;
-	--pantheon-feu: #ff6b4a;
-	--pantheon-eau: #5ecfff;
-	--pantheon-air: #d8b4fe;
-	--pantheon-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
-	position: relative;
-	isolation: isolate;
-	overflow-x: clip;
-}
+	&--pantheon {
+		--pantheon-terre: #a3d636;
+		--pantheon-feu: #ff6b4a;
+		--pantheon-eau: #5ecfff;
+		--pantheon-air: #d8b4fe;
+		--pantheon-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Code', monospace;
+		position: relative;
+		isolation: isolate;
+		overflow-x: clip;
+	}
 
-.about-page__cosmic-bg {
-	position: fixed;
-	inset: 0;
-	pointer-events: none;
-	z-index: 0;
-	overflow: hidden;
-}
+	&__cosmic-bg {
+		position: fixed;
+		inset: 0;
+		pointer-events: none;
+		z-index: 0;
+		overflow: hidden;
+	}
 
-.about-page__orb {
-	position: absolute;
-	border-radius: 50%;
-	filter: blur(64px);
-	opacity: 0.38;
-	mix-blend-mode: screen;
-	will-change: transform;
-}
+	&__orb {
+		position: absolute;
+		border-radius: 50%;
+		filter: blur(64px);
+		opacity: 0.38;
+		mix-blend-mode: screen;
+		will-change: transform;
 
-.about-page__orb--terre {
-	width: min(42vw, 480px);
-	height: min(72vh, 520px);
-	left: -8%;
-	top: 5%;
-	background: radial-gradient(circle, var(--pantheon-terre) 0%, transparent 70%);
-	animation: about-orb-a 18s ease-in-out infinite;
-}
+		&--terre {
+			width: min(42vw, 480px);
+			height: min(72vh, 520px);
+			left: -8%;
+			top: 5%;
+			background: radial-gradient(circle, var(--pantheon-terre) 0%, transparent 70%);
+			animation: about-orb-a 18s ease-in-out infinite;
+		}
 
-.about-page__orb--feu {
-	width: min(38vw, 420px);
-	height: min(68vh, 480px);
-	right: -6%;
-	top: 0%;
-	background: radial-gradient(circle, var(--pantheon-feu) 0%, transparent 68%);
-	animation: about-orb-b 20s ease-in-out infinite;
-}
+		&--feu {
+			width: min(38vw, 420px);
+			height: min(68vh, 480px);
+			right: -6%;
+			top: 0%;
+			background: radial-gradient(circle, var(--pantheon-feu) 0%, transparent 68%);
+			animation: about-orb-b 20s ease-in-out infinite;
+		}
 
-.about-page__orb--eau {
-	width: min(48vw, 520px);
-	height: min(55vh, 420px);
-	left: 22%;
-	bottom: -12%;
-	background: radial-gradient(circle, var(--pantheon-eau) 0%, transparent 66%);
-	animation: about-orb-c 22s ease-in-out infinite;
-}
+		&--eau {
+			width: min(48vw, 520px);
+			height: min(55vh, 420px);
+			left: 22%;
+			bottom: -12%;
+			background: radial-gradient(circle, var(--pantheon-eau) 0%, transparent 66%);
+			animation: about-orb-c 22s ease-in-out infinite;
+		}
 
-.about-page__orb--air {
-	width: min(36vw, 400px);
-	height: min(62vh, 440px);
-	right: 18%;
-	top: 32%;
-	background: radial-gradient(circle, var(--pantheon-air) 0%, transparent 70%);
-	animation: about-orb-d 15s ease-in-out infinite;
-}
+		&--air {
+			width: min(36vw, 400px);
+			height: min(62vh, 440px);
+			right: 18%;
+			top: 32%;
+			background: radial-gradient(circle, var(--pantheon-air) 0%, transparent 70%);
+			animation: about-orb-d 15s ease-in-out infinite;
+		}
 
-.about-page__orb--core {
-	width: min(32vw, 360px);
-	height: min(48vh, 380px);
-	left: 50%;
-	top: 38%;
-	transform: translate(-50%, -50%);
-	background: radial-gradient(
-		circle,
-		color-mix(in srgb, var(--pantheon-eau) 35%, transparent) 0%,
-		color-mix(in srgb, var(--pantheon-air) 22%, transparent) 42%,
-		transparent 72%
-	);
-	filter: blur(44px);
-	opacity: 0.5;
-	animation: about-core 11s ease-in-out infinite;
+		&--core {
+			width: min(32vw, 360px);
+			height: min(48vh, 380px);
+			left: 50%;
+			top: 38%;
+			transform: translate(-50%, -50%);
+			background: radial-gradient(
+				circle,
+				color-mix(in srgb, var(--pantheon-eau) 35%, transparent) 0%,
+				color-mix(in srgb, var(--pantheon-air) 22%, transparent) 42%,
+				transparent 72%
+			);
+			filter: blur(44px);
+			opacity: 0.5;
+			animation: about-core 11s ease-in-out infinite;
+		}
+	}
 }
 
 @keyframes about-orb-a {
-	0%,
 	100% {
 		transform: translate(0, 0) scale(1);
 	}

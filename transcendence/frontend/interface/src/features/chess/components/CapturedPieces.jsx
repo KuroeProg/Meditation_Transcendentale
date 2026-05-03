@@ -9,7 +9,7 @@
  *   Si disponible, ce champ peut remplacer le calcul local via le prop `serverAdvantage`.
  */
 import { useMemo } from 'react'
-import './CapturedPieces.css'
+import './CapturedPieces.scss'
 
 const PIECE_VALUES = { p: 1, n: 3, b: 3, r: 5, q: 9 }
 const INITIAL_COUNTS = { p: 8, n: 2, b: 2, r: 2, q: 1 }

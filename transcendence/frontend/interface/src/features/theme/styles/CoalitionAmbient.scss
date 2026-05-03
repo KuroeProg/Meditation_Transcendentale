@@ -6,10 +6,10 @@
 	overflow: hidden;
 	isolation: isolate;
 	opacity: 0;
-}
 
-.coalition-ambient--ready {
-	opacity: 1;
+	&--ready {
+		opacity: 1;
+	}
 }
 
 .coalition-ambient__glow {
@@ -40,11 +40,11 @@
 	inset: -8%;
 	will-change: transform, background-position;
 	transition: none;
-}
 
-.coalition-ambient__layer--deep {
-	filter: saturate(1.05) brightness(0.72) contrast(1.08);
-	opacity: 0.95;
+	&--deep {
+		filter: saturate(1.05) brightness(0.72) contrast(1.08);
+		opacity: 0.95;
+	}
 }
 
 .coalition-ambient__punch {

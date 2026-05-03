@@ -50,10 +50,10 @@
 	cursor: pointer;
 	padding: 0.2rem;
 	transition: color 0.2s;
-}
 
-.chat-drawer-back:hover {
-	color: #fff;
+	&:hover {
+		color: #fff;
+	}
 }
 
 .chat-drawer-title {
@@ -78,11 +78,11 @@
 	padding: 0.3rem;
 	border-radius: 6px;
 	transition: all 0.2s;
-}
 
-.chat-drawer-action-btn:hover {
-	background: rgba(255, 255, 255, 0.06);
-	color: #fff;
+	&:hover {
+		background: rgba(255, 255, 255, 0.06);
+		color: #fff;
+	}
 }
 
 /* --- Body --- */

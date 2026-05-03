@@ -7,22 +7,24 @@
 	max-width: 100%;
 	box-sizing: border-box;
 	scroll-behavior: smooth;
+
+	&.HomeMenu {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		z-index: 10;
+	}
 }
 
-html[data-reduce-motion='true'] .home {
-	scroll-behavior: auto;
-}
+html[data-reduce-motion='true'] {
+	.home {
+		scroll-behavior: auto;
+	}
 
-html[data-reduce-motion='true'] .title-gradient {
-	animation: none;
-}
-
-.HomeMenu {
-	position: absolute;
-	top: 0;
-	left: 0;
-	width: 100%;
-	z-index: 10;
+	.title-gradient {
+		animation: none;
+	}
 }
 
 .front-page {

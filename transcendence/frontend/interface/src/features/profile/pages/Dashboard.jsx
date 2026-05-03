@@ -1,4 +1,4 @@
-import '../styles/Dashboard.css'
+import '../styles/Dashboard.scss'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../../auth/index.js'

@@ -22,16 +22,47 @@
 	position: relative;
 	z-index: 1;
 	isolation: isolate;
-}
 
-.main-content.full-width {
-	margin-left: 0;
-	padding: 0;
-	padding-bottom: calc(var(--site-footer-reserve) + env(safe-area-inset-bottom, 0px));
-	min-height: 100vh;
-	min-height: 100dvh;
-	overflow: auto;
-	box-sizing: border-box;
+	&.full-width {
+		margin-left: 0;
+		padding: 0;
+		padding-bottom: calc(var(--site-footer-reserve) + env(safe-area-inset-bottom, 0px));
+		min-height: 100vh;
+		min-height: 100dvh;
+		overflow: auto;
+		box-sizing: border-box;
+
+		&:has(.auth-page) {
+			overflow: hidden;
+			min-height: 0;
+			flex: 1 1 auto;
+			align-self: stretch;
+		}
+	}
+
+	&--guest {
+		margin-left: 0 !important;
+	}
+
+	&:has(.game-container) {
+		max-width: none;
+		width: auto;
+		padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem)) 1.5rem;
+	}
+
+	&:has(.pstats-page) {
+		max-width: none;
+		width: 100%;
+		padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
+		box-sizing: border-box;
+	}
+
+	&:has(.phistory-page) {
+		max-width: none;
+		width: 100%;
+		padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
+		box-sizing: border-box;
+	}
 }
 
 /* Auth : pas de scroll document (overflow venait de .full-width + contenu pleine hauteur) */
@@ -40,41 +71,6 @@ body:has(.auth-page),
 #root:has(.auth-page) {
 	overflow: hidden;
 	height: 100%;
-}
-
-.main-content.full-width:has(.auth-page) {
-	overflow: hidden;
-	min-height: 0;
-	flex: 1 1 auto;
-	align-self: stretch;
-}
-
-/* Pas de sidebar : Home / pages publiques en pleine largeur */
-.main-content--guest {
-	margin-left: 0 !important;
-}
-
-/* Page jeu : pleine largeur restante (échiquier + panneau stats sans coupure) */
-.main-content:has(.game-container) {
-	max-width: none;
-	width: auto;
-	padding: 0.75rem 1rem calc(1rem + var(--site-footer-reserve) + var(--game-footer-overscan, 0.4rem)) 1.5rem;
-}
-
-/* Statistiques perso */
-.main-content:has(.pstats-page) {
-	max-width: none;
-	width: 100%;
-	padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
-	box-sizing: border-box;
-}
-
-/* Historique des parties */
-.main-content:has(.phistory-page) {
-	max-width: none;
-	width: 100%;
-	padding: 1rem 1.25rem calc(2rem + var(--site-footer-reserve));
-	box-sizing: border-box;
 }
 
 /* Relecture partie : même logique que l’écran jeu — padding bas = footer */

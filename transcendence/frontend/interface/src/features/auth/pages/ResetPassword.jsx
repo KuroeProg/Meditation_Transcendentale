@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useAuth } from '../hooks/useAuth.js'
-import '../styles/Auth.css'
+import '../styles/Auth.scss'
 
 export default function ResetPasswordPage() {
   const { isAuthenticated, resetPassword, error, setError } = useAuth()

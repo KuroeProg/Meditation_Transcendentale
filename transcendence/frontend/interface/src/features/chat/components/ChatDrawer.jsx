@@ -3,7 +3,7 @@ import { useAuth } from '../../auth/index.js'
 import ConversationList from './ConversationList.jsx'
 import MessageThread from './MessageThread.jsx'
 import ContactSearch from './ContactSearch.jsx'
-import '../styles/Chat.css'
+import '../styles/Chat.scss'
 
 export default function ChatDrawer({ isOpen, onClose, initialConversation = null, onConsumedInitial }) {
 	const { user } = useAuth()

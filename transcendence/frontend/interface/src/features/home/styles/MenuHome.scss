@@ -8,12 +8,11 @@
 	position: absolute;
 	left: var(--sidebar-width, 75px);
 	z-index: 5;
-}
 
-/* Visiteur sans sidebar : barre sur toute la largeur */
-.top-bar--full {
-	left: 0;
-	width: 100%;
+	&--full {
+		left: 0;
+		width: 100%;
+	}
 }
 
 @media (max-width: 770px) {
@@ -34,11 +33,11 @@
 	transition:
 		color 0.2s,
 		background 0.2s;
-}
 
-.top-bar-link:hover {
-	color: #fff;
-	background: rgba(255, 255, 255, 0.06);
+	&:hover {
+		color: #fff;
+		background: rgba(255, 255, 255, 0.06);
+	}
 }
 
 .top-bar-actions {
@@ -60,10 +59,10 @@
 	border-radius: 6px;
 	transition: color 0.2s;
 	text-decoration: none;
-}
 
-.button-signin:hover {
-	color: #fff;
+	&:hover {
+		color: #fff;
+	}
 }
 
 .button-signup {
@@ -79,9 +78,9 @@
 	border-radius: 6px;
 	transition: border-color 0.2s, background 0.2s;
 	text-decoration: none;
-}
 
-.button-signup:hover {
-	border-color: rgba(255, 255, 255, 0.8);
-	background: rgba(255, 255, 255, 0.05);
+	&:hover {
+		border-color: rgba(255, 255, 255, 0.8);
+		background: rgba(255, 255, 255, 0.05);
+	}
 }

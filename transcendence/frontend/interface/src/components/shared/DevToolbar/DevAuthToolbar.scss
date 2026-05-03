@@ -48,10 +48,10 @@
 	cursor: pointer;
 	box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 	align-self: flex-start;
-}
 
-.dev-auth-toolbar__toggle:hover {
-	filter: brightness(1.05);
+	&:hover {
+		filter: brightness(1.05);
+	}
 }
 
 .dev-auth-toolbar {
