@@ -63,21 +63,21 @@ html[data-reduce-motion='true'] .pstats-page {
 	width: 100%;
 	justify-content: center;
 	flex-wrap: wrap;
-}
 
-.pstats-controls__group {
-	display: flex;
-	align-items: center;
-	gap: 0.4rem;
-	flex-wrap: wrap;
-	justify-content: center;
-}
+	&__group {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
 
-.pstats-controls__separator {
-	width: 2px;
-	min-height: 24px;
-	background: rgba(255, 255, 255, 0.1);
-	border-radius: 2px;
+	&__separator {
+		width: 2px;
+		min-height: 24px;
+		background: rgba(255, 255, 255, 0.1);
+		border-radius: 2px;
+	}
 }
 
 .pstats-controls__btn {

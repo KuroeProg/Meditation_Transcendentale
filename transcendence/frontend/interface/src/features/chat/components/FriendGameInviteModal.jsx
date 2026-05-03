@@ -4,7 +4,7 @@ import { TimeControlSection, defaultSelectedControl } from '../../chess/componen
 import { TIME_CONTROLS } from '../../chess/constants/timeControls.js'
 import { useAuth } from '../../auth/index.js'
 import '../../profile/styles/Dashboard.scss'
-import './FriendGameInviteModal.scss'
+import '../styles/FriendGameInviteModal.scss'
 import { createConversation, sendGameInviteHttp } from '../services/chatApi.js'
 
 function buildInviteBody(selectedTC, competitive) {
