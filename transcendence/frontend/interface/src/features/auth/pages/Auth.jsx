@@ -32,7 +32,7 @@ function LoginForm({ on2FARequired, onSwitchToRegister, onForgotPassword }) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-    const result = await loginLocal(formData.email, formData.password)
+    const result = await loginLocal(formData.email, formData.password, formData.remember)
     if (result?.status === '2fa_required') {
       on2FARequired(result)
     }

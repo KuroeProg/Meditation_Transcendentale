@@ -161,31 +161,27 @@ function Settings() {
 		if (!user) return
 		fetchServerPrefs().then((serverPrefs) => {
 			if (!serverPrefs || !Object.keys(serverPrefs).length) return
-			setPrefsRaw((local) => {
-				const merged = { ...local, ...serverPrefs }
-				localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(merged))
-				applyDocumentUiPrefs()
-				notifyPrefsChanged()
-				return merged
-			})
+			setPrefsRaw((local) => ({ ...local, ...serverPrefs }))
 		}).catch(() => {})
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user?.id])
 
+	// Side effects: whenever prefs change, sync to localStorage, DOM, and notify other components
+	useEffect(() => {
+		localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs))
+		applyDocumentUiPrefs()
+		notifyPrefsChanged()
+
+		// Debounced server sync
+		if (syncDebounce.current) clearTimeout(syncDebounce.current)
+		syncDebounce.current = setTimeout(() => {
+			if (user) patchServerPrefs(prefs).catch(() => {})
+		}, 800)
+	}, [prefs, user])
+
 	const setPrefs = useCallback((updater) => {
-		setPrefsRaw((prev) => {
-			const next = typeof updater === 'function' ? updater(prev) : updater
-			localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(next))
-			applyDocumentUiPrefs()
-			notifyPrefsChanged()
-			// Debounced server sync
-			if (syncDebounce.current) clearTimeout(syncDebounce.current)
-			syncDebounce.current = setTimeout(() => {
-				if (user) patchServerPrefs(next).catch(() => {})
-			}, 800)
-			return next
-		})
-	}, [user])
+		setPrefsRaw(updater)
+	}, [])
 
 	useEffect(() => {
 		return () => { if (syncDebounce.current) clearTimeout(syncDebounce.current) }
@@ -195,10 +191,7 @@ function Settings() {
 		localStorage.removeItem(PREFS_STORAGE_KEY)
 		localStorage.removeItem(GAME_AUDIO_PREFS_KEY)
 		const defaults = loadUiPrefs()
-		applyDocumentUiPrefs()
-		notifyPrefsChanged()
 		setPrefsRaw(defaults)
-		if (user) patchServerPrefs(defaults).catch(() => {})
 		setResetDone(true)
 		setTimeout(() => setResetDone(false), 2500)
 	}
@@ -211,10 +204,7 @@ function Settings() {
 		const keysToRemove = [PREFS_STORAGE_KEY, GAME_AUDIO_PREFS_KEY]
 		keysToRemove.forEach((k) => localStorage.removeItem(k))
 		const defaults = loadUiPrefs()
-		applyDocumentUiPrefs()
-		notifyPrefsChanged()
 		setPrefsRaw(defaults)
-		if (user) patchServerPrefs(defaults).catch(() => {})
 		setConfirmErase(false)
 		setEraseDone(true)
 		setTimeout(() => setEraseDone(false), 2500)

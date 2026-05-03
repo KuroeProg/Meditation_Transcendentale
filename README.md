@@ -105,6 +105,60 @@ Typical entry points (exact URLs depend on your Nginx routing and `.env`):
 
 ---
 
+## Demo World (Fixture Data)
+
+The project includes a coherent demo world generator that creates a realistic-looking community of players with relationships, games, and conversations.
+
+### Quick Start
+
+```bash
+# Generate demo world with default users (alice_competitive, bob_casual, etc.)
+make seed-demo-world
+
+# Regenerate demo world, purging old data first
+make seed-demo-world SEED_ARGS="--purge"
+
+# Complete fresh start: reset database, then populate
+make reset-db-safe && make seed-demo-world
+```
+
+### Default Login Credentials
+
+**Primary test account:**
+- **Username:** `alice_competitive`
+- **Password:** `alicedemo123`
+
+**Other demo users** (all passwords follow the pattern `{username}demo123`):
+- `bob_casual` (casual player, ELO 1400)
+- `charlie_legend` (elite player, ELO 2400)
+- `diana_rising` (improving player, ELO 1650)
+- `eve_nocturnal` (night owl blitzer, ELO 1300)
+- `frank_tactical` (positional player, ELO 1950)
+- `grace_blitzer` (blitz specialist, ELO 2150)
+
+### Demo Data Included
+
+- **7 named users** with distinct profiles, bios, and coalition affiliations
+- **11 friendships** reflecting realistic social networks
+- **8 competitive games** with proper ELO deltas and match outcomes
+- **4 conversation threads** with authentic message exchanges
+- **Game history** showing realistic progression and rivalries
+
+### Configuration
+
+The demo world is defined in `/transcendence/backend/demo_world_config.json`:
+- User profiles (names, ELO ratings, bios, coalitions)
+- Friendship relationships and statuses
+- Game history with results and time controls
+- Conversation threads with message sequences
+
+To customize, edit the config file and regenerate:
+```bash
+make seed-demo-world SEED_ARGS="--purge"
+```
+
+---
+
 ## Features (honest scope)
 
 What is **implemented or demonstrable** evolves with each sprint. As of the latest iteration:

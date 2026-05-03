@@ -338,7 +338,7 @@ function AnalysisPanel({ game }) {
 								<strong>{game.accuracy.opponent}%</strong>
 							</div>
 							<div className="phistory-accuracy-bar-bg">
-								<div className="phistory-accuracy-bar-fill" style={{ width: `${game.accuracy.opponent}%`, background: 'rgba(255,255,255,0.3)' }} />
+								<div className="phistory-accuracy-bar-fill" style={{ width: `${game.accuracy.opponent}%`, backgroundColor: 'rgba(255,255,255,0.3)' }} />
 							</div>
 						</div>
 					</section>

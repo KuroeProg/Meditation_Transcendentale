@@ -127,7 +127,7 @@ function PerfTooltip({ active, payload, label, perfMode }) {
 			</p>
 			{payload.map((p) => (
 				<div key={String(p.dataKey)} className="pstats-tooltip__row">
-					<span className="pstats-tooltip__dot" style={{ background: p.color }} />
+					<span className="pstats-tooltip__dot" style={{ backgroundColor: p.color }} />
 					<span className="pstats-tooltip__name">{p.name}</span>
 					<strong className="pstats-tooltip__val">
 						{typeof p.value === 'number'
@@ -156,7 +156,7 @@ function PieceTooltip({ active, payload, label }) {
 				<div key={String(p.dataKey)} className="pstats-tooltip__row">
 					<span
 						className="pstats-tooltip__dot"
-						style={{ background: p.fill ?? p.color }}
+						style={{ backgroundColor: p.fill ?? p.color }}
 					/>
 					<span className="pstats-tooltip__name">{p.name}</span>
 					<strong className="pstats-tooltip__val">

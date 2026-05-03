@@ -164,6 +164,7 @@ def auth_login_db(request):
     payload = _read_json_body(request)
     email = str(payload.get('email', '')).strip()
     password = str(payload.get('password', ''))
+    remember = bool(payload.get('remember', False))
 
     if not email or not password:
         return JsonResponse({'error': 'Email et mot de passe requis'}, status=400)
@@ -183,6 +184,10 @@ def auth_login_db(request):
     if user.is_2fa_enabled:
         if _is_trusted_2fa_cookie_valid(request, user):
             request.session['local_user_id'] = user.id
+            if remember:
+                request.session.set_expiry(TRUSTED_2FA_MAX_AGE_SECONDS)
+            else:
+                request.session.set_expiry(0)  # Browser close
             request.session.modified = True
             _evaluate_achievements_and_notify(user)
             return JsonResponse({'status': 'authenticated', 'user': _serialize_user_session_payload(user)})
@@ -207,9 +212,14 @@ def auth_login_db(request):
             'pre_auth_token': pre_auth_token,
             'message': 'Code sent to email',
             'email': user.email,
+            'remember': remember,
         }, status=200)
 
     request.session['local_user_id'] = user.id
+    if remember:
+        request.session.set_expiry(TRUSTED_2FA_MAX_AGE_SECONDS)
+    else:
+        request.session.set_expiry(0)
     _evaluate_achievements_and_notify(user)
     return JsonResponse({'user': _serialize_user_session_payload(user)})
 
@@ -218,16 +228,18 @@ def auth_login_db(request):
 def auth_me(request):
     user_id = request.session.get('local_user_id')
     if not user_id:
-        return JsonResponse({'error': 'Non authentifie'}, status=401)
+        return JsonResponse({'authenticated': False}, status=200)
 
     try:
         user = LocalUser.objects.get(id=user_id)
     except LocalUser.DoesNotExist:
         request.session.pop('local_user_id', None)
-        return JsonResponse({'error': 'Session invalide'}, status=401)
+        return JsonResponse({'authenticated': False}, status=200)
 
     _evaluate_achievements_and_notify(user)
-    return JsonResponse(_serialize_user_session_payload(user))
+    payload = _serialize_user_session_payload(user)
+    payload['authenticated'] = True
+    return JsonResponse(payload)
 
 
 @require_GET
@@ -257,7 +269,7 @@ def auth_logout(request):
     request.session.flush()
     response = JsonResponse({'ok': True})
     response.delete_cookie(settings.SESSION_COOKIE_NAME, path='/')
-    response.delete_cookie(TRUSTED_2FA_COOKIE_NAME, path='/')
+    # TRUSTED_2FA_COOKIE_NAME is NOT deleted here to allow bypassing 2FA on next login
     return response
 
 
@@ -453,6 +465,7 @@ class Verify2FAView(View):
         code = str(payload.get('code', '')).strip()
         pre_auth_token = str(payload.get('pre_auth_token', '')).strip()
         remember_device = bool(payload.get('remember_device', True))
+        remember = bool(payload.get('remember', remember_device))
         is_login_flow = False
 
         if pre_auth_token:
@@ -505,6 +518,10 @@ class Verify2FAView(View):
             user.save(update_fields=['is_2fa_verified'])
 
         request.session['local_user_id'] = user.id
+        if remember:
+            request.session.set_expiry(TRUSTED_2FA_MAX_AGE_SECONDS)
+        else:
+            request.session.set_expiry(0)
         request.session.modified = True
         _evaluate_achievements_and_notify(user)
 

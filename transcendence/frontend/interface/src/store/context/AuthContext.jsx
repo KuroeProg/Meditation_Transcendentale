@@ -107,9 +107,15 @@ export function AuthProvider({ children }) {
 
       if (response.ok) {
         const userData = await response.json()
-        syncActiveGameStorage(userData)
-        setUser(userData)
-        setTwoFactorChallenge(null)
+        if (userData && userData.authenticated === false) {
+          sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
+          setUser(null)
+          setTwoFactorChallenge(null)
+        } else {
+          syncActiveGameStorage(userData)
+          setUser(userData)
+          setTwoFactorChallenge(null)
+        }
       } else {
         sessionStorage.removeItem(ACTIVE_GAME_STORAGE_KEY)
         setUser(null)
@@ -252,7 +258,7 @@ export function AuthProvider({ children }) {
     }
   }, [user, twoFactorChallenge])
 
-  async function loginLocal(email, password) {
+  async function loginLocal(email, password, remember = false) {
     setError(null)
     try {
       if (isDevMockAuthEnabled()) {
@@ -280,7 +286,7 @@ export function AuthProvider({ children }) {
         method: 'POST',
         credentials: 'include',
         headers,
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, remember }),
       })
 
       const data = await safeJson(response)
@@ -297,6 +303,7 @@ export function AuthProvider({ children }) {
           pre_auth_token: data.pre_auth_token,
           email: data.email,
           message: data.message,
+          remember: data.remember ?? remember,
         }
         setUser(null)
         setTwoFactorChallenge(challenge)
@@ -396,6 +403,7 @@ export function AuthProvider({ children }) {
       if (preAuthToken) {
         payload.pre_auth_token = preAuthToken
         payload.remember_device = Boolean(rememberDevice)
+        payload.remember = twoFactorChallenge?.remember ?? Boolean(rememberDevice)
       } else {
         payload.user_id = userId
       }
