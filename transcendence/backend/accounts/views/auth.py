@@ -405,17 +405,17 @@ class RegisterView(View):
         if not username or not password or not email:
             return JsonResponse({
                 'error': 'Username, password, and email are required'
-            }, status=400)
+            }, status=200)
 
         if LocalUser.objects.filter(username=username).exists():
             return JsonResponse({
                 'error': 'Username already taken'
-            }, status=409)
+            }, status=200)
 
         if LocalUser.objects.filter(email=email).exists():
             return JsonResponse({
                 'error': 'Email already registered'
-            }, status=409)
+            }, status=200)
 
         try:
             user = LocalUser.objects.create(

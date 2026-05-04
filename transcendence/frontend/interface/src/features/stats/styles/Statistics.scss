@@ -584,3 +584,39 @@ html[data-reduce-motion='true'] .pstats-page {
 		max-width: 1100px;
 	}
 }
+
+/* ──────────────────────────────────────────────────
+   Loading View (Matching History style)
+   ────────────────────────────────────────────────── */
+
+.pstats-loading-view {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 1rem;
+	padding: 4rem 2rem;
+	opacity: 0.7;
+	color: var(--pstats-accent);
+	font-weight: 600;
+	font-size: 0.85rem;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+	text-align: center;
+
+	i {
+		font-size: 2.2rem;
+	}
+
+	&--small {
+		padding: 2rem 1rem;
+		i { font-size: 1.5rem; }
+	}
+}
+
+/* On s'assure que le container parent prend toute la place */
+.pstats-left:has(.pstats-loading-view),
+.pstats-right:has(.pstats-loading-view) {
+	justify-content: center;
+}

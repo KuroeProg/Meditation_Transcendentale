@@ -113,7 +113,7 @@ def update_profile(request):
             value = str(value).strip()[:max_len]
             if field == 'username' and value:
                 if LocalUser.objects.filter(username=value).exclude(id=user.id).exists():
-                    return JsonResponse({'error': 'Ce nom d\'utilisateur est deja pris'}, status=409)
+                    return JsonResponse({'error': 'Ce nom d\'utilisateur est deja pris'}, status=200)
             setattr(user, field, value)
             update_fields.append(field)
 
@@ -131,7 +131,6 @@ def update_profile(request):
     return JsonResponse(user.to_public_dict())
 
 
-@csrf_exempt
 def upload_avatar(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -236,7 +235,6 @@ def search_users(request):
     })
 
 
-@csrf_exempt
 def presence_ping(request):
     """Marque l'utilisateur connecté comme en ligne (heartbeat app, toutes les ~45s)."""
     if request.method != 'POST':
@@ -262,7 +260,6 @@ _ALLOWED_PREF_KEYS = frozenset({
 })
 
 
-@csrf_exempt
 def client_settings(request):
     """GET or PATCH the user's persistent client preferences."""
     user, err = _get_authenticated_user(request)
@@ -441,7 +438,6 @@ def _read_delete_account_token(token: str):
         return None
 
 
-@csrf_exempt
 def request_delete_account_email(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -474,7 +470,6 @@ def request_delete_account_email(request):
     return JsonResponse({'ok': True, 'message': 'Email de confirmation envoyé.'})
 
 
-@csrf_exempt
 def confirm_delete_account_email(request):
     if request.method != 'POST':
         return JsonResponse({'error': 'Method not allowed'}, status=405)
@@ -504,7 +499,6 @@ def confirm_delete_account_email(request):
     return JsonResponse({'ok': True, 'message': 'Données supprimées et compte anonymisé. Vous avez été déconnecté.'})
 
 
-@csrf_exempt
 def delete_account_data(request):
     """RGPD — anonymise the account, delete personal data, invalidate the session.
 
