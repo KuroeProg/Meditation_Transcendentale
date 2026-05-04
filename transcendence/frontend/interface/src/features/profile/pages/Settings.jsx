@@ -446,7 +446,7 @@ function Settings() {
 										disabled={deleteStep === 2}
 									>
 										{deleteStep === 0 && (
-											<><i className="ri-mail-send-line" aria-hidden /> Envoyer l’email de confirmation</>
+											<><i className="ri-mail-send-line" aria-hidden /> suppression des données personnelles</>
 										)}
 										{deleteStep === 1 && (
 											<><i className="ri-mail-check-line" aria-hidden /> Email envoyé — confirme via le lien reçu</>
