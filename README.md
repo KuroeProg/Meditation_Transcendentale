@@ -1,164 +1,164 @@
-# Transcendence (ft_transcendence)
+_This project has been created as part of the 42 curriculum by tbahin, cfiachet, vbonnard, ezeppa, acoste._
 
-Web application for an online chess experience with coalitions, OAuth, real-time play (in progress), monitoring, and security hardening. This repository implements the **42 ft_transcendence** subject: a full-stack project with a **Dockerized** infrastructure, **HTTPS**, and modular features aligned with the official grading grid.
+# Transcendence
 
----
+## Description
+**Transcendence** is a high-performance, real-time multiplayer chess platform with social features, advanced analytics, and a robust microservices-based infrastructure. The project focuses on providing a seamless chess experience, featuring real-time matchmaking, live gameplay, a comprehensive chat system, and detailed performance analytics, all while emphasizing security, scalability, and observability through modern DevOps practices.
 
-## Table of contents
+### Key Features
+- **Real-Time Chess Engine**: Live matches with matchmaking and reconnection logic.
+- **Social Ecosystem**: Chat system, friend management, and user profiles.
+- **Advanced Analytics**: Real-time stats, Elo tracking, and PDF export of performance metrics.
+- **Secure Infrastructure**: Secret management with HashiCorp Vault and WAF protection.
+- **Observability Stack**: Centralized logging (ELK) and real-time monitoring (Prometheus/Grafana).
 
-1. [Overview](#overview)
-2. [Team & responsibilities](#team--responsibilities)
-3. [Architecture](#architecture)
-4. [Prerequisites](#prerequisites)
-5. [Installation & deployment](#installation--deployment)
-6. [Frontend (local development)](#frontend-local-development)
-7. [Usage & access](#usage--access)
-8. [Features (honest scope)](#features-honest-scope)
-9. [Known limitations](#known-limitations)
-10. [Grading & modules](#grading--modules)
-11. [Contributions & workflow](#contributions--workflow)
-12. [Challenges](#challenges)
-13. [License & credits](#license--credits)
+## Instructions
+### Prerequisites
+- **Docker & Docker Compose**: Version 20.10+ recommended.
+- **Make**: For simplified command execution.
+- **OpenSSL**: For certificate generation.
+- **Modern Web Browser**: Chrome, Firefox, Safari, or Edge.
 
----
+### Installation & Execution
+1. **Clone the repository**:
+   ```bash
+   git clone <repository_url>
+   cd transcendence
+   ```
+2. **Configure Environment**:
+   Create a `.env` file at the root (use `.env.example` as a template).
+   ```bash
+   cp transcendence/.env.example transcendence/.env
+   ```
+3. **Run the project**:
+   Use the Makefile for automated setup (certificates, build, and deployment).
+   ```bash
+   make all
+   ```
+   This command will:
+   - Generate TLS certificates.
+   - Build Docker images.
+   - Start the stack in the background.
+   - Run database migrations.
 
-## Overview
+4. **Access the Application**:
+   Open [https://localhost](https://localhost) in your browser. (Note: You may need to bypass the self-signed certificate warning).
 
-- **Goal**: Deliver a playable chess experience in the browser with user accounts, coalition-themed UI, statistics, and operational tooling (logging, metrics).
-- **Constraints**: Subject **Part III** must be satisfied (HTTPS, DB, Git, Docker one-command startup, README in English, Privacy/Terms, form validation, etc.). Module points are tracked in `**Todo.md`** (French, internal).
+## Resources
+- **Django Documentation**: Backend framework and ORM implementation.
+- **React Documentation**: Frontend framework and component architecture.
+- **HashiCorp Vault Guide**: Secret management best practices.
+- **ELK Stack Documentation**: Log indexing and visualization.
+- **Prometheus/Grafana Guides**: Metrics collection and dashboarding.
+- **AI Use**: AI tools were utilized for boilerplate code generation, unit test scaffolding, and initial documentation drafting. Specifically, it assisted in refining the implementation of complex SQL queries for analytics and debugging WebSocket synchronization edge cases.
 
----
+## Team Information
+| Name | Role | Responsibilities |
+| :--- | :--- | :--- |
+| **acoste** | Product Owner (PO) | Feature prioritization, Chess engine logic, Frontend architecture. |
+| **cfiachet** | Project Manager (PM) | Timeline management, Security infrastructure, Monitoring setup. |
+| **tbahin** | Tech Lead | System architecture, Database design, ELK integration, Analytics. |
+| **vbonnard** | Developer | UI/UX design system, Social features, Browser compatibility, GDPR. |
+| **ezeppa** | Developer | Backend development, Real-time sync, OAuth integration, Networking. |
 
-## Team & responsibilities
+## Project Management
+The team followed an agile-inspired workflow:
+- **Task Distribution**: Managed via GitHub Issues and project boards.
+- **Meetings**: Daily synchronization via Discord and regular in-person sessions at school.
+- **Collaboration**: GitHub was used for version control, transitioning from direct merges to a more structured feature-branch workflow.
 
+## Database Schema
+The database (PostgreSQL) follows the **Third Normal Form (3NF)** and is managed via **Django ORM**.
+- **LocalUser**: Identity, player stats (Elo), and online status tracking.
+- **Friendship**: Social graph with status management (pending, accepted, blocked).
+- **Game**: Match metadata, results, and snapshot of Elo ratings.
+- **Move**: Chronological sequence of moves with tactical data (SAN notation, piece usage).
+- **Conversation/Message**: Real-time chat persistence and unread status tracking.
+- **GameInvite**: Transactional state-machine for matchmaking challenges.
+- **Relationships**: Heavy use of ForeignKeys with cascading rules to ensure data integrity across the identity, game, and chat domains.
 
-| Member     | Focus                                                                                                           |
-| ---------- | --------------------------------------------------------------------------------------------------------------- |
-| **Cloe**   | Project management, cybersecurity (WAF/ModSecurity, Vault), Nginx HTTPS, monitoring (Prometheus/Grafana), Scrum |
-| **Theo**   | Tech lead, backend core API, database, ELK logging                                                              |
-| **Alexis** | Product owner, UI/UX, chess game logic (frontend)                                                               |
+## Features List
+| Feature | Owner(s) | Description |
+| :--- | :--- | :--- |
+| **Frontend Framework** | acoste, vbonnard | Built with React for a responsive, component-driven UI. |
+| **Backend Framework** | ezeppa, tbahin | Django REST framework for a robust and secure API. |
+| **Real-time Engine** | ezeppa | WebSockets for live game updates and status broadcasting. |
+| **User Interaction** | vbonnard, ezeppa | Integrated chat, profiles, and friend management system. |
+| **ORM Integration** | tbahin | Abstracted database interactions using Django ORM for safety. |
+| **Design System** | vbonnard | Custom library of 10+ reusable components with consistent DA. |
+| **Multi-Browser** | vbonnard | Full compatibility testing for Firefox, Safari, and Edge. |
+| **User Management** | ezeppa, vbonnard | Profile updates, avatar uploads, and online status tracking. |
+| **Stats & History** | tbahin, vbonnard | Historical game records and Elo-based leaderboards. |
+| **OAuth 2.0** | ezeppa | Secure remote authentication via 42 Intra API. |
+| **Security Hardening** | cfiachet | WAF/ModSecurity protection and Vault secret management. |
+| **Chess Game** | acoste | Fully functional web-based chess with win/loss conditions. |
+| **Remote Play** | ezeppa | Latency handling and reconnection logic for remote sessions. |
+| **Advanced Chat** | ezeppa, vbonnard | Blocking, game invites from chat, and history persistence. |
+| **Spectator Mode** | vbonnard | Real-time observation of ongoing matches for other users. |
+| **Log Management** | tbahin | Centralized ELK stack for log indexing and visualization. |
+| **Monitoring** | cfiachet | Prometheus and Grafana for system health and alerting. |
+| **Microservices** | Team | Loosely-coupled services ensuring single responsibility. |
+| **Analytics** | tbahin, vbonnard | Real-time data visualization and PDF report generation. |
+| **GDPR Compliance** | vbonnard | Data request, deletion, and export features with email confirmation. |
 
+## Modules
+### Major Modules (2pts each)
+- **Web-based Game (Chess)**: Real-time multiplayer game with clear rules. *Implementation: acoste.*
+- **Remote Players**: Networking logic to handle latency and reconnection. *Implementation: ezeppa.*
+- **Standard User Management**: Profiles, avatars, and social status. *Implementation: ezeppa, vbonnard.*
+- **User Interaction**: Chat, friends, and profile systems. *Implementation: vbonnard, ezeppa.*
+- **Real-time Features**: WebSocket-based updates and broadcasting. *Implementation: ezeppa.*
+- **Security (WAF + Vault)**: Hardened ModSecurity and secret isolation. *Implementation: cfiachet.*
+- **Log Management (ELK)**: Centralized indexing and archiving. *Implementation: tbahin.*
+- **Monitoring (Prometheus/Grafana)**: Real-time metrics and custom alerting. *Implementation: cfiachet.*
+- **Microservices**: Decoupled backend architecture. *Implementation: Team.*
+- **Advanced Analytics**: Data visualization and export functionality. *Implementation: tbahin, vbonnard.*
 
-*Adjust names/logins in commits and evaluation materials to match your official group roster.*
+### Minor Modules (1pt each)
+- **Frontend Framework (React)**: Component-driven interface. *Implementation: acoste, vbonnard.*
+- **Backend Framework (Django)**: API and logic layer. *Implementation: ezeppa, tbahin.*
+- **ORM Integration**: Database abstraction. *Implementation: tbahin.*
+- **Design System**: Reusable UI library. *Implementation: vbonnard.*
+- **Additional Browsers**: Cross-platform compatibility. *Implementation: vbonnard.*
+- **Stats & History**: Match tracking and leaderboard. *Implementation: tbahin, vbonnard.*
+- **OAuth 2.0 (42)**: External authentication. *Implementation: ezeppa.*
+- **Advanced Chat**: Feature-rich messaging. *Implementation: ezeppa, vbonnard.*
+- **Spectator Mode**: Live match observation. *Implementation: vbonnard.*
+- **GDPR Compliance**: Data privacy features. *Implementation: vbonnard.*
 
----
+## Individual Contributions
+### tbahin (Tech Lead)
+- **Specific Features**: ELK Stack architecture, Analytics Dashboard engine, Elo calculation logic, Backend infra.
+- **Challenges Overcome**:
+  - **Performance**: Resolved backend blocking during stats generation by implementing an independent worker process.
+  - **Persistence**: Ensured Elasticsearch data remains persistent across container reboots using volume patterns established for PostgreSQL.
+  - **Optimization**: Offloaded complex statistical calculations to Elasticsearch to maintain backend responsiveness.
 
-## Architecture
+### cfiachet (PM)
+- **Specific Features**: WAF/ModSecurity hardening, HashiCorp Vault secret orchestration, Prometheus/Grafana dashboards.
+- **Challenges Overcome**:
+  - **Security Architecture**: Configured Vault for secret isolation, requiring research into encrypted variable injection within Docker environments.
+  - **Hardening**: Implemented strict WAF rules by collaborating with industry professionals to identify and mitigate project-specific vulnerabilities.
 
-- **Reverse proxy**: Nginx as the single HTTPS entry point for the application and tooling UIs.
-- **TLS**: HTTPS with project-provided or generated certificates (see `transcendence/nginx/`).
-- **Stack (high level)**: React (Vite) frontend, Django backend, PostgreSQL, Redis, background workers; ELK and Prometheus/Grafana for observability (see `transcendence/docker-compose.yml` and `Makefile` targets).
-- **Secrets**: Never commit real secrets. Use `.env` (from `.env.example` where provided) and Vault where applicable.
+### acoste (PO)
+- **Specific Features**: Core Chess Engine, React layout architecture, Microservices service-mesh design.
+- **Challenges Overcome**:
+  - **Game Logic**: Developed a robust chess engine capable of handling complex rule sets in a real-time web environment.
+  - **Project Direction**: Managed the late-stage transition to a microservices architecture to ensure long-term scalability and service independence.
 
----
+### vbonnard (Developer)
+- **Specific Features**: Design System components, Social UI flows, GDPR logic, Analytics visualization, Cross-browser QA.
+- **Challenges Overcome**:
+  - **Design consistency**: Created a library of 10+ reusable components that unified the visual identity across the entire platform.
+  - **Refactor**: Led the frontend reorganization into "features" modules, which resolved modularity issues that had initially slowed down integration.
 
-## Prerequisites
+### ezeppa (Developer)
+- **Specific Features**: WebSocket networking, Remote play synchronization, Auth/OAuth 42, Advanced Chat features.
+- **Challenges Overcome**:
+  - **Real-time Sync**: Overcame network latency and reconnection issues in remote matches using advanced WebSocket state management.
+  - **Collaboration**: Successfully bridged frontend and backend gaps by standardizing API endpoints during a mid-project integration phase.
 
-- **Docker** and **Docker Compose**
-- **GNU Make**
-- **Node.js** (LTS recommended) if you run the **frontend** outside Docker for development
+## Technical Reflections & Challenges
+The project faced several environment-specific challenges, including port restrictions at the 42 school, which were resolved by mapping Nginx ports and blocking port 80. HTTPS certificate management was automated within the Makefile to ensure a secure local development environment. 
 
----
-
-## Installation & deployment
-
-1. Copy and configure environment variables from the project’s `**.env.example`** (or team template) to `**.env**` at the paths documented for this repo.
-2. From the repository root, build and start the stack:
-  ```bash
-   make up
-  ```
-3. Consult `**make help**` for logs, teardown, and other targets.
-
-Database volumes and runtime logs paths are listed in `**.gitignore**` to avoid committing local data.
-
----
-
-## Frontend (local development)
-
-The SPA lives under `**transcendence/frontend/interface/**`.
-
-```bash
-cd transcendence/frontend/interface
-npm ci
-npm run dev
-```
-
-- `**npm run build**` — production bundle (runs tile manifest generation via `prebuild`).
-- `**npm run lint**` — ESLint.
-- `**scripts/generate-board-tiles-manifest.mjs**` — regenerates chess tile manifests from `public/` assets (invoked automatically before dev/build).
-
-See `**transcendence/frontend/interface/README.md**` for npm script details (tile manifest generation, etc.).
-
----
-
-## Usage & access
-
-Typical entry points (exact URLs depend on your Nginx routing and `.env`):
-
-
-| Service     | Example URL (see your deployment)                            |
-| ----------- | ------------------------------------------------------------ |
-| Application | `https://localhost/`                                         |
-| Grafana     | `https://localhost/grafana/`                                 |
-| Kibana      | `https://localhost/kibana/`                                  |
-| Prometheus  | `https://localhost/prometheus/` (may require auth via Nginx) |
-
-
----
-
-## Features (honest scope)
-
-What is **implemented or demonstrable** evolves with each sprint. As of the latest iteration:
-
-- **Chess UI**: Board, move rules via `chess.js`, timers (white clock does not tick until the first move is played; UI sync), end-of-game panel, coalition-themed pieces and board tiles.
-- **Audio**: Shared volume/mute in **Settings** (`gameAudioPrefs`). **Home** BGM (`public/sounds/home/Beth's Story.m4a`) plays across the app **except** on `/game/*`. **In-game** BGM (`public/sounds/game/Theme_of_game.wav`) loops and starts **with the clock** (after the first move). SFX remain procedural or file-based per `public/sounds/game/README.md`.
-- **Auth**: OAuth 42 integration path; **development mock user** optional via env for UI work without a live backend.
-- **Profile & settings**: Profile view, settings for audio and **reduced motion** (accessibility); coalition-themed ambient background and particles respect this preference where applicable.
-- **Statistics**: Personal statistics page with charts (**Recharts**), coalition theming; data may be **mock JSON** until the backend exposes real game history.
-- **Infrastructure**: Monitoring and logging stacks as defined in compose files (finalize dashboards and alerting per subject).
-
-Treat `**Todo.md`** as the source of truth for **which modules** you claim at evaluation.
-
----
-
-## Known limitations
-
-- **README** and **Privacy Policy / Terms of Service** must stay accurate; link them from the app when required by Part III.
-- **Remote multiplayer**, **WebSocket** resilience, and **full stats persistence** may still be **in progress**—verify before claiming points.
-- **Browser support**: Chrome is the baseline; extended browser support is a separate minor module if claimed.
-- **i18n** (3+ languages) is optional/bonus unless you implement it.
-- Some UI toggles were removed when they had **no backend or product behavior** (e.g. placeholder 2FA, notifications)—restore them when the feature is real.
-
----
-
-## Grading & modules
-
-- Official rules: **ft_transcendence** PDF (modules in chapter IV, bonuses in chapter VII).
-- Internal tracking: `**Todo.md`** — module list, owners, status (**Fait** / **Quasi** / **En cours** / **À faire**), and bonus suffix `**, bonus`** for modules beyond the 14-point core.
-
----
-
-## Contributions & workflow
-
-- Use **clear commit messages** and **shared branches** as required by the subject.
-- Prefer small, reviewable changes; document notable decisions in `**Todo.md`** history and this README when behavior or deployment changes.
-
----
-
-## Challenges
-
-- Aligning **frontend mock flows** with **backend APIs** and WebSocket semantics for remote games.
-- Meeting **Part III** bar (HTTPS, DB schema documentation, email/password auth alongside OAuth, etc.) while iterating on gameplay and DevOps.
-- Keeping the **README** and `**Todo.md`** honest so evaluators see what is demo-ready versus planned.
-
----
-
-## License & credits
-
-- Academic / **42 Network** project context; reuse and publication are subject to **42** rules and your campus policies—not a standalone open-source license unless you add one explicitly.
-- **Third-party**: React, Vite, chess.js, Recharts, Remix Icon, Framer Motion, and other dependencies are listed in `package.json` and their respective licenses.
-- **Assets**: Coalition visuals, audio, and chess sprites are team or subject-sourced; attribute external work in commits or a `CREDITS` file if required.
-
----
-
-*For French-language sprint tracking and module point math, see `**Todo.md`**. For interface-only npm details, see `**transcendence/frontend/interface/README.md**`.*
+Architecturally, the project evolved through a critical mid-stage refactor. Initially, independent work streams led to integration bottlenecks ("merge hell"). The team overcame this by adopting a modular feature-based structure and a strict branch-to-main workflow. While responsive design and E2E testing (Playwright) were integrated in the later stages, they proved vital for catching regressions and ensuring a professional-grade user experience across all supported browsers.
