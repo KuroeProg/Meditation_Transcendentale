@@ -370,6 +370,9 @@ services:
       - xpack.security.http.ssl.key=/usr/share/elasticsearch/config/certs/elasticsearch.key
       - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
+    depends_on:
+      vault-init:
+        condition: service_completed_successfully
     volumes:
       - ./elasticsearch/certs:/usr/share/elasticsearch/config/certs:ro
       - elastic_data:/usr/share/elasticsearch/data
@@ -377,8 +380,8 @@ services:
       test: ["CMD-SHELL", "curl -s -k https://localhost:9200 > /dev/null || exit 1"]
       interval: 10s
       timeout: 5s
-      retries: 10
-      start_period: 120s
+      retries: 30
+      start_period: 240s
     restart: always
     logging: *default-logging
     networks:

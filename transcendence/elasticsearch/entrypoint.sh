@@ -2,7 +2,7 @@
 
 echo "[Elasticsearch] Fetching secrets from Vault..."
 
-MAX_RETRIES=10
+MAX_RETRIES=20
 RETRY_COUNT=0
 
 while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
