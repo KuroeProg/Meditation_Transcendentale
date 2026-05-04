@@ -13,18 +13,31 @@ Les environnements Python locaux pour outils graphiques (ex. **`.venv-sprites`**
 
 ---
 
-## Audio (BGM)
+## Audio (BGM + SFX)
 
-Fichiers sous **`public/sounds/`** (non bundlés par Vite ; servis tels quels) :
+Documentation détaillée du module React : **`src/features/audio/README.md`**.
 
-| Zone | Fichier | Comportement |
-| ---- | ------- | ------------ |
-| App hors partie | `home/Beth's Story.m4a` | Boucle ; pause automatique sur les routes `/game/*`. |
-| Partie | `game/Theme_of_game.wav` | Boucle ; lecture déclenchée au premier coup (chronomètre). |
+### Fichiers statiques
 
-Préférences volume/coupe : `src/config/gameAudioPrefs.js` ; détails SFX : `public/sounds/game/README.md`.
+Sous **`public/sounds/`** (non bundlés par Vite). **Partie** : plusieurs pistes dans `public/sounds/game/` (liste canonique `GAME_BGM_FILES` dans `src/config/gameAudioPrefs.js`). **Accueil** : `public/sounds/home/Beth's Story.m4a`.
 
-Le BGM **partie** utilise des **fondus** (`audioFade.js`) à la sortie de partie et au premier coup. Le BGM **menu / hors partie** est en lecture simple (pause sur `/game/*`, pas de fondu).
+### Préférences
+
+- Stockage : `localStorage`, clé `transcendence_game_audio_v2` (`gameAudioPrefs.js`).
+- Accueil et partie ont chacun volume + mute ; SFX ont volume + mute ; mode de piste partie : **rotation** (défaut), **aléatoire**, ou **piste fixe**.
+- Mise à jour globale : événement `transcendence-game-audio-changed` sur `window`.
+
+### Comportement
+
+| Zone | Composant | Lecture |
+| ---- | --------- | ------- |
+| Hors `/game/*` | `HomeAmbientBgm` (`App.jsx`) | Boucle ; déblocage après geste utilisateur ; pause sur `/game/*`. |
+| Partie | `GameAmbientBgm` (`Game.jsx`) | Boucle ; **démarrage après 2 demi-coups** dans le journal (comme le chrono), via `useChessAudio` + `tryPlayGameBgm`. |
+| Contrôle in-game | `GameMusicPanel` | Volume / mute BGM partie ; `tryPlayGameBgm` sur interaction pour l’autoplay. |
+
+**Fondus** (`src/features/audio/services/audioFade.js`) : montée en volume sur la BGM partie au lancement (smoothstep + `requestAnimationFrame`). Pas de fondu sur la BGM accueil (pause simple).
+
+**SFX** : Web Audio API procédurale dans `src/features/audio/services/gameSfx.js` ; brief fichiers WAV futurs : `public/sounds/game/README.md`.
 
 ---
 

@@ -16,7 +16,7 @@ Réglages : **Paramètres** → Audio, ou bouton volume en haut à droite pendan
 
 ## SFX (coups, UI…)
 
-Fichiers attendus (stéréo ou mono, **44,1 kHz**, WAV 16-bit conseillé). Tant qu’ils sont absents, l’app utilise la **synthèse Web Audio** (`src/audio/gameSfx.js`).
+Fichiers attendus (stéréo ou mono, **44,1 kHz**, WAV 16-bit conseillé). Tant qu’ils sont absents, l’app utilise la **synthèse Web Audio** (`src/features/audio/services/gameSfx.js`).
 
 | Fichier | Brief | Déclencheur in-game |
 |--------|--------|---------------------|
