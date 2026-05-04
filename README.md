@@ -42,7 +42,7 @@ _This project has been created as part of the 42 curriculum by tbahin, cfiachet,
    - Run database migrations.
 
 4. **Access the Application**:
-   Open [https://localhost](https://localhost) in your browser. (Note: You may need to bypass the self-signed certificate warning).
+   Open [https://localhost:8443](https://localhost:8443) in your browser. (Note: You may need to bypass the self-signed certificate warning).
 
 ## Resources
 - **Django Documentation**: Backend framework and ORM implementation.
