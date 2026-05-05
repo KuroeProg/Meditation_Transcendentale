@@ -149,7 +149,7 @@ services:
       - EMAIL_HOST_USER=${EMAIL_HOST_USER:-}
       - VAULT_ADDR=https://vault:8202
       - VAULT_TOKEN=${VAULT_ROOT_TOKEN}
-    command: ["daphne", "-e", "ssl:8000:privateKey=/app/certs/backend.key:certKey=/app/certs/backend.crt:interface=0.0.0.0", "transcendence_backend.asgi:application"]
+    command: ["daphne", "-b", "0.0.0.0", "-p", "8000", "transcendence_backend.asgi:application"]
     expose:
       - "8000"
     depends_on:
