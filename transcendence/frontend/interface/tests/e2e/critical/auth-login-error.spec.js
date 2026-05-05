@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 // Vérifie qu'un login invalide reste sur la page auth avec un message d'erreur.
 test('invalid login shows an error message', async ({ page }) => {

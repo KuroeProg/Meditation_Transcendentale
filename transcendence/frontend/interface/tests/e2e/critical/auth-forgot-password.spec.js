@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('auth forgot password', () => {
 	// Vérifie qu'un email soumis renvoie toujours le message générique de sécurité.

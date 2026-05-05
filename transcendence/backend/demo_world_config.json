@@ -1,0 +1,340 @@
+{
+  "users": [
+    {
+      "username": "alice_competitive",
+      "password": "alicedemo123",
+      "first_name": "Alice",
+      "last_name": "Champion",
+      "email": "alice@demo.local",
+      "bio": "Competitive chess player, always grinding for rating improvements. Love rapid games!",
+      "coalition": "air",
+      "elo_bullet": 2100,
+      "elo_blitz": 2050,
+      "elo_rapid": 2100,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "bob_casual",
+      "password": "bobdemo123",
+      "first_name": "Bob",
+      "last_name": "Relaxed",
+      "email": "bob@demo.local",
+      "bio": "Just here to have fun and enjoy chess. Not too serious about ratings.",
+      "coalition": "feu",
+      "elo_bullet": 1400,
+      "elo_blitz": 1350,
+      "elo_rapid": 1400,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "charlie_legend",
+      "password": "charliedemo123",
+      "first_name": "Charlie",
+      "last_name": "Legend",
+      "email": "charlie@demo.local",
+      "bio": "The legend himself. Peak rating player with decades of experience.",
+      "coalition": "eau",
+      "elo_bullet": 2400,
+      "elo_blitz": 2380,
+      "elo_rapid": 2420,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "diana_rising",
+      "password": "dianademo123",
+      "first_name": "Diana",
+      "last_name": "Rising",
+      "email": "diana@demo.local",
+      "bio": "Coming up through the ranks! My rise is just beginning.",
+      "coalition": "terre",
+      "elo_bullet": 1650,
+      "elo_blitz": 1600,
+      "elo_rapid": 1650,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "eve_nocturnal",
+      "password": "evedemo123",
+      "first_name": "Eve",
+      "last_name": "Night",
+      "email": "eve@demo.local",
+      "bio": "Night owl chess enthusiast. Always playing late-night blitz marathons.",
+      "coalition": "terre",
+      "elo_bullet": 1300,
+      "elo_blitz": 1280,
+      "elo_rapid": 1350,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "frank_tactical",
+      "password": "frankdemo123",
+      "first_name": "Frank",
+      "last_name": "Tactical",
+      "email": "frank@demo.local",
+      "bio": "Deep calculation and solid positional play. No blunders on my watch!",
+      "coalition": "air",
+      "elo_bullet": 1950,
+      "elo_blitz": 1920,
+      "elo_rapid": 1950,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    },
+    {
+      "username": "grace_blitzer",
+      "password": "gracedemo123",
+      "first_name": "Grace",
+      "last_name": "Blitzer",
+      "email": "grace@demo.local",
+      "bio": "Blitz is where I shine! The faster the game, the better I play.",
+      "coalition": "terre",
+      "elo_bullet": 2150,
+      "elo_blitz": 2200,
+      "elo_rapid": 1950,
+      "is_2fa_enabled": true,
+      "is_2fa_verified": true
+    }
+  ],
+  "friendships": [
+    {
+      "from_username": "alice_competitive",
+      "to_username": "bob_casual",
+      "status": "accepted"
+    },
+    {
+      "from_username": "diana_rising",
+      "to_username": "alice_competitive",
+      "status": "accepted"
+    },
+    {
+      "from_username": "alice_competitive",
+      "to_username": "frank_tactical",
+      "status": "accepted"
+    },
+    {
+      "from_username": "bob_casual",
+      "to_username": "diana_rising",
+      "status": "accepted"
+    },
+    {
+      "from_username": "diana_rising",
+      "to_username": "bob_casual",
+      "status": "accepted"
+    },
+    {
+      "from_username": "frank_tactical",
+      "to_username": "diana_rising",
+      "status": "accepted"
+    },
+    {
+      "from_username": "diana_rising",
+      "to_username": "frank_tactical",
+      "status": "accepted"
+    },
+    {
+      "from_username": "charlie_legend",
+      "to_username": "alice_competitive",
+      "status": "pending"
+    }
+  ],
+  "games": [
+    {
+      "player_white": "alice_competitive",
+      "player_black": "bob_casual",
+      "winner": "alice_competitive",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 5,
+      "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bb5 a6 4. Ba4 Nf6 5. O-O Be7 6. Re1 b5 7. Bb3 d6 8. c3 O-O 9. h3 Na5 10. Bc2 c5 11. d4 Qc7 12. Nbd2 Bd7 13. Nf1 Rfe8 14. Ng3 Bf8 15. Bg5 Re6 16. d5 Re7 17. Nh5 Nxh5 18. Bxe7 Bxe7 19. Nxe5 dxe5 20. Qxh5" 
+    },
+    {
+      "player_white": "bob_casual",
+      "player_black": "alice_competitive",
+      "winner": "alice_competitive",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 4,
+      "pgn": "1. d4 d5 2. c4 e6 3. Nc3 Nf6 4. Bg5 Be7 5. e3 O-O 6. Nf3 h6 7. Bh4 b6 8. cxd5 exd5 9. Bd3 Bb7 10. O-O Nbd7 11. Rc1 c5 12. Ne5 Ne4 13. Bxe7 Qxe7 14. Nxd7 Qxd7 15. dxc5 Nxc5 16. Bb1 Rac8 17. Qc2 g6 18. Rfd1 Qe6 19. Qe2" 
+    },
+    {
+      "player_white": "alice_competitive",
+      "player_black": "diana_rising",
+      "winner": "alice_competitive",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 3,
+      "pgn": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be3 e6 7. f3 b5 8. Qd2 Nbd7 9. O-O-O Bb7 10. g4 h6 11. h4 b4 12. Nce2 d5 13. Ng3 dxe4 14. fxe4 Nxe4 15. Nxe4 Bxe4 16. Rg1 Rc8 17. g5 h5 18. g6" 
+    },
+    {
+      "player_white": "diana_rising",
+      "player_black": "alice_competitive",
+      "winner": "diana_rising",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 2,
+      "pgn": "1. Nf3 d5 2. g3 c5 3. Bg2 Nc6 4. O-O Nf6 5. d3 e5 6. e4 Be7 7. Nc3 O-O 8. Bg5 d4 9. Bxf6 Bxf6 10. Nd5 Be6 11. Nd2 Bg5 12. f4 exf4 13. gxf4 Bh6 14. Qh5 f5 15. Rae1" 
+    },
+    {
+      "player_white": "alice_competitive",
+      "player_black": "frank_tactical",
+      "winner": "frank_tactical",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 2,
+      "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. c3 Nf6 5. d4 exd4 6. cxd4 Bb4+ 7. Nc3 Nxe4 8. O-O Nxc3 9. bxc3 Bxc3 10. Ba3 d6 11. Qb3 Bxa1 12. Bxf7+ Kf8 13. Rxa1 Qf6 14. Bd5" 
+    },
+    {
+      "player_white": "charlie_legend",
+      "player_black": "alice_competitive",
+      "winner": "charlie_legend",
+      "time_category": "rapid",
+      "time_control_seconds": 600,
+      "increment_seconds": 10,
+      "is_rated": true,
+      "termination_reason": "resignation",
+      "days_ago": 1,
+      "pgn": "1. d4 Nf6 2. c4 e6 3. Nf3 d5 4. Nc3 Be7 5. Bg5 O-O 6. e3 h6 7. Bh4 b6 8. cxd5 Nxd5 9. Bxe7 Qxe7 10. Nxd5 exd5 11. Rc1 Be6 12. Qc2 Rc8 13. Bb5 c5 14. O-O Nd7 15. Rfd1" 
+    },
+    {
+      "player_white": "alice_competitive",
+      "player_black": "grace_blitzer",
+      "winner": "grace_blitzer",
+      "time_category": "blitz",
+      "time_control_seconds": 180,
+      "increment_seconds": 2,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 1,
+      "pgn": "1. e4 c5 2. Nf3 d6 3. d4 cxd4 4. Nxd4 Nf6 5. Nc3 a6 6. Be2 e5 7. Nf3 Be7 8. O-O O-O 9. a4 Be6 10. Ng5 Qd7 11. Nxe6 Qxe6 12. Be3" 
+    },
+    {
+      "player_white": "bob_casual",
+      "player_black": "eve_nocturnal",
+      "winner": "eve_nocturnal",
+      "time_category": "blitz",
+      "time_control_seconds": 180,
+      "increment_seconds": 2,
+      "is_rated": true,
+      "termination_reason": "checkmate",
+      "days_ago": 3,
+      "pgn": "1. e4 e5 2. Nf3 Nc6 3. Bc4 Bc5 4. b4 Bxb4 5. c3 Ba5 6. O-O d6 7. d4 exd4 8. cxd4 Bb6 9. Nc3 Nf6 10. Bg5" 
+    }
+  ],
+  "conversations": [
+    {
+      "type": "private",
+      "participants": ["alice_competitive", "bob_casual"],
+      "messages": [
+        {
+          "sender": "alice_competitive",
+          "content": "Hey Bob! Want to play a game later?",
+          "message_type": "text",
+          "days_ago": 2
+        },
+        {
+          "sender": "bob_casual",
+          "content": "Sure! Let's do some rapid games. I need to warm up my rating.",
+          "message_type": "text",
+          "days_ago": 2
+        },
+        {
+          "sender": "alice_competitive",
+          "content": "Great! I'll play you in about 30 minutes?",
+          "message_type": "text",
+          "days_ago": 2
+        },
+        {
+          "sender": "bob_casual",
+          "content": "Perfect, I'll be ready!",
+          "message_type": "text",
+          "days_ago": 2
+        }
+      ]
+    },
+    {
+      "type": "private",
+      "participants": ["alice_competitive", "diana_rising"],
+      "messages": [
+        {
+          "sender": "diana_rising",
+          "content": "Alice, thanks for the mentoring session yesterday! I learned so much.",
+          "message_type": "text",
+          "days_ago": 1
+        },
+        {
+          "sender": "alice_competitive",
+          "content": "Anytime Diana! You're making great progress. Keep grinding and you'll be 2000+ in no time.",
+          "message_type": "text",
+          "days_ago": 1
+        },
+        {
+          "sender": "diana_rising",
+          "content": "I got that endgame right you taught me in our last game. Won the match because of it!",
+          "message_type": "text",
+          "days_ago": 1
+        }
+      ]
+    },
+    {
+      "type": "private",
+      "participants": ["alice_competitive", "charlie_legend"],
+      "messages": [
+        {
+          "sender": "charlie_legend",
+          "content": "Alice, I see you've been climbing the ratings. Impressive.",
+          "message_type": "text",
+          "days_ago": 1
+        },
+        {
+          "sender": "alice_competitive",
+          "content": "Thanks Charlie. Would love to play you sometime. I want to test myself against the best!",
+          "message_type": "text",
+          "days_ago": 1
+        },
+        {
+          "sender": "charlie_legend",
+          "content": "Let's play. I'm always up for a challenge. Be ready to learn.",
+          "message_type": "text",
+          "days_ago": 0
+        }
+      ]
+    },
+    {
+      "type": "private",
+      "participants": ["bob_casual", "diana_rising"],
+      "messages": [
+        {
+          "sender": "bob_casual",
+          "content": "Hey Diana! How are your studies going?",
+          "message_type": "text",
+          "days_ago": 3
+        },
+        {
+          "sender": "diana_rising",
+          "content": "Pretty good! Been busy but trying to find time for chess too.",
+          "message_type": "text",
+          "days_ago": 3
+        }
+      ]
+    }
+  ]
+}

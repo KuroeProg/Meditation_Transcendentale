@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test('about page shows Even with local profile photo', async ({ page }) => {
 	await page.goto('/about')

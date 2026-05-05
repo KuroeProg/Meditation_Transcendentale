@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 // Vérifie qu'un visiteur non connecté est redirigé vers l'écran d'authentification.
 test('guest is redirected to auth when opening protected dashboard route', async ({ page }) => {

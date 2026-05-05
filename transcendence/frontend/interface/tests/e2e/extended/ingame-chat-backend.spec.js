@@ -6,7 +6,7 @@
  *  2. A received WS new_message appears in the message list.
  *  3. Sending a message dispatches send_message via WebSocket.
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { getRoleStateFilePath } from '../helpers/storageState.js'

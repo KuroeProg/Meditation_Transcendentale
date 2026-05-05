@@ -19,7 +19,13 @@ function MessageBubble({ msg, isOwn, currentUserId }) {
 
 	return (
 		<div className={`chat-msg ${isOwn ? 'chat-msg--own' : 'chat-msg--other'}`}>
-			{!isOwn && <img className="chat-msg-avatar" src={msg.sender?.avatar || undefined} alt="" />}
+			{!isOwn && (
+				<img
+					className="chat-msg-avatar"
+					src={msg.sender?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${msg.sender?.username || 'Inconnu'}`}
+					alt=""
+				/>
+			)}
 			<div className="chat-msg-body">
 				{!isOwn && (
 					<UserProfileLink
@@ -133,7 +139,11 @@ export default function MessageThread({ conversation, userId, username }) {
 	return (
 		<div className="chat-thread" data-testid="chat-thread">
 			<div className="chat-thread-header">
-				<img className="chat-thread-avatar" src={other?.avatar || undefined} alt="" />
+				<img
+					className="chat-thread-avatar"
+					src={other?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${other?.username || 'Inconnu'}`}
+					alt=""
+				/>
 				<div className="chat-thread-info">
 					<UserProfileLink
 						userId={other?.id}

@@ -6,7 +6,7 @@
  *   - time_seconds + increment       → calcul en minutes
  *   - time_control_label             → libellé libre
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { withRoleSessions } from '../helpers/multiUser.js'
 import { openConversationThread, waitForDashboardReady } from '../helpers/waits.js'

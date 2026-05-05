@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('endpoint de seed des utilisateurs e2e', () => {
 	// Vérifie que l'endpoint de seed renvoie un payload de succès exploitable par l'environnement e2e.

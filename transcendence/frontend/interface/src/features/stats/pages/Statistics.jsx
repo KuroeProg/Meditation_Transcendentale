@@ -127,7 +127,7 @@ function PerfTooltip({ active, payload, label, perfMode }) {
 			</p>
 			{payload.map((p) => (
 				<div key={String(p.dataKey)} className="pstats-tooltip__row">
-					<span className="pstats-tooltip__dot" style={{ background: p.color }} />
+					<span className="pstats-tooltip__dot" style={{ backgroundColor: p.color }} />
 					<span className="pstats-tooltip__name">{p.name}</span>
 					<strong className="pstats-tooltip__val">
 						{typeof p.value === 'number'
@@ -156,7 +156,7 @@ function PieceTooltip({ active, payload, label }) {
 				<div key={String(p.dataKey)} className="pstats-tooltip__row">
 					<span
 						className="pstats-tooltip__dot"
-						style={{ background: p.fill ?? p.color }}
+						style={{ backgroundColor: p.fill ?? p.color }}
 					/>
 					<span className="pstats-tooltip__name">{p.name}</span>
 					<strong className="pstats-tooltip__val">
@@ -478,6 +478,7 @@ export default function Statistics() {
 	const { user } = useAuth()
 	const { isConnected, lastMessage, sendMove } = useChessSocket('matchmaking')
 	const [esStats, setEsStats] = useState(null)
+	const [isLoading, setIsLoading] = useState(true)
 	const [category, setCategory] = useState('rapid')
 	const [limit, setLimit] = useState('all')
 	const [isExporting, setIsExporting] = useState(false)
@@ -551,6 +552,10 @@ export default function Statistics() {
 			allPlayers: esStats.all_players_winrate_black ?? 0,
 			allDraw: esStats.all_players_drawrate_black ?? 0
 		},
+	} : isLoading ? {
+		global: { player: 0, playerDraw: 0, allPlayers: 0, allDraw: 0 },
+		white: { player: 0, playerDraw: 0, allPlayers: 0, allDraw: 0 },
+		black: { player: 0, playerDraw: 0, allPlayers: 0, allDraw: 0 },
 	} : {
 		global: { player: data.winrates.global.player, playerDraw: 0, allPlayers: data.winrates.global.allPlayers, allDraw: 0 },
 		white: { player: data.winrates.white.player, playerDraw: 0, allPlayers: data.winrates.white.allPlayers, allDraw: 0 },
@@ -573,8 +578,17 @@ export default function Statistics() {
 	useEffect(() => {
 		if (lastMessage?.action === 'player_stats') {
 			setEsStats(lastMessage.stats)
+			setIsLoading(false)
 		}
 	}, [lastMessage])
+
+	// Sécurité pour arrêter le loading si le socket est déconnecté trop longtemps
+	useEffect(() => {
+		if (!isConnected) {
+			const t = setTimeout(() => setIsLoading(false), 5000)
+			return () => clearTimeout(t)
+		}
+	}, [isConnected])
 
 	const pageStyle = useMemo(() => buildStatsPageStyle(theme), [theme])
 	const categoryOptions = ['bullet', 'blitz', 'rapid']
@@ -588,7 +602,7 @@ export default function Statistics() {
 					{categoryOptions.map(cat => (
 						<button
 							key={cat}
-							onClick={() => setCategory(cat)}
+							onClick={() => { setCategory(cat); setIsLoading(true); }}
 							type="button"
 							className={`pstats-controls__btn ${category === cat ? 'is-active' : ''}`}
 						>
@@ -603,7 +617,7 @@ export default function Statistics() {
 					{limitOptions.map(lim => (
 						<button
 							key={lim}
-							onClick={() => setLimit(lim)}
+							onClick={() => { setLimit(lim); setIsLoading(true); }}
 							type="button"
 							className={`pstats-controls__btn ${limit === lim ? 'is-active' : ''}`}
 						>
@@ -622,61 +636,77 @@ export default function Statistics() {
 						{isExporting ? 'Génération...' : 'Export PDF'}
 					</button>
 				</div>
-				<div className="pstats-winrates">
-					<WinrateGroup
-						title="Global Winrate — player vs. all players"
-						playerPct={wr.global.player}
-						playerDrawPct={wr.global.playerDraw}
-						allPct={wr.global.allPlayers}
-						allDrawPct={wr.global.allDraw}
-						accent={theme.accent}
-						drawColor={theme.draw}
-						track={theme.donutTrack}
-						allMuted={theme.allPlayersLine}
-						chartAnim={chartAnim}
-					/>
-					<WinrateGroup
-						title="Global Winrate — with white player vs. global all players"
-						playerPct={wr.white.player}
-						playerDrawPct={wr.white.playerDraw}
-						allPct={wr.white.allPlayers}
-						allDrawPct={wr.white.allDraw}
-						accent={theme.accent}
-						drawColor={theme.draw}
-						track={theme.donutTrack}
-						allMuted={theme.allPlayersLine}
-						chartAnim={chartAnim}
-					/>
-					<WinrateGroup
-						title="Global Winrate — with black player vs. global all players"
-						playerPct={wr.black.player}
-						playerDrawPct={wr.black.playerDraw}
-						allPct={wr.black.allPlayers}
-						allDrawPct={wr.black.allDraw}
-						accent={theme.accent}
-						drawColor={theme.draw}
-						track={theme.donutTrack}
-						allMuted={theme.allPlayersLine}
-						chartAnim={chartAnim}
-					/>
-				</div>
-				<PerfChart
-					theme={theme}
-					chartAnim={chartAnim}
-					moveSpeedHistory={esStats?.performance_history?.move_speed_history}
-					gameAdvantageHistory={esStats?.performance_history?.game_advantage_history}
-					eloHistory={esStats?.performance_history?.elo_history}
-					isMock={!esStats}
-				/>
-				<PieceUsageChart
-					theme={theme}
-					chartAnim={chartAnim}
-					pieceUsage={esStats?.piece_usage}
-					allPieceUsage={esStats?.all_players_piece_usage}
-				/>
+
+				{isLoading ? (
+					<div className="pstats-loading-view">
+						<i className="ri-loader-2-line ri-spin" aria-hidden="true" />
+						<span>Analyse des performances en cours...</span>
+					</div>
+				) : (
+					<>
+						<div className="pstats-winrates">
+							<WinrateGroup
+								title="Global Winrate — player vs. all players"
+								playerPct={wr.global.player}
+								playerDrawPct={wr.global.playerDraw}
+								allPct={wr.global.allPlayers}
+								allDrawPct={wr.global.allDraw}
+								accent={theme.accent}
+								drawColor={theme.draw}
+								track={theme.donutTrack}
+								allMuted={theme.allPlayersLine}
+								chartAnim={chartAnim}
+							/>
+							<WinrateGroup
+								title="Global Winrate — with white player vs. global all players"
+								playerPct={wr.white.player}
+								playerDrawPct={wr.white.playerDraw}
+								allPct={wr.white.allPlayers}
+								allDrawPct={wr.white.allDraw}
+								accent={theme.accent}
+								drawColor={theme.draw}
+								track={theme.donutTrack}
+								allMuted={theme.allPlayersLine}
+								chartAnim={chartAnim}
+							/>
+							<WinrateGroup
+								title="Global Winrate — with black player vs. global all players"
+								playerPct={wr.black.player}
+								playerDrawPct={wr.black.playerDraw}
+								allPct={wr.black.allPlayers}
+								allDrawPct={wr.black.allDraw}
+								accent={theme.accent}
+								drawColor={theme.draw}
+								track={theme.donutTrack}
+								allMuted={theme.allPlayersLine}
+								chartAnim={chartAnim}
+							/>
+						</div>
+						<PerfChart
+							theme={theme}
+							chartAnim={chartAnim}
+							moveSpeedHistory={esStats?.performance_history?.move_speed_history}
+							gameAdvantageHistory={esStats?.performance_history?.game_advantage_history}
+							eloHistory={esStats?.performance_history?.elo_history}
+							isMock={!esStats}
+						/>
+						<PieceUsageChart
+							theme={theme}
+							chartAnim={chartAnim}
+							pieceUsage={esStats?.piece_usage}
+							allPieceUsage={esStats?.all_players_piece_usage}
+						/>
+					</>
+				)}
 			</div>
 			<div className="pstats-right">
-				<MetricsTable realStats={esStats} />
+				{isLoading ? (
+					<div className="pstats-loading-view pstats-loading-view--small">
+						<i className="ri-loader-2-line ri-spin" aria-hidden="true" />
+					</div>
+				) : (
+					<MetricsTable realStats={esStats} />
+				)}
 			</div>
 		</div>
 	)

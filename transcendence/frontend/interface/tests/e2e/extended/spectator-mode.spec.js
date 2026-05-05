@@ -7,7 +7,7 @@
  *  3. When the WS server sends spectator:true, the spectator banner is visible.
  *  4. Game controls are read-only (board isViewOnly) for a spectator.
  */
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 import { hasE2ERoleCredentials } from '../helpers/e2eEnv.js'
 import { withRoleSessions } from '../helpers/multiUser.js'

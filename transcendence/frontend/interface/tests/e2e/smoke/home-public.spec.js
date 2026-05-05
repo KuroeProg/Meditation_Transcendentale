@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 // Vérifie que la page d'accueil publique s'affiche avec son CTA principal.
 test('home loads with primary CTA', async ({ page }) => {

@@ -58,7 +58,11 @@ export default function ConversationList({ onSelect, activeId }) {
 						data-testid={`chat-conversation-item-${c.id}`}
 						onClick={() => onSelect(c)}
 					>
-						<img className="chat-conv-avatar" src={other?.avatar || undefined} alt="" />
+						<img
+							className="chat-conv-avatar"
+							src={other?.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${other?.username || 'Inconnu'}`}
+							alt=""
+						/>
 						<div className="chat-conv-info">
 							<div className="chat-conv-top">
 								<div className="chat-conv-name-line">

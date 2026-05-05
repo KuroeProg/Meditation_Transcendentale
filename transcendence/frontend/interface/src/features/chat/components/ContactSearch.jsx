@@ -23,7 +23,11 @@ function ContactItem({ contact, onAction, onStartChat, onWatchGame, isBusy, erro
 	const isBlockedByOther = contact.status === 'blocked' && !isBlockedByMe
 	return (
 		<li className="chat-contact-item">
-			<img className="chat-contact-avatar" src={u.avatar} alt="" />
+			<img
+				className="chat-contact-avatar"
+				src={u.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${u.username || 'Inconnu'}`}
+				alt=""
+			/>
 			<div className="chat-contact-info">
 				<UserProfileLink userId={u.id} username={u.username} className="chat-contact-name" />
 				<span
@@ -153,7 +157,11 @@ function SearchResultItem({ user, onAdd }) {
 	const coalSlug = coalitionToSlug(user?.coalition)
 	return (
 		<li className="chat-contact-item">
-			<img className="chat-contact-avatar" src={user.avatar} alt="" />
+			<img
+				className="chat-contact-avatar"
+				src={user.avatar || `https://api.dicebear.com/7.x/initials/svg?seed=${user.username || 'Inconnu'}`}
+				alt=""
+			/>
 			<div className="chat-contact-info">
 				<UserProfileLink userId={user.id} username={user.username} className="chat-contact-name" />
 				<span className={`chat-contact-status ${online ? 'online' : ''}`}>

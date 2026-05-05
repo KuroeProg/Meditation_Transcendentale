@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('auth reset password', () => {
 	// Vérifie qu'un token valide permet la mise à jour du mot de passe.

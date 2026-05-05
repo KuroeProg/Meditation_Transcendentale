@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('auth register', () => {
 	// Vérifie qu'une inscription valide enchaîne vers l'étape de vérification 2FA.

@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('entrée du flux OAuth 42', () => {
 	// Vérifie que le bouton OAuth pointe bien vers la route backend d'entrée du flux 42.

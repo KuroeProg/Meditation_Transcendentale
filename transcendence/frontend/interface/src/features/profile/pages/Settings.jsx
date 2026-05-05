@@ -183,6 +183,19 @@ function Settings() {
 	// eslint-disable-next-line react-hooks/exhaustive-deps
 	}, [user?.id])
 
+	// Side effects: whenever prefs change, sync to localStorage, DOM, and notify other components
+	useEffect(() => {
+		localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs))
+		applyDocumentUiPrefs()
+		notifyPrefsChanged()
+
+		// Debounced server sync
+		if (syncDebounce.current) clearTimeout(syncDebounce.current)
+		syncDebounce.current = setTimeout(() => {
+			if (user) patchServerPrefs(prefs).catch(() => {})
+		}, 800)
+	}, [prefs, user])
+
 	const setPrefs = useCallback((updater) => {
 		const next = typeof updater === 'function' ? updater(prefs) : updater
 		setPrefsRaw(next)
@@ -204,10 +217,7 @@ function Settings() {
 		localStorage.removeItem(PREFS_STORAGE_KEY)
 		localStorage.removeItem(GAME_AUDIO_PREFS_KEY)
 		const defaults = loadUiPrefs()
-		applyDocumentUiPrefs()
-		notifyPrefsChanged()
 		setPrefsRaw(defaults)
-		if (user) patchServerPrefs(defaults).catch(() => {})
 		setResetDone(true)
 		setTimeout(() => setResetDone(false), 2500)
 	}
@@ -220,10 +230,7 @@ function Settings() {
 		const keysToRemove = [PREFS_STORAGE_KEY, GAME_AUDIO_PREFS_KEY]
 		keysToRemove.forEach((k) => localStorage.removeItem(k))
 		const defaults = loadUiPrefs()
-		applyDocumentUiPrefs()
-		notifyPrefsChanged()
 		setPrefsRaw(defaults)
-		if (user) patchServerPrefs(defaults).catch(() => {})
 		setConfirmErase(false)
 		setEraseDone(true)
 		setTimeout(() => setEraseDone(false), 2500)
@@ -446,7 +453,7 @@ function Settings() {
 										disabled={deleteStep === 2}
 									>
 										{deleteStep === 0 && (
-											<><i className="ri-mail-send-line" aria-hidden /> Envoyer l’email de confirmation</>
+											<><i className="ri-mail-send-line" aria-hidden /> suppression des données personnelles</>
 										)}
 										{deleteStep === 1 && (
 											<><i className="ri-mail-check-line" aria-hidden /> Email envoyé — confirme via le lien reçu</>

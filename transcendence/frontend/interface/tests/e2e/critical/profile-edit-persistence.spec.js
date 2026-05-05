@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test'
+import { expect, test } from '../testWithLogging'
 
 test.describe('profile edit persistence', () => {
 	// Vérifie que le nom d'utilisateur et la bio persistent après recharge.

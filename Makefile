@@ -10,7 +10,7 @@ COMPOSE        := cd $(COMPOSE_DIR) && docker compose
 INTERFACE_DIR  := $(COMPOSE_DIR)/frontend/interface
 
 # E2E test controls
-E2E_BASE_URL ?= https://localhost
+E2E_BASE_URL ?= https://localhost:8443
 PROJECT ?= chromium
 WORKERS ?=
 FILE ?=
@@ -77,7 +77,7 @@ ifeq ($(strip $(PROFILE)),localhost)
 endif
 ENV_SOURCE := $(ENV_PROFILES_DIR)/$(PROFILE_FILE).env
 
-.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean reset-db-safe re env-list env-use env-reload seed-e2e-users test-e2e-list test-e2e test-e2e-headed test-e2e-file test-e2e-grep test-e2e-suite
+.PHONY: help mock-help all certs build build-nc up up-attach up-bg down stop restart reup logs logs-all ps ps-a clean fclean reset-db-safe seed-demo-world re env-list env-use env-reload seed-e2e-users test-e2e-list test-e2e test-e2e-headed test-e2e-file test-e2e-grep test-e2e-suite
 
 # ---------------------------------------------------------------------------
 help: ## Afficher cette aide (cible par défaut)
@@ -257,8 +257,13 @@ reset-db-safe: ## Réinitialiser uniquement Postgres (purge bind-mount) puis rel
 	@$(COMPOSE) down
 	@docker run --rm -v "$(COMPOSE_DIR)/database/data:/data" alpine:3.20 sh -c 'rm -rf /data/*'
 	@$(COMPOSE) up -d
-	@$(MAKE) migrations
+	@$(MAKE) -f "$(REPO_ROOT)Makefile" migrations
 	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Base PostgreSQL réinitialisée et migrations appliquées."
+
+seed-demo-world: ## Générer un monde démo cohérent avec utilisateurs nommés, relations, et historique de jeux
+	@printf '%b\n' "$(C_CYAN)▶$(C_RESET) Génération du monde démo…"
+	@$(COMPOSE) exec -T backend python manage.py generate_demo_world $(SEED_ARGS)
+	@printf '%b\n' "$(C_GREEN)✓$(C_RESET) Monde démo généré avec succès!"
 
 re: fclean all ## fclean puis all (repartir de zéro)
 
